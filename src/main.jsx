@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
-import storage from './lib/storage';
+import storage from './lib/storage.firebase';
 // To use Firebase instead of localStorage, swap the import above for:
 // import storage from './lib/storage.firebase';
 
