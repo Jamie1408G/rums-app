@@ -322,7 +322,6 @@ export default function RUMS() {
   const matchedUsers = q ? users.filter((u) => u.username.toLowerCase().includes(q)) : [];
   const matchedPosts = q
     ? posts
-        .filter((p) => p.tag !== 'Lumina')
         .filter((p) => p.username.toLowerCase().includes(q) || (p.caption || '').toLowerCase().includes(q))
         .sort((a, b) => b.timestamp - a.timestamp)
     : [];
@@ -630,7 +629,7 @@ export default function RUMS() {
         }
         .admin-post-row img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
         .admin-post-meta { flex: 1; font-size: 12.5px; }
-        .admin-post-meta b { display: block; font-size: 13px; }
+        .admin-post-meta b { display: flex; align-items: center; font-size: 13px; }
         .del-btn {
           border: none; background: #fff0ee; color: #c14a35; border-radius: 10px;
           width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;
@@ -956,7 +955,7 @@ export default function RUMS() {
                     )}
                   </div>
 
-                  {!q && <p className="switch-line" style={{ padding: '0 4px' }}>Search doesn't include Lumina posts — head to the Lumina tab for those.</p>}
+                  {!q && <p className="switch-line" style={{ padding: '0 4px' }}>Search covers all posts on RUMS, including Lumina.</p>}
 
                   {q && (
                     <>
@@ -978,7 +977,12 @@ export default function RUMS() {
                         <div className="admin-post-row" key={p.id}>
                           <img src={p.image} alt="" />
                           <div className="admin-post-meta">
-                            <b>{p.username}</b>
+                            <b>
+                              {p.username}
+                              {p.tag === 'Lumina' && (
+                                <span className="tag-pill" style={{ marginLeft: 6 }}><Droplet size={9} /> Lumina</span>
+                              )}
+                            </b>
                             {p.caption ? p.caption.slice(0, 50) : timeAgo(p.timestamp)}
                           </div>
                         </div>
