@@ -8,6 +8,8 @@ const USERS_KEY = 'rums-users';
 const POSTS_KEY = 'rums-posts';
 const SESSION_KEY = 'rums-session';
 const TAGS = ['General', 'Lumina'];
+const lastSeenKey = (username) => `rums-lastseen-${username}`;
+const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
 
 async function safeGet(key, shared) {
   try {
@@ -68,12 +70,45 @@ export default function RUMS() {
   const [feedFilter, setFeedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [shareStatus, setShareStatus] = useState({});
+  const [mention, setMention] = useState(null); // { postId, query, start }
+  const [lastSeen, setLastSeen] = useState({ General: 0, Lumina: 0 });
   const fileInputRef = useRef(null);
+  const commentInputRefs = useRef({});
 
   useEffect(() => {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Poll the shared posts store so new posts (and their notification badges)
+  // show up without needing to log out/in.
+  useEffect(() => {
+    if (!currentUser) return;
+    const id = setInterval(async () => {
+      const p = await safeGet(POSTS_KEY, true);
+      if (p) {
+        try {
+          setPosts(JSON.parse(p.value));
+        } catch {
+          /* ignore malformed payload */
+        }
+      }
+    }, 15000);
+    return () => clearInterval(id);
+  }, [currentUser]);
+
+  // Mark the currently-viewed feed tab as "seen" once its newest post is on screen.
+  useEffect(() => {
+    if (screen !== 'feed' || !currentUser) return;
+    const activeTag = feedFilter === 'lumina' ? 'Lumina' : 'General';
+    const latest = posts
+      .filter((p) => (activeTag === 'Lumina' ? p.tag === 'Lumina' : p.tag !== 'Lumina'))
+      .reduce((max, p) => Math.max(max, p.timestamp), 0);
+    if (latest > (lastSeen[activeTag] || 0)) {
+      saveLastSeen(currentUser.username, { ...lastSeen, [activeTag]: latest });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, feedFilter, posts, currentUser]);
 
   async function init() {
     try {
@@ -91,6 +126,7 @@ export default function RUMS() {
         const found = loadedUsers.find((x) => x.username === sess.username);
         if (found) {
           setCurrentUser(found);
+          await loadLastSeen(found.username);
           setScreen('feed');
           return;
         }
@@ -99,6 +135,30 @@ export default function RUMS() {
     } catch (e) {
       console.error(e);
       setScreen('login');
+    }
+  }
+
+  async function loadLastSeen(username) {
+    const rec = await safeGet(lastSeenKey(username), false);
+    if (rec) {
+      try {
+        setLastSeen(JSON.parse(rec.value));
+        return;
+      } catch {
+        /* fall through to reseed */
+      }
+    }
+    // First time we've seen this user: don't flag existing posts as "new".
+    const now = Date.now();
+    await saveLastSeen(username, { General: now, Lumina: now });
+  }
+
+  async function saveLastSeen(username, next) {
+    setLastSeen(next);
+    try {
+      await window.storage.set(lastSeenKey(username), JSON.stringify(next), false);
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -143,6 +203,7 @@ export default function RUMS() {
         const next = [...users, newUser];
         await saveUsers(next);
         setCurrentUser(newUser);
+        await loadLastSeen(newUser.username);
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: uname }), false);
         setScreen('feed');
       } else {
@@ -155,6 +216,7 @@ export default function RUMS() {
           return;
         }
         setCurrentUser(found);
+        await loadLastSeen(found.username);
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: found.username }), false);
         setScreen('feed');
       }
@@ -311,8 +373,65 @@ export default function RUMS() {
     }
   }
 
+  function handleCommentInput(postId, e) {
+    const value = e.target.value;
+    const cursor = e.target.selectionStart;
+    setCommentDrafts((d) => ({ ...d, [postId]: value }));
+    const uptoCursor = value.slice(0, cursor);
+    const atIndex = uptoCursor.lastIndexOf('@');
+    if (atIndex === -1 || /\s/.test(uptoCursor.slice(atIndex + 1))) {
+      setMention((m) => (m && m.postId === postId ? null : m));
+      return;
+    }
+    setMention({ postId, query: uptoCursor.slice(atIndex + 1), start: atIndex });
+  }
+
+  function selectMention(username) {
+    if (!mention) return;
+    const { postId, start } = mention;
+    const text = commentDrafts[postId] || '';
+    const input = commentInputRefs.current[postId];
+    const cursor = input ? input.selectionStart : text.length;
+    const newText = `${text.slice(0, start)}@${username} ${text.slice(cursor)}`;
+    setCommentDrafts((d) => ({ ...d, [postId]: newText }));
+    setMention(null);
+    requestAnimationFrame(() => {
+      const el = commentInputRefs.current[postId];
+      if (el) {
+        const pos = start + username.length + 2;
+        el.focus();
+        el.setSelectionRange(pos, pos);
+      }
+    });
+  }
+
+  function renderCommentText(text) {
+    return text.split(MENTION_RE).map((part, i) => {
+      const m = part.match(/^@([A-Za-z0-9_]+)$/);
+      if (m && users.some((u) => u.username.toLowerCase() === m[1].toLowerCase())) {
+        return (
+          <span className="mention-tag" key={i}>
+            {part}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  }
+
+  const mentionMatches = mention
+    ? users.filter((u) => u.username.toLowerCase().startsWith(mention.query.toLowerCase())).slice(0, 5)
+    : [];
+
   const canManage = (post) => currentUser?.isAdmin || currentUser?.username === post.username;
   const canManageComment = (c) => currentUser?.isAdmin || currentUser?.username === c.username;
+  const unseenGeneral = currentUser
+    ? posts.filter((p) => p.tag !== 'Lumina' && p.timestamp > (lastSeen.General || 0) && p.username !== currentUser.username).length
+    : 0;
+  const unseenLumina = currentUser
+    ? posts.filter((p) => p.tag === 'Lumina' && p.timestamp > (lastSeen.Lumina || 0) && p.username !== currentUser.username).length
+    : 0;
+  const hasNewPosts = unseenGeneral > 0 || unseenLumina > 0;
   const visiblePosts = posts
     .slice()
     .sort((a, b) => b.timestamp - a.timestamp)
@@ -547,7 +666,30 @@ export default function RUMS() {
         .comment-like-btn:hover, .comment-del-btn:hover { background: var(--mist); }
         .comment-like-btn.liked { color: #e0546b; }
         .comment-del-btn:hover { color: #c14a35; }
-        .comment-input-row { display: flex; gap: 8px; margin-top: 8px; }
+        .mention-tag { color: var(--teal); font-weight: 700; }
+        .comment-input-wrap { position: relative; margin-top: 8px; }
+        .mention-dropdown {
+          position: absolute; bottom: 100%; left: 0; right: 0; margin-bottom: 6px;
+          background: var(--white); border: 1.5px solid var(--line); border-radius: 14px;
+          box-shadow: 0 8px 20px rgba(10,58,77,0.15); overflow: hidden; z-index: 25;
+        }
+        .mention-option {
+          width: 100%; display: flex; align-items: center; gap: 8px; border: none;
+          background: var(--white); cursor: pointer; padding: 8px 12px;
+          font-size: 13px; font-weight: 600; color: var(--deep); text-align: left;
+          font-family: 'Inter', sans-serif;
+        }
+        .mention-option:hover { background: var(--mist); }
+        .tab-badge {
+          background: #e0546b; color: white; font-size: 10px; font-weight: 800;
+          border-radius: 999px; padding: 1px 6px; line-height: 1.4;
+        }
+        .nav-icon-wrap { position: relative; display: flex; }
+        .nav-badge-dot {
+          position: absolute; top: -2px; right: -3px; width: 9px; height: 9px;
+          border-radius: 50%; background: #e0546b; border: 2px solid white;
+        }
+        .comment-input-row { display: flex; gap: 8px; margin-top: 0; }
         .comment-input-row input {
           flex: 1; border: 1.5px solid var(--line); border-radius: 999px;
           padding: 9px 14px; font-size: 13px; outline: none; font-family: 'Inter', sans-serif;
@@ -739,9 +881,11 @@ export default function RUMS() {
               <div className="feed-tabs">
                 <button className={`tab-btn ${feedFilter === 'all' ? 'active' : ''}`} onClick={() => setFeedFilter('all')}>
                   All RUMS
+                  {unseenGeneral > 0 && <span className="tab-badge">{unseenGeneral}</span>}
                 </button>
                 <button className={`tab-btn ${feedFilter === 'lumina' ? 'active' : ''}`} onClick={() => setFeedFilter('lumina')}>
                   <Droplet size={12} /> Lumina
+                  {unseenLumina > 0 && <span className="tab-badge">{unseenLumina}</span>}
                 </button>
               </div>
             )}
@@ -827,7 +971,7 @@ export default function RUMS() {
                                 const cLiked = (c.likes || []).includes(currentUser.username);
                                 return (
                                   <div className="comment-row" key={c.id}>
-                                    <div className="comment-text"><b>{c.username}</b>{c.text}</div>
+                                    <div className="comment-text"><b>{c.username}</b>{renderCommentText(c.text)}</div>
                                     <div className="comment-actions">
                                       <button className={`comment-like-btn ${cLiked ? 'liked' : ''}`} onClick={() => toggleCommentLike(post.id, c.id)}>
                                         <Heart size={12} fill={cLiked ? '#e0546b' : 'none'} />
@@ -842,16 +986,43 @@ export default function RUMS() {
                                   </div>
                                 );
                               })}
-                              <div className="comment-input-row">
-                                <input
-                                  placeholder="Add a comment…"
-                                  value={commentDrafts[post.id] || ''}
-                                  onChange={(e) => setCommentDrafts((d) => ({ ...d, [post.id]: e.target.value }))}
-                                  onKeyDown={(e) => { if (e.key === 'Enter') submitComment(post.id); }}
-                                />
-                                <button className="comment-send" onClick={() => submitComment(post.id)} disabled={!(commentDrafts[post.id] || '').trim()}>
-                                  <Send size={14} />
-                                </button>
+                              <div className="comment-input-wrap">
+                                {mention && mention.postId === post.id && mentionMatches.length > 0 && (
+                                  <div className="mention-dropdown">
+                                    {mentionMatches.map((u) => (
+                                      <button
+                                        key={u.username}
+                                        type="button"
+                                        className="mention-option"
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => selectMention(u.username)}
+                                      >
+                                        <div className="avatar" style={{ width: 22, height: 22, fontSize: 9 }}>
+                                          {u.username.slice(0, 2).toUpperCase()}
+                                        </div>
+                                        {u.username}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="comment-input-row">
+                                  <input
+                                    ref={(el) => { commentInputRefs.current[post.id] = el; }}
+                                    placeholder="Add a comment… @ to mention"
+                                    value={commentDrafts[post.id] || ''}
+                                    onChange={(e) => handleCommentInput(post.id, e)}
+                                    onKeyDown={(e) => {
+                                      if (mention && mention.postId === post.id && mentionMatches.length > 0) {
+                                        if (e.key === 'Enter') { e.preventDefault(); selectMention(mentionMatches[0].username); return; }
+                                        if (e.key === 'Escape') { setMention(null); return; }
+                                      }
+                                      if (e.key === 'Enter') submitComment(post.id);
+                                    }}
+                                  />
+                                  <button className="comment-send" onClick={() => submitComment(post.id)} disabled={!(commentDrafts[post.id] || '').trim()}>
+                                    <Send size={14} />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -995,7 +1166,11 @@ export default function RUMS() {
 
             <div className="bottom-nav">
               <button className={`nav-btn ${screen === 'feed' ? 'active' : ''}`} onClick={() => setScreen('feed')}>
-                <Home size={20} /> Feed
+                <span className="nav-icon-wrap">
+                  <Home size={20} />
+                  {hasNewPosts && <span className="nav-badge-dot" />}
+                </span>
+                Feed
               </button>
               <button className="nav-upload" onClick={() => { setError(''); setScreen('upload'); }}>
                 <Plus size={24} />
