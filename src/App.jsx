@@ -2,11 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Heart, MessageCircle, LogOut, ShieldCheck, Shield, User as UserIcon,
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
+  Lightbulb, Megaphone, Pencil,
 } from 'lucide-react';
 
 const USERS_KEY = 'rums-users';
 const POSTS_KEY = 'rums-posts';
 const SESSION_KEY = 'rums-session';
+const SUGGESTIONS_KEY = 'rums-suggestions';
+const UPDATES_KEY = 'rums-updates';
 const TAGS = ['General', 'Lumina'];
 const lastSeenKey = (username) => `rums-lastseen-${username}`;
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
@@ -56,6 +59,8 @@ export default function RUMS() {
   const [screen, setScreen] = useState('loading');
   const [users, setUsers] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [updates, setUpdates] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState('');
   const [authMode, setAuthMode] = useState('login');
@@ -74,6 +79,13 @@ export default function RUMS() {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null); // { type: 'self' | 'admin', username }
+  const [newUsername, setNewUsername] = useState('');
+  const [usernameBusy, setUsernameBusy] = useState(false);
+  const [usernameError, setUsernameError] = useState('');
+  const [suggestionDraft, setSuggestionDraft] = useState('');
+  const [suggestionBusy, setSuggestionBusy] = useState(false);
+  const [updateDraft, setUpdateDraft] = useState({ title: '', body: '' });
+  const [updateBusy, setUpdateBusy] = useState(false);
   const fileInputRef = useRef(null);
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
@@ -83,17 +95,36 @@ export default function RUMS() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Poll the shared posts + users store so new posts (and their notification
-  // badges) show up without needing to log out/in, and so an account deleted
-  // elsewhere (by an admin, or by the user themself on another device) gets
-  // logged out here too.
+  // Poll the shared stores so new posts/suggestions/updates (and their
+  // notification badges) show up without needing to log out/in, and so an
+  // account deleted elsewhere (by an admin, or by the user themself on
+  // another device) gets logged out here too.
   useEffect(() => {
     if (!currentUser) return;
     const id = setInterval(async () => {
-      const [p, u] = await Promise.all([safeGet(POSTS_KEY, true), safeGet(USERS_KEY, true)]);
+      const [p, u, sg, up] = await Promise.all([
+        safeGet(POSTS_KEY, true),
+        safeGet(USERS_KEY, true),
+        safeGet(SUGGESTIONS_KEY, true),
+        safeGet(UPDATES_KEY, true),
+      ]);
       if (p) {
         try {
           setPosts(JSON.parse(p.value));
+        } catch {
+          /* ignore malformed payload */
+        }
+      }
+      if (sg) {
+        try {
+          setSuggestions(JSON.parse(sg.value));
+        } catch {
+          /* ignore malformed payload */
+        }
+      }
+      if (up) {
+        try {
+          setUpdates(JSON.parse(up.value));
         } catch {
           /* ignore malformed payload */
         }
@@ -137,15 +168,19 @@ export default function RUMS() {
 
   async function init() {
     try {
-      const [u, p, s] = await Promise.all([
+      const [u, p, s, sg, up] = await Promise.all([
         safeGet(USERS_KEY, true),
         safeGet(POSTS_KEY, true),
         safeGet(SESSION_KEY, false),
+        safeGet(SUGGESTIONS_KEY, true),
+        safeGet(UPDATES_KEY, true),
       ]);
       const loadedUsers = u ? JSON.parse(u.value) : [];
       const loadedPosts = p ? JSON.parse(p.value) : [];
       setUsers(loadedUsers);
       setPosts(loadedPosts);
+      setSuggestions(sg ? JSON.parse(sg.value) : []);
+      setUpdates(up ? JSON.parse(up.value) : []);
       if (s) {
         const sess = JSON.parse(s.value);
         const found = loadedUsers.find((x) => x.username === sess.username);
@@ -201,6 +236,26 @@ export default function RUMS() {
     setPosts(next);
     try {
       await window.storage.set(POSTS_KEY, JSON.stringify(next), true);
+    } catch (e) {
+      console.error(e);
+      setError('Could not save — try again.');
+    }
+  }
+
+  async function saveSuggestions(next) {
+    setSuggestions(next);
+    try {
+      await window.storage.set(SUGGESTIONS_KEY, JSON.stringify(next), true);
+    } catch (e) {
+      console.error(e);
+      setError('Could not save — try again.');
+    }
+  }
+
+  async function saveUpdates(next) {
+    setUpdates(next);
+    try {
+      await window.storage.set(UPDATES_KEY, JSON.stringify(next), true);
     } catch (e) {
       console.error(e);
       setError('Could not save — try again.');
@@ -414,6 +469,10 @@ export default function RUMS() {
           .map((c) => ({ ...c, likes: (c.likes || []).filter((u) => u !== username) })),
       }));
     await savePosts(nextPosts);
+    const nextSuggestions = suggestions
+      .filter((s) => s.username !== username)
+      .map((s) => ({ ...s, votes: (s.votes || []).filter((u) => u !== username) }));
+    await saveSuggestions(nextSuggestions);
   }
 
   async function deleteMyAccount() {
@@ -458,6 +517,141 @@ export default function RUMS() {
     }
     setAvatarBusy(false);
     if (avatarInputRef.current) avatarInputRef.current.value = '';
+  }
+
+  // Renames a user everywhere their username is referenced: the account
+  // record, their posts and likes, their comments and comment-likes, their
+  // suggestions and suggestion-votes, and update authorship — then migrates
+  // their session and last-seen record to the new name.
+  async function handleChangeUsername() {
+    setUsernameError('');
+    if (!currentUser) return;
+    const trimmed = newUsername.trim();
+    if (!trimmed) {
+      setUsernameError('Enter a new username.');
+      return;
+    }
+    if (!/^[A-Za-z0-9_]+$/.test(trimmed)) {
+      setUsernameError('Usernames can only contain letters, numbers, and underscores.');
+      return;
+    }
+    const oldUsername = currentUser.username;
+    if (trimmed.toLowerCase() === oldUsername.toLowerCase()) {
+      setUsernameError("That's already your username.");
+      return;
+    }
+    if (users.some((u) => u.username.toLowerCase() === trimmed.toLowerCase())) {
+      setUsernameError('That username is taken.');
+      return;
+    }
+    setUsernameBusy(true);
+    try {
+      const nextUsers = users.map((u) => (u.username === oldUsername ? { ...u, username: trimmed } : u));
+      const nextPosts = posts.map((p) => ({
+        ...p,
+        username: p.username === oldUsername ? trimmed : p.username,
+        likes: p.likes.map((u) => (u === oldUsername ? trimmed : u)),
+        comments: p.comments.map((c) => ({
+          ...c,
+          username: c.username === oldUsername ? trimmed : c.username,
+          likes: (c.likes || []).map((u) => (u === oldUsername ? trimmed : u)),
+        })),
+      }));
+      const nextSuggestions = suggestions.map((s) => ({
+        ...s,
+        username: s.username === oldUsername ? trimmed : s.username,
+        votes: (s.votes || []).map((u) => (u === oldUsername ? trimmed : u)),
+      }));
+      const nextUpdates = updates.map((u) => ({
+        ...u,
+        author: u.author === oldUsername ? trimmed : u.author,
+      }));
+
+      await Promise.all([
+        saveUsers(nextUsers),
+        savePosts(nextPosts),
+        saveSuggestions(nextSuggestions),
+        saveUpdates(nextUpdates),
+      ]);
+
+      try {
+        const rec = await safeGet(lastSeenKey(oldUsername), false);
+        if (rec) {
+          await window.storage.set(lastSeenKey(trimmed), rec.value, false);
+          await window.storage.delete(lastSeenKey(oldUsername), false);
+        }
+      } catch {
+        /* ignore */
+      }
+      try {
+        await window.storage.set(SESSION_KEY, JSON.stringify({ username: trimmed }), false);
+      } catch {
+        /* ignore */
+      }
+
+      setCurrentUser(nextUsers.find((u) => u.username === trimmed));
+      setNewUsername('');
+    } catch (e) {
+      console.error(e);
+      setUsernameError('Could not change your username — try again.');
+    }
+    setUsernameBusy(false);
+  }
+
+  async function submitSuggestion() {
+    const text = suggestionDraft.trim();
+    if (!text || !currentUser) return;
+    setSuggestionBusy(true);
+    const newS = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      username: currentUser.username,
+      text,
+      timestamp: Date.now(),
+      votes: [],
+    };
+    await saveSuggestions([newS, ...suggestions]);
+    setSuggestionDraft('');
+    setSuggestionBusy(false);
+  }
+
+  async function toggleSuggestionVote(id) {
+    const next = suggestions.map((s) => {
+      if (s.id !== id) return s;
+      const voted = (s.votes || []).includes(currentUser.username);
+      return {
+        ...s,
+        votes: voted
+          ? s.votes.filter((u) => u !== currentUser.username)
+          : [...(s.votes || []), currentUser.username],
+      };
+    });
+    await saveSuggestions(next);
+  }
+
+  async function deleteSuggestion(id) {
+    await saveSuggestions(suggestions.filter((s) => s.id !== id));
+  }
+
+  async function submitUpdate() {
+    if (!currentUser?.isAdmin) return;
+    const title = updateDraft.title.trim();
+    if (!title) return;
+    setUpdateBusy(true);
+    const newU = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title,
+      body: updateDraft.body.trim(),
+      timestamp: Date.now(),
+      author: currentUser.username,
+    };
+    await saveUpdates([newU, ...updates]);
+    setUpdateDraft({ title: '', body: '' });
+    setUpdateBusy(false);
+  }
+
+  async function deleteUpdate(id) {
+    if (!currentUser?.isAdmin) return;
+    await saveUpdates(updates.filter((u) => u.id !== id));
   }
 
   function avatarNode(username, size = 32, fontSize) {
@@ -525,6 +719,7 @@ export default function RUMS() {
 
   const canManage = (post) => currentUser?.isAdmin || currentUser?.username === post.username;
   const canManageComment = (c) => currentUser?.isAdmin || currentUser?.username === c.username;
+  const canManageSuggestion = (s) => currentUser?.isAdmin || currentUser?.username === s.username;
   const isLastAdmin = (u) => u.isAdmin && users.filter((x) => x.isAdmin).length === 1;
   const unseenGeneral = currentUser
     ? posts.filter((p) => p.tag !== 'Lumina' && p.timestamp > (lastSeen.General || 0) && p.username !== currentUser.username).length
@@ -537,6 +732,12 @@ export default function RUMS() {
     .slice()
     .sort((a, b) => b.timestamp - a.timestamp)
     .filter((p) => (feedFilter === 'lumina' ? p.tag === 'Lumina' : p.tag !== 'Lumina'));
+
+  const visibleSuggestions = suggestions
+    .slice()
+    .sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0) || b.timestamp - a.timestamp);
+
+  const visibleUpdates = updates.slice().sort((a, b) => b.timestamp - a.timestamp);
 
   const q = searchQuery.trim().toLowerCase();
   const matchedUsers = q ? users.filter((u) => u.username.toLowerCase().includes(q)) : [];
@@ -905,11 +1106,33 @@ export default function RUMS() {
           font-family: 'Baloo 2', cursive; font-size: 19px; margin: 16px 0 2px;
           display: flex; align-items: center; justify-content: center;
         }
+        .profile-section {
+          width: 100%; text-align: left; margin-top: 26px;
+        }
+        .profile-section .field-label { margin-top: 0; }
+        .username-edit-row { display: flex; gap: 8px; }
+        .username-edit-row .aero-input { flex: 1; }
+        .username-edit-row .aero-btn { width: auto; padding-left: 16px; padding-right: 16px; flex-shrink: 0; }
         .profile-danger-zone { margin-top: 30px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
         .danger-btn {
           background: linear-gradient(180deg, #f2806e 0%, #c14a35 100%) !important;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 6px 16px rgba(193,74,53,0.35) !important;
           width: auto; padding-left: 22px; padding-right: 22px;
+        }
+
+        /* Suggestions & updates */
+        .suggestion-card {
+          background: var(--mist); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px;
+          display: flex; flex-direction: column; gap: 8px;
+        }
+        .suggestion-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .suggestion-text { font-size: 13.5px; line-height: 1.4; }
+        .suggestion-vote-btn {
+          align-self: flex-start; padding: 4px 10px; border-radius: 999px; background: var(--white);
+          border: 1.5px solid var(--line);
+        }
+        .update-card {
+          border: 1px solid var(--line); border-radius: 16px; margin-bottom: 12px; overflow: hidden;
         }
 
         /* Delete confirmation modal */
@@ -937,7 +1160,7 @@ export default function RUMS() {
         .bottom-nav {
           position: absolute; bottom: 0; left: 0; right: 0; z-index: 30;
           display: flex; align-items: center; justify-content: space-around;
-          padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+          padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
           background: linear-gradient(0deg, rgba(255,255,255,0.98) 60%, rgba(234,248,248,0.85));
           backdrop-filter: blur(8px);
           border-top: 1px solid var(--line);
@@ -946,7 +1169,7 @@ export default function RUMS() {
         .nav-btn {
           border: none; background: transparent; cursor: pointer;
           display: flex; flex-direction: column; align-items: center; gap: 3px;
-          color: #8db4bb; font-size: 10.5px; font-weight: 700; padding: 4px 10px;
+          color: #8db4bb; font-size: 10px; font-weight: 700; padding: 4px 6px;
         }
         .nav-btn.active { color: var(--teal); }
         .nav-upload {
@@ -954,7 +1177,7 @@ export default function RUMS() {
           background: linear-gradient(180deg, #6fdcf9, #0fb8a6);
           display: flex; align-items: center; justify-content: center; color: white;
           box-shadow: inset 0 2px 3px rgba(255,255,255,0.6), 0 8px 18px rgba(15,184,166,0.4);
-          margin-top: -22px; border: 3px solid white;
+          margin-top: -22px; border: 3px solid white; flex-shrink: 0;
         }
         .center-loading { flex:1; display:flex; align-items:center; justify-content:center; color:#7ba3ac; gap: 8px; font-size: 14px; }
         .spin { animation: spin 1s linear infinite; }
@@ -1023,7 +1246,7 @@ export default function RUMS() {
                 <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   <Search size={18} />
                 </button>
-                <button className="pill pill-btn" onClick={() => { setProfileError(''); setScreen('profile'); }} title="Your profile">
+                <button className="pill pill-btn" onClick={() => { setProfileError(''); setUsernameError(''); setNewUsername(''); setScreen('profile'); }} title="Your profile">
                   {avatarNode(currentUser.username, 18, 8)}
                   {currentUser.username}
                   {currentUser.isAdmin && <ShieldCheck size={13} color="#0fb8a6" />}
@@ -1230,6 +1453,113 @@ export default function RUMS() {
                 </div>
               )}
 
+              {screen === 'suggestions' && (
+                <div className="upload-wrap">
+                  <div className="field-label" style={{ marginTop: 0 }}>Share an idea</div>
+                  <textarea
+                    className="caption-area"
+                    style={{ marginTop: 0 }}
+                    placeholder="What should RUMS do next?"
+                    value={suggestionDraft}
+                    onChange={(e) => setSuggestionDraft(e.target.value)}
+                  />
+                  <button
+                    className="aero-btn"
+                    style={{ marginTop: 12 }}
+                    onClick={submitSuggestion}
+                    disabled={suggestionBusy || !suggestionDraft.trim()}
+                  >
+                    {suggestionBusy && <Loader2 size={15} className="spin" />}
+                    Submit suggestion
+                  </button>
+
+                  <div className="admin-section-title"><Lightbulb size={16} /> Suggestions ({suggestions.length})</div>
+                  {visibleSuggestions.length === 0 && (
+                    <p style={{ fontSize: 13, color: '#7ba3ac' }}>No suggestions yet — be the first!</p>
+                  )}
+                  {visibleSuggestions.map((s) => {
+                    const voted = (s.votes || []).includes(currentUser.username);
+                    return (
+                      <div className="suggestion-card" key={s.id}>
+                        <div className="suggestion-top">
+                          <div className="user-row-left">
+                            {avatarNode(s.username, 24, 10)}
+                            {s.username}
+                          </div>
+                          {canManageSuggestion(s) && (
+                            <button className="row-del-btn" onClick={() => deleteSuggestion(s.id)} title="Delete suggestion">
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                        <div className="suggestion-text">{s.text}</div>
+                        <button
+                          className={`like-btn suggestion-vote-btn ${voted ? 'liked' : ''}`}
+                          onClick={() => toggleSuggestionVote(s.id)}
+                        >
+                          <Heart size={14} fill={voted ? '#e0546b' : 'none'} />
+                          {(s.votes || []).length > 0 ? (s.votes || []).length : 'Upvote'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {screen === 'updates' && (
+                <div className="upload-wrap">
+                  {currentUser.isAdmin && (
+                    <>
+                      <div className="field-label" style={{ marginTop: 0 }}>Post an update</div>
+                      <input
+                        className="aero-input"
+                        placeholder="Title"
+                        value={updateDraft.title}
+                        onChange={(e) => setUpdateDraft((d) => ({ ...d, title: e.target.value }))}
+                      />
+                      <textarea
+                        className="caption-area"
+                        placeholder="What changed?"
+                        value={updateDraft.body}
+                        onChange={(e) => setUpdateDraft((d) => ({ ...d, body: e.target.value }))}
+                      />
+                      <button
+                        className="aero-btn"
+                        style={{ marginTop: 12 }}
+                        onClick={submitUpdate}
+                        disabled={updateBusy || !updateDraft.title.trim()}
+                      >
+                        {updateBusy && <Loader2 size={15} className="spin" />}
+                        Post update
+                      </button>
+                    </>
+                  )}
+
+                  <div className="admin-section-title" style={{ marginTop: currentUser.isAdmin ? 24 : 0 }}>
+                    <Megaphone size={16} /> Updates
+                  </div>
+                  {visibleUpdates.length === 0 && (
+                    <p style={{ fontSize: 13, color: '#7ba3ac' }}>No updates posted yet.</p>
+                  )}
+                  {visibleUpdates.map((u) => (
+                    <div className="update-card" key={u.id}>
+                      <div className="post-top">
+                        <div>
+                          <div className="post-user-name">{u.title}</div>
+                          <div className="post-time">{timeAgo(u.timestamp)} · {u.author}</div>
+                        </div>
+                        {currentUser.isAdmin && (
+                          <button className="icon-btn manage-btn" onClick={() => deleteUpdate(u.id)} title="Delete update">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                      {u.body && <div className="post-caption">{u.body}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {screen === 'profile' && (
                 <div className="profile-wrap">
                   <div className="profile-avatar-wrap" onClick={() => avatarInputRef.current?.click()}>
@@ -1254,6 +1584,28 @@ export default function RUMS() {
                     <p className="switch-line"><Loader2 size={13} className="spin" style={{ verticalAlign: 'middle', marginRight: 4 }} /> Updating photo…</p>
                   )}
                   {profileError && <div className="error-pill" style={{ marginTop: 10 }}>{profileError}</div>}
+
+                  <div className="profile-section">
+                    <div className="field-label">Change username</div>
+                    <div className="username-edit-row">
+                      <input
+                        className="aero-input"
+                        placeholder={currentUser.username}
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        autoComplete="off"
+                      />
+                      <button
+                        className="aero-btn"
+                        onClick={handleChangeUsername}
+                        disabled={usernameBusy || !newUsername.trim()}
+                        title="Save new username"
+                      >
+                        {usernameBusy ? <Loader2 size={15} className="spin" /> : <Pencil size={15} />}
+                      </button>
+                    </div>
+                    {usernameError && <div className="error-pill" style={{ marginTop: 8 }}>{usernameError}</div>}
+                  </div>
 
                   <div className="profile-danger-zone">
                     {isLastAdmin(currentUser) ? (
@@ -1378,21 +1730,27 @@ export default function RUMS() {
             <div className="bottom-nav">
               <button className={`nav-btn ${screen === 'feed' ? 'active' : ''}`} onClick={() => setScreen('feed')}>
                 <span className="nav-icon-wrap">
-                  <Home size={20} />
+                  <Home size={19} />
                   {hasNewPosts && <span className="nav-badge-dot" />}
                 </span>
                 Feed
               </button>
+              <button className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
+                <Lightbulb size={19} /> Ideas
+              </button>
               <button className="nav-upload" onClick={() => { setError(''); setScreen('upload'); }}>
                 <Plus size={24} />
               </button>
+              <button className={`nav-btn ${screen === 'updates' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('updates'); }}>
+                <Megaphone size={19} /> Updates
+              </button>
               {currentUser.isAdmin ? (
                 <button className={`nav-btn ${screen === 'admin' ? 'active' : ''}`} onClick={() => setScreen('admin')}>
-                  <ShieldCheck size={20} /> Admin
+                  <ShieldCheck size={19} /> Admin
                 </button>
               ) : (
                 <button className="nav-btn" onClick={() => setScreen('feed')} style={{ visibility: 'hidden' }}>
-                  <ArrowLeft size={20} /> —
+                  <ArrowLeft size={19} /> —
                 </button>
               )}
             </div>
