@@ -30,13 +30,12 @@ function timeAgo(ts) {
   return `${d}d ago`;
 }
 
-function resizeImage(file) {
+function resizeImage(file, maxW = 900) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const img = new Image();
       img.onload = () => {
-        const maxW = 900;
         const scale = Math.min(1, maxW / img.width);
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(img.width * scale);
@@ -72,23 +71,49 @@ export default function RUMS() {
   const [shareStatus, setShareStatus] = useState({});
   const [mention, setMention] = useState(null); // { postId, query, start }
   const [lastSeen, setLastSeen] = useState({ General: 0, Lumina: 0 });
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null); // { type: 'self' | 'admin', username }
   const fileInputRef = useRef(null);
   const commentInputRefs = useRef({});
+  const avatarInputRef = useRef(null);
 
   useEffect(() => {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Poll the shared posts store so new posts (and their notification badges)
-  // show up without needing to log out/in.
+  // Poll the shared posts + users store so new posts (and their notification
+  // badges) show up without needing to log out/in, and so an account deleted
+  // elsewhere (by an admin, or by the user themself on another device) gets
+  // logged out here too.
   useEffect(() => {
     if (!currentUser) return;
     const id = setInterval(async () => {
-      const p = await safeGet(POSTS_KEY, true);
+      const [p, u] = await Promise.all([safeGet(POSTS_KEY, true), safeGet(USERS_KEY, true)]);
       if (p) {
         try {
           setPosts(JSON.parse(p.value));
+        } catch {
+          /* ignore malformed payload */
+        }
+      }
+      if (u) {
+        try {
+          const freshUsers = JSON.parse(u.value);
+          setUsers(freshUsers);
+          const stillExists = freshUsers.find((x) => x.username === currentUser.username);
+          if (!stillExists) {
+            try {
+              await window.storage.delete(SESSION_KEY, false);
+            } catch {
+              /* ignore */
+            }
+            setCurrentUser(null);
+            setScreen('login');
+          } else if (JSON.stringify(stillExists) !== JSON.stringify(currentUser)) {
+            setCurrentUser(stillExists);
+          }
         } catch {
           /* ignore malformed payload */
         }
@@ -373,6 +398,81 @@ export default function RUMS() {
     }
   }
 
+  // Removes a user account plus every trace of them across posts: their own
+  // posts, their likes on other posts, their comments, and their likes on
+  // other people's comments.
+  async function deleteAccountEverywhere(username) {
+    const nextUsers = users.filter((u) => u.username !== username);
+    await saveUsers(nextUsers);
+    const nextPosts = posts
+      .filter((p) => p.username !== username)
+      .map((p) => ({
+        ...p,
+        likes: p.likes.filter((u) => u !== username),
+        comments: p.comments
+          .filter((c) => c.username !== username)
+          .map((c) => ({ ...c, likes: (c.likes || []).filter((u) => u !== username) })),
+      }));
+    await savePosts(nextPosts);
+  }
+
+  async function deleteMyAccount() {
+    if (!currentUser) return;
+    const username = currentUser.username;
+    await deleteAccountEverywhere(username);
+    try { await window.storage.delete(SESSION_KEY, false); } catch { /* ignore */ }
+    try { await window.storage.delete(lastSeenKey(username), false); } catch { /* ignore */ }
+    setCurrentUser(null);
+    setScreen('login');
+  }
+
+  async function confirmDeleteAction() {
+    if (!confirmDelete) return;
+    setBusy(true);
+    try {
+      if (confirmDelete.type === 'self') {
+        await deleteMyAccount();
+      } else {
+        await deleteAccountEverywhere(confirmDelete.username);
+      }
+    } catch (e) {
+      console.error(e);
+      setError('Could not delete that account — try again.');
+    }
+    setConfirmDelete(null);
+    setBusy(false);
+  }
+
+  async function handleAvatarSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+    setProfileError('');
+    setAvatarBusy(true);
+    try {
+      const dataUrl = await resizeImage(file, 240);
+      const nextUsers = users.map((u) => (u.username === currentUser.username ? { ...u, avatar: dataUrl } : u));
+      await saveUsers(nextUsers);
+      setCurrentUser((c) => ({ ...c, avatar: dataUrl }));
+    } catch {
+      setProfileError('Could not update your photo.');
+    }
+    setAvatarBusy(false);
+    if (avatarInputRef.current) avatarInputRef.current.value = '';
+  }
+
+  function avatarNode(username, size = 32, fontSize) {
+    const url = users.find((u) => u.username === username)?.avatar;
+    const style = { width: size, height: size };
+    if (url) {
+      return <img className="avatar avatar-img" src={url} alt={username} style={style} />;
+    }
+    return (
+      <div className="avatar" style={{ ...style, fontSize: fontSize ?? Math.round(size * 0.42) }}>
+        {username.slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
+
   function handleCommentInput(postId, e) {
     const value = e.target.value;
     const cursor = e.target.selectionStart;
@@ -425,6 +525,7 @@ export default function RUMS() {
 
   const canManage = (post) => currentUser?.isAdmin || currentUser?.username === post.username;
   const canManageComment = (c) => currentUser?.isAdmin || currentUser?.username === c.username;
+  const isLastAdmin = (u) => u.isAdmin && users.filter((x) => x.isAdmin).length === 1;
   const unseenGeneral = currentUser
     ? posts.filter((p) => p.tag !== 'Lumina' && p.timestamp > (lastSeen.General || 0) && p.username !== currentUser.username).length
     : 0;
@@ -512,6 +613,8 @@ export default function RUMS() {
           font-size: 13px; font-weight: 600;
           box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 2px 6px rgba(10,58,77,0.06);
         }
+        .pill-btn { cursor: pointer; font-family: 'Inter', sans-serif; color: var(--deep); }
+        .pill-btn:active { transform: translateY(1px); }
         .icon-btn {
           border: none; background: transparent; cursor: pointer;
           display: flex; align-items: center; justify-content: center;
@@ -627,6 +730,7 @@ export default function RUMS() {
           color: white; font-weight: 700; font-size: 13px;
           box-shadow: inset -2px -2px 4px rgba(0,0,0,0.15);
         }
+        .avatar-img { object-fit: cover; background: var(--mist); box-shadow: none; flex-shrink: 0; }
         .post-user-name { font-weight: 700; font-size: 13.5px; display: flex; align-items: center; }
         .post-time { font-size: 11px; color: #7ba3ac; }
         .post-img-wrap {
@@ -765,6 +869,13 @@ export default function RUMS() {
           display: flex; align-items: center; gap: 5px; color: var(--deep);
         }
         .admin-toggle.is-admin { background: linear-gradient(180deg,#66d3f6,#12a9c9); color: white; border: none; }
+        .user-row-right { display: flex; align-items: center; gap: 6px; }
+        .row-del-btn {
+          border: none; background: #fff0ee; color: #c14a35; border-radius: 10px;
+          width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+          flex-shrink: 0;
+        }
+        .row-del-btn:hover { background: #ffe0da; }
         .admin-post-row {
           display: flex; align-items: center; gap: 10px; background: var(--mist);
           border-radius: 14px; padding: 8px; margin-bottom: 8px;
@@ -776,6 +887,51 @@ export default function RUMS() {
           border: none; background: #fff0ee; color: #c14a35; border-radius: 10px;
           width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
+
+        /* Profile */
+        .profile-wrap {
+          padding: 34px 24px; display: flex; flex-direction: column; align-items: center; text-align: center;
+        }
+        .profile-avatar-wrap { position: relative; cursor: pointer; }
+        .profile-avatar-wrap .avatar, .profile-avatar-wrap .avatar-img {
+          box-shadow: inset -5px -5px 10px rgba(0,0,0,0.18), inset 3px 3px 8px rgba(255,255,255,0.7), 0 10px 24px rgba(15,184,166,0.25);
+        }
+        .avatar-edit-badge {
+          position: absolute; bottom: -2px; right: -2px; width: 28px; height: 28px; border-radius: 50%;
+          background: var(--teal); color: white; display: flex; align-items: center; justify-content: center;
+          border: 3px solid white;
+        }
+        .profile-name {
+          font-family: 'Baloo 2', cursive; font-size: 19px; margin: 16px 0 2px;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .profile-danger-zone { margin-top: 30px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .danger-btn {
+          background: linear-gradient(180deg, #f2806e 0%, #c14a35 100%) !important;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 6px 16px rgba(193,74,53,0.35) !important;
+          width: auto; padding-left: 22px; padding-right: 22px;
+        }
+
+        /* Delete confirmation modal */
+        .modal-overlay {
+          position: absolute; inset: 0; background: rgba(10,58,77,0.45);
+          display: flex; align-items: center; justify-content: center; z-index: 100; padding: 24px;
+        }
+        .modal-card {
+          background: var(--white); border-radius: 18px; padding: 22px; max-width: 320px; width: 100%;
+          box-shadow: 0 20px 50px rgba(10,58,77,0.3);
+        }
+        .modal-card h4 { margin: 0 0 8px; font-family: 'Baloo 2', cursive; font-size: 17px; color: var(--deep); }
+        .modal-card p { margin: 0 0 18px; font-size: 13.5px; color: #4a7f8c; line-height: 1.4; }
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-btn {
+          flex: 1; border: none; border-radius: 12px; padding: 11px; font-size: 13.5px; font-weight: 700;
+          cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+          font-family: 'Inter', sans-serif;
+        }
+        .modal-btn.cancel { background: var(--mist); color: var(--deep); }
+        .modal-btn.danger { background: linear-gradient(180deg, #f2806e, #c14a35); color: white; }
+        .modal-btn:disabled { opacity: 0.6; cursor: default; }
 
         /* Bottom nav */
         .bottom-nav {
@@ -867,10 +1023,11 @@ export default function RUMS() {
                 <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   <Search size={18} />
                 </button>
-                <div className="pill">
-                  {currentUser.isAdmin ? <ShieldCheck size={14} color="#0fb8a6" /> : <UserIcon size={14} />}
+                <button className="pill pill-btn" onClick={() => { setProfileError(''); setScreen('profile'); }} title="Your profile">
+                  {avatarNode(currentUser.username, 18, 8)}
                   {currentUser.username}
-                </div>
+                  {currentUser.isAdmin && <ShieldCheck size={13} color="#0fb8a6" />}
+                </button>
                 <button className="icon-btn" onClick={handleLogout} title="Log out">
                   <LogOut size={18} />
                 </button>
@@ -922,7 +1079,7 @@ export default function RUMS() {
                         <div className="post-card" key={post.id}>
                           <div className="post-top">
                             <div className="post-user">
-                              <div className="avatar">{post.username.slice(0, 2).toUpperCase()}</div>
+                              {avatarNode(post.username, 32)}
                               <div>
                                 <div className="post-user-name">
                                   {post.username}
@@ -997,9 +1154,7 @@ export default function RUMS() {
                                         onMouseDown={(e) => e.preventDefault()}
                                         onClick={() => selectMention(u.username)}
                                       >
-                                        <div className="avatar" style={{ width: 22, height: 22, fontSize: 9 }}>
-                                          {u.username.slice(0, 2).toUpperCase()}
-                                        </div>
+                                        {avatarNode(u.username, 22, 9)}
                                         {u.username}
                                       </button>
                                     ))}
@@ -1075,24 +1230,80 @@ export default function RUMS() {
                 </div>
               )}
 
+              {screen === 'profile' && (
+                <div className="profile-wrap">
+                  <div className="profile-avatar-wrap" onClick={() => avatarInputRef.current?.click()}>
+                    {avatarNode(currentUser.username, 84, 30)}
+                    <div className="avatar-edit-badge"><ImagePlus size={14} /></div>
+                  </div>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleAvatarSelect}
+                  />
+                  <h3 className="profile-name">
+                    {currentUser.username}
+                    {currentUser.isAdmin && (
+                      <span className="tag-pill" style={{ marginLeft: 8 }}><ShieldCheck size={10} /> Admin</span>
+                    )}
+                  </h3>
+                  <p className="switch-line">Tap your photo to change it.</p>
+                  {avatarBusy && (
+                    <p className="switch-line"><Loader2 size={13} className="spin" style={{ verticalAlign: 'middle', marginRight: 4 }} /> Updating photo…</p>
+                  )}
+                  {profileError && <div className="error-pill" style={{ marginTop: 10 }}>{profileError}</div>}
+
+                  <div className="profile-danger-zone">
+                    {isLastAdmin(currentUser) ? (
+                      <p className="switch-line" style={{ color: '#c14a35' }}>
+                        You're the only admin — make someone else an admin before deleting this account.
+                      </p>
+                    ) : (
+                      <>
+                        <button
+                          className="aero-btn danger-btn"
+                          onClick={() => setConfirmDelete({ type: 'self', username: currentUser.username })}
+                        >
+                          <Trash2 size={15} /> Delete my account
+                        </button>
+                        <p className="switch-line">This permanently removes your account, posts, and comments.</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {screen === 'admin' && currentUser.isAdmin && (
                 <div className="admin-wrap">
                   <div className="admin-section-title"><Shield size={16} /> Members ({users.length})</div>
                   {users.map((u) => (
                     <div className="user-row" key={u.username}>
                       <div className="user-row-left">
-                        <div className="avatar" style={{ width: 26, height: 26, fontSize: 11 }}>{u.username.slice(0, 2).toUpperCase()}</div>
+                        {avatarNode(u.username, 26, 11)}
                         {u.username}
                       </div>
-                      <button
-                        className={`admin-toggle ${u.isAdmin ? 'is-admin' : ''}`}
-                        onClick={() => toggleAdmin(u.username)}
-                        disabled={u.username === currentUser.username && users.filter((x) => x.isAdmin).length === 1}
-                        title={u.username === currentUser.username && users.filter((x) => x.isAdmin).length === 1 ? "Can't remove the last admin" : ''}
-                      >
-                        {u.isAdmin ? <ShieldCheck size={13} /> : <Shield size={13} />}
-                        {u.isAdmin ? 'Admin' : 'Make admin'}
-                      </button>
+                      <div className="user-row-right">
+                        <button
+                          className={`admin-toggle ${u.isAdmin ? 'is-admin' : ''}`}
+                          onClick={() => toggleAdmin(u.username)}
+                          disabled={u.username === currentUser.username && users.filter((x) => x.isAdmin).length === 1}
+                          title={u.username === currentUser.username && users.filter((x) => x.isAdmin).length === 1 ? "Can't remove the last admin" : ''}
+                        >
+                          {u.isAdmin ? <ShieldCheck size={13} /> : <Shield size={13} />}
+                          {u.isAdmin ? 'Admin' : 'Make admin'}
+                        </button>
+                        {u.username !== currentUser.username && (
+                          <button
+                            className="row-del-btn"
+                            onClick={() => setConfirmDelete({ type: 'admin', username: u.username })}
+                            title="Delete account"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
 
@@ -1135,7 +1346,7 @@ export default function RUMS() {
                       {matchedUsers.map((u) => (
                         <div className="user-row" key={u.username}>
                           <div className="user-row-left">
-                            <div className="avatar" style={{ width: 26, height: 26, fontSize: 11 }}>{u.username.slice(0, 2).toUpperCase()}</div>
+                            {avatarNode(u.username, 26, 11)}
                             {u.username}
                           </div>
                           {u.isAdmin && <span className="tag-pill" style={{ background: 'linear-gradient(180deg,#66d3f6,#12a9c9)' }}><ShieldCheck size={10} /> Admin</span>}
@@ -1186,6 +1397,29 @@ export default function RUMS() {
               )}
             </div>
           </>
+        )}
+
+        {confirmDelete && (
+          <div className="modal-overlay" onClick={() => !busy && setConfirmDelete(null)}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <h4>
+                Delete {confirmDelete.type === 'self' ? 'your account' : `@${confirmDelete.username}`}?
+              </h4>
+              <p>
+                This permanently removes {confirmDelete.type === 'self' ? 'your' : 'their'} account, posts,
+                and comments across RUMS. This can't be undone.
+              </p>
+              <div className="modal-actions">
+                <button className="modal-btn cancel" onClick={() => setConfirmDelete(null)} disabled={busy}>
+                  Cancel
+                </button>
+                <button className="modal-btn danger" onClick={confirmDeleteAction} disabled={busy}>
+                  {busy && <Loader2 size={14} className="spin" />}
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>
