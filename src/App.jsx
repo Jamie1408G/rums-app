@@ -86,6 +86,9 @@ export default function RUMS() {
   const [suggestionBusy, setSuggestionBusy] = useState(false);
   const [updateDraft, setUpdateDraft] = useState({ title: '', body: '' });
   const [updateBusy, setUpdateBusy] = useState(false);
+  const [viewedProfile, setViewedProfile] = useState(null); // username being viewed, or null = own profile
+  const [viewingPostId, setViewingPostId] = useState(null);
+  const [navStack, setNavStack] = useState([]);
   const fileInputRef = useRef(null);
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
@@ -316,6 +319,44 @@ export default function RUMS() {
       /* ignore */
     }
     setScreen('login');
+  }
+
+  // --- Navigation helpers: a lightweight back-stack so search results,
+  // profile links, and post links can push into a detail screen and pop
+  // back to wherever the user came from. ---
+  function goTo(nextScreen) {
+    setNavStack((s) => [...s, screen]);
+    setScreen(nextScreen);
+  }
+
+  function goBack() {
+    setNavStack((s) => {
+      const copy = [...s];
+      const prev = copy.pop();
+      setScreen(prev || 'feed');
+      return copy;
+    });
+  }
+
+  function openProfile(username) {
+    setViewedProfile(username);
+    setProfileError('');
+    setUsernameError('');
+    setNewUsername('');
+    goTo('profile');
+  }
+
+  function openOwnProfile() {
+    setViewedProfile(null);
+    setProfileError('');
+    setUsernameError('');
+    setNewUsername('');
+    goTo('profile');
+  }
+
+  function openPost(postId) {
+    setViewingPostId(postId);
+    goTo('postDetail');
   }
 
   async function handleFileSelect(e) {
@@ -590,6 +631,7 @@ export default function RUMS() {
       }
 
       setCurrentUser(nextUsers.find((u) => u.username === trimmed));
+      if (viewedProfile === oldUsername) setViewedProfile(trimmed);
       setNewUsername('');
     } catch (e) {
       console.error(e);
@@ -704,7 +746,11 @@ export default function RUMS() {
       const m = part.match(/^@([A-Za-z0-9_]+)$/);
       if (m && users.some((u) => u.username.toLowerCase() === m[1].toLowerCase())) {
         return (
-          <span className="mention-tag" key={i}>
+          <span
+            className="mention-tag clickable-text"
+            key={i}
+            onClick={() => openProfile(users.find((u) => u.username.toLowerCase() === m[1].toLowerCase()).username)}
+          >
             {part}
           </span>
         );
@@ -746,6 +792,129 @@ export default function RUMS() {
         .filter((p) => p.username.toLowerCase().includes(q) || (p.caption || '').toLowerCase().includes(q))
         .sort((a, b) => b.timestamp - a.timestamp)
     : [];
+
+  // Renders a single post card. Shared by the feed list and the single-post
+  // detail view (reached by clicking a post from search results).
+  function renderPost(post) {
+    const liked = post.likes.includes(currentUser.username);
+    const showComments = !!openComments[post.id];
+    return (
+      <div className="post-card" key={post.id}>
+        <div className="post-top">
+          <div className="post-user clickable-row" onClick={() => openProfile(post.username)}>
+            {avatarNode(post.username, 32)}
+            <div>
+              <div className="post-user-name">
+                {post.username}
+                {post.tag === 'Lumina' && (
+                  <span className="tag-pill"><Droplet size={9} /> Lumina</span>
+                )}
+              </div>
+              <div className="post-time">{timeAgo(post.timestamp)}</div>
+            </div>
+          </div>
+          {canManage(post) && (
+            <button
+              className="icon-btn manage-btn"
+              onClick={(e) => { e.stopPropagation(); deletePost(post.id); }}
+              title="Delete post"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
+        </div>
+        <div className="post-img-wrap">
+          <img src={post.image} alt={post.caption || 'RUMS screenshot'} />
+          <div className="post-sheen" />
+        </div>
+        <div className="post-actions">
+          <button className={`like-btn ${liked ? 'liked' : ''}`} onClick={() => toggleLike(post.id)}>
+            <Heart size={19} fill={liked ? '#e0546b' : 'none'} />
+            {post.likes.length > 0 ? post.likes.length : ''}
+          </button>
+          <button
+            className="comment-btn"
+            onClick={() => setOpenComments((o) => ({ ...o, [post.id]: !o[post.id] }))}
+          >
+            <MessageCircle size={18} />
+            {post.comments.length > 0 ? post.comments.length : ''}
+          </button>
+          <button className="comment-btn" onClick={() => sharePost(post)}>
+            {shareStatus[post.id] ? <Check size={17} color="#0fb8a6" /> : <Share2 size={17} />}
+            {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
+          </button>
+        </div>
+        {post.caption && (
+          <div className="post-caption">
+            <b className="clickable-text" onClick={() => openProfile(post.username)}>{post.username}</b>
+            {post.caption}
+          </div>
+        )}
+        {showComments && (
+          <div className="comments-box">
+            {post.comments.map((c) => {
+              const cLiked = (c.likes || []).includes(currentUser.username);
+              return (
+                <div className="comment-row" key={c.id}>
+                  <div className="comment-text">
+                    <b className="clickable-text" onClick={() => openProfile(c.username)}>{c.username}</b>
+                    {renderCommentText(c.text)}
+                  </div>
+                  <div className="comment-actions">
+                    <button className={`comment-like-btn ${cLiked ? 'liked' : ''}`} onClick={() => toggleCommentLike(post.id, c.id)}>
+                      <Heart size={12} fill={cLiked ? '#e0546b' : 'none'} />
+                      {(c.likes || []).length > 0 ? c.likes.length : ''}
+                    </button>
+                    {canManageComment(c) && (
+                      <button className="comment-del-btn" onClick={() => deleteComment(post.id, c.id)}>
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="comment-input-wrap">
+              {mention && mention.postId === post.id && mentionMatches.length > 0 && (
+                <div className="mention-dropdown">
+                  {mentionMatches.map((u) => (
+                    <button
+                      key={u.username}
+                      type="button"
+                      className="mention-option"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => selectMention(u.username)}
+                    >
+                      {avatarNode(u.username, 22, 9)}
+                      {u.username}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="comment-input-row">
+                <input
+                  ref={(el) => { commentInputRefs.current[post.id] = el; }}
+                  placeholder="Add a comment… @ to mention"
+                  value={commentDrafts[post.id] || ''}
+                  onChange={(e) => handleCommentInput(post.id, e)}
+                  onKeyDown={(e) => {
+                    if (mention && mention.postId === post.id && mentionMatches.length > 0) {
+                      if (e.key === 'Enter') { e.preventDefault(); selectMention(mentionMatches[0].username); return; }
+                      if (e.key === 'Escape') { setMention(null); return; }
+                    }
+                    if (e.key === 'Enter') submitComment(post.id);
+                  }}
+                />
+                <button className="comment-send" onClick={() => submitComment(post.id)} disabled={!(commentDrafts[post.id] || '').trim()}>
+                  <Send size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="aero-root">
@@ -863,6 +1032,12 @@ export default function RUMS() {
           font-size: 10.5px; font-weight: 700; padding: 3px 9px 3px 7px; border-radius: 999px;
           margin-left: 8px;
         }
+
+        /* Clickable usernames / rows that navigate to a profile or post */
+        .clickable-text { cursor: pointer; }
+        .clickable-text:hover { text-decoration: underline; }
+        .clickable-row { cursor: pointer; }
+        .clickable-row:hover { opacity: 0.75; }
 
         /* Auth screen */
         .auth-wrap {
@@ -1093,6 +1268,7 @@ export default function RUMS() {
         .profile-wrap {
           padding: 34px 24px; display: flex; flex-direction: column; align-items: center; text-align: center;
         }
+        .profile-back-row { align-self: flex-start; margin-bottom: 6px; }
         .profile-avatar-wrap { position: relative; cursor: pointer; }
         .profile-avatar-wrap .avatar, .profile-avatar-wrap .avatar-img {
           box-shadow: inset -5px -5px 10px rgba(0,0,0,0.18), inset 3px 3px 8px rgba(255,255,255,0.7), 0 10px 24px rgba(15,184,166,0.25);
@@ -1118,6 +1294,21 @@ export default function RUMS() {
           background: linear-gradient(180deg, #f2806e 0%, #c14a35 100%) !important;
           box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 6px 16px rgba(193,74,53,0.35) !important;
           width: auto; padding-left: 22px; padding-right: 22px;
+        }
+        .profile-post-grid {
+          display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+          width: 100%; margin-top: 20px;
+        }
+        .profile-grid-thumb {
+          position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden;
+          cursor: pointer; background: var(--mist);
+        }
+        .profile-grid-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .profile-grid-thumb:hover img { opacity: 0.85; }
+        .thumb-lumina-badge {
+          position: absolute; bottom: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%;
+          background: linear-gradient(135deg, var(--sky), var(--teal));
+          display: flex; align-items: center; justify-content: center;
         }
 
         /* Suggestions & updates */
@@ -1155,6 +1346,10 @@ export default function RUMS() {
         .modal-btn.cancel { background: var(--mist); color: var(--deep); }
         .modal-btn.danger { background: linear-gradient(180deg, #f2806e, #c14a35); color: white; }
         .modal-btn:disabled { opacity: 0.6; cursor: default; }
+
+        /* Post detail */
+        .detail-back-row { padding: 14px 14px 0; }
+        .detail-back-btn { display: flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; }
 
         /* Bottom nav */
         .bottom-nav {
@@ -1246,7 +1441,7 @@ export default function RUMS() {
                 <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   <Search size={18} />
                 </button>
-                <button className="pill pill-btn" onClick={() => { setProfileError(''); setUsernameError(''); setNewUsername(''); setScreen('profile'); }} title="Your profile">
+                <button className="pill pill-btn" onClick={openOwnProfile} title="Your profile">
                   {avatarNode(currentUser.username, 18, 8)}
                   {currentUser.username}
                   {currentUser.isAdmin && <ShieldCheck size={13} color="#0fb8a6" />}
@@ -1295,120 +1490,32 @@ export default function RUMS() {
                       <p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p>
                     </div>
                   ) : (
-                    visiblePosts.map((post) => {
-                      const liked = post.likes.includes(currentUser.username);
-                      const showComments = !!openComments[post.id];
-                      return (
-                        <div className="post-card" key={post.id}>
-                          <div className="post-top">
-                            <div className="post-user">
-                              {avatarNode(post.username, 32)}
-                              <div>
-                                <div className="post-user-name">
-                                  {post.username}
-                                  {post.tag === 'Lumina' && (
-                                    <span className="tag-pill"><Droplet size={9} /> Lumina</span>
-                                  )}
-                                </div>
-                                <div className="post-time">{timeAgo(post.timestamp)}</div>
-                              </div>
-                            </div>
-                            {canManage(post) && (
-                              <button className="icon-btn manage-btn" onClick={() => deletePost(post.id)} title="Delete post">
-                                <Trash2 size={16} />
-                              </button>
-                            )}
-                          </div>
-                          <div className="post-img-wrap">
-                            <img src={post.image} alt={post.caption || 'RUMS screenshot'} />
-                            <div className="post-sheen" />
-                          </div>
-                          <div className="post-actions">
-                            <button className={`like-btn ${liked ? 'liked' : ''}`} onClick={() => toggleLike(post.id)}>
-                              <Heart size={19} fill={liked ? '#e0546b' : 'none'} />
-                              {post.likes.length > 0 ? post.likes.length : ''}
-                            </button>
-                            <button
-                              className="comment-btn"
-                              onClick={() => setOpenComments((o) => ({ ...o, [post.id]: !o[post.id] }))}
-                            >
-                              <MessageCircle size={18} />
-                              {post.comments.length > 0 ? post.comments.length : ''}
-                            </button>
-                            <button className="comment-btn" onClick={() => sharePost(post)}>
-                              {shareStatus[post.id] ? <Check size={17} color="#0fb8a6" /> : <Share2 size={17} />}
-                              {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
-                            </button>
-                          </div>
-                          {post.caption && (
-                            <div className="post-caption">
-                              <b>{post.username}</b>{post.caption}
-                            </div>
-                          )}
-                          {showComments && (
-                            <div className="comments-box">
-                              {post.comments.map((c) => {
-                                const cLiked = (c.likes || []).includes(currentUser.username);
-                                return (
-                                  <div className="comment-row" key={c.id}>
-                                    <div className="comment-text"><b>{c.username}</b>{renderCommentText(c.text)}</div>
-                                    <div className="comment-actions">
-                                      <button className={`comment-like-btn ${cLiked ? 'liked' : ''}`} onClick={() => toggleCommentLike(post.id, c.id)}>
-                                        <Heart size={12} fill={cLiked ? '#e0546b' : 'none'} />
-                                        {(c.likes || []).length > 0 ? c.likes.length : ''}
-                                      </button>
-                                      {canManageComment(c) && (
-                                        <button className="comment-del-btn" onClick={() => deleteComment(post.id, c.id)}>
-                                          <Trash2 size={12} />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                              <div className="comment-input-wrap">
-                                {mention && mention.postId === post.id && mentionMatches.length > 0 && (
-                                  <div className="mention-dropdown">
-                                    {mentionMatches.map((u) => (
-                                      <button
-                                        key={u.username}
-                                        type="button"
-                                        className="mention-option"
-                                        onMouseDown={(e) => e.preventDefault()}
-                                        onClick={() => selectMention(u.username)}
-                                      >
-                                        {avatarNode(u.username, 22, 9)}
-                                        {u.username}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                                <div className="comment-input-row">
-                                  <input
-                                    ref={(el) => { commentInputRefs.current[post.id] = el; }}
-                                    placeholder="Add a comment… @ to mention"
-                                    value={commentDrafts[post.id] || ''}
-                                    onChange={(e) => handleCommentInput(post.id, e)}
-                                    onKeyDown={(e) => {
-                                      if (mention && mention.postId === post.id && mentionMatches.length > 0) {
-                                        if (e.key === 'Enter') { e.preventDefault(); selectMention(mentionMatches[0].username); return; }
-                                        if (e.key === 'Escape') { setMention(null); return; }
-                                      }
-                                      if (e.key === 'Enter') submitComment(post.id);
-                                    }}
-                                  />
-                                  <button className="comment-send" onClick={() => submitComment(post.id)} disabled={!(commentDrafts[post.id] || '').trim()}>
-                                    <Send size={14} />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
+                    visiblePosts.map((post) => renderPost(post))
                   )}
                 </>
+              )}
+
+              {screen === 'postDetail' && (
+                <div>
+                  <div className="detail-back-row">
+                    <button className="icon-btn detail-back-btn" onClick={goBack}>
+                      <ArrowLeft size={18} /> Back
+                    </button>
+                  </div>
+                  {(() => {
+                    const post = posts.find((p) => p.id === viewingPostId);
+                    if (!post) {
+                      return (
+                        <div className="feed-empty">
+                          <div className="r-badge">R</div>
+                          <h3>Post not found</h3>
+                          <p>This post may have been deleted.</p>
+                        </div>
+                      );
+                    }
+                    return renderPost(post);
+                  })()}
+                </div>
               )}
 
               {screen === 'upload' && (
@@ -1482,7 +1589,7 @@ export default function RUMS() {
                     return (
                       <div className="suggestion-card" key={s.id}>
                         <div className="suggestion-top">
-                          <div className="user-row-left">
+                          <div className="user-row-left clickable-row" onClick={() => openProfile(s.username)}>
                             {avatarNode(s.username, 24, 10)}
                             {s.username}
                           </div>
@@ -1546,7 +1653,10 @@ export default function RUMS() {
                       <div className="post-top">
                         <div>
                           <div className="post-user-name">{u.title}</div>
-                          <div className="post-time">{timeAgo(u.timestamp)} · {u.author}</div>
+                          <div className="post-time">
+                            {timeAgo(u.timestamp)} ·{' '}
+                            <span className="clickable-text" onClick={() => openProfile(u.author)}>{u.author}</span>
+                          </div>
                         </div>
                         {currentUser.isAdmin && (
                           <button className="icon-btn manage-btn" onClick={() => deleteUpdate(u.id)} title="Delete update">
@@ -1562,68 +1672,144 @@ export default function RUMS() {
 
               {screen === 'profile' && (
                 <div className="profile-wrap">
-                  <div className="profile-avatar-wrap" onClick={() => avatarInputRef.current?.click()}>
-                    {avatarNode(currentUser.username, 84, 30)}
-                    <div className="avatar-edit-badge"><ImagePlus size={14} /></div>
+                  <div className="profile-back-row">
+                    <button className="icon-btn detail-back-btn" onClick={goBack}>
+                      <ArrowLeft size={18} /> Back
+                    </button>
                   </div>
-                  <input
-                    ref={avatarInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={handleAvatarSelect}
-                  />
-                  <h3 className="profile-name">
-                    {currentUser.username}
-                    {currentUser.isAdmin && (
-                      <span className="tag-pill" style={{ marginLeft: 8 }}><ShieldCheck size={10} /> Admin</span>
-                    )}
-                  </h3>
-                  <p className="switch-line">Tap your photo to change it.</p>
-                  {avatarBusy && (
-                    <p className="switch-line"><Loader2 size={13} className="spin" style={{ verticalAlign: 'middle', marginRight: 4 }} /> Updating photo…</p>
-                  )}
-                  {profileError && <div className="error-pill" style={{ marginTop: 10 }}>{profileError}</div>}
 
-                  <div className="profile-section">
-                    <div className="field-label">Change username</div>
-                    <div className="username-edit-row">
+                  {viewedProfile && viewedProfile !== currentUser.username ? (
+                    (() => {
+                      const u = users.find((x) => x.username === viewedProfile);
+                      if (!u) {
+                        return (
+                          <div className="feed-empty">
+                            <div className="r-badge">R</div>
+                            <h3>Account not found</h3>
+                            <p>This user may have deleted their account.</p>
+                          </div>
+                        );
+                      }
+                      const theirPosts = posts
+                        .filter((p) => p.username === u.username)
+                        .sort((a, b) => b.timestamp - a.timestamp);
+                      return (
+                        <>
+                          {avatarNode(u.username, 84, 30)}
+                          <h3 className="profile-name">
+                            {u.username}
+                            {u.isAdmin && (
+                              <span className="tag-pill" style={{ marginLeft: 8 }}><ShieldCheck size={10} /> Admin</span>
+                            )}
+                          </h3>
+                          <p className="switch-line">{theirPosts.length} post{theirPosts.length === 1 ? '' : 's'}</p>
+                          {theirPosts.length === 0 ? (
+                            <p className="switch-line" style={{ marginTop: 20 }}>No posts yet.</p>
+                          ) : (
+                            <div className="profile-post-grid">
+                              {theirPosts.map((p) => (
+                                <div className="profile-grid-thumb" key={p.id} onClick={() => openPost(p.id)}>
+                                  <img src={p.image} alt="" />
+                                  {p.tag === 'Lumina' && (
+                                    <span className="thumb-lumina-badge"><Droplet size={10} color="white" /></span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()
+                  ) : (
+                    <>
+                      <div className="profile-avatar-wrap" onClick={() => avatarInputRef.current?.click()}>
+                        {avatarNode(currentUser.username, 84, 30)}
+                        <div className="avatar-edit-badge"><ImagePlus size={14} /></div>
+                      </div>
                       <input
-                        className="aero-input"
-                        placeholder={currentUser.username}
-                        value={newUsername}
-                        onChange={(e) => setNewUsername(e.target.value)}
-                        autoComplete="off"
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handleAvatarSelect}
                       />
-                      <button
-                        className="aero-btn"
-                        onClick={handleChangeUsername}
-                        disabled={usernameBusy || !newUsername.trim()}
-                        title="Save new username"
-                      >
-                        {usernameBusy ? <Loader2 size={15} className="spin" /> : <Pencil size={15} />}
-                      </button>
-                    </div>
-                    {usernameError && <div className="error-pill" style={{ marginTop: 8 }}>{usernameError}</div>}
-                  </div>
+                      <h3 className="profile-name">
+                        {currentUser.username}
+                        {currentUser.isAdmin && (
+                          <span className="tag-pill" style={{ marginLeft: 8 }}><ShieldCheck size={10} /> Admin</span>
+                        )}
+                      </h3>
+                      <p className="switch-line">Tap your photo to change it.</p>
+                      {avatarBusy && (
+                        <p className="switch-line"><Loader2 size={13} className="spin" style={{ verticalAlign: 'middle', marginRight: 4 }} /> Updating photo…</p>
+                      )}
+                      {profileError && <div className="error-pill" style={{ marginTop: 10 }}>{profileError}</div>}
 
-                  <div className="profile-danger-zone">
-                    {isLastAdmin(currentUser) ? (
-                      <p className="switch-line" style={{ color: '#c14a35' }}>
-                        You're the only admin — make someone else an admin before deleting this account.
-                      </p>
-                    ) : (
-                      <>
-                        <button
-                          className="aero-btn danger-btn"
-                          onClick={() => setConfirmDelete({ type: 'self', username: currentUser.username })}
-                        >
-                          <Trash2 size={15} /> Delete my account
-                        </button>
-                        <p className="switch-line">This permanently removes your account, posts, and comments.</p>
-                      </>
-                    )}
-                  </div>
+                      <div className="profile-section">
+                        <div className="field-label">Change username</div>
+                        <div className="username-edit-row">
+                          <input
+                            className="aero-input"
+                            placeholder={currentUser.username}
+                            value={newUsername}
+                            onChange={(e) => setNewUsername(e.target.value)}
+                            autoComplete="off"
+                          />
+                          <button
+                            className="aero-btn"
+                            onClick={handleChangeUsername}
+                            disabled={usernameBusy || !newUsername.trim()}
+                            title="Save new username"
+                          >
+                            {usernameBusy ? <Loader2 size={15} className="spin" /> : <Pencil size={15} />}
+                          </button>
+                        </div>
+                        {usernameError && <div className="error-pill" style={{ marginTop: 8 }}>{usernameError}</div>}
+                      </div>
+
+                      <div className="profile-section">
+                        <div className="field-label">Your posts</div>
+                        {(() => {
+                          const myPosts = posts
+                            .filter((p) => p.username === currentUser.username)
+                            .sort((a, b) => b.timestamp - a.timestamp);
+                          if (myPosts.length === 0) {
+                            return <p className="switch-line">You haven't posted anything yet.</p>;
+                          }
+                          return (
+                            <div className="profile-post-grid">
+                              {myPosts.map((p) => (
+                                <div className="profile-grid-thumb" key={p.id} onClick={() => openPost(p.id)}>
+                                  <img src={p.image} alt="" />
+                                  {p.tag === 'Lumina' && (
+                                    <span className="thumb-lumina-badge"><Droplet size={10} color="white" /></span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      <div className="profile-danger-zone">
+                        {isLastAdmin(currentUser) ? (
+                          <p className="switch-line" style={{ color: '#c14a35' }}>
+                            You're the only admin — make someone else an admin before deleting this account.
+                          </p>
+                        ) : (
+                          <>
+                            <button
+                              className="aero-btn danger-btn"
+                              onClick={() => setConfirmDelete({ type: 'self', username: currentUser.username })}
+                            >
+                              <Trash2 size={15} /> Delete my account
+                            </button>
+                            <p className="switch-line">This permanently removes your account, posts, and comments.</p>
+                          </>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -1632,7 +1818,7 @@ export default function RUMS() {
                   <div className="admin-section-title"><Shield size={16} /> Members ({users.length})</div>
                   {users.map((u) => (
                     <div className="user-row" key={u.username}>
-                      <div className="user-row-left">
+                      <div className="user-row-left clickable-row" onClick={() => openProfile(u.username)}>
                         {avatarNode(u.username, 26, 11)}
                         {u.username}
                       </div>
@@ -1663,9 +1849,16 @@ export default function RUMS() {
                   {posts.length === 0 && <p style={{ fontSize: 13, color: '#7ba3ac' }}>Nothing posted yet.</p>}
                   {posts.slice().sort((a, b) => b.timestamp - a.timestamp).map((p) => (
                     <div className="admin-post-row" key={p.id}>
-                      <img src={p.image} alt="" />
+                      <img
+                        src={p.image}
+                        alt=""
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => openPost(p.id)}
+                      />
                       <div className="admin-post-meta">
-                        <b>{p.username}{p.tag === 'Lumina' ? ' · Lumina' : ''}</b>
+                        <b className="clickable-text" onClick={() => openProfile(p.username)}>
+                          {p.username}{p.tag === 'Lumina' ? ' · Lumina' : ''}
+                        </b>
                         {p.caption ? p.caption.slice(0, 40) : timeAgo(p.timestamp)}
                       </div>
                       <button className="del-btn" onClick={() => deletePost(p.id)}><Trash2 size={14} /></button>
@@ -1689,14 +1882,14 @@ export default function RUMS() {
                     )}
                   </div>
 
-                  {!q && <p className="switch-line" style={{ padding: '0 4px' }}>Search covers all posts on RUMS, including Lumina.</p>}
+                  {!q && <p className="switch-line" style={{ padding: '0 4px' }}>Search covers all posts on RUMS, including Lumina. Tap a result to jump to it.</p>}
 
                   {q && (
                     <>
                       <div className="admin-section-title"><UserIcon size={15} /> Accounts</div>
                       {matchedUsers.length === 0 && <p style={{ fontSize: 13, color: '#7ba3ac' }}>No accounts found.</p>}
                       {matchedUsers.map((u) => (
-                        <div className="user-row" key={u.username}>
+                        <div className="user-row clickable-row" key={u.username} onClick={() => openProfile(u.username)}>
                           <div className="user-row-left">
                             {avatarNode(u.username, 26, 11)}
                             {u.username}
@@ -1708,7 +1901,7 @@ export default function RUMS() {
                       <div className="admin-section-title"><ImagePlus size={15} /> Posts</div>
                       {matchedPosts.length === 0 && <p style={{ fontSize: 13, color: '#7ba3ac' }}>No posts found.</p>}
                       {matchedPosts.map((p) => (
-                        <div className="admin-post-row" key={p.id}>
+                        <div className="admin-post-row clickable-row" key={p.id} onClick={() => openPost(p.id)}>
                           <img src={p.image} alt="" />
                           <div className="admin-post-meta">
                             <b>
