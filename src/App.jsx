@@ -925,6 +925,27 @@ export default function RUMS() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
+        @font-face {
+          font-family: 'Modulus Pro';
+          src: url('/fonts/modulus-pro/ModulusPro-SemiBold.otf') format('opentype');
+          font-weight: 600; font-style: normal; font-display: swap;
+        }
+        @font-face {
+          font-family: 'Modulus Pro';
+          src: url('/fonts/modulus-pro/ModulusPro-Bold.otf') format('opentype');
+          font-weight: 700; font-style: normal; font-display: swap;
+        }
+        @font-face {
+          font-family: 'Modulus Pro';
+          src: url('/fonts/modulus-pro/ModulusPro-ExtraBold.otf') format('opentype');
+          font-weight: 800; font-style: normal; font-display: swap;
+        }
+        @font-face {
+          font-family: 'Modulus Pro';
+          src: url('/fonts/modulus-pro/ModulusPro-Black.otf') format('opentype');
+          font-weight: 900; font-style: normal; font-display: swap;
+        }
+
         .aero-root {
           --sky: #4fc3f7;
           --teal: #0fb8a6;
@@ -1056,7 +1077,8 @@ export default function RUMS() {
           box-shadow: 0 2px 6px rgba(10,58,77,0.15); position: relative; z-index: 1;
         }
         .lumina-hero h2 {
-          font-family: 'Baloo 2', cursive; font-size: 27px; margin: 14px 0 4px;
+          font-family: 'Modulus Pro', 'Baloo 2', cursive; font-weight: 800; font-size: 28px;
+          margin: 14px 0 4px; letter-spacing: 0.3px;
           position: relative; z-index: 1;
         }
         .lumina-hero p {
@@ -1082,8 +1104,8 @@ export default function RUMS() {
           box-shadow: 0 10px 22px rgba(15, 140, 166, 0.2);
         }
         .metro-wordmark {
-          font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 26px;
-          color: white; line-height: 1;
+          font-family: 'Modulus Pro', 'Baloo 2', cursive; font-weight: 800; font-size: 26px;
+          color: white; line-height: 1; letter-spacing: 0.2px;
         }
         .metro-tagline {
           margin: 4px 0 22px; font-size: 12.5px; color: rgba(255,255,255,0.85);
@@ -1607,9 +1629,9 @@ export default function RUMS() {
                   </div>
 
                   <div className="lumina-hero">
-                    <span className="lumina-hero-badge">RUMS City Project</span>
+                    <span className="lumina-hero-badge">A city project on RUMS</span>
                     <h2>Project Lumina</h2>
-                    <p>The city district built into the server — and the corner of RUMS that's all about it.</p>
+                    <p>The city being built inside the RUMS server — this page is its home base.</p>
                   </div>
 
                   <div className="lumina-motto-card">
