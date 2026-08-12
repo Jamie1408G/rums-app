@@ -1124,7 +1124,7 @@ export default function RUMS() {
           flex-shrink: 0; position: relative; z-index: 1;
         }
         .metro-stop-name {
-          font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 15.5px; color: white;
+          font-family: 'Modulus Pro', 'Baloo 2', cursive; font-weight: 700; font-size: 15.5px; color: white;
         }
 
         .tag-pill {
