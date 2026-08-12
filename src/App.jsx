@@ -359,6 +359,10 @@ export default function RUMS() {
     goTo('postDetail');
   }
 
+  function openLumina() {
+    goTo('lumina');
+  }
+
   async function handleFileSelect(e) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1025,6 +1029,83 @@ export default function RUMS() {
         .lumina-banner .droplet-badge svg { transform: rotate(-45deg); }
         .lumina-banner h4 { margin: 0; font-family: 'Baloo 2', cursive; font-size: 16px; }
         .lumina-banner p { margin: 2px 0 0; font-size: 12px; color: #4a7f8c; }
+        .lumina-banner.clickable-row { cursor: pointer; }
+        .lumina-banner.clickable-row:active { transform: translateY(1px); }
+        .lumina-banner-arrow {
+          margin-left: auto; flex-shrink: 0; font-size: 11px; font-weight: 700;
+          color: var(--teal); white-space: nowrap;
+        }
+
+        /* Lumina about page */
+        .lumina-page { padding: 4px 4px 16px; }
+        .lumina-hero {
+          margin: 10px 0 16px; padding: 28px 20px 26px; border-radius: 24px;
+          background: linear-gradient(160deg, #bfe9fb 0%, #6fc9ea 55%, #2fa9cf 100%);
+          text-align: center; color: white; position: relative; overflow: hidden;
+          box-shadow: 0 12px 26px rgba(15, 140, 166, 0.22);
+        }
+        .lumina-hero::before {
+          content: ''; position: absolute; inset: 0;
+          background: radial-gradient(240px 120px at 15% 0%, rgba(255,255,255,0.55), transparent 60%);
+          pointer-events: none;
+        }
+        .lumina-hero-badge {
+          display: inline-flex; align-items: center; justify-content: center;
+          background: white; color: var(--teal); font-family: 'Baloo 2', cursive;
+          font-weight: 800; font-size: 13px; padding: 6px 16px; border-radius: 999px;
+          box-shadow: 0 2px 6px rgba(10,58,77,0.15); position: relative; z-index: 1;
+        }
+        .lumina-hero h2 {
+          font-family: 'Baloo 2', cursive; font-size: 27px; margin: 14px 0 4px;
+          position: relative; z-index: 1;
+        }
+        .lumina-hero p {
+          margin: 0; font-size: 13px; opacity: 0.92; position: relative; z-index: 1;
+        }
+
+        .lumina-motto-card {
+          margin: 0 0 16px; padding: 20px; border-radius: 18px; text-align: center;
+          background: linear-gradient(135deg, #eafcff 0%, #e2f7ef 100%);
+          border: 1px solid var(--line);
+        }
+        .lumina-motto-words {
+          font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 14px;
+          color: var(--teal); letter-spacing: 0.4px; text-transform: uppercase;
+        }
+        .lumina-motto-card h3 {
+          font-family: 'Baloo 2', cursive; font-size: 21px; margin: 6px 0 0; color: var(--deep);
+        }
+
+        .metro-card {
+          padding: 22px 20px 20px; border-radius: 20px;
+          background: linear-gradient(165deg, #8fdcf4 0%, #35b4dd 100%);
+          box-shadow: 0 10px 22px rgba(15, 140, 166, 0.2);
+        }
+        .metro-card-title {
+          display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+          font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 15px; color: white;
+        }
+        .metro-card-sub { font-size: 12px; color: rgba(255,255,255,0.85); margin: 0 0 16px; }
+        .metro-badge {
+          display: inline-flex; align-items: center; justify-content: center;
+          background: white; color: var(--teal); font-family: 'Baloo 2', cursive;
+          font-weight: 800; font-size: 12px; padding: 4px 14px; border-radius: 999px;
+          box-shadow: 0 2px 5px rgba(10,58,77,0.15);
+        }
+        .metro-stops { margin: 4px 0 4px 6px; }
+        .metro-stop { display: flex; align-items: center; gap: 14px; position: relative; min-height: 46px; }
+        .metro-stop:not(:last-child)::after {
+          content: ''; position: absolute; left: 7px; top: 24px; width: 2px; bottom: -2px;
+          background: rgba(255,255,255,0.75);
+        }
+        .metro-stop-dot {
+          width: 16px; height: 16px; border-radius: 50%; background: white;
+          box-shadow: inset -2px -2px 4px rgba(0,0,0,0.12), 0 2px 4px rgba(10,58,77,0.2);
+          flex-shrink: 0; position: relative; z-index: 1;
+        }
+        .metro-stop-name {
+          font-family: 'Baloo 2', cursive; font-weight: 700; font-size: 15.5px; color: white;
+        }
 
         .tag-pill {
           display: inline-flex; align-items: center; gap: 4px;
@@ -1475,12 +1556,13 @@ export default function RUMS() {
               {screen === 'feed' && (
                 <>
                   {feedFilter === 'lumina' && (
-                    <div className="lumina-banner">
+                    <div className="lumina-banner clickable-row" onClick={openLumina}>
                       <div className="droplet-badge"><Droplet size={18} color="white" /></div>
                       <div>
                         <h4>Lumina</h4>
                         <p>Screenshots from the city district, in one place.</p>
                       </div>
+                      <span className="lumina-banner-arrow">About the city →</span>
                     </div>
                   )}
                   {visiblePosts.length === 0 ? (
@@ -1515,6 +1597,42 @@ export default function RUMS() {
                     }
                     return renderPost(post);
                   })()}
+                </div>
+              )}
+
+              {screen === 'lumina' && (
+                <div className="lumina-page">
+                  <div className="detail-back-row">
+                    <button className="icon-btn detail-back-btn" onClick={goBack}>
+                      <ArrowLeft size={18} /> Back
+                    </button>
+                  </div>
+
+                  <div className="lumina-hero">
+                    <span className="lumina-hero-badge">RUMS City Project</span>
+                    <h2>Project Lumina</h2>
+                    <p>The city district built into the server — and the corner of RUMS that's all about it.</p>
+                  </div>
+
+                  <div className="lumina-motto-card">
+                    <div className="lumina-motto-words">Green, Free, Utopian</div>
+                    <h3>That's Lumina's motto</h3>
+                  </div>
+
+                  <div className="metro-card">
+                    <div className="metro-card-title"><Droplet size={16} /> metro</div>
+                    <p className="metro-card-sub">Lumina's core spine</p>
+                    <div className="metro-stops">
+                      <span className="metro-badge">metro</span>
+                      {['Lumen', 'Luminelia', 'Luminarra'].map((name) => (
+                        <div className="metro-stop" key={name}>
+                          <span className="metro-stop-dot" />
+                          <span className="metro-stop-name">{name}</span>
+                        </div>
+                      ))}
+                      <span className="metro-badge">metro</span>
+                    </div>
+                  </div>
                 </div>
               )}
 
