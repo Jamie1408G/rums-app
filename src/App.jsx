@@ -1077,29 +1077,27 @@ export default function RUMS() {
         }
 
         .metro-card {
-          padding: 22px 20px 20px; border-radius: 20px;
+          padding: 24px 22px 26px; border-radius: 20px;
           background: linear-gradient(165deg, #8fdcf4 0%, #35b4dd 100%);
           box-shadow: 0 10px 22px rgba(15, 140, 166, 0.2);
         }
-        .metro-card-title {
-          display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
-          font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 15px; color: white;
+        .metro-wordmark {
+          font-family: 'Baloo 2', cursive; font-weight: 800; font-size: 26px;
+          color: white; line-height: 1;
         }
-        .metro-card-sub { font-size: 12px; color: rgba(255,255,255,0.85); margin: 0 0 16px; }
-        .metro-badge {
-          display: inline-flex; align-items: center; justify-content: center;
-          background: white; color: var(--teal); font-family: 'Baloo 2', cursive;
-          font-weight: 800; font-size: 12px; padding: 4px 14px; border-radius: 999px;
-          box-shadow: 0 2px 5px rgba(10,58,77,0.15);
+        .metro-tagline {
+          margin: 4px 0 22px; font-size: 12.5px; color: rgba(255,255,255,0.85);
         }
-        .metro-stops { margin: 4px 0 4px 6px; }
-        .metro-stop { display: flex; align-items: center; gap: 14px; position: relative; min-height: 46px; }
-        .metro-stop:not(:last-child)::after {
-          content: ''; position: absolute; left: 7px; top: 24px; width: 2px; bottom: -2px;
-          background: rgba(255,255,255,0.75);
+        .metro-track { position: relative; padding-left: 4px; }
+        .metro-track-line {
+          position: absolute; top: 23px; bottom: 23px; left: 11px; width: 2px;
+          background: rgba(255,255,255,0.65);
+        }
+        .metro-stop {
+          display: flex; align-items: center; gap: 16px; position: relative; min-height: 46px;
         }
         .metro-stop-dot {
-          width: 16px; height: 16px; border-radius: 50%; background: white;
+          width: 15px; height: 15px; border-radius: 50%; background: white;
           box-shadow: inset -2px -2px 4px rgba(0,0,0,0.12), 0 2px 4px rgba(10,58,77,0.2);
           flex-shrink: 0; position: relative; z-index: 1;
         }
@@ -1620,17 +1618,16 @@ export default function RUMS() {
                   </div>
 
                   <div className="metro-card">
-                    <div className="metro-card-title"><Droplet size={16} /> metro</div>
-                    <p className="metro-card-sub">Lumina's core spine</p>
-                    <div className="metro-stops">
-                      <span className="metro-badge">metro</span>
+                    <div className="metro-wordmark">metro</div>
+                    <p className="metro-tagline">Lumina's core spine</p>
+                    <div className="metro-track">
+                      <div className="metro-track-line" />
                       {['Lumen', 'Luminelia', 'Luminarra'].map((name) => (
                         <div className="metro-stop" key={name}>
                           <span className="metro-stop-dot" />
                           <span className="metro-stop-name">{name}</span>
                         </div>
                       ))}
-                      <span className="metro-badge">metro</span>
                     </div>
                   </div>
                 </div>
