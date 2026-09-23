@@ -26,6 +26,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+function withDeadline(operation) {
+  let timer;
+  return Promise.race([
+    operation,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('The server did not respond. Check your connection and try again.')), 10000);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
 // BUG FIX: "local" (shared: false) data used to be stored at doc(db, 'local', key)
 // — just the raw key name, with no per-browser scoping. That made it ONE global
 // document shared by every visitor (e.g. everyone's session lived at
@@ -72,7 +82,7 @@ const storage = {
   async get(key, shared = false) {
     if (!isValidKey(key)) throw new Error('Invalid key');
     const ref = doc(db, collectionName(shared), docId(key, shared));
-    const snap = await getDoc(ref);
+    const snap = await withDeadline(getDoc(ref));
     if (!snap.exists()) return null;
     return { key, value: snap.data().value, shared };
   },
@@ -81,22 +91,22 @@ const storage = {
     if (!isValidKey(key)) throw new Error('Invalid key');
     if (typeof value !== 'string') throw new Error('Value must be a string');
     const ref = doc(db, collectionName(shared), docId(key, shared));
-    await setDoc(ref, { value });
+    await withDeadline(setDoc(ref, { value }));
     return { key, value, shared };
   },
 
   async delete(key, shared = false) {
     if (!isValidKey(key)) throw new Error('Invalid key');
     const ref = doc(db, collectionName(shared), docId(key, shared));
-    const snap = await getDoc(ref);
+    const snap = await withDeadline(getDoc(ref));
     const existed = snap.exists();
-    await deleteDoc(ref);
+    await withDeadline(deleteDoc(ref));
     return { key, deleted: existed, shared };
   },
 
   async list(prefix = '', shared = false) {
     const colRef = collection(db, collectionName(shared));
-    const snap = await getDocs(query(colRef));
+    const snap = await withDeadline(getDocs(query(colRef)));
     const ownPrefix = shared ? '' : `${clientId}::`;
     const keys = [];
     snap.forEach((d) => {

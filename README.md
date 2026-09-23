@@ -29,7 +29,7 @@ polyfill** in `src/lib/storage.js`, wired up in `src/main.jsx` via `window.stora
 
 Two options are included:
 
-### Option A — localStorage (default, zero config)
+### Option A — localStorage (default when Firebase is not configured)
 `src/lib/storage.js` backs the API with `localStorage`. This works out of the box and
 deploys instantly to Vercel with no backend setup. **Limitation:** localStorage is
 per-browser. The app's "shared" data (users, posts) is only shared across tabs/sessions
@@ -53,7 +53,7 @@ visitor reads/writes the same shared data. To switch to it:
    VITE_FIREBASE_MESSAGING_SENDER_ID=...
    VITE_FIREBASE_APP_ID=...
    ```
-4. In `src/main.jsx`, change the import from `./lib/storage` to `./lib/storage.firebase`.
+4. Restart the dev server. The app automatically selects Firebase when the required config variables are present.
 5. Set Firestore security rules before going to production (see security note below).
 
 Nothing else in the app needs to change either way — both files implement the identical
