@@ -91,6 +91,13 @@ export default function RUMS() {
   const [viewedProfile, setViewedProfile] = useState(null); // username being viewed, or null = own profile
   const [viewingPostId, setViewingPostId] = useState(null);
   const [navStack, setNavStack] = useState([]);
+  const [glassStrength, setGlassStrength] = useState(() => {
+    try {
+      const saved = Number(window.localStorage.getItem('rums-glass-strength'));
+      return Number.isFinite(saved) && saved >= 35 && saved <= 95 ? saved : 72;
+    } catch { return 72; }
+  });
+  const [glassDragging, setGlassDragging] = useState(false);
   const fileInputRef = useRef(null);
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
@@ -129,6 +136,10 @@ export default function RUMS() {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    try { window.localStorage.setItem('rums-glass-strength', String(glassStrength)); } catch { /* browser preferences unavailable */ }
+  }, [glassStrength]);
 
   // Poll the shared stores so new posts/suggestions/updates (and their
   // notification badges) show up without needing to log out/in, and so an
@@ -956,7 +967,7 @@ export default function RUMS() {
   }
 
   return (
-    <div className="aero-root" ref={rootRef}>
+    <div className="aero-root" ref={rootRef} style={{ '--glass-alpha': glassStrength / 100 }}>
 
 
       <div className="aero-frame">
@@ -1396,6 +1407,16 @@ export default function RUMS() {
                           </button>
                         </div>
                         {usernameError && <div className="error-pill" style={{ marginTop: 8 }}>{usernameError}</div>}
+                      </div>
+
+                      <div className="profile-section appearance-section">
+                        <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Adjust the transparency of the glass controls on this device.</p></div><span>{glassStrength}%</span></div>
+                        <div className={`glass-slider-shell ${glassDragging ? 'is-dragging' : ''}`} style={{ '--slider-position': `${(glassStrength - 35) / 60 * 100}%` }}>
+                          <input className="glass-range" type="range" min="35" max="95" step="1" value={glassStrength}
+                            aria-label="Glass transparency" onChange={(e) => setGlassStrength(Number(e.target.value))}
+                            onPointerDown={() => setGlassDragging(true)} onPointerUp={() => setGlassDragging(false)} onPointerCancel={() => setGlassDragging(false)} onBlur={() => setGlassDragging(false)} />
+                        </div>
+                        <div className="glass-slider-labels"><span>Clear</span><span>Frosted</span></div>
                       </div>
 
                       <div className="profile-section">
