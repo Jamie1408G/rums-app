@@ -1190,7 +1190,7 @@ export default function RUMS() {
                   <section className="lumina-project-hero">
                     <div className="lumina-project-glow" aria-hidden="true"><span /><span /></div>
                     <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1>Project<br />Lumina</h1><p>A bright community city where Frutiger Aero optimism, Frutiger Eco nature and solarpunk urbanism meet.</p><div className="lumina-hero-actions"><button onClick={() => setLuminaView('metro')}>Explore the metro</button><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}><Plus size={14} /> Share a view</button></div></div>
-                    <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>3</strong><span>metro districts</span></div></div>
+                    <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>M1</strong><span>every minute</span></div></div>
                   </section>
 
                   <nav className="lumina-view-switch" style={{ '--lumina-tab-index': ['overview', 'metro', 'community'].indexOf(luminaView) }} aria-label="Project Lumina sections">{[['overview','Overview'],['metro','Districts'],['community','Community']].map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => setLuminaView(value)}>{label}</button>)}</nav>
@@ -1202,7 +1202,7 @@ export default function RUMS() {
                   </div>}
 
                   {luminaView === 'metro' && <section className="lumina-view-panel lumina-metro-panel">
-                    <div className="lumina-section-copy"><span className="eyebrow">DISTRICT EXPLORER</span><h2>Choose a destination</h2><p>Move between Lumina’s three metro districts.</p></div>
+                    <div className="lumina-section-copy"><span className="eyebrow">M1 · DISTRICT EXPLORER</span><h2>Choose a destination</h2><p>Move between Lumina’s three metro districts.</p><div className="lumina-service-facts"><span><b>1 min</b> service</span><span><b>3</b> stations</span><span><b>PSD</b> at every station</span></div></div>
                     <div className="lumina-line" aria-label="Lumina districts">{LUMINA_STATIONS.map((station,index) => <button className={`lumina-station ${activeLuminaStation === index ? 'active' : ''}`} key={station.name} onClick={() => setActiveLuminaStation(index)} aria-pressed={activeLuminaStation === index} style={{ '--station-accent': station.accent }}><span><small>0{index + 1}</small></span><b>{station.name}</b><em>{station.type}</em></button>)}</div>
                     <div className="lumina-station-detail" style={{ '--station-accent': LUMINA_STATIONS[activeLuminaStation].accent }}><div className="station-number">0{activeLuminaStation + 1}</div><div><span>{LUMINA_STATIONS[activeLuminaStation].type}</span><h3>{LUMINA_STATIONS[activeLuminaStation].name}</h3><p>{LUMINA_STATIONS[activeLuminaStation].description}</p></div><button onClick={() => { setFeedFilter('lumina'); setScreen('feed'); }}>View posts</button></div>
                     <div className="lumina-map-help"><span>Tap a district to explore</span><span>Swipe to browse →</span></div>
