@@ -102,6 +102,54 @@ export default function RUMS() {
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
   const rootRef = useRef(null);
+  const tabsRef = useRef(null);
+  const tabsDragRef = useRef(null);
+  const [tabsDragging, setTabsDragging] = useState(false);
+  const [tabOffset, setTabOffset] = useState(0);
+
+  function tabForPointer(clientX) {
+    const rect = tabsRef.current?.getBoundingClientRect();
+    return rect && clientX >= rect.left + rect.width / 2 ? 'lumina' : 'all';
+  }
+
+  function updateTabDrag(clientX) {
+    const rect = tabsRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const offset = Math.max(0, Math.min(rect.width / 2, clientX - rect.left - rect.width / 4));
+    setTabOffset(offset);
+    tabsRef.current.style.setProperty('--tab-reflection-x', `${clientX - rect.left - offset}px`);
+    setFeedFilter(tabForPointer(clientX));
+  }
+
+  function handleTabsPointerDown(e) {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    tabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+  }
+
+  function handleTabsPointerMove(e) {
+    const drag = tabsDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    if (!drag.moved && (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy))) return;
+    if (!drag.moved) {
+      drag.moved = true;
+      tabsRef.current?.setPointerCapture(e.pointerId);
+      setTabsDragging(true);
+    }
+    updateTabDrag(e.clientX);
+  }
+
+  function handleTabsPointerEnd(e) {
+    const drag = tabsDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    if (drag.moved && e.type !== 'pointercancel') setFeedFilter(tabForPointer(e.clientX));
+    setTabsDragging(false);
+    if (tabsRef.current?.hasPointerCapture(e.pointerId)) tabsRef.current.releasePointerCapture(e.pointerId);
+    // A browser may synthesize a click on the starting button after a drag.
+    if (drag.moved) setTimeout(() => { if (tabsDragRef.current === drag) tabsDragRef.current = null; }, 0);
+    else tabsDragRef.current = null;
+  }
 
   useEffect(() => {
     const root = rootRef.current;
@@ -1057,7 +1105,11 @@ export default function RUMS() {
             </div>
 
             {screen === 'feed' && (
-              <div className="feed-tabs">
+              <div ref={tabsRef} className={`feed-tabs ${tabsDragging ? 'is-dragging' : ''}`}
+                style={{ '--seg-translate': tabsDragging ? `${tabOffset}px` : feedFilter === 'lumina' ? '100%' : '0%' }}
+                onPointerDown={handleTabsPointerDown} onPointerMove={handleTabsPointerMove}
+                onPointerUp={handleTabsPointerEnd} onPointerCancel={handleTabsPointerEnd}
+                onClickCapture={(e) => { if (tabsDragRef.current?.moved) { e.preventDefault(); e.stopPropagation(); } }}>
                 <button className={`tab-btn ${feedFilter === 'all' ? 'active' : ''}`} onClick={() => setFeedFilter('all')}>
                   All RUMS
                   {unseenGeneral > 0 && <span className="tab-badge">{unseenGeneral}</span>}
@@ -1162,20 +1214,22 @@ export default function RUMS() {
 
               {screen === 'upload' && (
                 <div className="upload-wrap">
+                  <div className="composer-heading"><span className="eyebrow">NEW POST</span><h2>Share a moment</h2><p>Show everyone what you’ve built or discovered on RUMS.</p></div>
                   {!uploadPreview ? (
-                    <div className="drop-zone" onClick={() => fileInputRef.current?.click()}>
-                      <ImagePlus size={30} color="#0fb8a6" />
-                      <p><b>Tap to choose a screenshot</b><br />JPG or PNG from anywhere on RUMS</p>
+                    <div className="drop-zone" role="button" tabIndex={0} onClick={() => fileInputRef.current?.click()}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}>
+                      <span className="composer-upload-icon"><ImagePlus size={25} /></span>
+                      <p><b>Choose a screenshot</b><br />JPG or PNG from anywhere on RUMS</p>
                     </div>
                   ) : (
                     <div className="preview-wrap">
                       <img src={uploadPreview} alt="preview" />
-                      <button className="preview-clear" onClick={() => setUploadPreview(null)}><X size={16} /></button>
+                      <button className="preview-clear" onClick={() => setUploadPreview(null)} aria-label="Remove screenshot"><X size={16} /></button>
                     </div>
                   )}
                   <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileSelect} />
 
-                  <div className="field-label">Where's this from?</div>
+                  <div className="field-label">Where was it taken?</div>
                   <div className="tag-select">
                     {TAGS.map((t) => (
                       <button
@@ -1189,6 +1243,7 @@ export default function RUMS() {
                     ))}
                   </div>
 
+                  <div className="field-label">Caption</div>
                   <textarea
                     className="caption-area"
                     placeholder="Write a caption…"
