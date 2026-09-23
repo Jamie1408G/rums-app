@@ -118,7 +118,9 @@ button,input,textarea { font:inherit; }
 @media(max-width:600px) {.lumina-project-hero {min-height:335px;padding:29px 23px 22px;border-radius:25px;}.lumina-project-copy h1 {font-size:48px;}.lumina-project-glow span:first-child {right:-7px;top:54px;width:103px;height:103px;}.lumina-project-glow span:last-child {right:68px;top:115px;}.lumina-project-stats {left:22px;right:22px;bottom:21px;}.lumina-project-stats div {min-width:0;flex:1;padding:10px 12px;}.lumina-principles {grid-template-columns:1fr;}.lumina-principles article {min-height:auto;padding:16px 18px;}.lumina-principles h3 {margin:8px 0 4px;}.lumina-metro-panel {padding:22px 15px;}.lumina-station b {font-size:9px;}.lumina-gallery {grid-template-columns:1fr 1fr;gap:7px;}.lumina-gallery>button {border-radius:14px;}}
 
 /* Expanded Lumina project hub. */
-.lumina-project-hero {min-height:410px;}
+.lumina-project-hero {display:flex;min-height:0;padding:38px 34px 27px;flex-direction:column;align-items:flex-start;}
+.lumina-project-copy {flex:0 0 auto;}
+.lumina-project-stats {position:relative;left:auto;right:auto;bottom:auto;display:grid;grid-template-columns:repeat(2,minmax(126px,1fr));width:min(100%,330px);margin-top:28px;}
 .lumina-hero-actions {display:flex;gap:8px;margin-top:20px;}
 .lumina-hero-actions button,.lumina-wide-action,.lumina-share-card button {display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:39px;padding:0 15px;border:1px solid #ffffffc7;border-radius:999px;background:#ffffffc7;color:#2767bd;font-size:11px;font-weight:750;box-shadow:inset 0 1px #fff,0 4px 14px #315b8d27;backdrop-filter:blur(16px);cursor:pointer;}
 .lumina-hero-actions button:first-child {background:#3478f6;color:#fff;border-color:#74a8fa;box-shadow:inset 0 1px #ffffff7d,0 6px 16px #2865c34c;}
@@ -142,6 +144,8 @@ button,input,textarea { font:inherit; }
 .lumina-metro-panel {overflow:hidden;}
 .lumina-line {min-width:440px;}
 .lumina-station {appearance:none;padding:0 8px;border:0;background:transparent;font-family:inherit;cursor:pointer;transition:transform .2s ease,color .2s ease;}
+.aero-root .lumina-station::before,.aero-root .lumina-station .glass-ripple {display:none!important;}
+.aero-root .lumina-station:active {transform:translateY(-2px) scale(.98);filter:none;}
 .lumina-station:hover,.lumina-station.active {color:#245fae;transform:translateY(-2px);}
 .lumina-station span {border-color:var(--station-accent,#4d8bef);transition:transform .22s ease,box-shadow .22s ease;}
 .lumina-station.active span {transform:scale(1.17);box-shadow:inset 0 1px #fff,0 0 0 5px #ffffffb5,0 5px 17px color-mix(in srgb,var(--station-accent,#4d8bef) 55%,transparent);}
@@ -157,7 +161,7 @@ button,input,textarea { font:inherit; }
 .lumina-share-card {display:flex;align-items:center;justify-content:flex-start;gap:14px;width:100%;margin-top:12px;padding:19px;border:1px solid #dfe8f6;border-radius:20px;background:linear-gradient(135deg,#f7faff,#eaf2ff);color:inherit;text-align:left;cursor:pointer;}
 .lumina-share-card>svg {flex:0 0 auto;margin-left:auto;color:#397ae5;}.lumina-share-card>span:nth-child(2) {min-width:0;flex:1;}.lumina-share-card b,.lumina-share-card small {display:block;}.lumina-share-card b {color:#263d5e;font-size:13px;}.lumina-share-card small {margin-top:4px;color:#7c899b;font-size:11px;}
 @media(max-width:600px) {
-  .lumina-project-hero {min-height:405px;}.lumina-hero-actions {flex-wrap:wrap;margin-top:16px;}.lumina-hero-actions button {min-height:36px;padding:0 12px;font-size:10px;}
+  .lumina-project-hero {min-height:0;padding:29px 23px 22px;}.lumina-project-copy {max-width:100%;}.lumina-project-copy p {max-width:285px;}.lumina-hero-actions {flex-wrap:wrap;margin-top:16px;}.lumina-hero-actions button {min-height:36px;padding:0 12px;font-size:10px;}.lumina-project-stats {left:auto;right:auto;bottom:auto;width:100%;margin-top:24px;}.lumina-project-stats div {min-width:0;}
   .lumina-view-switch {position:sticky;top:-53px;z-index:12;border-radius:16px;}.lumina-view-switch button {min-height:38px;padding:0 5px;font-size:10.5px;}
   .lumina-intro-card {padding:20px;}.lumina-intro-card h2 {font-size:22px;}.lumina-fact-row {grid-template-columns:1fr;margin-top:16px;}.lumina-fact-row>span {display:flex;align-items:center;justify-content:space-between;padding:10px 12px;}.lumina-fact-row b {margin:0;}
   .lumina-metro-panel {padding:21px 0 18px;}.lumina-metro-panel .lumina-section-copy,.lumina-metro-panel .lumina-station-detail,.lumina-metro-panel .lumina-map-help {margin-left:15px;margin-right:15px;}.lumina-line {min-width:430px;margin:27px 0 0;padding:0 8px;overflow:visible;}.lumina-metro-panel {overflow-x:auto;scrollbar-width:none;}.lumina-metro-panel::-webkit-scrollbar {display:none;}.lumina-station {touch-action:manipulation;}.lumina-station b {font-size:10px;}
