@@ -142,13 +142,18 @@ button,input,textarea { font:inherit; }
 .lumina-fact-row b {display:block;margin-bottom:3px;color:#2f5688;font-size:12px;}
 .lumina-wide-action {align-self:flex-start;justify-content:space-between;min-width:245px;background:#edf4ff;border-color:#fff;text-align:left;}.lumina-wide-action>span:first-child {display:flex;flex-direction:column;}.lumina-wide-action small {margin-top:2px;color:#8091aa;font-size:9px;font-weight:600;}
 .lumina-metro-panel {overflow:hidden;}
-.lumina-line {min-width:440px;}
-.lumina-station {appearance:none;padding:0 8px;border:0;background:transparent;font-family:inherit;cursor:pointer;transition:transform .2s ease,color .2s ease;}
+.lumina-line {min-width:440px;padding:10px 8px 5px;}
+.lumina-line::before {left:16%;right:16%;top:30px;height:8px;border:1px solid #ffffffc9;background:linear-gradient(180deg,#ddecffde 0%,#75a9f2d6 48%,#4b89e6d9 100%);box-shadow:inset 0 2px 3px #fff,0 4px 12px #3478f642;}
+.lumina-line::after {content:'';position:absolute;z-index:0;left:16.5%;right:16.5%;top:31px;height:2px;border-radius:999px;background:#ffffffad;filter:blur(.2px);pointer-events:none;}
+.lumina-station {appearance:none;min-height:70px;padding:0 8px;border:0;background:transparent;font-family:inherit;cursor:pointer;overflow:visible!important;transition:transform .28s cubic-bezier(.2,.8,.2,1),color .2s ease;}
 .aero-root .lumina-station::before,.aero-root .lumina-station .glass-ripple {display:none!important;}
 .aero-root .lumina-station:active {transform:translateY(-2px) scale(.98);filter:none;}
 .lumina-station:hover,.lumina-station.active {color:#245fae;transform:translateY(-2px);}
-.lumina-station span {border-color:var(--station-accent,#4d8bef);transition:transform .22s ease,box-shadow .22s ease;}
-.lumina-station.active span {transform:scale(1.17);box-shadow:inset 0 1px #fff,0 0 0 5px #ffffffb5,0 5px 17px color-mix(in srgb,var(--station-accent,#4d8bef) 55%,transparent);}
+.lumina-station span {position:relative;width:42px;height:42px;border:1px solid #ffffffec;border-radius:50%;background:radial-gradient(circle at 29% 19%,#fff 0,#f7fbff 22%,color-mix(in srgb,var(--station-accent,#4d8bef) 28%,#eaf3ff) 58%,color-mix(in srgb,var(--station-accent,#4d8bef) 68%,#fff) 100%);color:#2867c4;box-shadow:inset 2px 2px 4px #fff,inset -3px -4px 7px #4473b342,0 4px 12px #315f9d42;transition:transform .35s cubic-bezier(.16,.9,.25,1.2),border-radius .3s ease,box-shadow .3s ease,filter .3s;}
+.lumina-station span::after {content:'';position:absolute;left:8px;top:5px;width:16px;height:8px;border-radius:50%;background:#ffffffa8;filter:blur(1px);pointer-events:none;}
+.lumina-station b {padding:4px 9px;border:1px solid transparent;border-radius:999px;transition:background .25s,border-color .25s,box-shadow .25s;}
+.lumina-station.active span {z-index:2;border-radius:56% 44% 52% 48% / 44% 55% 45% 56%;transform:scale(1.13) rotate(-2deg);filter:saturate(1.18);box-shadow:inset 3px 3px 5px #fff,inset -4px -5px 9px #3d6fb852,0 0 0 4px #ffffff8f,0 8px 22px color-mix(in srgb,var(--station-accent,#4d8bef) 58%,transparent);}
+.lumina-station.active b {border-color:#fff;background:#ffffffb8;box-shadow:inset 0 1px #fff,0 3px 10px #365d8f22;backdrop-filter:blur(10px);}
 .lumina-station-detail {display:flex;align-items:center;gap:16px;margin-top:26px;padding:18px;border:1px solid #fff;border-radius:19px;background:#ffffffa8;box-shadow:inset 0 1px #fff,0 5px 16px #34547f12;backdrop-filter:blur(16px);}
 .station-number {display:grid;flex:0 0 auto;place-items:center;width:44px;height:44px;border:1px solid #fff;border-radius:15px;background:linear-gradient(145deg,#fff,#dceaff);color:#3272d8;font-size:12px;font-weight:800;box-shadow:0 4px 12px #3769aa28;}
 .lumina-station-detail>div {min-width:0;flex:1;}.lumina-station-detail>div>span {color:#7d8da5;font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.07em;}.lumina-station-detail h3 {margin:4px 0;color:#213b60;font-size:19px;}.lumina-station-detail p {margin:0;color:#728198;font-size:11.5px;line-height:1.45;}
@@ -164,7 +169,7 @@ button,input,textarea { font:inherit; }
   .lumina-project-hero {min-height:0;padding:29px 23px 22px;}.lumina-project-copy {max-width:100%;}.lumina-project-copy p {max-width:285px;}.lumina-hero-actions {flex-wrap:wrap;margin-top:16px;}.lumina-hero-actions button {min-height:36px;padding:0 12px;font-size:10px;}.lumina-project-stats {left:auto;right:auto;bottom:auto;width:100%;margin-top:24px;}.lumina-project-stats div {min-width:0;}
   .lumina-view-switch {position:sticky;top:-53px;z-index:12;border-radius:16px;}.lumina-view-switch button {min-height:38px;padding:0 5px;font-size:10.5px;}
   .lumina-intro-card {padding:20px;}.lumina-intro-card h2 {font-size:22px;}.lumina-fact-row {grid-template-columns:1fr;margin-top:16px;}.lumina-fact-row>span {display:flex;align-items:center;justify-content:space-between;padding:10px 12px;}.lumina-fact-row b {margin:0;}
-  .lumina-metro-panel {padding:21px 0 18px;}.lumina-metro-panel .lumina-section-copy,.lumina-metro-panel .lumina-station-detail,.lumina-metro-panel .lumina-map-help {margin-left:15px;margin-right:15px;}.lumina-line {min-width:430px;margin:27px 0 0;padding:0 8px;overflow:visible;}.lumina-metro-panel {overflow-x:auto;scrollbar-width:none;}.lumina-metro-panel::-webkit-scrollbar {display:none;}.lumina-station {touch-action:manipulation;}.lumina-station b {font-size:10px;}
+  .lumina-metro-panel {padding:21px 0 18px;}.lumina-metro-panel .lumina-section-copy,.lumina-metro-panel .lumina-station-detail,.lumina-metro-panel .lumina-map-help {margin-left:15px;margin-right:15px;}.lumina-line {min-width:430px;margin:20px 0 0;padding:12px 8px 7px;overflow:visible;}.lumina-line::before {top:32px;}.lumina-line::after {top:33px;}.lumina-metro-panel {overflow-x:auto;scrollbar-width:none;}.lumina-metro-panel::-webkit-scrollbar {display:none;}.lumina-station {touch-action:manipulation;}.lumina-station b {font-size:10px;}
   .lumina-station-detail {align-items:flex-start;flex-wrap:wrap;margin-top:25px;}.lumina-station-detail>div {flex-basis:calc(100% - 62px);}.lumina-station-detail button {margin-left:60px;}
   .lumina-section-heading {align-items:center;}.lumina-gallery button>small {font-size:9.5px;}.lumina-share-card {padding:16px;}
 }
