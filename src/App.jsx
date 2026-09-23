@@ -14,9 +14,9 @@ const SUGGESTIONS_KEY = 'rums-suggestions';
 const UPDATES_KEY = 'rums-updates';
 const TAGS = ['General', 'Lumina'];
 const LUMINA_STATIONS = [
-  { name: 'Lumen', type: 'Civic heart', description: 'Public spaces, city services and the main gateway into Lumina.', accent: '#72a8ff' },
-  { name: 'Luminelia', type: 'Skyline district', description: 'Lumina’s dense centre, with landmark towers and the busiest station.', accent: '#8d84f6' },
-  { name: 'Luminarra', type: 'Green neighbourhood', description: 'A quieter district where homes, parks and local streets meet.', accent: '#62bea1' },
+  { name: 'Lumen', type: 'Shopping district', description: 'The station beneath Lumina’s main shopping district, putting shops and lively public spaces directly above the platforms.', accent: '#72a8ff' },
+  { name: 'Luminelia', type: 'Skyline district', description: 'The station directly beneath Lumina’s skyline, surrounded by the city’s towers and most recognisable architecture.', accent: '#8d84f6' },
+  { name: 'Luminarra', type: 'Gateway station', description: 'Lumina’s arrival point beside the teleporter: the gateway where visitors first enter and connect with the city.', accent: '#62bea1' },
 ];
 const lastSeenKey = (username) => `rums-lastseen-${username}`;
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
@@ -1189,15 +1189,15 @@ export default function RUMS() {
                   <div className="lumina-topbar"><button className="glass-circle-btn" onClick={goBack} aria-label="Back"><ArrowLeft size={19} /></button><span>Project</span><button className="glass-circle-btn" onClick={() => { setTag('Lumina'); setScreen('upload'); }} aria-label="Share from Lumina"><Plus size={19} /></button></div>
                   <section className="lumina-project-hero">
                     <div className="lumina-project-glow" aria-hidden="true"><span /><span /></div>
-                    <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1>Project<br />Lumina</h1><p>A green, free and optimistic city shaped together by the server community.</p><div className="lumina-hero-actions"><button onClick={() => setLuminaView('metro')}>Explore the metro</button><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}><Plus size={14} /> Share a view</button></div></div>
+                    <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1>Project<br />Lumina</h1><p>A bright community city where Frutiger Aero optimism, Frutiger Eco nature and solarpunk urbanism meet.</p><div className="lumina-hero-actions"><button onClick={() => setLuminaView('metro')}>Explore the metro</button><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}><Plus size={14} /> Share a view</button></div></div>
                     <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>3</strong><span>metro districts</span></div></div>
                   </section>
 
-                  <nav className="lumina-view-switch" aria-label="Project Lumina sections">{[['overview','Overview'],['metro','Route map'],['community','Community']].map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => setLuminaView(value)}>{label}</button>)}</nav>
+                  <nav className="lumina-view-switch" style={{ '--lumina-tab-index': ['overview', 'metro', 'community'].indexOf(luminaView) }} aria-label="Project Lumina sections">{[['overview','Overview'],['metro','Route map'],['community','Community']].map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => setLuminaView(value)}>{label}</button>)}</nav>
 
                   {luminaView === 'overview' && <div className="lumina-view-panel lumina-overview-view">
-                    <section className="lumina-intro-card"><span className="eyebrow">THE IDEA</span><h2>A city that feels open.</h2><p>Lumina combines generous public space, useful transit and expressive architecture. Every district has its own character, while the metro keeps the entire city close.</p><div className="lumina-fact-row"><span><b>Community built</b>Made together on RUMS</span><span><b>Transit first</b>Three connected districts</span><span><b>Always evolving</b>New views and builds</span></div></section>
-                    <section className="lumina-principles"><article><span>01</span><h3>Green</h3><p>Nature is woven through streets, buildings and public space.</p></article><article><span>02</span><h3>Free</h3><p>A city made to explore, meet people and build without barriers.</p></article><article><span>03</span><h3>Utopian</h3><p>An optimistic Minecraft city that tries ideas beyond the ordinary.</p></article></section>
+                    <section className="lumina-intro-card"><span className="eyebrow">THE IDEA</span><h2>Optimism built into a city.</h2><p>Lumina mixes the glossy blue skies and friendly technology of Frutiger Aero, the natural calm of Frutiger Eco and the green, people-first future of solarpunk. Each district has its own role, while the metro keeps everything close.</p><div className="lumina-fact-row"><span><b>Community built</b>Made together on RUMS</span><span><b>Transit first</b>Three connected districts</span><span><b>Always evolving</b>New views and builds</span></div></section>
+                    <section className="lumina-principles"><article><span>01</span><h3>Frutiger Aero</h3><p>Clear water, bright skies and friendly futuristic technology.</p></article><article><span>02</span><h3>Frutiger Eco</h3><p>Soft natural forms, greenery and a calm connection to the landscape.</p></article><article><span>03</span><h3>Solarpunk</h3><p>Walkable neighbourhoods, clean transit and architecture shaped around people.</p></article></section>
                     <button className="lumina-wide-action" onClick={() => setLuminaView('metro')}><span><b>Explore Lumina Metro</b><small>See every district on the route</small></span><span>→</span></button>
                   </div>}
 
