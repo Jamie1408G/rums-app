@@ -68,3 +68,28 @@ button,input,textarea { font:inherit; }
 .aero-root .upload-wrap .preview-wrap {max-height:440px;border:1px solid #e4eaf4;border-radius:18px;background:#f3f6fb;}.aero-root .preview-clear {top:12px;right:12px;width:34px;height:34px;border:1px solid #ffffffa8;background:#f8fbffcf;color:#344660;backdrop-filter:blur(14px);box-shadow:0 3px 12px #20365d35;}.aero-root .upload-wrap .field-label {margin-top:23px;margin-bottom:9px;color:#4c586c;text-transform:none;letter-spacing:0;font-size:13px;}.aero-root .upload-wrap .tag-select {padding:4px;gap:4px;border:1px solid #e6eaf2;border-radius:15px;background:#f2f4f9;}.aero-root .upload-wrap .tag-chip,.aero-root .upload-wrap .tag-chip.active {padding:10px;min-height:40px;border:0;border-radius:11px;background:transparent;color:#6e7c90;box-shadow:none;}.aero-root .upload-wrap .tag-chip.active {background:#ffffffdc;color:#2b6edf;box-shadow:0 2px 9px #45618b24,inset 0 1px #fff;}.aero-root .upload-wrap .caption-area {margin-top:0;min-height:112px;background:#f7f9fc;}.aero-root .upload-wrap>.aero-btn {min-height:46px;}
 @media(max-width:600px) {.aero-root .feed-tabs {width:230px;height:44px;}.aero-root .upload-wrap .drop-zone {min-height:195px;}.composer-heading h2 {font-size:23px;}}
 @media(prefers-reduced-motion:reduce) {.aero-root .feed-tabs::before {transition:none;}}
+
+/* Mobile Liquid Glass: the selected segment stretches like a water droplet. */
+@media(max-width:900px) {
+  .aero-root .feed-tabs::before {transform:translateX(var(--seg-translate,0%)) scale(1);transform-origin:center;}
+  .aero-root .feed-tabs.is-dragging::before {border-radius:52% 48% 49% 51% / 45% 55% 47% 53%;transform:translateX(var(--seg-translate,0%)) scaleX(1.11) scaleY(.92);background:radial-gradient(62px 24px at var(--tab-reflection-x,50%) 0,#fff 0,#ffffffb5 28%,transparent 78%),linear-gradient(145deg,#ffffffed,#d9e9ffc9 56%,#f5faffdf);filter:saturate(1.35) contrast(1.03);}
+  .aero-root .feed-tabs.is-dragging::after {content:'';position:absolute;z-index:0;top:12px;left:calc(var(--tab-reflection-x,50%) - 11px);width:22px;height:22px;border-radius:58% 42% 55% 45% / 44% 56% 44% 56%;background:radial-gradient(circle at 30% 22%,#fff,#b9d6ffb8 60%,#82aeed8f);box-shadow:inset 1px 2px 3px #fff,0 3px 12px #4481db56;pointer-events:none;opacity:.78;transform:rotate(calc(var(--tab-drag-direction,1) * 16deg));}
+
+  .aero-root .bottom-nav {left:50%;right:auto;bottom:max(10px,env(safe-area-inset-bottom));width:min(370px,calc(100% - 22px));height:68px;transform:translateX(-50%);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;justify-items:center;padding:6px 8px;border:1px solid #ffffffd4;border-radius:25px;background:linear-gradient(145deg,rgb(255 255 255 / calc(var(--glass-alpha,.72) + .08)),rgb(229 237 252 / var(--glass-alpha,.72)));box-shadow:inset 0 1px 1px #fff,0 12px 34px #1e35574a;backdrop-filter:blur(28px) saturate(1.55);-webkit-backdrop-filter:blur(28px) saturate(1.55);overflow:visible;}
+  .aero-root .bottom-nav::before {content:'';position:absolute;inset:1px 14px auto;height:15px;border-radius:999px;background:linear-gradient(180deg,#ffffff9c,transparent);pointer-events:none;}
+  .aero-root .nav-btn {width:50px;height:50px;padding:0;border-radius:17px;justify-content:center;gap:2px;color:#778397;font-size:9px;font-weight:600;overflow:visible;}
+  .aero-root .nav-btn svg {width:20px;height:20px;stroke-width:2;}
+  .aero-root .nav-btn.active {color:#246de3;background:linear-gradient(145deg,#fffffff0,#dce9ffc7);border:1px solid #fff;box-shadow:inset 0 1px #fff,0 4px 13px #3e6cad38;}
+  .aero-root .nav-btn.active::after {content:'';position:absolute;top:4px;left:9px;width:24px;height:11px;border-radius:50%;background:#ffffff8c;filter:blur(4px);pointer-events:none;}
+  .aero-root .nav-upload {align-self:center;width:51px;height:51px;margin:0;border:2px solid #ffffffdc;border-radius:18px;background:linear-gradient(145deg,#69a5ff,#3478f6 65%,#2260c8);box-shadow:inset 0 1px 2px #cfe1ff,0 6px 16px #2867d269;transform:none;}
+  .aero-root .nav-upload:active {transform:scale(.93);}
+  .aero-root .nav-icon-wrap {display:grid;place-items:center;}
+  .aero-root .nav-badge-dot {top:-4px;right:-6px;border-color:#f8faff;}
+}
+@media(max-width:600px) {
+  .aero-root .content {padding-bottom:122px;}
+  .aero-root .bottom-nav {height:65px;border-radius:23px;}
+  .aero-root .nav-btn {width:46px;height:47px;font-size:8.5px;border-radius:15px;}
+  .aero-root .nav-upload {width:48px;height:48px;border-radius:16px;}
+}
+@media(prefers-reduced-motion:reduce) {.aero-root .feed-tabs.is-dragging::after {display:none;}}

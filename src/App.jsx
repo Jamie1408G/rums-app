@@ -124,6 +124,11 @@ export default function RUMS() {
   function handleTabsPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     tabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    e.currentTarget.style.setProperty('--tab-drag-direction', feedFilter === 'lumina' ? '-1' : '1');
+    setTabsDragging(true);
+    updateTabDrag(e.clientX);
+    e.preventDefault();
   }
 
   function handleTabsPointerMove(e) {
@@ -131,24 +136,18 @@ export default function RUMS() {
     if (!drag || drag.pointerId !== e.pointerId) return;
     const dx = e.clientX - drag.x;
     const dy = e.clientY - drag.y;
-    if (!drag.moved && (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy))) return;
-    if (!drag.moved) {
-      drag.moved = true;
-      tabsRef.current?.setPointerCapture(e.pointerId);
-      setTabsDragging(true);
-    }
+    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) drag.moved = true;
     updateTabDrag(e.clientX);
   }
 
   function handleTabsPointerEnd(e) {
     const drag = tabsDragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
-    if (drag.moved && e.type !== 'pointercancel') setFeedFilter(tabForPointer(e.clientX));
+    if (e.type !== 'pointercancel') setFeedFilter(tabForPointer(e.clientX));
     setTabsDragging(false);
     if (tabsRef.current?.hasPointerCapture(e.pointerId)) tabsRef.current.releasePointerCapture(e.pointerId);
     // A browser may synthesize a click on the starting button after a drag.
-    if (drag.moved) setTimeout(() => { if (tabsDragRef.current === drag) tabsDragRef.current = null; }, 0);
-    else tabsDragRef.current = null;
+    setTimeout(() => { if (tabsDragRef.current === drag) tabsDragRef.current = null; }, 0);
   }
 
   useEffect(() => {
