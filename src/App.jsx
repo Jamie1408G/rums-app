@@ -881,6 +881,7 @@ export default function RUMS() {
     .sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0) || b.timestamp - a.timestamp);
 
   const visibleUpdates = updates.slice().sort((a, b) => b.timestamp - a.timestamp);
+  const luminaPosts = posts.filter((p) => p.tag === 'Lumina').sort((a, b) => b.timestamp - a.timestamp);
 
   const q = searchQuery.trim().toLowerCase();
   const matchedUsers = q ? users.filter((u) => u.username.toLowerCase().includes(q)) : [];
@@ -1178,36 +1179,30 @@ export default function RUMS() {
 
               {screen === 'lumina' && (
                 <div className="lumina-page">
-                  <div className="detail-back-row">
-                    <button className="icon-btn detail-back-btn" onClick={goBack}>
-                      <ArrowLeft size={18} /> Back
-                    </button>
-                  </div>
+                  <div className="lumina-topbar"><button className="glass-circle-btn" onClick={goBack} aria-label="Back"><ArrowLeft size={19} /></button><span>Project</span><button className="glass-circle-btn" onClick={() => { setTag('Lumina'); setScreen('upload'); }} aria-label="Share from Lumina"><Plus size={19} /></button></div>
+                  <section className="lumina-project-hero">
+                    <div className="lumina-project-glow" aria-hidden="true"><span /><span /></div>
+                    <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1>Project<br />Lumina</h1><p>A green, free and optimistic city shaped together by the server community.</p></div>
+                    <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>3</strong><span>metro districts</span></div></div>
+                  </section>
 
-                  <div className="lumina-hero">
-                    <span className="lumina-hero-badge">A city project on RUMS</span>
-                    <h2>Project Lumina</h2>
-                    <p>The city being built inside the RUMS server — this page is its home base.</p>
-                  </div>
+                  <section className="lumina-principles">
+                    <article><span>01</span><h3>Green</h3><p>Nature is woven through streets, buildings and public space.</p></article>
+                    <article><span>02</span><h3>Free</h3><p>A city made to explore, meet people and build without barriers.</p></article>
+                    <article><span>03</span><h3>Utopian</h3><p>An optimistic Minecraft city that tries ideas beyond the ordinary.</p></article>
+                  </section>
 
-                  <div className="lumina-motto-card">
-                    <div className="lumina-motto-words">Green, Free, Utopian</div>
-                    <h3>That's Lumina's motto</h3>
-                  </div>
-
-                  <div className="metro-card">
-                    <div className="metro-wordmark">metro</div>
-                    <p className="metro-tagline">Lumina's core spine</p>
-                    <div className="metro-track">
-                      <div className="metro-track-line" />
-                      {['Lumen', 'Luminelia', 'Luminarra'].map((name) => (
-                        <div className="metro-stop" key={name}>
-                          <span className="metro-stop-dot" />
-                          <span className="metro-stop-name">{name}</span>
-                        </div>
-                      ))}
+                  <section className="lumina-metro-panel">
+                    <div className="lumina-section-copy"><span className="eyebrow">GETTING AROUND</span><h2>Lumina Metro</h2><p>The transit spine connects the city's three main districts.</p></div>
+                    <div className="lumina-line" aria-label="Lumen, Luminelia, Luminarra">
+                      {['Lumen', 'Luminelia', 'Luminarra'].map((name, index) => <div className="lumina-station" key={name}><span>{index + 1}</span><b>{name}</b></div>)}
                     </div>
-                  </div>
+                  </section>
+
+                  <section className="lumina-community-section">
+                    <div className="lumina-section-heading"><div><span className="eyebrow">FROM THE COMMUNITY</span><h2>Latest views</h2></div><button onClick={() => { setFeedFilter('lumina'); setScreen('feed'); }}>See all</button></div>
+                    {luminaPosts.length ? <div className="lumina-gallery">{luminaPosts.slice(0, 4).map((p) => <button key={p.id} onClick={() => openPost(p.id)} aria-label={`Open post by ${p.username}`}><img src={p.image} alt="" /><span>{p.username}</span></button>)}</div> : <div className="lumina-gallery-empty"><Droplet size={22} /><p>No Lumina views have been shared yet.</p><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}>Share the first</button></div>}
+                  </section>
                 </div>
               )}
 
@@ -1632,23 +1627,23 @@ export default function RUMS() {
                   <Home size={19} />
                   {hasNewPosts && <span className="nav-badge-dot" />}
                 </span>
-                Feed
+                <span className="nav-label">Feed</span>
               </button>
               <button className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
-                <Lightbulb size={19} /> Ideas
+                <span className="nav-icon-wrap"><Lightbulb size={19} /></span><span className="nav-label">Ideas</span>
               </button>
               <button className="nav-upload" onClick={() => { setError(''); setScreen('upload'); }}>
                 <Plus size={24} />
               </button>
               <button className={`nav-btn ${screen === 'updates' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('updates'); }}>
-                <Megaphone size={19} /> Updates
+                <span className="nav-icon-wrap"><Megaphone size={19} /></span><span className="nav-label">Updates</span>
               </button>
               {currentUser.isAdmin ? (
                 <button className={`nav-btn ${screen === 'admin' ? 'active' : ''}`} onClick={() => setScreen('admin')}>
-                  <ShieldCheck size={19} /> Admin
+                  <span className="nav-icon-wrap"><ShieldCheck size={19} /></span><span className="nav-label">Admin</span>
                 </button>
               ) : (
-                <button className="nav-btn" onClick={() => setScreen('feed')} style={{ visibility: 'hidden' }}>
+                <button className="nav-btn nav-placeholder" tabIndex={-1} aria-hidden="true">
                   <ArrowLeft size={19} /> —
                 </button>
               )}
