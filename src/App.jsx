@@ -1193,7 +1193,7 @@ export default function RUMS() {
                     <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>3</strong><span>metro districts</span></div></div>
                   </section>
 
-                  <nav className="lumina-view-switch" style={{ '--lumina-tab-index': ['overview', 'metro', 'community'].indexOf(luminaView) }} aria-label="Project Lumina sections">{[['overview','Overview'],['metro','Route map'],['community','Community']].map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => setLuminaView(value)}>{label}</button>)}</nav>
+                  <nav className="lumina-view-switch" style={{ '--lumina-tab-index': ['overview', 'metro', 'community'].indexOf(luminaView) }} aria-label="Project Lumina sections">{[['overview','Overview'],['metro','Districts'],['community','Community']].map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => setLuminaView(value)}>{label}</button>)}</nav>
 
                   {luminaView === 'overview' && <div className="lumina-view-panel lumina-overview-view">
                     <section className="lumina-intro-card"><span className="eyebrow">THE IDEA</span><h2>Optimism built into a city.</h2><p>Lumina mixes the glossy blue skies and friendly technology of Frutiger Aero, the natural calm of Frutiger Eco and the green, people-first future of solarpunk. Each district has its own role, while the metro keeps everything close.</p><div className="lumina-fact-row"><span><b>Community built</b>Made together on RUMS</span><span><b>Transit first</b>Three connected districts</span><span><b>Always evolving</b>New views and builds</span></div></section>
@@ -1202,10 +1202,10 @@ export default function RUMS() {
                   </div>}
 
                   {luminaView === 'metro' && <section className="lumina-view-panel lumina-metro-panel">
-                    <div className="lumina-section-copy"><span className="eyebrow">INTERACTIVE ROUTE MAP</span><h2>Lumina Metro</h2><p>Select a station to explore its district.</p></div>
-                    <div className="lumina-line" aria-label="Lumina Metro route">{LUMINA_STATIONS.map((station,index) => <button className={`lumina-station ${activeLuminaStation === index ? 'active' : ''}`} key={station.name} onClick={() => setActiveLuminaStation(index)} aria-pressed={activeLuminaStation === index}><span style={{ '--station-accent': station.accent }}>{index + 1}</span><b>{station.name}</b></button>)}</div>
+                    <div className="lumina-section-copy"><span className="eyebrow">DISTRICT EXPLORER</span><h2>Choose a destination</h2><p>Move between Lumina’s three metro districts.</p></div>
+                    <div className="lumina-line" aria-label="Lumina districts">{LUMINA_STATIONS.map((station,index) => <button className={`lumina-station ${activeLuminaStation === index ? 'active' : ''}`} key={station.name} onClick={() => setActiveLuminaStation(index)} aria-pressed={activeLuminaStation === index} style={{ '--station-accent': station.accent }}><span><small>0{index + 1}</small></span><b>{station.name}</b><em>{station.type}</em></button>)}</div>
                     <div className="lumina-station-detail" style={{ '--station-accent': LUMINA_STATIONS[activeLuminaStation].accent }}><div className="station-number">0{activeLuminaStation + 1}</div><div><span>{LUMINA_STATIONS[activeLuminaStation].type}</span><h3>{LUMINA_STATIONS[activeLuminaStation].name}</h3><p>{LUMINA_STATIONS[activeLuminaStation].description}</p></div><button onClick={() => { setFeedFilter('lumina'); setScreen('feed'); }}>View posts</button></div>
-                    <div className="lumina-map-help"><span>Tap a stop</span><span>← Swipe across the route →</span></div>
+                    <div className="lumina-map-help"><span>Tap a district to explore</span><span>Swipe to browse →</span></div>
                   </section>}
 
                   {luminaView === 'community' && <section className="lumina-view-panel lumina-community-section">
