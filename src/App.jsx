@@ -13,6 +13,11 @@ const SESSION_KEY = 'rums-session';
 const SUGGESTIONS_KEY = 'rums-suggestions';
 const UPDATES_KEY = 'rums-updates';
 const TAGS = ['General', 'Lumina'];
+const LUMINA_STATIONS = [
+  { name: 'Lumen', type: 'Civic heart', description: 'Public spaces, city services and the main gateway into Lumina.', accent: '#72a8ff' },
+  { name: 'Luminelia', type: 'Skyline district', description: 'Lumina’s dense centre, with landmark towers and the busiest station.', accent: '#8d84f6' },
+  { name: 'Luminarra', type: 'Green neighbourhood', description: 'A quieter district where homes, parks and local streets meet.', accent: '#62bea1' },
+];
 const lastSeenKey = (username) => `rums-lastseen-${username}`;
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
 
@@ -98,6 +103,8 @@ export default function RUMS() {
     } catch { return 72; }
   });
   const [glassDragging, setGlassDragging] = useState(false);
+  const [luminaView, setLuminaView] = useState('overview');
+  const [activeLuminaStation, setActiveLuminaStation] = useState(1);
   const fileInputRef = useRef(null);
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
@@ -1182,27 +1189,30 @@ export default function RUMS() {
                   <div className="lumina-topbar"><button className="glass-circle-btn" onClick={goBack} aria-label="Back"><ArrowLeft size={19} /></button><span>Project</span><button className="glass-circle-btn" onClick={() => { setTag('Lumina'); setScreen('upload'); }} aria-label="Share from Lumina"><Plus size={19} /></button></div>
                   <section className="lumina-project-hero">
                     <div className="lumina-project-glow" aria-hidden="true"><span /><span /></div>
-                    <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1>Project<br />Lumina</h1><p>A green, free and optimistic city shaped together by the server community.</p></div>
+                    <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1>Project<br />Lumina</h1><p>A green, free and optimistic city shaped together by the server community.</p><div className="lumina-hero-actions"><button onClick={() => setLuminaView('metro')}>Explore the metro</button><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}><Plus size={14} /> Share a view</button></div></div>
                     <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>3</strong><span>metro districts</span></div></div>
                   </section>
 
-                  <section className="lumina-principles">
-                    <article><span>01</span><h3>Green</h3><p>Nature is woven through streets, buildings and public space.</p></article>
-                    <article><span>02</span><h3>Free</h3><p>A city made to explore, meet people and build without barriers.</p></article>
-                    <article><span>03</span><h3>Utopian</h3><p>An optimistic Minecraft city that tries ideas beyond the ordinary.</p></article>
-                  </section>
+                  <nav className="lumina-view-switch" aria-label="Project Lumina sections">{[['overview','Overview'],['metro','Route map'],['community','Community']].map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => setLuminaView(value)}>{label}</button>)}</nav>
 
-                  <section className="lumina-metro-panel">
-                    <div className="lumina-section-copy"><span className="eyebrow">GETTING AROUND</span><h2>Lumina Metro</h2><p>The transit spine connects the city's three main districts.</p></div>
-                    <div className="lumina-line" aria-label="Lumen, Luminelia, Luminarra">
-                      {['Lumen', 'Luminelia', 'Luminarra'].map((name, index) => <div className="lumina-station" key={name}><span>{index + 1}</span><b>{name}</b></div>)}
-                    </div>
-                  </section>
+                  {luminaView === 'overview' && <div className="lumina-view-panel lumina-overview-view">
+                    <section className="lumina-intro-card"><span className="eyebrow">THE IDEA</span><h2>A city that feels open.</h2><p>Lumina combines generous public space, useful transit and expressive architecture. Every district has its own character, while the metro keeps the entire city close.</p><div className="lumina-fact-row"><span><b>Community built</b>Made together on RUMS</span><span><b>Transit first</b>Three connected districts</span><span><b>Always evolving</b>New views and builds</span></div></section>
+                    <section className="lumina-principles"><article><span>01</span><h3>Green</h3><p>Nature is woven through streets, buildings and public space.</p></article><article><span>02</span><h3>Free</h3><p>A city made to explore, meet people and build without barriers.</p></article><article><span>03</span><h3>Utopian</h3><p>An optimistic Minecraft city that tries ideas beyond the ordinary.</p></article></section>
+                    <button className="lumina-wide-action" onClick={() => setLuminaView('metro')}><span><b>Explore Lumina Metro</b><small>See every district on the route</small></span><span>→</span></button>
+                  </div>}
 
-                  <section className="lumina-community-section">
-                    <div className="lumina-section-heading"><div><span className="eyebrow">FROM THE COMMUNITY</span><h2>Latest views</h2></div><button onClick={() => { setFeedFilter('lumina'); setScreen('feed'); }}>See all</button></div>
-                    {luminaPosts.length ? <div className="lumina-gallery">{luminaPosts.slice(0, 4).map((p) => <button key={p.id} onClick={() => openPost(p.id)} aria-label={`Open post by ${p.username}`}><img src={p.image} alt="" /><span>{p.username}</span></button>)}</div> : <div className="lumina-gallery-empty"><Droplet size={22} /><p>No Lumina views have been shared yet.</p><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}>Share the first</button></div>}
-                  </section>
+                  {luminaView === 'metro' && <section className="lumina-view-panel lumina-metro-panel">
+                    <div className="lumina-section-copy"><span className="eyebrow">INTERACTIVE ROUTE MAP</span><h2>Lumina Metro</h2><p>Select a station to explore its district.</p></div>
+                    <div className="lumina-line" aria-label="Lumina Metro route">{LUMINA_STATIONS.map((station,index) => <button className={`lumina-station ${activeLuminaStation === index ? 'active' : ''}`} key={station.name} onClick={() => setActiveLuminaStation(index)} aria-pressed={activeLuminaStation === index}><span style={{ '--station-accent': station.accent }}>{index + 1}</span><b>{station.name}</b></button>)}</div>
+                    <div className="lumina-station-detail" style={{ '--station-accent': LUMINA_STATIONS[activeLuminaStation].accent }}><div className="station-number">0{activeLuminaStation + 1}</div><div><span>{LUMINA_STATIONS[activeLuminaStation].type}</span><h3>{LUMINA_STATIONS[activeLuminaStation].name}</h3><p>{LUMINA_STATIONS[activeLuminaStation].description}</p></div><button onClick={() => { setFeedFilter('lumina'); setScreen('feed'); }}>View posts</button></div>
+                    <div className="lumina-map-help"><span>Tap a stop</span><span>← Swipe across the route →</span></div>
+                  </section>}
+
+                  {luminaView === 'community' && <section className="lumina-view-panel lumina-community-section">
+                    <div className="lumina-section-heading"><div><span className="eyebrow">FROM THE COMMUNITY</span><h2>Latest views</h2><p>Places and progress shared by RUMS members.</p></div><button onClick={() => { setFeedFilter('lumina'); setScreen('feed'); }}>Open feed</button></div>
+                    {luminaPosts.length ? <div className="lumina-gallery">{luminaPosts.slice(0, 8).map((p) => <button key={p.id} onClick={() => openPost(p.id)} aria-label={`Open post by ${p.username}`}><img src={p.image} alt="" /><span>{p.username}</span>{p.caption && <small>{p.caption}</small>}</button>)}</div> : <div className="lumina-gallery-empty"><Droplet size={22} /><p>No Lumina views have been shared yet.</p><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}>Share the first</button></div>}
+                    <button className="lumina-share-card" onClick={() => { setTag('Lumina'); setScreen('upload'); }}><span className="composer-upload-icon"><ImagePlus size={21} /></span><span><b>Add your view of Lumina</b><small>Share a build, street or skyline moment</small></span><Plus size={18} /></button>
+                  </section>}
                 </div>
               )}
 
