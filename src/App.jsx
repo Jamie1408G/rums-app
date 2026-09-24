@@ -76,7 +76,7 @@ function migratePlazaOverhaulAnnouncement(config) {
 
 const BUILT_IN_PAGES = [
   ['feed', 'Community feed'], ['lumina', 'Project Lumina'], ['upload', 'Add post'],
-  ['suggestions', 'Suggestions'], ['updates', 'Server updates'], ['search', 'Discover'],
+  ['suggestions', 'Suggestions'], ['updates', 'Server updates'], ['chat', 'Chat'], ['search', 'Discover'],
   ['profile', 'Profiles'], ['postDetail', 'Post detail'],
 ];
 const TAGS = ['General', 'Lumina'];
@@ -89,6 +89,9 @@ const LUMINA_STATIONS = [
 const lastSeenKey = (username, space = 'rums4') => space === 'rums5' ? `rums5-lastseen-${username}` : `rums-lastseen-${username}`;
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
 const CUSTOM_EMOJIS_KEY = 'rums-custom-emojis';
+const CHAT_MESSAGES_KEY = 'rums-chat-messages';
+const CHAT_ROOM_ID = 'plaza';
+const chatReadKey = (username) => `rums-chat-read-${username}`;
 const EMOJI_SKIN_TONES = ['🏻', '🏼', '🏽', '🏾', '🏿'];
 const EMOJI_CATEGORY_META = [
   ['smileys', '😀'], ['people', '👋'], ['nature', '🌿'], ['food', '🍕'], ['activities', '⚽'],
@@ -307,6 +310,12 @@ export default function RUMS() {
   const [posts, setPosts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [updates, setUpdates] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatReadState, setChatReadState] = useState({});
+  const [activeChat, setActiveChat] = useState('plaza');
+  const [chatDraft, setChatDraft] = useState('');
+  const [chatSearch, setChatSearch] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState('');
   const [authMode, setAuthMode] = useState('login');
@@ -363,6 +372,7 @@ export default function RUMS() {
   const fileInputRef = useRef(null);
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
+  const chatEndRef = useRef(null);
   const rootRef = useRef(null);
   const siteConfigRef = useRef(DEFAULT_SITE_CONFIG);
   const spaceLoadTokenRef = useRef(0);
@@ -456,9 +466,107 @@ export default function RUMS() {
     return <span className="page-nav-icon">{icon}{count > 0 && <span className="page-new-indicator page-new-count" title={badgeTitle} aria-label={badgeTitle}>{badgeText}</span>}</span>;
   }
 
+
+  function chatThreadForMessage(message, username = currentUser?.username) {
+    if (!message || !username) return null;
+    if (message.type === 'room' && message.room === CHAT_ROOM_ID) return 'plaza';
+    if (message.type !== 'dm' || !Array.isArray(message.participants) || !message.participants.includes(username)) return null;
+    const other = message.participants.find((name) => name !== username);
+    return other ? `dm:${other}` : null;
+  }
+
+  function chatMessagesForThread(threadId = activeChat) {
+    if (!currentUser) return [];
+    return chatMessages
+      .filter((message) => chatThreadForMessage(message, currentUser.username) === threadId)
+      .slice()
+      .sort((a, b) => a.timestamp - b.timestamp);
+  }
+
+  function chatUnreadCount(threadId = null) {
+    if (!currentUser) return 0;
+    return chatMessages.filter((message) => {
+      if (message.sender === currentUser.username) return false;
+      const messageThread = chatThreadForMessage(message, currentUser.username);
+      if (!messageThread || (threadId && messageThread !== threadId)) return false;
+      return message.timestamp > Number(chatReadState[messageThread] || 0);
+    }).length;
+  }
+
+  function chatNavIcon(size = 19) {
+    const count = chatUnreadCount() + sessionNewCountOnPage('chat');
+    const badgeText = count > 99 ? '99+' : String(count);
+    const label = count === 1 ? '1 unread chat message' : `${count} unread chat messages`;
+    return <span className="page-nav-icon"><MessageCircle size={size} />{count > 0 && <span className="page-new-indicator page-new-count chat-unread-count" title={label} aria-label={label}>{badgeText}</span>}</span>;
+  }
+
+  function activeChatLabel() {
+    if (activeChat === 'plaza') return 'Plaza Chat';
+    return activeChat.startsWith('dm:') ? activeChat.slice(3) : 'Chat';
+  }
+
   useEffect(() => {
     siteConfigRef.current = siteConfig;
   }, [siteConfig]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setChatMessages([]);
+      setChatReadState({});
+      setActiveChat('plaza');
+      return undefined;
+    }
+    let cancelled = false;
+    const loadMessages = async () => {
+      const record = await safeGet(CHAT_MESSAGES_KEY, true);
+      if (cancelled || !record) return;
+      try {
+        const parsed = JSON.parse(record.value);
+        if (Array.isArray(parsed)) setChatMessages((current) => JSON.stringify(current) === record.value ? current : parsed);
+      } catch { /* ignore malformed chat payload */ }
+    };
+    const loadReadState = async () => {
+      setChatReadState({});
+      const record = await safeGet(chatReadKey(currentUser.username), false);
+      if (cancelled) return;
+      if (!record) {
+        const baseline = { plaza: Date.now() };
+        setChatReadState(baseline);
+        void window.storage.set(chatReadKey(currentUser.username), JSON.stringify(baseline), false).catch((e) => console.error(e));
+        return;
+      }
+      try {
+        const parsed = JSON.parse(record.value);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) setChatReadState(parsed);
+      } catch { /* ignore malformed read state */ }
+    };
+    loadMessages();
+    loadReadState();
+    const poll = window.setInterval(loadMessages, 3000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(poll);
+    };
+  }, [currentUser?.username]);
+
+  useEffect(() => {
+    if (!currentUser || screen !== 'chat') return;
+    const threadMessages = chatMessagesForThread(activeChat);
+    const latestTimestamp = threadMessages.reduce((latest, message) => Math.max(latest, Number(message.timestamp || 0)), 0);
+    if (!latestTimestamp) return;
+    setChatReadState((current) => {
+      if (latestTimestamp <= Number(current[activeChat] || 0)) return current;
+      const next = { ...current, [activeChat]: latestTimestamp };
+      void window.storage.set(chatReadKey(currentUser.username), JSON.stringify(next), false).catch((e) => console.error(e));
+      return next;
+    });
+  }, [screen, activeChat, chatMessages, currentUser?.username]);
+
+  useEffect(() => {
+    if (screen !== 'chat') return;
+    const id = window.requestAnimationFrame(() => chatEndRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }));
+    return () => window.cancelAnimationFrame(id);
+  }, [screen, activeChat, chatMessages.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2182,6 +2290,76 @@ export default function RUMS() {
     }));
   }
 
+  async function sendChatMessage() {
+    if (!currentUser || chatBusy) return;
+    const text = chatDraft.trim().slice(0, 1200);
+    if (!text) return;
+    if (activeChat !== 'plaza' && !activeChat.startsWith('dm:')) return;
+    const recipient = activeChat.startsWith('dm:') ? activeChat.slice(3) : null;
+    if (recipient && !users.some((user) => user.username === recipient)) {
+      setError('That user is no longer available.');
+      return;
+    }
+    setChatBusy(true);
+    const message = {
+      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      type: recipient ? 'dm' : 'room',
+      room: recipient ? null : CHAT_ROOM_ID,
+      participants: recipient ? [currentUser.username, recipient].sort((a, b) => a.localeCompare(b)) : [],
+      sender: currentUser.username,
+      text,
+      timestamp: Date.now(),
+    };
+    try {
+      const record = await safeGet(CHAT_MESSAGES_KEY, true);
+      let latest = chatMessages;
+      if (record) {
+        try {
+          const parsed = JSON.parse(record.value);
+          if (Array.isArray(parsed)) latest = parsed;
+        } catch { /* keep local copy */ }
+      }
+      const next = [...latest.filter((item) => item?.id !== message.id), message]
+        .filter((item) => item && item.id && item.sender && item.text)
+        .slice(-2500);
+      await window.storage.set(CHAT_MESSAGES_KEY, JSON.stringify(next), true);
+      setChatMessages(next);
+      setChatDraft('');
+      setChatReadState((current) => {
+        const nextRead = { ...current, [activeChat]: message.timestamp };
+        void window.storage.set(chatReadKey(currentUser.username), JSON.stringify(nextRead), false).catch((e) => console.error(e));
+        return nextRead;
+      });
+    } catch (e) {
+      console.error(e);
+      setError('Could not send that message — try again.');
+    } finally {
+      setChatBusy(false);
+    }
+  }
+
+  async function deleteChatMessage(messageId) {
+    if (!currentUser) return;
+    const target = chatMessages.find((message) => message.id === messageId);
+    if (!target || (target.sender !== currentUser.username && !currentUser.isAdmin)) return;
+    try {
+      const record = await safeGet(CHAT_MESSAGES_KEY, true);
+      let latest = chatMessages;
+      if (record) {
+        try {
+          const parsed = JSON.parse(record.value);
+          if (Array.isArray(parsed)) latest = parsed;
+        } catch { /* keep local copy */ }
+      }
+      const next = latest.filter((message) => message.id !== messageId);
+      await window.storage.set(CHAT_MESSAGES_KEY, JSON.stringify(next), true);
+      setChatMessages(next);
+    } catch (e) {
+      console.error(e);
+      setError('Could not delete that message.');
+    }
+  }
+
   // Removes a user account plus every trace of them across posts: their own
   // posts, their likes on other posts, their comments, and their likes on
   // other people's comments.
@@ -2203,6 +2381,15 @@ export default function RUMS() {
       .filter((s) => s.username !== username)
       .map((s) => ({ ...s, votes: (s.votes || []).filter((u) => u !== username), reactions: Object.fromEntries(Object.entries(s.reactions || {}).map(([emoji, names]) => [emoji, (names || []).filter((u) => u !== username)]).filter(([, names]) => names.length)) }));
     await saveSuggestions(nextSuggestions);
+    try {
+      const chatRecord = await safeGet(CHAT_MESSAGES_KEY, true);
+      const allMessages = chatRecord ? JSON.parse(chatRecord.value) : chatMessages;
+      const cleanedMessages = (Array.isArray(allMessages) ? allMessages : [])
+        .filter((message) => message.sender !== username && !(message.type === 'dm' && (message.participants || []).includes(username)));
+      await window.storage.set(CHAT_MESSAGES_KEY, JSON.stringify(cleanedMessages), true);
+      setChatMessages(cleanedMessages);
+      try { await window.storage.delete(chatReadKey(username), false); } catch { /* ignore */ }
+    } catch { /* chat cleanup can retry later */ }
   }
 
   async function deleteMyAccount() {
@@ -2305,6 +2492,35 @@ export default function RUMS() {
         saveSuggestions(nextSuggestions),
         saveUpdates(nextUpdates),
       ]);
+
+      try {
+        const chatRecord = await safeGet(CHAT_MESSAGES_KEY, true);
+        const allMessages = chatRecord ? JSON.parse(chatRecord.value) : chatMessages;
+        const renamedMessages = (Array.isArray(allMessages) ? allMessages : []).map((message) => ({
+          ...message,
+          sender: message.sender === oldUsername ? trimmed : message.sender,
+          participants: Array.isArray(message.participants)
+            ? message.participants.map((name) => (name === oldUsername ? trimmed : name)).sort((a, b) => a.localeCompare(b))
+            : message.participants,
+        }));
+        await window.storage.set(CHAT_MESSAGES_KEY, JSON.stringify(renamedMessages), true);
+        setChatMessages(renamedMessages);
+        const chatReadRecord = await safeGet(chatReadKey(oldUsername), false);
+        if (chatReadRecord) {
+          let renamedRead = JSON.parse(chatReadRecord.value);
+          if (renamedRead && typeof renamedRead === 'object') {
+            const oldDmKey = `dm:${oldUsername}`;
+            const newDmKey = `dm:${trimmed}`;
+            if (renamedRead[oldDmKey] != null && renamedRead[newDmKey] == null) {
+              renamedRead = { ...renamedRead, [newDmKey]: renamedRead[oldDmKey] };
+              delete renamedRead[oldDmKey];
+            }
+            await window.storage.set(chatReadKey(trimmed), JSON.stringify(renamedRead), false);
+          }
+          await window.storage.delete(chatReadKey(oldUsername), false);
+        }
+        if (activeChat === `dm:${oldUsername}`) setActiveChat(`dm:${trimmed}`);
+      } catch { /* chat rename can retry later */ }
 
       try {
         for (const space of ['rums4', 'rums5']) {
@@ -3026,6 +3242,7 @@ export default function RUMS() {
               {siteConfig.showDiscover && <button className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}>{navIconWithNew(<Search size={19} />, 'search')} Discover</button>}
               {!isRums5 && siteConfig.showLumina && <button className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
               <div className="rail-label">COMMUNITY</div>
+              <button className={`rail-link ${screen === 'chat' ? 'selected' : ''}`} onClick={() => setScreen('chat')}>{chatNavIcon(19)} Chat</button>
               {siteConfig.showUpdates && <button className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
               {siteConfig.showSuggestions && <button className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
               {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{navIconWithNew(<Pencil size={19} />, `custom:${tab.id}`)} {tab.label}</button>)}
@@ -3042,6 +3259,7 @@ export default function RUMS() {
               <div className="aero-header-actions">
                 {editMode && isOwner ? <button className="finish-editing-button" onClick={() => setEditMode(false)}><Check size={17} /> Finish editing</button> : <>
                 {isOwner && <button className="icon-btn" onClick={() => setEditMode(true)} title="Edit website"><Pencil size={18} /></button>}
+                <button className="icon-btn header-chat-button" onClick={() => setScreen('chat')} title="Chat">{chatNavIcon(18)}</button>
                 {siteConfig.showDiscover && <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   {navIconWithNew(<Search size={18} />, 'search')}
                 </button>}
@@ -3174,6 +3392,88 @@ export default function RUMS() {
                     {busy && <Loader2 size={15} className="spin" />}
                     Share to RUMS
                   </button>
+                </div>
+              )}
+
+              {screen === 'chat' && (
+                <div className="chat-page">
+                  <aside className="chat-sidebar" aria-label="Conversations">
+                    <div className="chat-sidebar-heading">
+                      <div><span className="eyebrow">RUMS PLAZA</span><h2>Chat</h2></div>
+                      <span className="chat-live-pill"><span /> live</span>
+                    </div>
+                    <button className={`chat-thread-button chat-room-button ${activeChat === 'plaza' ? 'active' : ''}`} onClick={() => setActiveChat('plaza')}>
+                      <span className="chat-thread-avatar plaza-chat-avatar"><MessageCircle size={18} /></span>
+                      <span className="chat-thread-copy"><strong>Plaza Chat</strong><small>Everyone on RUMS</small></span>
+                      {chatUnreadCount('plaza') > 0 && <span className="chat-thread-unread">{chatUnreadCount('plaza') > 99 ? '99+' : chatUnreadCount('plaza')}</span>}
+                    </button>
+                    <div className="chat-sidebar-label">DIRECT MESSAGES</div>
+                    <div className="chat-user-search"><Search size={14} /><input value={chatSearch} onChange={(event) => setChatSearch(event.target.value)} placeholder="Find a person…" /></div>
+                    <div className="chat-user-list">
+                      {users
+                        .filter((user) => user.username !== currentUser.username && user.username.toLowerCase().includes(chatSearch.trim().toLowerCase()))
+                        .sort((a, b) => {
+                          const aUnread = chatUnreadCount(`dm:${a.username}`);
+                          const bUnread = chatUnreadCount(`dm:${b.username}`);
+                          return bUnread - aUnread || a.username.localeCompare(b.username);
+                        })
+                        .map((user) => {
+                          const threadId = `dm:${user.username}`;
+                          const unread = chatUnreadCount(threadId);
+                          return <button key={user.username} className={`chat-thread-button ${activeChat === threadId ? 'active' : ''}`} onClick={() => setActiveChat(threadId)}>
+                            <span className="chat-thread-avatar">{avatarNode(user.username, 34, 12)}</span>
+                            <span className="chat-thread-copy"><strong>{user.username}</strong><small>{user.isAdmin ? 'Admin · direct message' : 'Direct message'}</small></span>
+                            {unread > 0 && <span className="chat-thread-unread">{unread > 99 ? '99+' : unread}</span>}
+                          </button>;
+                        })}
+                      {users.filter((user) => user.username !== currentUser.username && user.username.toLowerCase().includes(chatSearch.trim().toLowerCase())).length === 0 && <p className="chat-no-users">No people found.</p>}
+                    </div>
+                  </aside>
+
+                  <section className="chat-conversation" aria-label={activeChatLabel()}>
+                    <header className="chat-conversation-header">
+                      <div className="chat-conversation-identity">
+                        {activeChat === 'plaza' ? <span className="chat-header-avatar plaza-chat-avatar"><MessageCircle size={20} /></span> : <span className="chat-header-avatar">{avatarNode(activeChatLabel(), 38, 13)}</span>}
+                        <div><strong>{activeChatLabel()}</strong><small>{activeChat === 'plaza' ? 'Shared across RUMS 4 and RUMS 5' : 'Direct message'}</small></div>
+                      </div>
+                      {activeChat !== 'plaza' && <button className="pill pill-btn" onClick={() => openProfile(activeChatLabel())}>View profile</button>}
+                    </header>
+
+                    <div className="chat-message-list">
+                      {chatMessagesForThread(activeChat).length === 0 ? (
+                        <div className="chat-empty"><span className="plaza-chat-avatar"><MessageCircle size={22} /></span><h3>{activeChat === 'plaza' ? 'Start the Plaza Chat' : `Say hi to ${activeChatLabel()}`}</h3><p>{activeChat === 'plaza' ? 'Messages here are visible to everyone using RUMS Plaza.' : 'There are no messages in this conversation yet.'}</p></div>
+                      ) : chatMessagesForThread(activeChat).map((message, index, list) => {
+                        const own = message.sender === currentUser.username;
+                        const previous = list[index - 1];
+                        const grouped = previous && previous.sender === message.sender && message.timestamp - previous.timestamp < 5 * 60 * 1000;
+                        return <div key={message.id} className={`chat-message ${own ? 'own' : ''} ${grouped ? 'grouped' : ''}`}>
+                          {!grouped && <button className="chat-message-avatar" onClick={() => openProfile(message.sender)} aria-label={`Open ${message.sender}'s profile`}>{avatarNode(message.sender, 32, 11)}</button>}
+                          <div className="chat-message-main">
+                            {!grouped && <div className="chat-message-meta"><button onClick={() => openProfile(message.sender)}>{message.sender}</button><span>{timeAgo(message.timestamp)}</span></div>}
+                            <div className="chat-message-bubble">{message.text}</div>
+                          </div>
+                          {(own || currentUser.isAdmin) && <button className="chat-message-delete" onClick={() => deleteChatMessage(message.id)} title="Delete message"><Trash2 size={13} /></button>}
+                        </div>;
+                      })}
+                      <div ref={chatEndRef} />
+                    </div>
+
+                    <div className="chat-composer">
+                      <textarea
+                        value={chatDraft}
+                        onChange={(event) => setChatDraft(event.target.value.slice(0, 1200))}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault();
+                            void sendChatMessage();
+                          }
+                        }}
+                        placeholder={activeChat === 'plaza' ? 'Message Plaza Chat…' : `Message ${activeChatLabel()}…`}
+                        aria-label="Message"
+                      />
+                      <div className="chat-composer-bottom"><small>{chatDraft.length}/1200 · Shift+Enter for a new line</small><button className="chat-send-button" onClick={sendChatMessage} disabled={chatBusy || !chatDraft.trim()}>{chatBusy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}<span>Send</span></button></div>
+                    </div>
+                  </section>
                 </div>
               )}
 
@@ -3624,6 +3924,9 @@ export default function RUMS() {
                   {navIconWithNew(<Home size={19} />, 'feed')}
                 </span>
                 <span className="nav-label">Feed</span>
+              </button>
+              <button className={`nav-btn ${screen === 'chat' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('chat'); }}>
+                <span className="nav-icon-wrap">{chatNavIcon(19)}</span><span className="nav-label">Chat</span>
               </button>
               {siteConfig.showSuggestions && <button className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
                 <span className="nav-icon-wrap">{navIconWithNew(<Lightbulb size={19} />, 'suggestions')}</span><span className="nav-label">Ideas</span>
