@@ -2145,3 +2145,218 @@ button,input,textarea { font:inherit; }
   background:#f7fcff!important;
   box-shadow:inset 0 0 0 1px #00a2ff!important;
 }
+
+/* ================================================================
+   COMPLETE THEME COVERAGE PASS
+   Secondary/newer RUMS Plaza components now inherit one coherent
+   token set instead of falling back to Standard's glossy materials.
+   Standard is intentionally untouched.
+   ================================================================ */
+.aero-root[data-theme="dark"] {
+  --theme-surface:#181e27;--theme-surface-2:#202832;--theme-surface-3:#10151c;
+  --theme-border:#303b49;--theme-text:#edf4ff;--theme-muted:#93a0b0;
+  --theme-accent:#6da8ff;--theme-accent-soft:#25364c;--theme-accent-text:#fff;
+  --theme-danger:#ff6f86;--theme-focus:#79afff;--theme-radius:16px;--theme-radius-sm:11px;
+  --theme-shadow:0 8px 24px #00000042;--theme-soft-shadow:0 4px 14px #0000002c;
+}
+.aero-root[data-theme="roblox2016"] {
+  --theme-surface:#fff;--theme-surface-2:#f4f4f4;--theme-surface-3:#e7e7e7;
+  --theme-border:#c7c7c7;--theme-text:#333;--theme-muted:#777;
+  --theme-accent:#00a2ff;--theme-accent-soft:#eaf7fe;--theme-accent-text:#fff;
+  --theme-danger:#d43c3c;--theme-focus:#00a2ff;--theme-radius:2px;--theme-radius-sm:2px;
+  --theme-shadow:none;--theme-soft-shadow:none;
+}
+.aero-root[data-theme="minecraft"] {
+  --theme-surface:#323232;--theme-surface-2:#414141;--theme-surface-3:#1c1c1c;
+  --theme-border:#696969;--theme-text:#fff;--theme-muted:#c9c9c9;
+  --theme-accent:#72b043;--theme-accent-soft:#465c38;--theme-accent-text:#fff;
+  --theme-danger:#d75b5b;--theme-focus:#9dd76f;--theme-radius:2px;--theme-radius-sm:2px;
+  --theme-shadow:none;--theme-soft-shadow:none;
+}
+.aero-root[data-theme="frutiger"] {
+  --theme-surface:#fafffff0;--theme-surface-2:#eafaffeb;--theme-surface-3:#ddf4f8e8;
+  --theme-border:#bce8ef;--theme-text:#16425d;--theme-muted:#688596;
+  --theme-accent:#159bc9;--theme-accent-soft:#e2f9ff;--theme-accent-text:#fff;
+  --theme-danger:#e65772;--theme-focus:#159bc9;--theme-radius:20px;--theme-radius-sm:13px;
+  --theme-shadow:0 7px 20px #13789918;--theme-soft-shadow:0 4px 13px #13789914;
+}
+.aero-root[data-theme="y2k"] {
+  --theme-surface:#f7f9fbed;--theme-surface-2:#e7ecf2eb;--theme-surface-3:#d8e0e9e8;
+  --theme-border:#b8c4d0;--theme-text:#26364d;--theme-muted:#718096;
+  --theme-accent:#7188e8;--theme-accent-soft:#e8ebfa;--theme-accent-text:#fff;
+  --theme-danger:#dc5d81;--theme-focus:#7188e8;--theme-radius:15px;--theme-radius-sm:10px;
+  --theme-shadow:0 7px 18px #56688024;--theme-soft-shadow:0 4px 12px #5668801c;
+}
+
+/* Newer/secondary panels that previously remained Standard. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(
+  .visual-edit-toolbar,.updates-composer,.reaction-picker,.mention-dropdown,
+  .custom-emoji-create,.custom-emoji-admin-item,.custom-emoji-empty,
+  .chat-image-preview,.editor-item,.lumina-intro-card,.lumina-metro-panel,
+  .lumina-share-card,.lumina-station-detail,.lumina-principles article,
+  .lumina-project-stats div,.auth-wrap,.space-choice-card,.drop-zone,
+  .comments-box,.preview-wrap,.profile-danger-zone
+) {
+  border-color:var(--theme-border)!important;
+  border-radius:var(--theme-radius)!important;
+  background:var(--theme-surface)!important;
+  color:var(--theme-text)!important;
+  box-shadow:var(--theme-shadow)!important;
+}
+
+/* Nested secondary surfaces and rows. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(
+  .chat-thread-button,.comment-row,.reaction-chip,.reaction-add,
+  .custom-emoji-upload,.custom-emoji-preview,.editor-toggles button,
+  .editor-actions button,.editor-add-row button,.selected-box-chip,
+  .box-color-control,.box-animation-control,.chat-attach-button,
+  .appearance-current-theme,.tag-pill,.detail-back-btn,.profile-pill-with-new,
+  .lumina-fact-row,.lumina-gallery>button,.lumina-wide-action,
+  .lumina-station-detail button,.lumina-share-card button,.preview-action,
+  .custom-mobile-tabs button,.auth-space-switch button
+) {
+  border-color:var(--theme-border)!important;
+  border-radius:var(--theme-radius-sm)!important;
+  background:var(--theme-surface-2)!important;
+  color:var(--theme-text)!important;
+  box-shadow:var(--theme-soft-shadow)!important;
+}
+
+/* All late-added form fields. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(
+  .reaction-picker-search input,.custom-emoji-name-input,
+  .editor-grid input,.editor-grid textarea,.editor-grid select,
+  .editor-add-row input,.username-edit-row input,.tag-select,
+  .custom-emoji-create input
+) {
+  border-color:var(--theme-border)!important;
+  border-radius:var(--theme-radius-sm)!important;
+  background:var(--theme-surface-3)!important;
+  color:var(--theme-text)!important;
+  box-shadow:none!important;
+}
+.aero-root[data-theme]:not([data-theme="standard"]) :is(input,textarea,select)::placeholder {color:var(--theme-muted)!important;opacity:.82;}
+
+/* Text hierarchy: prevent Standard navy/grey labels leaking into themes. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(
+  .admin-section-title,.composer-heading,.field-label,.editor-grid label,
+  .editor-subsection h3,.editor-item,.lumina-section-copy h2,
+  .lumina-section-heading h2,.lumina-station-detail h3,.lumina-share-card b,
+  .custom-emoji-name,.chat-sidebar-heading,.chat-sidebar-label,
+  .chat-empty h3,.space-choice-copy h2,.space-chooser-intro h1,
+  .profile-name,.suggestion-text,.update-card-copy h3
+) {color:var(--theme-text)!important;}
+.aero-root[data-theme]:not([data-theme="standard"]) :is(
+  .editor-intro,.editor-item small,.lumina-section-copy p,
+  .lumina-station-detail p,.lumina-station-detail>div>span,.lumina-share-card small,
+  .chat-thread-copy small,.chat-no-users,.chat-composer-bottom small,
+  .custom-emoji-empty,.space-choice-copy p,.space-chooser-intro p,
+  .appearance-heading p,.switch-line,.post-time,.updates-empty
+) {color:var(--theme-muted)!important;}
+
+/* Active/selected states across every newer control. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(
+  .chat-thread-button.active,.reaction-picker-tabs button.active,
+  .custom-mobile-tabs button.active,.auth-space-switch button.active,
+  .theme-option.active,.editor-toggles button.enabled,.admin-toggle.is-admin
+) {
+  border-color:var(--theme-accent)!important;
+  background:var(--theme-accent-soft)!important;
+  color:var(--theme-accent)!important;
+  box-shadow:none!important;
+}
+
+/* Primary actions across pages. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(
+  .chat-send-button,.comment-send,.custom-emoji-add,.editor-actions button.primary,
+  .editor-add-row button,.lumina-station-detail button,.finish-editing-button
+) {
+  border-color:var(--theme-accent)!important;
+  background:var(--theme-accent)!important;
+  color:var(--theme-accent-text)!important;
+  box-shadow:none!important;
+}
+
+/* Destructive controls should still read as destructive, not Standard pink glass. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(
+  .danger-btn,.del-btn,.row-del-btn,.comment-del-btn,.chat-message-delete,
+  .chat-image-remove,.preview-clear,.editor-item>button
+) {color:var(--theme-danger)!important;}
+
+/* Reaction + emoji picker fully follows the chosen theme. */
+.aero-root[data-theme]:not([data-theme="standard"]) .reaction-picker-tabs {
+  border-bottom-color:var(--theme-border)!important;
+  background:var(--theme-surface-2)!important;
+}
+.aero-root[data-theme]:not([data-theme="standard"]) .reaction-picker-tabs button {color:var(--theme-muted)!important;}
+.aero-root[data-theme]:not([data-theme="standard"]) .reaction-picker-tabs button.active {color:var(--theme-accent)!important;}
+.aero-root[data-theme]:not([data-theme="standard"]) .reaction-picker-grid button {
+  border-radius:var(--theme-radius-sm)!important;background:transparent!important;color:var(--theme-text)!important;box-shadow:none!important;
+}
+.aero-root[data-theme]:not([data-theme="standard"]) .reaction-picker-grid button:hover {background:var(--theme-surface-2)!important;}
+.aero-root[data-theme]:not([data-theme="standard"]) :is(.reaction-chip,.reaction-add) {border-color:var(--theme-border)!important;}
+.aero-root[data-theme]:not([data-theme="standard"]) .reaction-chip.reacted {border-color:var(--theme-accent)!important;background:var(--theme-accent-soft)!important;color:var(--theme-accent)!important;}
+
+/* Editor chrome and drag controls. */
+.aero-root[data-theme]:not([data-theme="standard"]) .selected-box-toolbar {border-top-color:var(--theme-border)!important;}
+.aero-root[data-theme]:not([data-theme="standard"]) :is(.widget-drag-handle,.built-in-box-handle,.text-position-handle) {
+  border-color:var(--theme-accent)!important;border-radius:var(--theme-radius-sm)!important;background:var(--theme-accent)!important;color:var(--theme-accent-text)!important;box-shadow:none!important;
+}
+.aero-root[data-theme]:not([data-theme="standard"]) .visual-edit-mode .editable-built-in-box {outline-color:color-mix(in srgb,var(--theme-accent) 42%,transparent)!important;}
+
+/* NEW/unread markers inherit the active palette too. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(.page-new-indicator,.session-new-label,.chat-thread-unread,.tab-badge) {
+  border-color:var(--theme-surface)!important;background:var(--theme-accent)!important;color:var(--theme-accent-text)!important;box-shadow:none!important;
+}
+
+/* Chat image/upload controls no longer stay glossy Standard. */
+.aero-root[data-theme]:not([data-theme="standard"]) .chat-image-remove {background:var(--theme-surface-3)!important;color:var(--theme-text)!important;}
+.aero-root[data-theme]:not([data-theme="standard"]) .chat-message-image-button {border-radius:var(--theme-radius-sm)!important;box-shadow:none!important;}
+
+/* Profile/search/upload thumbnail/control surfaces. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(.profile-grid-thumb,.drop-zone,.preview-wrap) {overflow:hidden;}
+.aero-root[data-theme]:not([data-theme="standard"]) .avatar-edit-badge {border-color:var(--theme-surface)!important;background:var(--theme-accent)!important;color:var(--theme-accent-text)!important;}
+
+/* One consistent focus treatment. This specifically removes the mismatched
+   square browser/Standard outlines that were visible in themed controls. */
+.aero-root[data-theme]:not([data-theme="standard"]) :where(button,a,input,textarea,select,[tabindex]):focus {outline:none!important;}
+.aero-root[data-theme]:not([data-theme="standard"]) :where(button,a,input,textarea,select,[tabindex]):focus-visible {
+  outline:none!important;
+  box-shadow:0 0 0 2px var(--theme-surface),0 0 0 4px var(--theme-focus)!important;
+}
+.aero-root[data-theme]:not([data-theme="standard"]) :where(.rail-link,.nav-btn,.chat-thread-button):focus-visible {
+  box-shadow:inset 0 0 0 2px var(--theme-focus)!important;
+}
+
+/* Don't let Standard's liquid hover sheen reappear as a bright rectangle on
+   flat themes. The more glassy themes keep a restrained version. */
+.aero-root[data-theme="roblox2016"] :is(button,.clickable-row,.profile-grid-thumb,.drop-zone)::before,
+.aero-root[data-theme="minecraft"] :is(button,.clickable-row,.profile-grid-thumb,.drop-zone)::before {display:none!important;}
+.aero-root[data-theme="dark"] :is(button,.clickable-row,.profile-grid-thumb,.drop-zone)::before {opacity:0!important;}
+
+/* Roblox 2016: complete the late-2016 logged-in dashboard treatment on all
+   secondary UI instead of letting modern glass controls leak through. */
+.aero-root[data-theme="roblox2016"] :is(.reaction-picker,.mention-dropdown,.visual-edit-toolbar,.updates-composer,.custom-emoji-create,.custom-emoji-admin-item,.auth-wrap,.space-choice-card) {
+  border-radius:2px!important;background:#fff!important;border-color:#c7c7c7!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+.aero-root[data-theme="roblox2016"] :is(.chat-thread-button.active,.reaction-picker-tabs button.active,.theme-option.active) {
+  background:#eaf7fe!important;border-color:#00a2ff!important;color:#0074bd!important;
+}
+.aero-root[data-theme="roblox2016"] .page-new-indicator,
+.aero-root[data-theme="roblox2016"] .session-new-label {background:#00a2ff!important;border-radius:2px!important;}
+
+/* Minecraft: secondary surfaces use the same bevel logic as the primary UI. */
+.aero-root[data-theme="minecraft"] :is(.reaction-picker,.mention-dropdown,.visual-edit-toolbar,.updates-composer,.custom-emoji-create,.custom-emoji-admin-item,.auth-wrap,.space-choice-card,.editor-item,.chat-attach-button) {
+  border:2px solid #696969!important;border-right-color:#151515!important;border-bottom-color:#151515!important;border-radius:2px!important;background:#323232!important;box-shadow:none!important;
+}
+.aero-root[data-theme="minecraft"] :is(.page-new-indicator,.session-new-label,.chat-thread-unread) {border:1px solid #a8d27e!important;border-radius:2px!important;background:#72b043!important;}
+
+/* Frutiger Aero: secondary modules keep the airy white/aqua material. */
+.aero-root[data-theme="frutiger"] :is(.reaction-picker,.mention-dropdown,.visual-edit-toolbar,.updates-composer,.custom-emoji-create,.custom-emoji-admin-item,.auth-wrap,.space-choice-card) {
+  background:linear-gradient(145deg,#ffffffef,#effffbe8)!important;border-color:#fff!important;box-shadow:0 6px 18px #13789918!important;
+}
+
+/* Y2K: secondary modules use restrained chrome/silver, not Standard glass. */
+.aero-root[data-theme="y2k"] :is(.reaction-picker,.mention-dropdown,.visual-edit-toolbar,.updates-composer,.custom-emoji-create,.custom-emoji-admin-item,.auth-wrap,.space-choice-card) {
+  background:linear-gradient(145deg,#fbfdff,#e7edf3)!important;border-color:#fff!important;box-shadow:inset 0 1px #fff,0 5px 14px #56688020!important;
+}
