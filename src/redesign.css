@@ -3241,76 +3241,82 @@ button,input,textarea { font:inherit; }
 /* keep Roblox era family intact — no generic theme selectors touching them here */
 
 /* ========================================================================== */
-/* ROBLOX 2026 — current app / Home language                                  */
-/* Dark icon-first shell, image-led discovery, minimal chrome and social UI.   */
+/* ROBLOX 2026 — researched current Home / app language                       */
+/* Light canvas, narrow icon rail, pale search, bold sections, image-first UI.*/
 /* ========================================================================== */
 .aero-root[data-theme="roblox2026"] {
-  --rbx-page:#1f1f1f;--rbx-frame:#1f1f1f;--rbx-frame-border:0 solid transparent;--rbx-frame-radius:0;--rbx-frame-shadow:none;
-  --rbx-header:#1f1f1f;--rbx-header-border:#343434;--rbx-header-shadow:none;--rbx-header-text:#f7f7f7;
-  --rbx-rail:#191919;--rbx-rail-border:#303030;--rbx-rail-text:#d8d8d8;
-  --rbx-card:#282828;--rbx-card-2:#242424;--rbx-field:#181818;--rbx-border:#363636;--rbx-card-border-width:0px;
-  --rbx-text:#f7f7f7;--rbx-muted:#a9a9a9;--rbx-accent:#ffffff;--rbx-accent-soft:#343434;--rbx-accent-text:#1d1d1d;
-  --rbx-radius:10px;--rbx-radius-sm:8px;--rbx-shadow:none;--rbx-soft-shadow:none;
-  --rbx-hover:#303030;--rbx-selected:#343434;--rbx-selected-border:#454545;--rbx-selected-text:#fff;--rbx-selected-shadow:none;
-  --rbx-button:#f5f5f5;--rbx-button-border:#f5f5f5;--rbx-button-text:#191919;--rbx-button-shadow:none;
-  --rbx-field-border:#3b3b3b;--rbx-field-radius:8px;--rbx-field-shadow:none;
-  --rbx-control:#292929;--rbx-control-border:#3a3a3a;--rbx-control-radius:10px;--rbx-control-shadow:none;
-  --rbx-control-active:#f5f5f5;--rbx-control-active-border:#f5f5f5;--rbx-control-active-radius:8px;--rbx-control-active-shadow:none;--rbx-control-active-text:#161616;
-  --rbx-hero:#242424;--rbx-logo-chip:#f5f5f5;--rbx-logo-border:#f5f5f5;--rbx-logo-radius:7px;--rbx-logo-shadow:none;--rbx-logo-text:#191919;
-  --rbx-chat-bg:#202020;--rbx-chat-radius:10px;--rbx-chat-own:#f5f5f5;--rbx-chat-own-border:#f5f5f5;--rbx-chat-own-text:#191919;
-  --rbx-mobile-nav:#191919f7;--rbx-mobile-nav-border:#333;--rbx-mobile-nav-shadow:0 -1px 0 #333;--rbx-mobile-muted:#aaa;--rbx-mobile-active:#fff;--rbx-focus-inner:#1f1f1f;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif!important;
+  --rbx-page:#ffffff;--rbx-frame:#ffffff;--rbx-frame-border:0 solid transparent;--rbx-frame-radius:0;--rbx-frame-shadow:none;
+  --rbx-header:#ffffff;--rbx-header-border:#e5e7eb;--rbx-header-shadow:none;--rbx-header-text:#111111;
+  --rbx-rail:#ffffff;--rbx-rail-border:#eceef1;--rbx-rail-text:#222222;
+  --rbx-card:#ffffff;--rbx-card-2:#f7f7f8;--rbx-field:#f1f3f5;--rbx-border:#e5e7eb;--rbx-card-border-width:1px;
+  --rbx-text:#111111;--rbx-muted:#666b73;--rbx-accent:#111111;--rbx-accent-soft:#f1f2f4;--rbx-accent-text:#ffffff;
+  --rbx-radius:8px;--rbx-radius-sm:6px;--rbx-shadow:none;--rbx-soft-shadow:none;
+  --rbx-hover:#f4f5f6;--rbx-selected:#eeeeef;--rbx-selected-border:#dedfe2;--rbx-selected-text:#111;--rbx-selected-shadow:none;
+  --rbx-button:#111111;--rbx-button-border:#111111;--rbx-button-text:#ffffff;--rbx-button-shadow:none;
+  --rbx-field-border:#e2e4e7;--rbx-field-radius:8px;--rbx-field-shadow:none;
+  --rbx-control:#f1f2f4;--rbx-control-border:#e1e3e6;--rbx-control-radius:9px;--rbx-control-shadow:none;
+  --rbx-control-active:#ffffff;--rbx-control-active-border:#d7d9dc;--rbx-control-active-radius:7px;--rbx-control-active-shadow:0 1px 3px #00000014;--rbx-control-active-text:#111111;
+  --rbx-hero:#ffffff;--rbx-logo-chip:#111111;--rbx-logo-border:#111111;--rbx-logo-radius:6px;--rbx-logo-shadow:none;--rbx-logo-text:#fff;
+  --rbx-chat-bg:#f7f7f8;--rbx-chat-radius:8px;--rbx-chat-own:#111111;--rbx-chat-own-border:#111111;--rbx-chat-own-text:#ffffff;
+  --rbx-mobile-nav:#fffffff7;--rbx-mobile-nav-border:#e3e5e8;--rbx-mobile-nav-shadow:0 -1px 0 #e6e8eb;--rbx-mobile-muted:#666;--rbx-mobile-active:#111;--rbx-focus-inner:#fff;
+  font-family:"Builder Sans","Helvetica Neue",Arial,sans-serif!important;
+  color:#111!important;
 }
-.aero-root[data-theme="roblox2026"] .aero-frame {background:#1f1f1f!important;}
-.aero-root[data-theme="roblox2026"] .desktop-rail {width:72px!important;padding:12px 8px!important;align-items:center!important;}
+.aero-root[data-theme="roblox2026"] .aero-frame {background:#fff!important;}
+.aero-root[data-theme="roblox2026"] .desktop-rail {width:64px!important;padding:10px 6px!important;align-items:center!important;background:#fff!important;border-right:1px solid #eceef1!important;}
 .aero-root[data-theme="roblox2026"] .rail-brand {justify-content:center!important;}
 .aero-root[data-theme="roblox2026"] .rail-copy,
 .aero-root[data-theme="roblox2026"] .rail-version-chip {display:none!important;}
-.aero-root[data-theme="roblox2026"] .rail-nav {gap:4px!important;}
+.aero-root[data-theme="roblox2026"] .rail-nav {gap:2px!important;}
 .aero-root[data-theme="roblox2026"] .rail-link,
-.aero-root[data-theme="roblox2026"] .rail-create {flex-direction:column!important;justify-content:center!important;gap:4px!important;min-height:54px!important;padding:7px 5px!important;border:0!important;border-radius:8px!important;font-size:9px!important;font-weight:650!important;text-align:center!important;}
+.aero-root[data-theme="roblox2026"] .rail-create {flex-direction:column!important;justify-content:center!important;gap:3px!important;min-height:50px!important;padding:6px 4px!important;border:0!important;border-radius:7px!important;background:transparent!important;color:#222!important;font-size:9px!important;font-weight:650!important;text-align:center!important;box-shadow:none!important;}
 .aero-root[data-theme="roblox2026"] .rail-link svg,
-.aero-root[data-theme="roblox2026"] .rail-create svg {width:20px!important;height:20px!important;}
-.aero-root[data-theme="roblox2026"] .rail-link.selected {background:#303030!important;color:#fff!important;}
-.aero-root[data-theme="roblox2026"] .aero-header {min-height:58px!important;background:#1f1f1f!important;border-bottom:1px solid #343434!important;}
-.aero-root[data-theme="roblox2026"] .header-center-feed-tabs {background:#292929!important;border-color:#3a3a3a!important;}
-.aero-root[data-theme="roblox2026"] :is(.post-card,.suggestion-card,.update-card,.custom-site-widget,.community-hero,.profile-section,.site-editor,.chat-sidebar,.chat-conversation,.updates-composer,.admin-wrap,.search-wrap,.upload-wrap) {background:#282828!important;border:0!important;box-shadow:none!important;}
-.aero-root[data-theme="roblox2026"] .community-hero {padding-block:22px!important;}
+.aero-root[data-theme="roblox2026"] .rail-create svg {width:19px!important;height:19px!important;}
+.aero-root[data-theme="roblox2026"] .rail-link:hover,
+.aero-root[data-theme="roblox2026"] .rail-create:hover {background:#f4f5f6!important;}
+.aero-root[data-theme="roblox2026"] .rail-link.selected {background:#f0f1f2!important;color:#111!important;}
+.aero-root[data-theme="roblox2026"] .aero-header {min-height:56px!important;background:#fff!important;border-bottom:1px solid #eceef1!important;box-shadow:none!important;color:#111!important;}
+.aero-root[data-theme="roblox2026"] .header-center-feed-tabs {background:#f1f3f5!important;border:1px solid #e3e5e8!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2026"] :is(.post-card,.suggestion-card,.update-card,.custom-site-widget,.community-hero,.profile-section,.site-editor,.chat-sidebar,.chat-conversation,.updates-composer,.admin-wrap,.search-wrap,.upload-wrap) {background:#fff!important;border:1px solid #e7e8ea!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2026"] .community-hero {padding-block:20px!important;}
 .aero-root[data-theme="roblox2026"] .hero-orb,.aero-root[data-theme="roblox2026"] .hero-glow {display:none!important;}
-.aero-root[data-theme="roblox2026"] :is(.section-heading h2,.hero-copy h1,.chat-conversation-identity strong,.chat-thread-copy strong) {font-weight:800!important;letter-spacing:-.02em!important;}
-.aero-root[data-theme="roblox2026"] :is(.post-card,.suggestion-card,.update-card,.custom-site-widget) {border-radius:10px!important;overflow:hidden!important;}
-.aero-root[data-theme="roblox2026"] :is(.post-image,.profile-grid-thumb img,.custom-widget-image,.lumina-gallery-item img) {border-radius:9px!important;}
-.aero-root[data-theme="roblox2026"] :is(.aero-input,.caption-area,.search-bar,.chat-composer textarea,.chat-user-search input,.reaction-picker-search input,.custom-emoji-name-input,.editor-grid input,.editor-grid textarea,.editor-grid select) {background:#181818!important;border-color:#3b3b3b!important;color:#f7f7f7!important;}
-.aero-root[data-theme="roblox2026"] :is(.aero-input,.caption-area,.search-bar,.chat-composer textarea,.chat-user-search input)::placeholder {color:#7f7f7f!important;}
-.aero-root[data-theme="roblox2026"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:#292929!important;border-color:#3a3a3a!important;}
+.aero-root[data-theme="roblox2026"] :is(.section-heading h2,.hero-copy h1,.chat-conversation-identity strong,.chat-thread-copy strong,.appearance-heading h2) {color:#111!important;font-weight:800!important;letter-spacing:-.02em!important;}
+.aero-root[data-theme="roblox2026"] :is(.post-card,.suggestion-card,.update-card,.custom-site-widget) {border-radius:8px!important;overflow:hidden!important;}
+.aero-root[data-theme="roblox2026"] :is(.post-image,.profile-grid-thumb img,.custom-widget-image,.lumina-gallery-item img) {border-radius:8px!important;}
+.aero-root[data-theme="roblox2026"] :is(.aero-input,.caption-area,.search-bar,.chat-composer textarea,.chat-user-search input,.reaction-picker-search input,.custom-emoji-name-input,.editor-grid input,.editor-grid textarea,.editor-grid select) {background:#f1f3f5!important;border-color:#e2e4e7!important;color:#111!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2026"] :is(.aero-input,.caption-area,.search-bar,.chat-composer textarea,.chat-user-search input)::placeholder {color:#747980!important;}
+.aero-root[data-theme="roblox2026"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:#f1f2f4!important;border-color:#e2e4e7!important;box-shadow:none!important;}
 .aero-root[data-theme="roblox2026"] .feed-tabs::before,
 .aero-root[data-theme="roblox2026"] .lumina-view-switch::before,
-.aero-root[data-theme="roblox2026"] .upload-wrap .location-tabs::before {background:#f5f5f5!important;border-color:#f5f5f5!important;}
-.aero-root[data-theme="roblox2026"] :is(.feed-tabs button.active,.lumina-view-switch button.active,.location-tabs button.active) {color:#181818!important;}
+.aero-root[data-theme="roblox2026"] .upload-wrap .location-tabs::before {background:#fff!important;border-color:#d9dce0!important;box-shadow:0 1px 3px #00000014!important;}
+.aero-root[data-theme="roblox2026"] :is(.feed-tabs button.active,.lumina-view-switch button.active,.location-tabs button.active) {color:#111!important;}
 .aero-root[data-theme="roblox2026"] .universal-rums-switcher button.active,
-.aero-root[data-theme="roblox2026"] .universal-rums-switcher.is-dragging::before {background:#f5f5f5!important;border-color:#f5f5f5!important;color:#181818!important;}
+.aero-root[data-theme="roblox2026"] .universal-rums-switcher.is-dragging::before {background:#111!important;border-color:#111!important;color:#fff!important;}
 .aero-root[data-theme="roblox2026"] .avatar,
 .aero-root[data-theme="roblox2026"] .avatar-img {border-radius:50%!important;}
-.aero-root[data-theme="roblox2026"] .chat-message-list {background:#202020!important;}
-.aero-root[data-theme="roblox2026"] .chat-message-bubble {background:#2b2b2b!important;border:0!important;color:#f5f5f5!important;}
-.aero-root[data-theme="roblox2026"] .chat-message.own .chat-message-bubble {background:#f5f5f5!important;color:#191919!important;}
-.aero-root[data-theme="roblox2026"] .chat-composer {background:#242424!important;border-color:#363636!important;}
-.aero-root[data-theme="roblox2026"] :is(.reaction-chip,.reaction-add,.pill,.tag-chip,.chat-attach-button,.icon-btn) {background:#303030!important;border-color:#3f3f3f!important;color:#eee!important;}
-.aero-root[data-theme="roblox2026"] :is(.reaction-chip.active,.tag-chip.active,.admin-toggle.is-admin) {background:#f5f5f5!important;border-color:#f5f5f5!important;color:#191919!important;}
-.aero-root[data-theme="roblox2026"] :is(.page-new-indicator,.chat-thread-unread,.new-content-label) {background:#f5f5f5!important;color:#191919!important;border-color:#f5f5f5!important;}
-.aero-root[data-theme="roblox2026"] .roblox-theme-year-2026 {background:#202020!important;border-color:#434343!important;color:#fff!important;}
-.aero-root[data-theme="roblox2026"] .roblox-theme-year-2026 .roblox-year-copy small {color:#aaa!important;}
-.aero-root[data-theme="roblox2026"] .roblox-theme-year-2026 .roblox-year-number {color:#fff!important;}
+.aero-root[data-theme="roblox2026"] .chat-message-list {background:#f7f7f8!important;}
+.aero-root[data-theme="roblox2026"] .chat-message-bubble {background:#fff!important;border:1px solid #e4e6e8!important;color:#151515!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2026"] .chat-message.own .chat-message-bubble {background:#111!important;border-color:#111!important;color:#fff!important;}
+.aero-root[data-theme="roblox2026"] .chat-composer {background:#fff!important;border-color:#e4e6e8!important;}
+.aero-root[data-theme="roblox2026"] :is(.reaction-chip,.reaction-add,.pill,.tag-chip,.chat-attach-button,.icon-btn) {background:#f4f5f6!important;border-color:#e1e3e6!important;color:#222!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2026"] :is(.reaction-chip.active,.tag-chip.active,.admin-toggle.is-admin) {background:#111!important;border-color:#111!important;color:#fff!important;}
+.aero-root[data-theme="roblox2026"] :is(.page-new-indicator,.chat-thread-unread,.new-content-label) {background:#111!important;color:#fff!important;border-color:#111!important;}
+.aero-root[data-theme="roblox2026"] .roblox-theme-year-2026 {background:#fff!important;border-color:#dfe1e4!important;color:#111!important;}
+.aero-root[data-theme="roblox2026"] .roblox-theme-year-2026 .roblox-year-copy small {color:#6e737a!important;}
+.aero-root[data-theme="roblox2026"] .roblox-theme-year-2026 .roblox-year-number {color:#111!important;}
 
-/* 2026 keeps discovery/social surfaces visually image-first and low-chrome. */
-.aero-root[data-theme="roblox2026"] :is(.lumina-overview-card,.lumina-principle,.lumina-metro-panel,.lumina-station-detail,.lumina-share-card,.lumina-gallery-item,.custom-emoji-admin-item,.reaction-picker,.modal-card) {background:#282828!important;border-color:#383838!important;box-shadow:none!important;}
-.aero-root[data-theme="roblox2026"] :is(.lumina-stat,.lumina-station-button,.chat-thread-button) {background:#242424!important;border-color:#363636!important;box-shadow:none!important;}
-.aero-root[data-theme="roblox2026"] :is(.lumina-station-button.active,.chat-thread-button.active) {background:#333!important;border-color:#444!important;color:#fff!important;}
-.aero-root[data-theme="roblox2026"] .lumina-project-hero {background:linear-gradient(160deg,#292929,#202020 65%,#262626)!important;border-color:#383838!important;box-shadow:none!important;}
-.aero-root[data-theme="roblox2026"] .lumina-project-hero::after {opacity:.05!important;}
+/* 2026 Home uses image-first discovery with deliberately low surrounding chrome. */
+.aero-root[data-theme="roblox2026"] :is(.lumina-overview-card,.lumina-principle,.lumina-metro-panel,.lumina-station-detail,.lumina-share-card,.lumina-gallery-item,.custom-emoji-admin-item,.reaction-picker,.modal-card) {background:#fff!important;border-color:#e5e7e9!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2026"] :is(.lumina-stat,.lumina-station-button,.chat-thread-button) {background:#f7f7f8!important;border-color:#e4e6e8!important;box-shadow:none!important;color:#222!important;}
+.aero-root[data-theme="roblox2026"] :is(.lumina-station-button.active,.chat-thread-button.active) {background:#eef0f2!important;border-color:#d8dadd!important;color:#111!important;}
+.aero-root[data-theme="roblox2026"] .lumina-project-hero {background:#fff!important;border-color:#e5e7e9!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2026"] .lumina-project-hero::after {opacity:.02!important;}
+.aero-root[data-theme="roblox2026"] :is(.primary-btn,.chat-send-button,.editor-finish-button) {background:#111!important;border-color:#111!important;color:#fff!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2026"] :is(.secondary-btn,.editor-tool-button) {background:#f4f5f6!important;border-color:#e0e2e5!important;color:#222!important;box-shadow:none!important;}
 
 @media(max-width:760px){
   .aero-root[data-theme="roblox2026"] .desktop-rail {width:auto!important;padding:0!important;}
-  .aero-root[data-theme="roblox2026"] .bottom-nav {background:#191919f7!important;border-color:#333!important;}
-  .aero-root[data-theme="roblox2026"] .nav-btn.active {background:#303030!important;color:#fff!important;}
+  .aero-root[data-theme="roblox2026"] .bottom-nav {background:#fffffff8!important;border-color:#e4e6e8!important;box-shadow:0 -1px 0 #e5e7e9!important;}
+  .aero-root[data-theme="roblox2026"] .nav-btn {color:#666!important;}
+  .aero-root[data-theme="roblox2026"] .nav-btn.active {background:#f0f1f2!important;color:#111!important;}
 }
