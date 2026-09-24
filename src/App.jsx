@@ -329,6 +329,7 @@ export default function RUMS() {
   const [customEmojiStatus, setCustomEmojiStatus] = useState('');
   const [mention, setMention] = useState(null); // { postId, query, start }
   const [lastSeen, setLastSeen] = useState({ General: 0, Lumina: 0 });
+  const [sessionNewItems, setSessionNewItems] = useState({});
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null); // { type: 'self' | 'admin', username }
@@ -365,6 +366,9 @@ export default function RUMS() {
   const rootRef = useRef(null);
   const siteConfigRef = useRef(DEFAULT_SITE_CONFIG);
   const spaceLoadTokenRef = useRef(0);
+  const sessionKnownContentRef = useRef(new Set());
+  const sessionNewTrackingSpaceRef = useRef(null);
+  const sessionNewSeenTimersRef = useRef(new Map());
   const historyPastRef = useRef([]);
   const historyFutureRef = useRef([]);
   const historyApplyingRef = useRef(false);
@@ -385,6 +389,66 @@ export default function RUMS() {
   const isRums5 = rumsSpace === 'rums5';
   const activeSpace = rumsSpace ? RUMS_SPACES[rumsSpace] : null;
 
+  function pageKeyForPlacement(placement) {
+    if (!placement) return null;
+    if (BUILT_IN_PAGES.some(([id]) => id === placement)) return placement;
+    return `custom:${placement}`;
+  }
+
+  function trackedContentEntries(sourcePosts = posts, sourceSuggestions = suggestions, sourceUpdates = updates, sourceConfig = siteConfig, space = rumsSpace || 'rums4') {
+    const entries = [];
+    const isSpace5 = space === 'rums5';
+    for (const post of sourcePosts || []) {
+      entries.push({ key: `feed|post:${post.id}`, page: 'feed', kind: 'post', id: post.id });
+      if (!isSpace5 && post.tag === 'Lumina') entries.push({ key: `lumina|post:${post.id}`, page: 'lumina', kind: 'post', id: post.id });
+    }
+    for (const suggestion of sourceSuggestions || []) entries.push({ key: `suggestions|suggestion:${suggestion.id}`, page: 'suggestions', kind: 'suggestion', id: suggestion.id });
+    for (const update of sourceUpdates || []) entries.push({ key: `updates|update:${update.id}`, page: 'updates', kind: 'update', id: update.id });
+    for (const widget of sourceConfig?.customWidgets || []) {
+      const page = pageKeyForPlacement(widget.placement);
+      if (page && !(isSpace5 && page === 'lumina')) entries.push({ key: `${page}|widget:${widget.id}`, page, kind: 'widget', id: widget.id });
+    }
+    return entries;
+  }
+
+  function primeSessionNewBaseline(space, sourcePosts, sourceSuggestions, sourceUpdates, sourceConfig) {
+    const entries = trackedContentEntries(sourcePosts, sourceSuggestions, sourceUpdates, sourceConfig, space);
+    sessionKnownContentRef.current = new Set(entries.map((entry) => entry.key));
+    sessionNewTrackingSpaceRef.current = space;
+    sessionNewSeenTimersRef.current.forEach((timer) => clearTimeout(timer));
+    sessionNewSeenTimersRef.current.clear();
+    setSessionNewItems({});
+  }
+
+  function hasSessionNewOnPage(page) {
+    return Object.values(sessionNewItems).some((item) => item.page === page);
+  }
+
+  function isSessionNew(page, kind, id) {
+    return Boolean(sessionNewItems[`${page}|${kind}:${id}`]);
+  }
+
+  function sessionNewKey(page, kind, id) {
+    return `${page}|${kind}:${id}`;
+  }
+
+  function markSessionNewSeen(key) {
+    setSessionNewItems((current) => {
+      if (!current[key]) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }
+
+  function newContentLabel(page, kind, id) {
+    return isSessionNew(page, kind, id) ? <span className="session-new-label">NEW</span> : null;
+  }
+
+  function navIconWithNew(icon, page, title = 'New content') {
+    return <span className="page-nav-icon">{icon}{hasSessionNewOnPage(page) && <span className="page-new-indicator" title={title} aria-label={title}><Sparkles size={7} /></span>}</span>;
+  }
+
   useEffect(() => {
     siteConfigRef.current = siteConfig;
   }, [siteConfig]);
@@ -400,6 +464,56 @@ export default function RUMS() {
     });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!rumsSpace || sessionNewTrackingSpaceRef.current !== rumsSpace) return;
+    const entries = trackedContentEntries(posts, suggestions, updates, siteConfig, rumsSpace);
+    const known = sessionKnownContentRef.current;
+    const added = {};
+    for (const entry of entries) {
+      if (known.has(entry.key)) continue;
+      known.add(entry.key);
+      added[entry.key] = entry;
+    }
+    if (Object.keys(added).length) setSessionNewItems((current) => ({ ...current, ...added }));
+  }, [posts, suggestions, updates, siteConfig.customWidgets, rumsSpace]);
+
+  useEffect(() => {
+    const activeKeys = new Set(Object.keys(sessionNewItems));
+    if (!activeKeys.size) return undefined;
+    const timers = sessionNewSeenTimersRef.current;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const key = entry.target.getAttribute('data-session-new-key');
+        if (!key || !activeKeys.has(key)) continue;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.45) {
+          if (!timers.has(key)) {
+            const timer = window.setTimeout(() => {
+              timers.delete(key);
+              markSessionNewSeen(key);
+            }, 550);
+            timers.set(key, timer);
+          }
+        } else if (timers.has(key)) {
+          clearTimeout(timers.get(key));
+          timers.delete(key);
+        }
+      }
+    }, { threshold: [0, 0.45, 0.75] });
+    document.querySelectorAll('[data-session-new-key]').forEach((node) => {
+      const key = node.getAttribute('data-session-new-key');
+      if (key && activeKeys.has(key)) observer.observe(node);
+    });
+    return () => {
+      observer.disconnect();
+      timers.forEach((timer, key) => {
+        if (activeKeys.has(key)) {
+          clearTimeout(timer);
+          timers.delete(key);
+        }
+      });
+    };
+  }, [sessionNewItems, screen, feedFilter, customPageId, luminaView]);
 
   useEffect(() => {
     if (editMode) {
@@ -896,6 +1010,7 @@ export default function RUMS() {
       if (space === 'rums5') loadedConfig = sanitizeConfigForRums5(loadedConfig);
       if (migratedConfig.changed) void window.storage.set(keys.siteConfig, JSON.stringify(loadedConfig), true).catch((e) => console.error(e));
 
+      primeSessionNewBaseline(space, loadedPosts, sg ? JSON.parse(sg.value) : [], up ? JSON.parse(up.value) : [], loadedConfig);
       setEditMode(false);
       setSelectedBoxId(null);
       setFeedFilter('all');
@@ -961,10 +1076,13 @@ export default function RUMS() {
         try { await window.storage.set(keys.siteConfig, JSON.stringify(loadedConfig), true); } catch { /* migration can retry on a later load */ }
       }
       if (requestId !== spaceLoadTokenRef.current) return;
+      const loadedSuggestions = sg ? JSON.parse(sg.value) : [];
+      const loadedUpdates = up ? JSON.parse(up.value) : [];
+      primeSessionNewBaseline(space, loadedPosts, loadedSuggestions, loadedUpdates, loadedConfig);
       setUsers(loadedUsers);
       setPosts(loadedPosts);
-      setSuggestions(sg ? JSON.parse(sg.value) : []);
-      setUpdates(up ? JSON.parse(up.value) : []);
+      setSuggestions(loadedSuggestions);
+      setUpdates(loadedUpdates);
       setSiteConfig(loadedConfig);
       siteConfigRef.current = loadedConfig;
       if (sessRec) {
@@ -2539,7 +2657,8 @@ export default function RUMS() {
     return (
       <div className="custom-widget-stack" data-widget-stack={placement}>
         {widgets.map((widget) => (
-          <article data-position-id={widget.id} data-widget-placement={widget.placement} className={`custom-site-widget ${widget.id === PLAZA_OVERHAUL_WIDGET_ID ? 'plaza-overhaul-announcement' : ''} ${widget.image ? 'has-widget-image' : 'no-widget-image'} widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''} ${selectedBoxId === `widget:${widget.id}` ? 'is-editor-selected' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDownCapture={(event) => { if (editMode && isOwner && !(event.target instanceof Element && event.target.closest('.widget-edit-controls'))) setSelectedBoxId(`widget:${widget.id}`); }}>
+          <article data-position-id={widget.id} data-widget-placement={widget.placement} data-session-new-key={sessionNewKey(pageKeyForPlacement(widget.placement), 'widget', widget.id)} className={`custom-site-widget ${widget.id === PLAZA_OVERHAUL_WIDGET_ID ? 'plaza-overhaul-announcement' : ''} ${widget.image ? 'has-widget-image' : 'no-widget-image'} widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''} ${selectedBoxId === `widget:${widget.id}` ? 'is-editor-selected' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDownCapture={(event) => { if (editMode && isOwner && !(event.target instanceof Element && event.target.closest('.widget-edit-controls'))) setSelectedBoxId(`widget:${widget.id}`); }}>
+            {newContentLabel(pageKeyForPlacement(widget.placement), 'widget', widget.id)}
             {editMode && isOwner && selectedBoxId === `widget:${widget.id}` && <div className="widget-edit-controls"><button type="button" className="widget-drag-handle" onPointerDown={(event) => startWidgetReorder(widget.id, event)} title="Hold and drag to move this box"><GripVertical size={15} /> Move box</button><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
             {widget.image && <img src={widget.image} alt="" />}
             <div><h3 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { title: e.currentTarget.textContent.trim() })}>{widget.title}</h3>{widget.body && <p contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { body: e.currentTarget.textContent.trim() })}>{widget.body}</p>}
@@ -2571,7 +2690,7 @@ export default function RUMS() {
   const feedBoxHandle = (id) => editMode && isOwner && selectedBoxId === `feed:${id}` ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
   function renderFeedBox(id) {
     if (id === 'hero') return <section data-feed-box="hero" data-edit-box-id="feed:hero" className={`editable-built-in-box ${selectedBoxId === 'feed:hero' ? 'is-editor-selected' : ''}`} key="hero" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:hero'); }}>{feedBoxHandle('hero')}<div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div></section>;
-    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge"><Droplet size={18} color="white" /></div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default' }))}</section>;
+    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge lumina-page-badge"><Droplet size={18} color="white" />{hasSessionNewOnPage('lumina') && <span className="page-new-indicator" title="New in Project Lumina"><Sparkles size={7} /></span>}</div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default', newPageKey: 'feed' }))}</section>;
   }
 
   function renderFeedTabs() {
@@ -2683,12 +2802,13 @@ export default function RUMS() {
 
   // Renders a single post card. Shared by the feed list and the single-post
   // detail view (reached by clicking a post from search results).
-  function renderPost(post, { reactionContext = 'default' } = {}) {
+  function renderPost(post, { reactionContext = 'default', newPageKey = null } = {}) {
     const liked = post.likes.includes(currentUser.username);
     const showComments = !!openComments[post.id];
     return (
-      <div className="post-card" data-edit-box-id={`post:${post.id}`} key={post.id}>
+      <div className="post-card" data-edit-box-id={`post:${post.id}`} data-session-new-key={newPageKey ? sessionNewKey(newPageKey, 'post', post.id) : undefined} key={post.id}>
         <div className="post-top">
+          {newPageKey && newContentLabel(newPageKey, 'post', post.id)}
           <div className="post-user clickable-row" onClick={() => openProfile(post.username)}>
             {avatarNode(post.username, 32)}
             <div>
@@ -2895,16 +3015,16 @@ export default function RUMS() {
             <aside className="desktop-rail">
               <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span></div>
               <div className="rail-label">EXPLORE</div>
-              <button className={`rail-link ${screen === 'feed' ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); }}><Home size={19} /> Community feed {hasNewPosts && <span className="rail-dot" />}</button>
-              {siteConfig.showDiscover && <button className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}><Search size={19} /> Discover</button>}
-              {!isRums5 && siteConfig.showLumina && <button className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}><Droplet size={19} /> Project Lumina</button>}
+              <button className={`rail-link ${screen === 'feed' ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); }}>{navIconWithNew(<Home size={19} />, 'feed')} Community feed</button>
+              {siteConfig.showDiscover && <button className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}>{navIconWithNew(<Search size={19} />, 'search')} Discover</button>}
+              {!isRums5 && siteConfig.showLumina && <button className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
               <div className="rail-label">COMMUNITY</div>
-              {siteConfig.showUpdates && <button className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}><Megaphone size={19} /> Server updates</button>}
-              {siteConfig.showSuggestions && <button className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}><Lightbulb size={19} /> Suggestions</button>}
-              {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}><Pencil size={19} /> {tab.label}</button>)}
+              {siteConfig.showUpdates && <button className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
+              {siteConfig.showSuggestions && <button className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
+              {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{navIconWithNew(<Pencil size={19} />, `custom:${tab.id}`)} {tab.label}</button>)}
               {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
               {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onClick={() => setEditMode(true)}>{editMode ? <Check size={19} /> : <Eye size={19} />} {editMode ? 'Editing website' : 'Edit website'}</button>}
-              <button className="rail-create" onClick={() => setScreen('upload')}><Plus size={19} /> Share a build</button>
+              <button className="rail-create" onClick={() => setScreen('upload')}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS Plaza · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
@@ -2916,10 +3036,10 @@ export default function RUMS() {
                 {editMode && isOwner ? <button className="finish-editing-button" onClick={() => setEditMode(false)}><Check size={17} /> Finish editing</button> : <>
                 {isOwner && <button className="icon-btn" onClick={() => setEditMode(true)} title="Edit website"><Pencil size={18} /></button>}
                 {siteConfig.showDiscover && <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
-                  <Search size={18} />
+                  {navIconWithNew(<Search size={18} />, 'search')}
                 </button>}
-                <button className="pill pill-btn" onClick={openOwnProfile} title="Your profile">
-                  {avatarNode(currentUser.username, 18, 8)}
+                <button className="pill pill-btn profile-pill-with-new" onClick={openOwnProfile} title="Your profile">
+                  <span className="profile-avatar-new-wrap">{avatarNode(currentUser.username, 18, 8)}{hasSessionNewOnPage('profile') && <span className="page-new-indicator" title="New profile content"><Sparkles size={7} /></span>}</span>
                   {currentUser.username}
                   {currentUser.isAdmin && <ShieldCheck size={13} color="#0fb8a6" />}
                 </button>
@@ -2931,7 +3051,7 @@ export default function RUMS() {
             </div>
 
             <div className="content">
-              {siteConfig.customTabs.length > 0 && <div className="custom-mobile-tabs">{siteConfig.customTabs.map((tab) => <button key={tab.id} className={screen === 'custom' && customPageId === tab.id ? 'active' : ''} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{tab.label}</button>)}</div>}
+              {siteConfig.customTabs.length > 0 && <div className="custom-mobile-tabs">{siteConfig.customTabs.map((tab) => <button key={tab.id} className={screen === 'custom' && customPageId === tab.id ? 'active' : ''} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{tab.label}{hasSessionNewOnPage(`custom:${tab.id}`) && <span className="custom-tab-new">NEW</span>}</button>)}</div>}
               {editMode && isOwner && screen !== 'admin' && renderVisualEditToolbar()}
               {error && (
                 <div style={{ padding: '10px 16px 0' }}>
@@ -2994,7 +3114,7 @@ export default function RUMS() {
 
                   {luminaView === 'community' && <section className="lumina-view-panel lumina-community-section">
                     <div className="lumina-section-heading"><div><span className="eyebrow">FROM THE COMMUNITY</span><h2>Latest views</h2><p>Places and progress shared by RUMS members.</p></div><button onClick={() => { setFeedFilter('lumina'); setScreen('feed'); }}>Open feed</button></div>
-                    {luminaPosts.length ? <div className="lumina-gallery">{luminaPosts.slice(0, 8).map((p) => <button key={p.id} onClick={() => openPost(p.id)} aria-label={`Open post by ${p.username}`}><img src={p.image} alt="" /><span>{p.username}</span>{p.caption && <small>{p.caption}</small>}</button>)}</div> : <div className="lumina-gallery-empty"><Droplet size={22} /><p>No Lumina views have been shared yet.</p><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}>Share the first</button></div>}
+                    {luminaPosts.length ? <div className="lumina-gallery">{luminaPosts.slice(0, 8).map((p) => <button key={p.id} data-session-new-key={sessionNewKey('lumina', 'post', p.id)} onClick={() => openPost(p.id)} aria-label={`Open post by ${p.username}`}>{newContentLabel('lumina', 'post', p.id)}<img src={p.image} alt="" /><span>{p.username}</span>{p.caption && <small>{p.caption}</small>}</button>)}</div> : <div className="lumina-gallery-empty"><Droplet size={22} /><p>No Lumina views have been shared yet.</p><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}>Share the first</button></div>}
                     <button className="lumina-share-card" onClick={() => { setTag('Lumina'); setScreen('upload'); }}><span className="composer-upload-icon"><ImagePlus size={21} /></span><span><b>Add your view of Lumina</b><small>Share a build, street or skyline moment</small></span><Plus size={18} /></button>
                   </section>}
                 </div>
@@ -3077,8 +3197,9 @@ export default function RUMS() {
                   {visibleSuggestions.map((s) => {
                     const voted = (s.votes || []).includes(currentUser.username);
                     return (
-                      <div className="suggestion-card" data-edit-box-id={`suggestion:${s.id}`} key={s.id}>
+                      <div className="suggestion-card" data-edit-box-id={`suggestion:${s.id}`} data-session-new-key={sessionNewKey('suggestions', 'suggestion', s.id)} key={s.id}>
                         <div className="suggestion-top">
+                          {newContentLabel('suggestions', 'suggestion', s.id)}
                           <div className="user-row-left clickable-row" onClick={() => openProfile(s.username)}>
                             {avatarNode(s.username, 24, 10)}
                             {s.username}
@@ -3146,8 +3267,9 @@ export default function RUMS() {
                     ) : (
                       <div className="updates-list">
                         {visibleUpdates.map((u) => (
-                          <article className="update-card" data-edit-box-id={`update:${u.id}`} key={u.id}>
+                          <article className="update-card" data-edit-box-id={`update:${u.id}`} data-session-new-key={sessionNewKey('updates', 'update', u.id)} key={u.id}>
                             <div className="post-top">
+                              {newContentLabel('updates', 'update', u.id)}
                               <div className="update-card-copy">
                                 <div className="post-user-name">{u.title}</div>
                                 <div className="post-time">
@@ -3492,19 +3614,18 @@ export default function RUMS() {
             <div className="bottom-nav">
               <button className={`nav-btn ${screen === 'feed' ? 'active' : ''}`} onClick={() => setScreen('feed')}>
                 <span className="nav-icon-wrap">
-                  <Home size={19} />
-                  {hasNewPosts && <span className="nav-badge-dot" />}
+                  {navIconWithNew(<Home size={19} />, 'feed')}
                 </span>
                 <span className="nav-label">Feed</span>
               </button>
               {siteConfig.showSuggestions && <button className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
-                <span className="nav-icon-wrap"><Lightbulb size={19} /></span><span className="nav-label">Ideas</span>
+                <span className="nav-icon-wrap">{navIconWithNew(<Lightbulb size={19} />, 'suggestions')}</span><span className="nav-label">Ideas</span>
               </button>}
               <button className="nav-upload" onClick={() => { setError(''); setScreen('upload'); }}>
-                <Plus size={24} />
+                {navIconWithNew(<Plus size={24} />, 'upload')}
               </button>
               {siteConfig.showUpdates && <button className={`nav-btn ${screen === 'updates' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('updates'); }}>
-                <span className="nav-icon-wrap"><Megaphone size={19} /></span><span className="nav-label">Updates</span>
+                <span className="nav-icon-wrap">{navIconWithNew(<Megaphone size={19} />, 'updates')}</span><span className="nav-label">Updates</span>
               </button>}
               {canEditSite ? (
                 <button className={`nav-btn ${screen === 'admin' ? 'active' : ''}`} onClick={() => setScreen('admin')}>
