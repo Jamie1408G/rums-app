@@ -47,6 +47,7 @@ const LUMINA_STATIONS = [
 ];
 const lastSeenKey = (username, space = 'rums4') => space === 'rums5' ? `rums5-lastseen-${username}` : `rums-lastseen-${username}`;
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
+const REACTION_EMOJIS = ['👍', '😂', '🔥', '😮', '🎉', '💯'];
 
 const UNIVERSAL_EDIT_BOX_SELECTOR = [
   '.post-card', '.lumina-banner', '.feed-empty', '.lumina-project-hero',
@@ -132,6 +133,7 @@ export default function RUMS() {
   const [feedFilter, setFeedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [shareStatus, setShareStatus] = useState({});
+  const [reactionMenus, setReactionMenus] = useState({});
   const [mention, setMention] = useState(null); // { postId, query, start }
   const [lastSeen, setLastSeen] = useState({ General: 0, Lumina: 0 });
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -1428,6 +1430,7 @@ export default function RUMS() {
       timestamp: Date.now(),
       likes: [],
       comments: [],
+      reactions: {},
     };
     await savePosts([newPost, ...posts]);
     setUploadPreview(null);
@@ -1447,6 +1450,91 @@ export default function RUMS() {
       };
     });
     await savePosts(next);
+  }
+
+
+  function cleanedReactions(reactions, emoji, username) {
+    const next = { ...(reactions || {}) };
+    const users = Array.isArray(next[emoji]) ? next[emoji] : [];
+    next[emoji] = users.includes(username) ? users.filter((u) => u !== username) : [...users, username];
+    if (next[emoji].length === 0) delete next[emoji];
+    return next;
+  }
+
+  async function togglePostReaction(postId, emoji) {
+    if (!currentUser || !REACTION_EMOJIS.includes(emoji)) return;
+    const post = posts.find((p) => p.id === postId);
+    if (!post || post.tag === 'Lumina') return;
+    const next = posts.map((p) => p.id === postId
+      ? { ...p, reactions: cleanedReactions(p.reactions, emoji, currentUser.username) }
+      : p
+    );
+    await savePosts(next);
+  }
+
+  async function toggleSuggestionReaction(suggestionId, emoji) {
+    if (!currentUser || !REACTION_EMOJIS.includes(emoji)) return;
+    const next = suggestions.map((s) => s.id === suggestionId
+      ? { ...s, reactions: cleanedReactions(s.reactions, emoji, currentUser.username) }
+      : s
+    );
+    await saveSuggestions(next);
+  }
+
+  function renderReactionBar(item, kind) {
+    if (!currentUser || (kind === 'post' && item.tag === 'Lumina')) return null;
+    const menuKey = `${kind}:${item.id}`;
+    const reactions = item.reactions || {};
+    const visible = REACTION_EMOJIS.filter((emoji) => (reactions[emoji] || []).length > 0);
+    const menuOpen = !!reactionMenus[menuKey];
+    const toggle = kind === 'post' ? togglePostReaction : toggleSuggestionReaction;
+    return (
+      <div className={`reaction-bar ${menuOpen ? 'is-open' : ''}`}>
+        <div className="reaction-chips">
+          {visible.map((emoji) => {
+            const users = reactions[emoji] || [];
+            const mine = users.includes(currentUser.username);
+            return (
+              <button
+                type="button"
+                key={emoji}
+                className={`reaction-chip ${mine ? 'mine' : ''}`}
+                onClick={() => toggle(item.id, emoji)}
+                title={users.length ? `${users.length} reaction${users.length === 1 ? '' : 's'}` : 'React'}
+                aria-pressed={mine}
+              >
+                <span>{emoji}</span><b>{users.length}</b>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className={`reaction-add ${menuOpen ? 'active' : ''}`}
+            onClick={() => setReactionMenus((menus) => ({ ...menus, [menuKey]: !menus[menuKey] }))}
+            aria-label={menuOpen ? 'Close reactions' : 'Add reaction'}
+            title={menuOpen ? 'Close reactions' : 'Add reaction'}
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+        {menuOpen && (
+          <div className="reaction-picker" aria-label="Choose a reaction">
+            {REACTION_EMOJIS.map((emoji) => {
+              const mine = (reactions[emoji] || []).includes(currentUser.username);
+              return (
+                <button
+                  type="button"
+                  key={emoji}
+                  className={mine ? 'selected' : ''}
+                  onClick={() => toggle(item.id, emoji)}
+                  aria-pressed={mine}
+                >{emoji}</button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
   }
 
   async function submitComment(postId) {
@@ -1547,6 +1635,7 @@ export default function RUMS() {
       .map((p) => ({
         ...p,
         likes: p.likes.filter((u) => u !== username),
+        reactions: Object.fromEntries(Object.entries(p.reactions || {}).map(([emoji, names]) => [emoji, (names || []).filter((u) => u !== username)]).filter(([, names]) => names.length)),
         comments: p.comments
           .filter((c) => c.username !== username)
           .map((c) => ({ ...c, likes: (c.likes || []).filter((u) => u !== username) })),
@@ -1554,7 +1643,7 @@ export default function RUMS() {
     await savePosts(nextPosts);
     const nextSuggestions = suggestions
       .filter((s) => s.username !== username)
-      .map((s) => ({ ...s, votes: (s.votes || []).filter((u) => u !== username) }));
+      .map((s) => ({ ...s, votes: (s.votes || []).filter((u) => u !== username), reactions: Object.fromEntries(Object.entries(s.reactions || {}).map(([emoji, names]) => [emoji, (names || []).filter((u) => u !== username)]).filter(([, names]) => names.length)) }));
     await saveSuggestions(nextSuggestions);
   }
 
@@ -1634,6 +1723,7 @@ export default function RUMS() {
         ...p,
         username: p.username === oldUsername ? trimmed : p.username,
         likes: p.likes.map((u) => (u === oldUsername ? trimmed : u)),
+        reactions: Object.fromEntries(Object.entries(p.reactions || {}).map(([emoji, names]) => [emoji, (names || []).map((u) => (u === oldUsername ? trimmed : u))])),
         comments: p.comments.map((c) => ({
           ...c,
           username: c.username === oldUsername ? trimmed : c.username,
@@ -1644,6 +1734,7 @@ export default function RUMS() {
         ...s,
         username: s.username === oldUsername ? trimmed : s.username,
         votes: (s.votes || []).map((u) => (u === oldUsername ? trimmed : u)),
+        reactions: Object.fromEntries(Object.entries(s.reactions || {}).map(([emoji, names]) => [emoji, (names || []).map((u) => (u === oldUsername ? trimmed : u))])),
       }));
       const nextUpdates = updates.map((u) => ({
         ...u,
@@ -1694,6 +1785,7 @@ export default function RUMS() {
       text,
       timestamp: Date.now(),
       votes: [],
+      reactions: {},
     };
     await saveSuggestions([newS, ...suggestions]);
     setSuggestionDraft('');
@@ -2207,6 +2299,7 @@ export default function RUMS() {
             {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
           </button>
         </div>
+        {renderReactionBar(post, 'post')}
         {post.caption && (
           <div className="post-caption">
             <b className="clickable-text" onClick={() => openProfile(post.username)}>{post.username}</b>
@@ -2570,6 +2663,7 @@ export default function RUMS() {
                           <Heart size={14} fill={voted ? '#e0546b' : 'none'} />
                           {(s.votes || []).length > 0 ? (s.votes || []).length : 'Upvote'}
                         </button>
+                        {renderReactionBar(s, 'suggestion')}
                       </div>
                     );
                   })}
