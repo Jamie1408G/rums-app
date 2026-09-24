@@ -32,7 +32,7 @@ const ROBLOX_THEMES = [
 const FRUTIGER_THEME_IDS = ['frutiger', 'frutigereco', 'frutigermetro', 'vectorflourish'];
 const PUNK_THEME_IDS = ['solarpunk', 'cyberpunk'];
 const RUMS_THEMES = [
-  { id: 'standard', name: 'Standard', description: 'Glossy modern RUMS Plaza', swatches: ['#f6f8fc', '#3478f6', '#b8d7ff'] },
+  { id: 'standard', name: 'Light', description: 'Glossy modern RUMS Plaza', swatches: ['#f6f8fc', '#3478f6', '#b8d7ff'] },
   ...ROBLOX_THEMES,
   { id: 'dark', name: 'Dark', description: 'Deep graphite glass with cool blue accents', swatches: ['#12151b', '#2c3440', '#6da8ff'] },
   { id: 'minecraft', name: 'Minecraft', description: 'Blocky stone, grass and dirt-inspired UI', swatches: ['#7cab43', '#6b4c2e', '#9a9a9a'] },
@@ -3786,9 +3786,9 @@ export default function RUMS() {
                       </div>
 
                       <div className="profile-section appearance-section">
-                        <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Choose a RUMS Plaza theme, then fine-tune its glass transparency on this device.</p></div><span className="appearance-current-theme">{RUMS_THEMES.find((item) => item.id === theme)?.name || 'Standard'}</span></div>
+                        <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Choose a RUMS Plaza theme, then fine-tune its glass transparency on this device.</p></div><span className="appearance-current-theme">{RUMS_THEMES.find((item) => item.id === theme)?.name || 'Light'}</span></div>
                         <div className="theme-picker" role="radiogroup" aria-label="RUMS Plaza theme">
-                          {MAIN_THEME_OPTIONS.filter((item) => item.id === 'standard').map((item) => (
+                          {['standard', 'dark'].map((id) => MAIN_THEME_OPTIONS.find((item) => item.id === id)).filter(Boolean).map((item) => (
                             <button
                               type="button"
                               role="radio"
@@ -3906,7 +3906,7 @@ export default function RUMS() {
                             </div>
                           )}
 
-                          {MAIN_THEME_OPTIONS.filter((item) => item.id !== 'standard').map((item) => (
+                          {MAIN_THEME_OPTIONS.filter((item) => !['standard', 'dark'].includes(item.id)).map((item) => (
                             <button
                               type="button"
                               role="radio"
