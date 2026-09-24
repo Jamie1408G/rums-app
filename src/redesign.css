@@ -147,6 +147,10 @@ button,input,textarea { font:inherit; }
 .ambient-gloss i:nth-child(5) {right:9%;bottom:18%;width:31px;height:34px;border-radius:43% 57% 54% 46% / 58% 43% 57% 42%;transform:translate3d(var(--orb-c-y,0),var(--orb-b-x,0),0) rotate(var(--orb-tilt-soft,0deg));opacity:.72;}
 @media(max-width:900px) {.ambient-gloss i:nth-child(1) {left:3%;top:21%;}.ambient-gloss i:nth-child(2) {right:2%;top:41%;}.ambient-gloss i:nth-child(4) {right:6%;top:12%;}.ambient-gloss i:nth-child(5) {right:3%;bottom:15%;}}
 @media(prefers-reduced-motion:reduce) {.ambient-gloss i {transition:none!important;transform:none!important;}}
+
+/* Keep scroll motion behind the interface; decorative glass never overlays content. */
+.ambient-gloss {display:none!important;}
+.aero-root .content {background-image:radial-gradient(42px 36px at calc(9% + var(--orb-a-x,0px)) calc(18% + var(--orb-a-y,0px)),#ffffffd9 0,#a9d1ff70 42%,#73c6aa42 65%,transparent 76%),radial-gradient(34px 30px at calc(91% + var(--orb-b-x,0px)) calc(68% + var(--orb-b-y,0px)),#ffffffc9 0,#b6d8ff62 40%,#80cfaf38 65%,transparent 77%);background-attachment:local;background-repeat:no-repeat;}
 @media(prefers-reduced-motion:reduce) {.aero-root .feed-tabs.is-dragging::after {display:none;}}
 
 /* Stronger mobile liquid thumb and a true icon dock. */

@@ -1062,7 +1062,6 @@ export default function RUMS() {
 
   return (
     <div className="aero-root" ref={rootRef} style={{ '--glass-alpha': glassStrength / 100 }}>
-      <div className="ambient-gloss" aria-hidden="true"><i /><i /><i /><i /><i /></div>
       <div className="aero-frame">
         {screen === 'loading' && (
           <div className="center-loading">
