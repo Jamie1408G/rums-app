@@ -162,8 +162,9 @@ button,input,textarea { font:inherit; }
   top:5px;
   width:84px;
   height:calc(100% - 10px);
+  border:2px solid transparent;
   border-radius:18px;
-  background:radial-gradient(70px 24px at var(--tab-reflection-x,var(--lumina-reflection-x,32%)) -2px,#fff 0,#ffffff8f 28%,transparent 70%),radial-gradient(28px 44px at 0 50%,#ffffff5c 0,#ffffff18 48%,transparent 74%),radial-gradient(28px 44px at 100% 52%,#ffffff48 0,#ffffff12 50%,transparent 75%),linear-gradient(145deg,#ffffff58,#ffffff0c 58%,#ffffff35);
+  background:radial-gradient(70px 24px at var(--tab-reflection-x,var(--lumina-reflection-x,32%)) -2px,#fff 0,#ffffff8f 28%,transparent 70%) padding-box,radial-gradient(28px 44px at 0 50%,#ffffff5c 0,#ffffff18 48%,transparent 74%) padding-box,radial-gradient(28px 44px at 100% 52%,#ffffff48 0,#ffffff12 50%,transparent 75%) padding-box,linear-gradient(145deg,#ffffff58,#ffffff0c 58%,#ffffff35) padding-box,conic-gradient(from 205deg,color-mix(in srgb,var(--glass-edge-color,#286bd5) 42%,#56efff),#ffffffed,color-mix(in srgb,var(--glass-edge-color,#286bd5) 38%,#f35cff),color-mix(in srgb,var(--glass-edge-color,#286bd5) 35%,#fff36a),#ffffffde,color-mix(in srgb,var(--glass-edge-color,#286bd5) 40%,#5affbd),color-mix(in srgb,var(--glass-edge-color,#286bd5) 42%,#56efff)) border-box;
   transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,47px)) - 47px)) scaleY(1.03);
   box-shadow:inset 3px 3px 5px #fff,inset 6px 0 9px #ffffff70,inset -6px 0 9px #ffffff55,inset 0 -4px 7px #ffffff42,0 0 0 2px #ffffffb8,0 0 0 4px #ffffff2f,0 8px 22px #345b8a4f;
   backdrop-filter:blur(3px) saturate(1.55) contrast(1.1) brightness(1.06);
