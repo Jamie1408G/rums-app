@@ -1210,8 +1210,8 @@ export default function RUMS() {
   const renderCustomWidgets = (placement) => siteConfig.customWidgets
     .filter((widget) => widget.placement === placement)
     .map((widget) => (
-      <article data-position-id={widget.id} className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff', '--position-x': `${widget.x || 0}px`, '--position-y': `${widget.y || 0}px` }} onPointerDown={(event) => { if (!editMode || !isOwner || event.target.closest('button,a,input,select,textarea,label,[contenteditable="true"],.widget-edit-controls')) return; startPositionDrag('widget', widget.id, event); }} onDragOver={(e) => { if (editMode && isOwner) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); dropCustomWidget(e.dataTransfer.getData('text/rums-widget'), widget.id); }}>
-        {editMode && isOwner && <div className="widget-edit-controls"><span className="widget-drag-handle" onPointerDown={(event) => startPositionDrag('widget', widget.id, event)} title="Drag freely"><GripVertical size={15} /></span><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
+      <article data-position-id={widget.id} className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} draggable={editMode && isOwner} onDragStart={(event) => { if (event.target.closest('button,a,input,select,textarea,label,[contenteditable="true"]')) { event.preventDefault(); return; } event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/rums-widget', widget.id); event.currentTarget.classList.add('is-widget-reordering'); }} onDragEnd={(event) => event.currentTarget.classList.remove('is-widget-reordering')} onDragOver={(e) => { if (editMode && isOwner) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } }} onDrop={(e) => { e.preventDefault(); dropCustomWidget(e.dataTransfer.getData('text/rums-widget'), widget.id); }}>
+        {editMode && isOwner && <div className="widget-edit-controls"><span className="widget-drag-handle" title="Drag the widget to reorder"><GripVertical size={15} /></span><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
         {widget.image && <img src={widget.image} alt="" />}
         <div><h3 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { title: e.currentTarget.textContent.trim() })}>{widget.title}</h3>{widget.body && <p contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { body: e.currentTarget.textContent.trim() })}>{widget.body}</p>}
           {widget.actionLabel && widget.actionUrl && <a href={widget.actionUrl} target="_blank" rel="noreferrer">{widget.actionLabel}</a>}
@@ -1453,7 +1453,8 @@ export default function RUMS() {
                 {siteConfig.brandName}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {isOwner && !editMode && <button className="icon-btn" onClick={() => setEditMode(true)} title="Edit website"><Pencil size={18} /></button>}
+                {editMode && isOwner ? <button className="finish-editing-button" onClick={() => setEditMode(false)}><Check size={17} /> Finish editing</button> : <>
+                {isOwner && <button className="icon-btn" onClick={() => setEditMode(true)} title="Edit website"><Pencil size={18} /></button>}
                 {siteConfig.showDiscover && <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   <Search size={18} />
                 </button>}
@@ -1465,9 +1466,9 @@ export default function RUMS() {
                 <button className="icon-btn" onClick={handleLogout} title="Log out">
                   <LogOut size={18} />
                 </button>
+                </>}
               </div>
             </div>
-            {editMode && isOwner && <button className="finish-editing-button" onClick={() => setEditMode(false)}><Check size={17} /> Finish editing</button>}
 
             {screen === 'feed' && (
               <div ref={tabsRef} className={`feed-tabs ${tabsDragging ? 'is-dragging' : ''}`}
