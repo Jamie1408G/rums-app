@@ -615,6 +615,34 @@ export default function RUMS() {
     saveSiteConfig({ ...siteConfig, customWidgets: widgets });
   }
 
+  function startWidgetReorder(id, event) {
+    if (!editMode || !isOwner) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const widget = siteConfig.customWidgets.find((item) => item.id === id);
+    const element = document.querySelector(`[data-position-id="${CSS.escape(id)}"]`);
+    if (!widget || !element) return;
+    const startY = event.clientY;
+    element.classList.add('is-widget-reordering');
+    const move = (moveEvent) => element.style.setProperty('--reorder-y', `${moveEvent.clientY - startY}px`);
+    const end = (endEvent) => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      const candidates = [...document.querySelectorAll(`[data-widget-placement="${CSS.escape(widget.placement)}"]`)].filter((node) => node !== element);
+      const target = candidates.reduce((closest, node) => {
+        const distance = Math.abs(node.getBoundingClientRect().top + node.getBoundingClientRect().height / 2 - endEvent.clientY);
+        return !closest || distance < closest.distance ? { node, distance } : closest;
+      }, null)?.node;
+      element.classList.remove('is-widget-reordering');
+      element.style.removeProperty('--reorder-y');
+      if (target) dropCustomWidget(id, target.dataset.positionId);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  }
+
   function updateSiteText(key, value) {
     saveSiteConfig({ ...siteConfig, textOverrides: { ...(siteConfig.textOverrides || {}), [key]: value.trim() } });
   }
@@ -1210,8 +1238,8 @@ export default function RUMS() {
   const renderCustomWidgets = (placement) => siteConfig.customWidgets
     .filter((widget) => widget.placement === placement)
     .map((widget) => (
-      <article data-position-id={widget.id} className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} draggable={editMode && isOwner} onDragStart={(event) => { if (event.target.closest('button,a,input,select,textarea,label,[contenteditable="true"]')) { event.preventDefault(); return; } event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/rums-widget', widget.id); event.currentTarget.classList.add('is-widget-reordering'); }} onDragEnd={(event) => event.currentTarget.classList.remove('is-widget-reordering')} onDragOver={(e) => { if (editMode && isOwner) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } }} onDrop={(e) => { e.preventDefault(); dropCustomWidget(e.dataTransfer.getData('text/rums-widget'), widget.id); }}>
-        {editMode && isOwner && <div className="widget-edit-controls"><span className="widget-drag-handle" title="Drag the widget to reorder"><GripVertical size={15} /></span><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
+      <article data-position-id={widget.id} data-widget-placement={widget.placement} className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDown={(event) => { if (!editMode || !isOwner || event.target.closest('button,a,input,select,textarea,label,[contenteditable="true"],.widget-edit-controls')) return; startWidgetReorder(widget.id, event); }}>
+        {editMode && isOwner && <div className="widget-edit-controls"><span className="widget-drag-handle" onPointerDown={(event) => startWidgetReorder(widget.id, event)} title="Drag the widget to reorder"><GripVertical size={15} /></span><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
         {widget.image && <img src={widget.image} alt="" />}
         <div><h3 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { title: e.currentTarget.textContent.trim() })}>{widget.title}</h3>{widget.body && <p contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { body: e.currentTarget.textContent.trim() })}>{widget.body}</p>}
           {widget.actionLabel && widget.actionUrl && <a href={widget.actionUrl} target="_blank" rel="noreferrer">{widget.actionLabel}</a>}
