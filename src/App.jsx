@@ -3787,6 +3787,17 @@ export default function RUMS() {
 
                       <div className="profile-section appearance-section">
                         <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Choose a RUMS Plaza theme, then fine-tune its glass transparency on this device.</p></div><span className="appearance-current-theme">{RUMS_THEMES.find((item) => item.id === theme)?.name || 'Light'}</span></div>
+                        <div className="appearance-heading glass-strength-heading"><div><div className="field-label">Glass strength</div><p>Adjust the transparency of glass controls for the selected theme.</p></div><span data-glass-value>{glassStrength}%</span></div>
+                        <div className="glass-live-preview" aria-label={`Glass appearance preview at ${glassStrength} percent`}>
+                          <div className="preview-sun" /><div className="preview-hill" />
+                          <div className="preview-island"><span className="preview-icon"><Droplet size={16} /></span><span><b>Glass preview</b><small data-glass-description>{glassStrength < 55 ? 'Clear and light' : glassStrength < 78 ? 'Balanced glass' : 'Soft and frosted'}</small></span><span className="preview-action"><Plus size={14} /></span></div>
+                        </div>
+                        <div className={`glass-slider-shell ${glassDragging ? 'is-dragging' : ''}`} style={{ '--slider-position': `${(glassStrength - 35) / 60 * 100}%` }}>
+                          <input className="glass-range" type="range" min="35" max="95" step="1" defaultValue={glassStrength}
+                            aria-label="Glass transparency" onInput={(e) => previewGlassStrength(e.currentTarget.value, e.currentTarget)}
+                            onPointerDown={() => setGlassDragging(true)} onPointerUp={(e) => { setGlassDragging(false); commitGlassStrength(e.currentTarget); }} onPointerCancel={(e) => { setGlassDragging(false); commitGlassStrength(e.currentTarget); }} onBlur={(e) => { setGlassDragging(false); commitGlassStrength(e.currentTarget); }} onKeyUp={(e) => commitGlassStrength(e.currentTarget)} />
+                        </div>
+                        <div className="glass-slider-labels"><span>Clear</span><span>Frosted</span></div>
                         <div className="theme-picker" role="radiogroup" aria-label="RUMS Plaza theme">
                           {['standard', 'dark'].map((id) => MAIN_THEME_OPTIONS.find((item) => item.id === id)).filter(Boolean).map((item) => (
                             <button
@@ -3923,17 +3934,6 @@ export default function RUMS() {
                             </button>
                           ))}
                         </div>
-                        <div className="appearance-heading glass-strength-heading"><div><div className="field-label">Glass strength</div><p>Adjust the transparency of glass controls for the selected theme.</p></div><span data-glass-value>{glassStrength}%</span></div>
-                        <div className="glass-live-preview" aria-label={`Glass appearance preview at ${glassStrength} percent`}>
-                          <div className="preview-sun" /><div className="preview-hill" />
-                          <div className="preview-island"><span className="preview-icon"><Droplet size={16} /></span><span><b>Glass preview</b><small data-glass-description>{glassStrength < 55 ? 'Clear and light' : glassStrength < 78 ? 'Balanced glass' : 'Soft and frosted'}</small></span><span className="preview-action"><Plus size={14} /></span></div>
-                        </div>
-                        <div className={`glass-slider-shell ${glassDragging ? 'is-dragging' : ''}`} style={{ '--slider-position': `${(glassStrength - 35) / 60 * 100}%` }}>
-                          <input className="glass-range" type="range" min="35" max="95" step="1" defaultValue={glassStrength}
-                            aria-label="Glass transparency" onInput={(e) => previewGlassStrength(e.currentTarget.value, e.currentTarget)}
-                            onPointerDown={() => setGlassDragging(true)} onPointerUp={(e) => { setGlassDragging(false); commitGlassStrength(e.currentTarget); }} onPointerCancel={(e) => { setGlassDragging(false); commitGlassStrength(e.currentTarget); }} onBlur={(e) => { setGlassDragging(false); commitGlassStrength(e.currentTarget); }} onKeyUp={(e) => commitGlassStrength(e.currentTarget)} />
-                        </div>
-                        <div className="glass-slider-labels"><span>Clear</span><span>Frosted</span></div>
                       </div>
 
                       <div className="profile-section">
