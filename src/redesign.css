@@ -478,20 +478,45 @@ button,input,textarea { font:inherit; }
 
 /* Header-centered feed switch + compact editor toolbar. */
 .aero-root .aero-header {
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  display:flex;
   align-items:center;
-  column-gap:14px;
+  justify-content:space-between;
+  gap:14px;
+  overflow:visible;
 }
-.aero-header .aero-brand {justify-self:start;min-width:0;}
-.aero-header-actions {justify-self:end;display:flex;align-items:center;gap:8px;min-width:0;}
-.aero-header-center {justify-self:center;display:flex;align-items:center;min-width:0;}
+.aero-header .aero-brand {
+  flex:0 0 auto;
+  min-width:max-content;
+  white-space:nowrap;
+}
+.aero-header-actions {
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  min-width:max-content;
+  white-space:nowrap;
+}
+.aero-header-center {
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:3;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:242px;
+  pointer-events:none;
+}
 .aero-root .aero-header-center .feed-tabs {
   position:relative;
   inset:auto;
   z-index:2;
   width:242px;
   margin:0;
+  pointer-events:auto;
 }
 @media (min-width:901px) {
   .visual-edit-toolbar-main {justify-content:flex-start;}
@@ -499,13 +524,31 @@ button,input,textarea { font:inherit; }
   .visual-edit-toolbar > .visual-edit-toolbar-main > .editor-primary-actions {margin:0;}
 }
 @media (max-width:900px) {
-  .aero-root .aero-header {grid-template-columns:auto 1fr auto;column-gap:8px;}
+  .aero-root .aero-header {gap:8px;}
+  .aero-header-center,
   .aero-root .aero-header-center .feed-tabs {width:210px;}
 }
 @media (max-width:680px) {
-  .aero-root .aero-header {grid-template-columns:auto 1fr;}
-  .aero-header-center {grid-column:1 / -1;grid-row:2;justify-self:center;margin-top:8px;}
-  .aero-root .aero-header {height:auto;min-height:50px;}
+  .aero-root .aero-header {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-rows:auto auto;
+    height:auto;
+    min-height:50px;
+    row-gap:8px;
+  }
+  .aero-header .aero-brand {grid-column:1;grid-row:1;min-width:0;}
+  .aero-header-actions {grid-column:2;grid-row:1;min-width:0;}
+  .aero-header-center {
+    position:relative;
+    left:auto;
+    top:auto;
+    transform:none;
+    grid-column:1 / -1;
+    grid-row:2;
+    justify-self:center;
+    width:min(242px,calc(100vw - 34px));
+  }
   .aero-root .content {padding-top:72px;}
-  .aero-root .aero-header-center .feed-tabs {width:min(242px,calc(100vw - 34px));}
+  .aero-root .aero-header-center .feed-tabs {width:100%;}
 }
