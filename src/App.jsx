@@ -701,29 +701,66 @@ export default function RUMS() {
     if (!editMode || !isOwner) return;
     event.preventDefault();
     event.stopPropagation();
-    const widget = siteConfig.customWidgets.find((item) => item.id === id);
+    const widget = siteConfigRef.current.customWidgets.find((item) => item.id === id);
     const element = document.querySelector(`[data-position-id="${CSS.escape(id)}"]`);
-    if (!widget || !element) return;
+    const stack = element?.closest('.custom-widget-stack');
+    if (!widget || !element || !stack) return;
+    const startX = event.clientX;
     const startY = event.clientY;
     const handle = event.currentTarget;
     handle.setPointerCapture?.(event.pointerId);
+    const siblings = [...stack.querySelectorAll(':scope > [data-position-id]')];
+    const baseOrder = siblings.map((node) => node.dataset.positionId).filter(Boolean);
+    let previewOrder = [...baseOrder];
+    let activeTarget = null;
+    const applyPreview = () => siblings.forEach((node) => {
+      const index = previewOrder.indexOf(node.dataset.positionId);
+      node.style.order = index >= 0 ? String(index) : '';
+    });
+    const setTarget = (node) => {
+      if (activeTarget === node) return;
+      activeTarget?.classList.remove('is-live-drop-target');
+      activeTarget = node;
+      activeTarget?.classList.add('is-live-drop-target');
+    };
     element.classList.add('is-widget-reordering');
     document.documentElement.classList.add('is-reordering-widget');
-    const move = (moveEvent) => element.style.setProperty('--reorder-y', `${moveEvent.clientY - startY}px`);
+    const move = (moveEvent) => {
+      element.style.setProperty('--reorder-x', `${moveEvent.clientX - startX}px`);
+      element.style.setProperty('--reorder-y', `${moveEvent.clientY - startY}px`);
+      const candidates = siblings.filter((node) => node !== element);
+      const target = candidates.reduce((closest, node) => {
+        const rect = node.getBoundingClientRect();
+        const distance = Math.abs(rect.top + rect.height / 2 - moveEvent.clientY);
+        return !closest || distance < closest.distance ? { node, distance, rect } : closest;
+      }, null);
+      if (!target) return;
+      setTarget(target.node);
+      const next = previewOrder.filter((item) => item !== id);
+      const targetIndex = next.indexOf(target.node.dataset.positionId);
+      const after = moveEvent.clientY > target.rect.top + target.rect.height / 2;
+      next.splice(Math.max(0, targetIndex + (after ? 1 : 0)), 0, id);
+      if (next.join('|') !== previewOrder.join('|')) { previewOrder = next; applyPreview(); }
+    };
     const end = (endEvent) => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', end);
       window.removeEventListener('pointercancel', end);
-      const candidates = [...document.querySelectorAll(`[data-widget-placement="${CSS.escape(widget.placement)}"]`)].filter((node) => node !== element);
-      const target = candidates.reduce((closest, node) => {
-        const distance = Math.abs(node.getBoundingClientRect().top + node.getBoundingClientRect().height / 2 - endEvent.clientY);
-        return !closest || distance < closest.distance ? { node, distance } : closest;
-      }, null)?.node;
+      const cancelled = endEvent.type === 'pointercancel';
       element.classList.remove('is-widget-reordering');
       document.documentElement.classList.remove('is-reordering-widget');
+      element.style.removeProperty('--reorder-x');
       element.style.removeProperty('--reorder-y');
+      setTarget(null);
       if (handle.hasPointerCapture?.(event.pointerId)) handle.releasePointerCapture(event.pointerId);
-      if (target) dropCustomWidget(id, target.dataset.positionId);
+      siblings.forEach((node) => { node.style.order = ''; });
+      if (cancelled || previewOrder.join('|') === baseOrder.join('|')) return;
+      const current = siteConfigRef.current;
+      const reordered = [...current.customWidgets];
+      const placementIndexes = reordered.map((item, index) => item.placement === widget.placement ? index : -1).filter((index) => index >= 0);
+      const byId = new Map(reordered.map((item) => [item.id, item]));
+      previewOrder.forEach((widgetId, index) => { if (placementIndexes[index] != null && byId.has(widgetId)) reordered[placementIndexes[index]] = byId.get(widgetId); });
+      saveSiteConfig({ ...current, customWidgets: reordered });
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', end);
@@ -735,28 +772,60 @@ export default function RUMS() {
     event.preventDefault();
     event.stopPropagation();
     const element = document.querySelector(`[data-feed-box="${id}"]`);
-    if (!element) return;
+    const layout = element?.closest('.feed-box-layout');
+    if (!element || !layout) return;
+    const startX = event.clientX;
     const startY = event.clientY;
     const handle = event.currentTarget;
     handle.setPointerCapture?.(event.pointerId);
+    const siblings = [...layout.querySelectorAll(':scope > [data-feed-box]')];
+    const baseOrder = siblings.map((node) => node.dataset.feedBox).filter(Boolean);
+    let previewOrder = [...baseOrder];
+    let activeTarget = null;
+    const applyPreview = () => siblings.forEach((node) => {
+      const index = previewOrder.indexOf(node.dataset.feedBox);
+      node.style.order = index >= 0 ? String(index) : '';
+    });
+    const setTarget = (node) => {
+      if (activeTarget === node) return;
+      activeTarget?.classList.remove('is-live-drop-target');
+      activeTarget = node;
+      activeTarget?.classList.add('is-live-drop-target');
+    };
     element.classList.add('is-widget-reordering');
     document.documentElement.classList.add('is-reordering-widget');
-    const move = (moveEvent) => element.style.setProperty('--reorder-y', `${moveEvent.clientY - startY}px`);
+    const move = (moveEvent) => {
+      element.style.setProperty('--reorder-x', `${moveEvent.clientX - startX}px`);
+      element.style.setProperty('--reorder-y', `${moveEvent.clientY - startY}px`);
+      const candidates = siblings.filter((node) => node !== element);
+      const target = candidates.reduce((closest, node) => {
+        const rect = node.getBoundingClientRect();
+        const distance = Math.abs(rect.top + rect.height / 2 - moveEvent.clientY);
+        return !closest || distance < closest.distance ? { node, distance, rect } : closest;
+      }, null);
+      if (!target) return;
+      setTarget(target.node);
+      const next = previewOrder.filter((item) => item !== id);
+      const targetIndex = next.indexOf(target.node.dataset.feedBox);
+      const after = moveEvent.clientY > target.rect.top + target.rect.height / 2;
+      next.splice(Math.max(0, targetIndex + (after ? 1 : 0)), 0, id);
+      if (next.join('|') !== previewOrder.join('|')) { previewOrder = next; applyPreview(); }
+    };
     const end = (endEvent) => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', end);
       window.removeEventListener('pointercancel', end);
-      const target = [...document.querySelectorAll('[data-feed-box]')].filter((node) => node !== element).sort((a, b) => Math.abs(a.getBoundingClientRect().top + a.getBoundingClientRect().height / 2 - endEvent.clientY) - Math.abs(b.getBoundingClientRect().top + b.getBoundingClientRect().height / 2 - endEvent.clientY))[0];
+      const cancelled = endEvent.type === 'pointercancel';
       element.classList.remove('is-widget-reordering');
+      element.style.removeProperty('--reorder-x');
       element.style.removeProperty('--reorder-y');
       document.documentElement.classList.remove('is-reordering-widget');
+      setTarget(null);
       if (handle.hasPointerCapture?.(event.pointerId)) handle.releasePointerCapture(event.pointerId);
-      if (target) {
-        const order = [...(siteConfig.feedBoxOrder || ['hero', 'posts'])];
-        const from = order.indexOf(id);
-        const to = order.indexOf(target.dataset.feedBox);
-        if (from >= 0 && to >= 0 && from !== to) { const [moved] = order.splice(from, 1); order.splice(to, 0, moved); saveSiteConfig({ ...siteConfig, feedBoxOrder: order }); }
-      }
+      siblings.forEach((node) => { node.style.order = ''; });
+      if (cancelled || previewOrder.join('|') === baseOrder.join('|')) return;
+      const current = siteConfigRef.current;
+      saveSiteConfig({ ...current, feedBoxOrder: previewOrder });
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', end);
@@ -906,27 +975,73 @@ export default function RUMS() {
     setSelectedBoxId(boxId);
     const startX = event.clientX;
     const startY = event.clientY;
+    const siblings = [...parent.children].filter((child) => child.classList?.contains('universal-edit-box'));
+    const liveIds = siblings.map((child) => child.dataset.editorBoxId).filter(Boolean);
+    const saved = siteConfigRef.current.boxOrders?.[parentKey] || [];
+    const baseOrder = [...saved.filter((id) => liveIds.includes(id)), ...liveIds.filter((id) => !saved.includes(id))];
+    let previewOrder = [...baseOrder];
+    let activeTarget = null;
+    const parentStyle = getComputedStyle(parent);
+    const horizontal = parentStyle.display.includes('flex') && parentStyle.flexDirection.startsWith('row');
+    const applyPreview = () => siblings.forEach((node) => {
+      const index = previewOrder.indexOf(node.dataset.editorBoxId);
+      node.style.order = index >= 0 ? String(100 + index) : '';
+    });
+    const setTarget = (node) => {
+      if (activeTarget === node) return;
+      activeTarget?.classList.remove('is-live-drop-target');
+      activeTarget = node;
+      activeTarget?.classList.add('is-live-drop-target');
+    };
     element.classList.add('is-universal-box-dragging');
     document.documentElement.classList.add('is-reordering-widget');
     const move = (moveEvent) => {
       element.style.setProperty('--universal-drag-x', `${moveEvent.clientX - startX}px`);
       element.style.setProperty('--universal-drag-y', `${moveEvent.clientY - startY}px`);
+      const candidates = siblings.filter((node) => node !== element);
+      const target = candidates.reduce((closest, node) => {
+        const rect = node.getBoundingClientRect();
+        const distance = parentStyle.display.includes('grid')
+          ? Math.hypot(rect.left + rect.width / 2 - moveEvent.clientX, rect.top + rect.height / 2 - moveEvent.clientY)
+          : Math.abs((horizontal ? rect.left + rect.width / 2 - moveEvent.clientX : rect.top + rect.height / 2 - moveEvent.clientY));
+        return !closest || distance < closest.distance ? { node, distance, rect } : closest;
+      }, null);
+      if (!target) return;
+      setTarget(target.node);
+      const next = previewOrder.filter((id) => id !== boxId);
+      const targetId = target.node.dataset.editorBoxId;
+      const targetIndex = next.indexOf(targetId);
+      let after;
+      if (parentStyle.display.includes('grid')) {
+        const dy = moveEvent.clientY - (target.rect.top + target.rect.height / 2);
+        const dx = moveEvent.clientX - (target.rect.left + target.rect.width / 2);
+        after = Math.abs(dy) >= Math.abs(dx) ? dy > 0 : dx > 0;
+      } else {
+        after = horizontal
+          ? moveEvent.clientX > target.rect.left + target.rect.width / 2
+          : moveEvent.clientY > target.rect.top + target.rect.height / 2;
+      }
+      next.splice(Math.max(0, targetIndex + (after ? 1 : 0)), 0, boxId);
+      if (next.join('|') !== previewOrder.join('|')) { previewOrder = next; applyPreview(); }
     };
     const end = (endEvent) => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', end);
       window.removeEventListener('pointercancel', end);
-      const siblings = [...parent.children].filter((child) => child !== element && child.classList?.contains('universal-edit-box'));
-      const target = siblings.reduce((closest, node) => {
-        const rect = node.getBoundingClientRect();
-        const distance = Math.hypot(rect.left + rect.width / 2 - endEvent.clientX, rect.top + rect.height / 2 - endEvent.clientY);
-        return !closest || distance < closest.distance ? { node, distance } : closest;
-      }, null)?.node;
+      const cancelled = endEvent.type === 'pointercancel';
       element.classList.remove('is-universal-box-dragging');
       document.documentElement.classList.remove('is-reordering-widget');
       element.style.removeProperty('--universal-drag-x');
       element.style.removeProperty('--universal-drag-y');
-      if (target) reorderUniversalBoxes(parentKey, boxId, target.dataset.editorBoxId);
+      setTarget(null);
+      if (cancelled) {
+        previewOrder = baseOrder;
+        applyPreview();
+        return;
+      }
+      if (previewOrder.join('|') === baseOrder.join('|')) return;
+      const current = siteConfigRef.current;
+      saveSiteConfig({ ...current, boxOrders: { ...(current.boxOrders || {}), [parentKey]: previewOrder } });
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', end);
@@ -1602,7 +1717,8 @@ export default function RUMS() {
       if (!box || !content.contains(box)) return;
       setSelectedBoxId(box.dataset.editorBoxId || null);
       const rect = box.getBoundingClientRect();
-      const inHandle = event.target === box && event.clientX >= rect.left + 6 && event.clientX <= rect.left + 132 && event.clientY >= rect.top + 5 && event.clientY <= rect.top + 39;
+      const isSelected = selectedBoxId === box.dataset.editorBoxId;
+      const inHandle = isSelected && event.target === box && event.clientX >= rect.left + 6 && event.clientX <= rect.left + 132 && event.clientY >= rect.top - 43 && event.clientY <= rect.top - 4;
       if (inHandle) startUniversalBoxReorder(box, event);
     };
 
@@ -1656,17 +1772,23 @@ export default function RUMS() {
     onBlur: editMode && isOwner ? (event) => updateSiteText(key, event.currentTarget.textContent) : undefined,
   });
   const textDragHandle = (key) => editMode && isOwner ? <span className="text-position-handle" contentEditable={false} onPointerDown={(event) => startPositionDrag('text', `text-${key}`, event)} title="Drag text"><GripVertical size={12} /></span> : null;
-  const renderCustomWidgets = (placement) => siteConfig.customWidgets
-    .filter((widget) => widget.placement === placement)
-    .map((widget) => (
-      <article data-position-id={widget.id} data-widget-placement={widget.placement} className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDown={(event) => { if (!editMode || !isOwner || event.target.closest('button,a,input,select,textarea,label,[contenteditable="true"],.widget-edit-controls')) return; startWidgetReorder(widget.id, event); }}>
-        {editMode && isOwner && <div className="widget-edit-controls"><button type="button" className="widget-drag-handle" onPointerDown={(event) => startWidgetReorder(widget.id, event)} title="Hold and drag to move this box"><GripVertical size={15} /> Move box</button><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
-        {widget.image && <img src={widget.image} alt="" />}
-        <div><h3 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { title: e.currentTarget.textContent.trim() })}>{widget.title}</h3>{widget.body && <p contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { body: e.currentTarget.textContent.trim() })}>{widget.body}</p>}
-          {widget.actionLabel && widget.actionUrl && <a href={widget.actionUrl} target="_blank" rel="noreferrer">{widget.actionLabel}</a>}
-        </div>
-      </article>
-    ));
+  const renderCustomWidgets = (placement) => {
+    const widgets = siteConfig.customWidgets.filter((widget) => widget.placement === placement);
+    if (!widgets.length) return null;
+    return (
+      <div className="custom-widget-stack" data-widget-stack={placement}>
+        {widgets.map((widget) => (
+          <article data-position-id={widget.id} data-widget-placement={widget.placement} className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }}>
+            {editMode && isOwner && <div className="widget-edit-controls"><button type="button" className="widget-drag-handle" onPointerDown={(event) => startWidgetReorder(widget.id, event)} title="Hold and drag to move this box"><GripVertical size={15} /> Move box</button><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
+            {widget.image && <img src={widget.image} alt="" />}
+            <div><h3 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { title: e.currentTarget.textContent.trim() })}>{widget.title}</h3>{widget.body && <p contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { body: e.currentTarget.textContent.trim() })}>{widget.body}</p>}
+              {widget.actionLabel && widget.actionUrl && <a href={widget.actionUrl} target="_blank" rel="noreferrer">{widget.actionLabel}</a>}
+            </div>
+          </article>
+        ))}
+      </div>
+    );
+  };
   const unseenGeneral = currentUser
     ? posts.filter((p) => p.tag !== 'Lumina' && p.timestamp > (lastSeen.General || 0) && p.username !== currentUser.username).length
     : 0;
