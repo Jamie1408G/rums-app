@@ -1120,6 +1120,15 @@ export default function RUMS() {
 
   return (
     <div className="aero-root" ref={rootRef} style={{ '--glass-alpha': glassStrength / 100 }}>
+      <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
+        <defs>
+          <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.085" numOctaves="1" seed="8" result="lensNoise" />
+            <feDisplacementMap in="SourceGraphic" in2="lensNoise" scale="8" xChannelSelector="R" yChannelSelector="B" result="refracted" />
+            <feGaussianBlur in="refracted" stdDeviation="0.22" />
+          </filter>
+        </defs>
+      </svg>
       <div className="aero-frame">
         {screen === 'loading' && (
           <div className="center-loading">

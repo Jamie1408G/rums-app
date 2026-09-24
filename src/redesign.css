@@ -156,17 +156,20 @@ button,input,textarea { font:inherit; }
 }
 .aero-root .feed-tabs::before {left:5px;width:calc((100% - 10px)/2);transform:translateX(var(--seg-translate,0%));}
 .aero-root .lumina-view-switch::before {left:5px;width:calc((100% - 10px)/3);transform:translateX(calc(var(--lumina-tab-index,0) * 100%));}
+.liquid-glass-filters {position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;}
 .aero-root .feed-tabs.is-dragging::before,.aero-root .lumina-view-switch.is-dragging::before {
   z-index:2;
   top:5px;
   width:84px;
   height:calc(100% - 10px);
   border-radius:18px;
-  background:radial-gradient(70px 24px at var(--tab-reflection-x,var(--lumina-reflection-x,32%)) -2px,#fff 0,#ffffffa8 28%,transparent 70%),radial-gradient(28px 44px at 0 50%,#ffffff70 0,#ffffff24 48%,transparent 74%),radial-gradient(28px 44px at 100% 52%,#ffffff54 0,#ffffff1c 50%,transparent 75%),linear-gradient(145deg,#ffffff75,#ffffff22 58%,#ffffff4a);
+  background:radial-gradient(70px 24px at var(--tab-reflection-x,var(--lumina-reflection-x,32%)) -2px,#fff 0,#ffffff8f 28%,transparent 70%),radial-gradient(28px 44px at 0 50%,#ffffff5c 0,#ffffff18 48%,transparent 74%),radial-gradient(28px 44px at 100% 52%,#ffffff48 0,#ffffff12 50%,transparent 75%),linear-gradient(145deg,#ffffff58,#ffffff0c 58%,#ffffff35);
   transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,47px)) - 47px)) scaleY(1.03);
   box-shadow:inset 3px 3px 5px #fff,inset 6px 0 9px #ffffff70,inset -6px 0 9px #ffffff55,inset 0 -4px 7px #ffffff42,0 0 0 2px #ffffffb8,0 0 0 4px #ffffff2f,0 8px 22px #345b8a4f;
-  backdrop-filter:blur(7px) saturate(1.9) contrast(1.12) brightness(1.08);
-  -webkit-backdrop-filter:blur(7px) saturate(1.9) contrast(1.12) brightness(1.08);
+  backdrop-filter:blur(3px) saturate(1.55) contrast(1.1) brightness(1.06);
+  backdrop-filter:url('#liquid-glass-refraction') blur(2px) saturate(1.55) contrast(1.1) brightness(1.06);
+  -webkit-backdrop-filter:blur(3px) saturate(1.55) contrast(1.1) brightness(1.06);
+  -webkit-backdrop-filter:url('#liquid-glass-refraction') blur(2px) saturate(1.55) contrast(1.1) brightness(1.06);
   transition:transform .07s linear,width .18s ease,border-radius .15s,box-shadow .15s;
   filter:saturate(1.25);
 }
