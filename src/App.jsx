@@ -176,6 +176,7 @@ export default function RUMS() {
     const offset = Math.max(0, Math.min(segment * 2, clientX - rect.left - 5 - segment / 2));
     setLuminaTabOffset(offset);
     luminaTabsRef.current.style.setProperty('--lumina-reflection-x', `${clientX - rect.left - 5 - offset}px`);
+    luminaTabsRef.current.style.setProperty('--lumina-pointer-x', `${clientX - rect.left}px`);
     setLuminaView(luminaViewForPointer(clientX));
   }
 
@@ -194,6 +195,10 @@ export default function RUMS() {
     const dx = e.clientX - drag.x;
     const dy = e.clientY - drag.y;
     if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) drag.moved = true;
+    const direction = e.clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
+    luminaTabsRef.current?.style.setProperty('--lumina-drag-tilt', `${direction * 3.5}deg`);
+    luminaTabsRef.current?.style.setProperty('--lumina-tail-offset', `${direction * -15}px`);
+    drag.lastX = e.clientX;
     updateLuminaTabDrag(e.clientX);
   }
 
