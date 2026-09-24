@@ -469,3 +469,11 @@ button,input,textarea { font:inherit; }
 @media(max-width:700px) {.visual-edit-mode .universal-edit-box::before {width:101px;height:29px;font-size:9px;}.visual-edit-toolbar .selected-box-chip {display:none;}.selected-box-toolbar {gap:6px;padding-top:7px;}}
 .visual-edit-mode .editable-built-in-box.universal-edit-box::before,.visual-edit-mode .editable-built-in-box.universal-edit-box::after {display:none;}
 .editable-built-in-box.has-universal-box-color>.community-hero {background:linear-gradient(145deg,color-mix(in srgb,var(--universal-box-color) 90%,white),color-mix(in srgb,var(--universal-box-color) 76%,#dcecff))!important;}
+
+/* Keep the visual editor clear of the floating All RUMS / Lumina switch. */
+@media (min-width: 901px) {
+  .visual-edit-toolbar {
+    width: calc(100% - 88px);
+    transform: translateX(-58px);
+  }
+}
