@@ -33,7 +33,7 @@ const RUMS_THEMES = [
   ...ROBLOX_THEMES,
   { id: 'dark', name: 'Dark', description: 'Deep graphite glass with cool blue accents', swatches: ['#12151b', '#2c3440', '#6da8ff'] },
   { id: 'minecraft', name: 'Minecraft', description: 'Blocky stone, grass and dirt-inspired UI', swatches: ['#7cab43', '#6b4c2e', '#9a9a9a'] },
-  { id: 'frutiger', name: 'Frutiger Aero', description: 'Early 2002–2006 Aqua, Longhorn glass and glossy Web 2.0', swatches: ['#2ba7df', '#d9f4ff', '#79c83d'] },
+  { id: 'frutiger', name: 'Frutiger Aero', description: 'Apple Aqua meets Windows Longhorn/Aero: silver glass, candy-blue controls and translucent chrome', swatches: ['#e9f5ff', '#2f9de0', '#aebfd0'] },
   { id: 'y2k', name: 'Y2K Futurism', description: 'Chrome, aqua and lavender 2000s futurism', swatches: ['#dce5f4', '#55d8e8', '#a693ff'] },
 ];
 const MAIN_THEME_OPTIONS = RUMS_THEMES.filter((item) => !item.id.startsWith('roblox'));
