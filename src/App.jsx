@@ -628,10 +628,25 @@ export default function RUMS() {
     const widget = kind === 'widget' ? siteConfig.customWidgets.find((item) => item.id === id) : null;
     const saved = widget ? { x: widget.x || 0, y: widget.y || 0 } : (siteConfig.elementPositions?.[id] || { x: 0, y: 0 });
     const element = document.querySelector(`[data-position-id="${CSS.escape(id)}"]`);
+    const elementRect = element?.getBoundingClientRect();
+    const parentRect = element?.parentElement?.getBoundingClientRect();
+    const snap = (value) => {
+      const snapped = Math.round(value / 8) * 8;
+      return Math.abs(snapped) <= 12 ? 0 : snapped;
+    };
+    const positionFor = (pointerEvent) => {
+      let x = snap(saved.x + pointerEvent.clientX - startX);
+      const y = snap(saved.y + pointerEvent.clientY - startY);
+      if (elementRect && parentRect) {
+        const minX = saved.x + parentRect.left + 8 - elementRect.left;
+        const maxX = saved.x + parentRect.right - 8 - elementRect.right;
+        x = snap(Math.max(minX, Math.min(maxX, x)));
+      }
+      return { x, y };
+    };
     element?.classList.add('is-position-dragging');
     const move = (moveEvent) => {
-      const x = Math.round(saved.x + moveEvent.clientX - startX);
-      const y = Math.round(saved.y + moveEvent.clientY - startY);
+      const { x, y } = positionFor(moveEvent);
       if (element) { element.style.setProperty('--position-x', `${x}px`); element.style.setProperty('--position-y', `${y}px`); }
     };
     const end = (endEvent) => {
@@ -639,8 +654,7 @@ export default function RUMS() {
       window.removeEventListener('pointerup', end);
       window.removeEventListener('pointercancel', end);
       element?.classList.remove('is-position-dragging');
-      const x = Math.round(saved.x + endEvent.clientX - startX);
-      const y = Math.round(saved.y + endEvent.clientY - startY);
+      const { x, y } = positionFor(endEvent);
       if (kind === 'widget') updateCustomWidget(id, { x, y });
       else saveSiteConfig({ ...siteConfig, elementPositions: { ...(siteConfig.elementPositions || {}), [id]: { x, y } } });
     };
@@ -1196,7 +1210,7 @@ export default function RUMS() {
   const renderCustomWidgets = (placement) => siteConfig.customWidgets
     .filter((widget) => widget.placement === placement)
     .map((widget) => (
-      <article data-position-id={widget.id} className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff', '--position-x': `${widget.x || 0}px`, '--position-y': `${widget.y || 0}px` }} onDragOver={(e) => { if (editMode && isOwner) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); dropCustomWidget(e.dataTransfer.getData('text/rums-widget'), widget.id); }}>
+      <article data-position-id={widget.id} className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff', '--position-x': `${widget.x || 0}px`, '--position-y': `${widget.y || 0}px` }} onPointerDown={(event) => { if (!editMode || !isOwner || event.target.closest('button,a,input,select,textarea,label,[contenteditable="true"],.widget-edit-controls')) return; startPositionDrag('widget', widget.id, event); }} onDragOver={(e) => { if (editMode && isOwner) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); dropCustomWidget(e.dataTransfer.getData('text/rums-widget'), widget.id); }}>
         {editMode && isOwner && <div className="widget-edit-controls"><span className="widget-drag-handle" onPointerDown={(event) => startPositionDrag('widget', widget.id, event)} title="Drag freely"><GripVertical size={15} /></span><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
         {widget.image && <img src={widget.image} alt="" />}
         <div><h3 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { title: e.currentTarget.textContent.trim() })}>{widget.title}</h3>{widget.body && <p contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { body: e.currentTarget.textContent.trim() })}>{widget.body}</p>}
