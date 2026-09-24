@@ -20,14 +20,23 @@ const RUMS5_UPDATES_KEY = 'rums5-updates';
 const RUMS5_SITE_CONFIG_KEY = 'rums5-site-config';
 const PLATFORM_NAME = 'RUMS Plaza';
 const THEME_STORAGE_KEY = 'rums-plaza-theme';
+const ROBLOX_THEMES = [
+  { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
+  { id: 'roblox2010', name: 'Roblox 2010', year: '2010', description: 'Sky-blue classic site with framed dashboard modules, blue tabs and bevelled buttons', swatches: ['#dcecf9', '#4e86b8', '#f6c33d'] },
+  { id: 'roblox2014', name: 'Roblox 2014', year: '2014', description: 'Blue top navigation, grey sidebar, global search and clean white content canvas', swatches: ['#f3f3f3', '#2d6ca2', '#d8d8d8'] },
+  { id: 'roblox2016', name: 'Roblox 2016', year: '2016', description: 'Grey dashboard, white cards, bright cyan actions and the classic mid-2010s home layout', swatches: ['#e3e3e3', '#00a2ff', '#ffffff'] },
+  { id: 'roblox2017', name: 'Roblox 2017', year: '2017', description: 'Post-rebrand blue navigation, crisp white cards, game-grid UI and lighter modern spacing', swatches: ['#f2f2f2', '#0074bd', '#e2231a'] },
+  { id: 'roblox2020', name: 'Roblox 2020', year: '2020', description: 'Modern light Roblox web UI with soft grey surfaces, minimal borders and restrained controls', swatches: ['#f2f4f5', '#ffffff', '#00b06f'] },
+];
 const RUMS_THEMES = [
   { id: 'standard', name: 'Standard', description: 'Glossy modern RUMS Plaza', swatches: ['#f6f8fc', '#3478f6', '#b8d7ff'] },
-  { id: 'roblox2016', name: 'Roblox 2016', description: 'September 2016 blue bar, grey dashboard and white cards', swatches: ['#e3e3e3', '#0074bd', '#ffffff'] },
+  ...ROBLOX_THEMES,
   { id: 'dark', name: 'Dark', description: 'Deep graphite glass with cool blue accents', swatches: ['#12151b', '#2c3440', '#6da8ff'] },
   { id: 'minecraft', name: 'Minecraft', description: 'Blocky stone, grass and dirt-inspired UI', swatches: ['#7cab43', '#6b4c2e', '#9a9a9a'] },
   { id: 'frutiger', name: 'Frutiger Aero', description: 'Blue skies, green glass and bubbly optimism', swatches: ['#5bbcff', '#5dcf70', '#f7ffff'] },
   { id: 'y2k', name: 'Y2K Futurism', description: 'Chrome, aqua and lavender 2000s futurism', swatches: ['#dce5f4', '#55d8e8', '#a693ff'] },
 ];
+const MAIN_THEME_OPTIONS = RUMS_THEMES.filter((item) => !item.id.startsWith('roblox'));
 const RUMS_SPACES = {
   rums4: { id: 'rums4', label: 'RUMS 4', subtitle: 'The current archive', description: 'Everything from the current site, including Project Lumina and all older posts.' },
   rums5: { id: 'rums5', label: 'RUMS 5', subtitle: 'The new era', description: 'The same RUMS experience with a fresh feed and no Project Lumina.' },
@@ -382,6 +391,9 @@ export default function RUMS() {
       const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
       return RUMS_THEMES.some((item) => item.id === saved) ? saved : 'standard';
     } catch { return 'standard'; }
+  });
+  const [robloxThemeMenuOpen, setRobloxThemeMenuOpen] = useState(() => {
+    try { return (window.localStorage.getItem(THEME_STORAGE_KEY) || '').startsWith('roblox'); } catch { return false; }
   });
   const [glassDragging, setGlassDragging] = useState(false);
   const [luminaView, setLuminaView] = useState('overview');
@@ -3758,7 +3770,58 @@ export default function RUMS() {
                       <div className="profile-section appearance-section">
                         <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Choose a RUMS Plaza theme, then fine-tune its glass transparency on this device.</p></div><span className="appearance-current-theme">{RUMS_THEMES.find((item) => item.id === theme)?.name || 'Standard'}</span></div>
                         <div className="theme-picker" role="radiogroup" aria-label="RUMS Plaza theme">
-                          {RUMS_THEMES.map((item) => (
+                          {MAIN_THEME_OPTIONS.filter((item) => item.id === 'standard').map((item) => (
+                            <button
+                              type="button"
+                              role="radio"
+                              aria-checked={theme === item.id}
+                              key={item.id}
+                              className={`theme-option theme-option-${item.id} ${theme === item.id ? 'active' : ''}`}
+                              onClick={() => setTheme(item.id)}
+                            >
+                              <span className="theme-option-preview" aria-hidden="true">
+                                {item.swatches.map((color, index) => <span key={`${item.id}-${index}`} style={{ background: color }} />)}
+                              </span>
+                              <span className="theme-option-copy"><strong>{item.name}</strong><small>{item.description}</small></span>
+                              {theme === item.id && <Check size={15} className="theme-option-check" />}
+                            </button>
+                          ))}
+
+                          <button
+                            type="button"
+                            className={`theme-option theme-family-option theme-family-roblox ${theme.startsWith('roblox') ? 'active' : ''}`}
+                            aria-expanded={robloxThemeMenuOpen}
+                            onClick={() => setRobloxThemeMenuOpen((open) => !open)}
+                          >
+                            <span className="theme-option-preview roblox-family-preview" aria-hidden="true"><span /><span /><span /></span>
+                            <span className="theme-option-copy"><strong>Roblox</strong><small>Choose a researched website era from 2008–2020</small></span>
+                            <ChevronDown size={15} className={`theme-family-chevron ${robloxThemeMenuOpen ? 'open' : ''}`} />
+                          </button>
+
+                          {robloxThemeMenuOpen && (
+                            <div className="roblox-theme-family-panel" role="group" aria-label="Roblox theme year">
+                              <div className="roblox-theme-family-heading"><strong>Roblox eras</strong><small>Each year recreates the web design language of that period.</small></div>
+                              <div className="roblox-theme-year-grid">
+                                {ROBLOX_THEMES.map((item) => (
+                                  <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={theme === item.id}
+                                    key={item.id}
+                                    className={`roblox-theme-year roblox-theme-year-${item.year} ${theme === item.id ? 'active' : ''}`}
+                                    onClick={() => setTheme(item.id)}
+                                  >
+                                    <span className="roblox-year-number">{item.year}</span>
+                                    <span className="roblox-year-swatch" aria-hidden="true">{item.swatches.map((color, index) => <span key={`${item.id}-year-${index}`} style={{ background: color }} />)}</span>
+                                    <span className="roblox-year-copy"><strong>{item.name}</strong><small>{item.description}</small></span>
+                                    {theme === item.id && <Check size={14} className="roblox-year-check" />}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {MAIN_THEME_OPTIONS.filter((item) => item.id !== 'standard').map((item) => (
                             <button
                               type="button"
                               role="radio"
