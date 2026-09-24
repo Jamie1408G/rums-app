@@ -21,6 +21,7 @@ const RUMS5_SITE_CONFIG_KEY = 'rums5-site-config';
 const PLATFORM_NAME = 'RUMS Plaza';
 const THEME_STORAGE_KEY = 'rums-plaza-theme';
 const TUTORIAL_VERSION = 2;
+const JAMIE_TUTORIAL_VERSION = 3;
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
   { id: 'roblox2010', name: 'Roblox 2010', year: '2010', description: 'Sky-blue classic site with framed dashboard modules, blue tabs and bevelled buttons', swatches: ['#dcecf9', '#4e86b8', '#f6c33d'] },
@@ -79,6 +80,11 @@ const PLAZA_OVERHAUL_WIDGET = {
   color: '#eaf4ff',
   animation: 'none',
 };
+
+function requiredTutorialVersionForUser(user) {
+  if (!user?.username) return TUTORIAL_VERSION;
+  return user.username.trim().toLowerCase() === 'jamie' ? JAMIE_TUTORIAL_VERSION : TUTORIAL_VERSION;
+}
 
 function migratePlazaOverhaulAnnouncement(config) {
   const next = { ...DEFAULT_SITE_CONFIG, ...(config || {}), migrations: { ...(config?.migrations || {}) } };
@@ -701,10 +707,11 @@ export default function RUMS() {
           if (Array.isArray(parsed)) latestUsers = parsed;
         } catch { /* use local users */ }
       }
-      const next = latestUsers.map((user) => user.username === currentUser.username ? { ...user, tutorialVersion: TUTORIAL_VERSION } : user);
+      const requiredVersion = requiredTutorialVersionForUser(currentUser);
+      const next = latestUsers.map((user) => user.username === currentUser.username ? { ...user, tutorialVersion: requiredVersion } : user);
       await window.storage.set(USERS_KEY, JSON.stringify(next), true);
       setUsers(next);
-      setCurrentUser((user) => user ? { ...user, tutorialVersion: TUTORIAL_VERSION } : user);
+      setCurrentUser((user) => user ? { ...user, tutorialVersion: requiredTutorialVersionForUser(user) } : user);
     } catch (e) {
       console.error(e);
     }
@@ -1490,7 +1497,7 @@ export default function RUMS() {
         if (found) {
           setCurrentUser(found);
           setScreen('feed');
-          if (Number(found.tutorialVersion || 0) < TUTORIAL_VERSION) {
+          if (Number(found.tutorialVersion || 0) < requiredTutorialVersionForUser(found)) {
             setTutorialStep(0);
             setTutorialReturningUser(true);
             setTutorialActive(true);
@@ -2108,7 +2115,7 @@ export default function RUMS() {
         await loadLastSeen(found.username, rumsSpace || 'rums4');
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: found.username }), false);
         setScreen('feed');
-        if (Number(found.tutorialVersion || 0) < TUTORIAL_VERSION) {
+        if (Number(found.tutorialVersion || 0) < requiredTutorialVersionForUser(found)) {
           setTutorialStep(0);
           setTutorialReturningUser(true);
           setTutorialActive(true);
