@@ -122,7 +122,7 @@ button,input,textarea { font:inherit; }
 @media(max-width:600px) {.site-editor {padding:17px;}.editor-grid {grid-template-columns:1fr;}.editor-wide {grid-column:auto;}.custom-site-widget {grid-template-columns:1fr;}.custom-site-widget>img {height:170px;}}
 
 /* Owner visual edit mode. */
-.custom-widget-stack {display:flex;flex-direction:column;gap:12px;min-width:0;}.custom-site-widget {position:relative;margin-bottom:0;background:linear-gradient(145deg,color-mix(in srgb,var(--widget-color,#fff) 88%,#fff),color-mix(in srgb,var(--widget-color,#fff) 76%,#ddecff));}
+.custom-widget-stack {display:flex;flex-direction:column;gap:20px;width:100%;min-width:0;margin:0 0 28px;box-sizing:border-box;}.custom-site-widget {position:relative;width:100%;min-width:0;margin:0;box-sizing:border-box;background:linear-gradient(145deg,color-mix(in srgb,var(--widget-color,#fff) 88%,#fff),color-mix(in srgb,var(--widget-color,#fff) 76%,#ddecff));}.custom-site-widget.no-widget-image {grid-template-columns:minmax(0,1fr);}.custom-site-widget.no-widget-image>div {min-width:0;width:100%;}.custom-site-widget.has-widget-image>div {min-width:0;}
 .visual-edit-mode .custom-site-widget {overflow:visible;outline:1px dashed transparent;outline-offset:4px;}.visual-edit-mode .custom-site-widget:hover {outline-color:color-mix(in srgb,var(--site-accent) 28%,transparent);}.visual-edit-mode .custom-site-widget.is-editor-selected {margin-top:42px;outline:2px solid color-mix(in srgb,var(--site-accent) 62%,white);}
 .visual-edit-mode .custom-site-widget.is-editing {cursor:default;}.visual-edit-mode .custom-site-widget [contenteditable=true] {cursor:text;}
 .visual-edit-mode .custom-site-widget.is-editing {animation:none;transition:opacity .18s,transform .18s,box-shadow .18s;touch-action:auto;}.custom-site-widget.is-widget-reordering,.editable-built-in-box.is-widget-reordering {z-index:45;opacity:.86;pointer-events:none;touch-action:none;transform:translate(var(--reorder-x,0),var(--reorder-y,0)) scale(.985)!important;box-shadow:0 18px 42px #244f8361!important;transition:none!important;}
@@ -595,3 +595,6 @@ button,input,textarea { font:inherit; }
     border-radius:14px;
   }
 }
+
+/* Keep newly added visual-editor boxes in the same page rhythm as built-in cards. */
+@media(max-width:600px){.custom-widget-stack{gap:16px;margin-bottom:22px;}}
