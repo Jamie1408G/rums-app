@@ -130,6 +130,7 @@ export default function RUMS() {
     const offset = Math.max(0, Math.min(rect.width / 2, clientX - rect.left - rect.width / 4));
     setTabOffset(offset);
     tabsRef.current.style.setProperty('--tab-reflection-x', `${clientX - rect.left - offset}px`);
+    tabsRef.current.style.setProperty('--tab-pointer-x', `${clientX - rect.left}px`);
     setFeedFilter(tabForPointer(clientX));
   }
 
@@ -149,6 +150,9 @@ export default function RUMS() {
     const dx = e.clientX - drag.x;
     const dy = e.clientY - drag.y;
     if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) drag.moved = true;
+    const direction = e.clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
+    tabsRef.current?.style.setProperty('--tab-tail-offset', `${direction * -15}px`);
+    drag.lastX = e.clientX;
     updateTabDrag(e.clientX);
   }
 
