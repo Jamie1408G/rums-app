@@ -420,8 +420,12 @@ export default function RUMS() {
     setSessionNewItems({});
   }
 
+  function sessionNewCountOnPage(page) {
+    return Object.values(sessionNewItems).filter((item) => item.page === page).length;
+  }
+
   function hasSessionNewOnPage(page) {
-    return Object.values(sessionNewItems).some((item) => item.page === page);
+    return sessionNewCountOnPage(page) > 0;
   }
 
   function isSessionNew(page, kind, id) {
@@ -446,7 +450,10 @@ export default function RUMS() {
   }
 
   function navIconWithNew(icon, page, title = 'New content') {
-    return <span className="page-nav-icon">{icon}{hasSessionNewOnPage(page) && <span className="page-new-indicator" title={title} aria-label={title}><Sparkles size={7} /></span>}</span>;
+    const count = sessionNewCountOnPage(page);
+    const badgeText = count > 99 ? '99+' : String(count);
+    const badgeTitle = count === 1 ? `1 ${title.toLowerCase()}` : `${count} ${title.toLowerCase()}`;
+    return <span className="page-nav-icon">{icon}{count > 0 && <span className="page-new-indicator page-new-count" title={badgeTitle} aria-label={badgeTitle}>{badgeText}</span>}</span>;
   }
 
   useEffect(() => {
@@ -2690,7 +2697,7 @@ export default function RUMS() {
   const feedBoxHandle = (id) => editMode && isOwner && selectedBoxId === `feed:${id}` ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
   function renderFeedBox(id) {
     if (id === 'hero') return <section data-feed-box="hero" data-edit-box-id="feed:hero" className={`editable-built-in-box ${selectedBoxId === 'feed:hero' ? 'is-editor-selected' : ''}`} key="hero" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:hero'); }}>{feedBoxHandle('hero')}<div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div></section>;
-    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge lumina-page-badge"><Droplet size={18} color="white" />{hasSessionNewOnPage('lumina') && <span className="page-new-indicator" title="New in Project Lumina"><Sparkles size={7} /></span>}</div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default', newPageKey: 'feed' }))}</section>;
+    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge lumina-page-badge"><Droplet size={18} color="white" />{sessionNewCountOnPage('lumina') > 0 && <span className="page-new-indicator page-new-count" title={`${sessionNewCountOnPage('lumina')} new in Project Lumina`}>{sessionNewCountOnPage('lumina') > 99 ? '99+' : sessionNewCountOnPage('lumina')}</span>}</div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default', newPageKey: 'feed' }))}</section>;
   }
 
   function renderFeedTabs() {
@@ -3039,7 +3046,7 @@ export default function RUMS() {
                   {navIconWithNew(<Search size={18} />, 'search')}
                 </button>}
                 <button className="pill pill-btn profile-pill-with-new" onClick={openOwnProfile} title="Your profile">
-                  <span className="profile-avatar-new-wrap">{avatarNode(currentUser.username, 18, 8)}{hasSessionNewOnPage('profile') && <span className="page-new-indicator" title="New profile content"><Sparkles size={7} /></span>}</span>
+                  <span className="profile-avatar-new-wrap">{avatarNode(currentUser.username, 18, 8)}{sessionNewCountOnPage('profile') > 0 && <span className="page-new-indicator page-new-count" title={`${sessionNewCountOnPage('profile')} new profile ${sessionNewCountOnPage('profile') === 1 ? 'item' : 'items'}`}>{sessionNewCountOnPage('profile') > 99 ? '99+' : sessionNewCountOnPage('profile')}</span>}</span>
                   {currentUser.username}
                   {currentUser.isAdmin && <ShieldCheck size={13} color="#0fb8a6" />}
                 </button>
@@ -3051,7 +3058,7 @@ export default function RUMS() {
             </div>
 
             <div className="content">
-              {siteConfig.customTabs.length > 0 && <div className="custom-mobile-tabs">{siteConfig.customTabs.map((tab) => <button key={tab.id} className={screen === 'custom' && customPageId === tab.id ? 'active' : ''} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{tab.label}{hasSessionNewOnPage(`custom:${tab.id}`) && <span className="custom-tab-new">NEW</span>}</button>)}</div>}
+              {siteConfig.customTabs.length > 0 && <div className="custom-mobile-tabs">{siteConfig.customTabs.map((tab) => <button key={tab.id} className={screen === 'custom' && customPageId === tab.id ? 'active' : ''} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{tab.label}{sessionNewCountOnPage(`custom:${tab.id}`) > 0 && <span className="custom-tab-new">{sessionNewCountOnPage(`custom:${tab.id}`) > 99 ? '99+' : sessionNewCountOnPage(`custom:${tab.id}`)}</span>}</button>)}</div>}
               {editMode && isOwner && screen !== 'admin' && renderVisualEditToolbar()}
               {error && (
                 <div style={{ padding: '10px 16px 0' }}>
