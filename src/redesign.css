@@ -176,10 +176,11 @@ button,input,textarea { font:inherit; }
 }
 .drag-refraction {display:none;}
 .is-dragging>.drag-refraction {position:absolute;z-index:3;display:block;left:5px;top:5px;width:84px;height:calc(100% - 10px);overflow:hidden;border-radius:18px;transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,47px)) - 47px)) scaleY(1.03);pointer-events:none;}
-.drag-refraction-content {position:absolute;left:calc(47px - var(--tab-pointer-x,var(--lumina-pointer-x,47px)));top:0;display:grid;width:calc(var(--glass-control-width,250px) - 10px);height:100%;align-items:center;color:#286bd5;font-size:13px;font-weight:750;filter:url('#liquid-glass-refraction') saturate(1.4) contrast(1.08);transform:scale(1.055);transform-origin:var(--tab-pointer-x,var(--lumina-pointer-x,47px)) 50%;}
+.drag-refraction-content {position:absolute;left:calc(47px - var(--tab-pointer-x,var(--lumina-pointer-x,47px)));top:0;display:grid;width:calc(var(--glass-control-width,250px) - 10px);height:100%;align-items:center;color:#708096;font-size:13px;font-weight:750;filter:url('#liquid-glass-refraction');}
 .feed-drag-refraction .drag-refraction-content {grid-template-columns:repeat(2,1fr);}
 .lumina-drag-refraction .drag-refraction-content {grid-template-columns:repeat(3,1fr);}
 .drag-refraction-content>span {display:flex;align-items:center;justify-content:center;gap:5px;height:100%;white-space:nowrap;}
+.drag-refraction-content>span.active {color:#286bd5;}
 .aero-root .feed-tabs.is-dragging::after,.aero-root .lumina-view-switch.is-dragging::after {
   content:'';
   position:absolute;
@@ -213,6 +214,7 @@ button,input,textarea { font:inherit; }
   .aero-root .feed-tabs,.aero-root .lumina-view-switch {min-height:50px;border-radius:999px;}
   .aero-root .lumina-view-switch {top:-53px;}
   .aero-root .feed-tabs .tab-btn,.aero-root .lumina-view-switch button {font-size:11.5px;}
+  .drag-refraction-content {font-size:11.5px;}
 }
 @media(max-width:600px) {
   .aero-root .content {padding-bottom:122px;}
