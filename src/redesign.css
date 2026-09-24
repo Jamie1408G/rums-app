@@ -112,6 +112,26 @@ button,input,textarea { font:inherit; }
   .aero-root .upload-wrap::after,.aero-root .search-wrap::after,.aero-root .profile-wrap::after,.aero-root .admin-wrap::after {width:60px;height:58px;opacity:.42;}
   .aero-root .post-top::after,.aero-root .suggestion-card::after {width:15px;height:8px;opacity:.4;}
 }
+
+/* High-visibility pass: make the shared glossy vocabulary actually noticeable. */
+.aero-root {background:radial-gradient(circle at 7% 16%,#9fd1ff4f 0 90px,transparent 230px),radial-gradient(circle at 93% 82%,#8fe0bd3d 0 80px,transparent 240px),#f4f6fa!important;}
+.aero-root .community-hero,.aero-root .upload-wrap,.aero-root .search-wrap,.aero-root .profile-wrap,.aero-root .admin-wrap,.aero-root .feed-empty {border-color:#fff;background:radial-gradient(170px 115px at 102% -5%,#91c5ff7d 0,#d9eaff8c 38%,transparent 72%),radial-gradient(130px 90px at -3% 105%,#9be4c565 0,transparent 72%),linear-gradient(140deg,#fffffff5,#f4f8fff0 62%,#edf7f3e8);box-shadow:inset 0 1px 1px #fff,0 10px 32px #34577f1a;}
+.aero-root .community-hero::after,.aero-root .upload-wrap::after,.aero-root .search-wrap::after,.aero-root .profile-wrap::after,.aero-root .admin-wrap::after,.aero-root .feed-empty::after {z-index:0;right:17px;top:16px;width:70px;height:64px;opacity:.92;border:1px solid #ffffffed;background:radial-gradient(34px 21px at 28% 15%,#fff 0,#ffffffb8 35%,transparent 78%),radial-gradient(35px 30px at 78% 82%,#73d2ad99 0,transparent 80%),linear-gradient(145deg,#dff2ffd9,#86baff9c 62%,#65c5a28c);box-shadow:inset 4px 4px 8px #ffffffd4,inset -5px -7px 12px #376f9a42,0 0 0 4px #ffffff52,0 10px 25px #3478f640;}
+.aero-root .community-hero::after {right:76px;top:24px;width:82px;height:70px;}
+.aero-root .upload-wrap::after {right:17px;top:17px;width:72px;height:67px;}
+.aero-root .search-wrap::after,.aero-root .profile-wrap::after,.aero-root .admin-wrap::after {width:62px;height:58px;}
+.aero-root .feed-empty::after {right:20px;top:17px;width:56px;height:51px;opacity:.82;}
+.aero-root .post-card,.aero-root .suggestion-card,.aero-root .update-card {border-color:#fff;background:radial-gradient(110px 65px at 101% 0,#9fcaff73 0,#e8f2ff66 48%,transparent 78%),radial-gradient(80px 50px at 0 100%,#a3e2c64d 0,transparent 75%),#fff;box-shadow:inset 0 1px #fff,0 8px 25px #334f7418;}
+.aero-root .post-top::after,.aero-root .suggestion-card::after {right:16px;top:14px;width:31px;height:18px;border:1px solid #fff;border-radius:58% 42% 52% 48% / 43% 58% 42% 57%;background:radial-gradient(circle at 28% 15%,#fff,#9cc8ff 55%,#73c4a8);box-shadow:inset 2px 2px 3px #fff,0 4px 11px #376ba94a;opacity:.88;}
+.aero-root .section-heading h2::after,.aero-root .composer-heading h2::after,.aero-root .profile-name::after,.aero-root .admin-section-title::after {content:'';display:inline-block;width:13px;height:13px;margin-left:8px;border:1px solid #fff;border-radius:58% 42% 52% 48% / 44% 57% 43% 56%;background:radial-gradient(circle at 30% 18%,#fff,#9fcaff 58%,#78c6aa);box-shadow:inset 1px 1px 2px #fff,0 3px 8px #376ba93c;vertical-align:2px;}
+.aero-root .drop-zone {background:radial-gradient(95px 65px at 92% 8%,#a9d2ff65 0,transparent 76%),radial-gradient(75px 60px at 5% 95%,#a9e5ca52 0,transparent 75%),linear-gradient(145deg,#fafdff,#edf4ff);border-color:#b8cff1;}
+.aero-root .aero-input:focus,.aero-root .caption-area:focus,.aero-root .search-bar:focus-within {background:#ffffffd9;border-color:#72a7f5;box-shadow:inset 0 1px #fff,0 0 0 4px #70a7ff24,0 7px 20px #3d65982b;}
+.aero-root .tag-chip.active,.aero-root .admin-toggle.is-admin,.aero-root .pill {border-color:#fff;background:radial-gradient(55px 22px at 28% 0,#fff 0,transparent 78%),linear-gradient(145deg,#ffffffed,#cfe3ffcf 66%,#b5dfd0b8);box-shadow:inset 1px 1px 2px #fff,0 4px 13px #3f68952d;}
+@media(max-width:600px) {
+  .aero-root .community-hero::after {right:55px;top:18px;width:61px;height:55px;opacity:.8;}
+  .aero-root .upload-wrap::after,.aero-root .search-wrap::after,.aero-root .profile-wrap::after,.aero-root .admin-wrap::after {right:10px;top:10px;width:48px;height:45px;opacity:.76;}
+  .aero-root .post-top::after,.aero-root .suggestion-card::after {width:24px;height:14px;opacity:.7;}
+}
 @media(prefers-reduced-motion:reduce) {.aero-root .feed-tabs.is-dragging::after {display:none;}}
 
 /* Stronger mobile liquid thumb and a true icon dock. */
