@@ -183,8 +183,10 @@ button,input,textarea { font:inherit; }
   height:12px;
   border:1px solid #fff;
   border-radius:50%;
-  background:radial-gradient(circle at 28% 18%,#fff,#c7dcffb8 56%,#82c7ae9c);
-  box-shadow:inset 1px 1px 3px #fff,0 4px 12px #3478f64a,-22px 17px 0 -3px #dbeaffc9,-22px 17px 7px -2px #3478f638,23px 20px 0 -4px #c9f0e0d1,23px 20px 7px -3px #2f9b7040;
+  background:radial-gradient(circle at 28% 18%,#fff,#ffffff72 56%,#ffffff25);
+  box-shadow:inset 1px 1px 3px #fff,0 4px 12px #304f7138,-22px 17px 0 -3px #ffffff8c,-22px 17px 7px -2px #304f712d,23px 20px 0 -4px #ffffff78,23px 20px 7px -3px #304f7127;
+  backdrop-filter:blur(2px) saturate(1.45);
+  -webkit-backdrop-filter:blur(2px) saturate(1.45);
   pointer-events:none;
   opacity:.86;
   transform:none;

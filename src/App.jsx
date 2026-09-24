@@ -1125,7 +1125,17 @@ export default function RUMS() {
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
             <feTurbulence type="fractalNoise" baseFrequency="0.012 0.085" numOctaves="1" seed="8" result="lensNoise" />
             <feDisplacementMap in="SourceGraphic" in2="lensNoise" scale="8" xChannelSelector="R" yChannelSelector="B" result="refracted" />
-            <feGaussianBlur in="refracted" stdDeviation="0.22" />
+            <feColorMatrix in="refracted" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="redChannel" />
+            <feColorMatrix in="refracted" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="greenChannel" />
+            <feColorMatrix in="refracted" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blueChannel" />
+            <feOffset in="redChannel" dx="-1.8" result="redShift" />
+            <feOffset in="blueChannel" dx="1.8" result="blueShift" />
+            <feBlend in="redShift" in2="greenChannel" mode="screen" result="redGreen" />
+            <feBlend in="redGreen" in2="blueShift" mode="screen" result="dispersion" />
+            <feMorphology in="SourceAlpha" operator="erode" radius="2.6" result="innerGlass" />
+            <feComposite in="dispersion" in2="innerGlass" operator="out" result="edgeDispersion" />
+            <feBlend in="refracted" in2="edgeDispersion" mode="screen" result="lensedGlass" />
+            <feGaussianBlur in="lensedGlass" stdDeviation="0.18" />
           </filter>
         </defs>
       </svg>
