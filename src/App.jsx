@@ -18,6 +18,7 @@ const RUMS5_POSTS_KEY = 'rums5-posts';
 const RUMS5_SUGGESTIONS_KEY = 'rums5-suggestions';
 const RUMS5_UPDATES_KEY = 'rums5-updates';
 const RUMS5_SITE_CONFIG_KEY = 'rums5-site-config';
+const PLATFORM_NAME = 'RUMS Plaza';
 const RUMS_SPACES = {
   rums4: { id: 'rums4', label: 'RUMS 4', subtitle: 'The current archive', description: 'Everything from the current site, including Project Lumina and all older posts.' },
   rums5: { id: 'rums5', label: 'RUMS 5', subtitle: 'The new era', description: 'The same RUMS experience with a fresh feed and no Project Lumina.' },
@@ -27,7 +28,7 @@ function storageKeysForSpace(space) {
   return { posts: POSTS_KEY, suggestions: SUGGESTIONS_KEY, updates: UPDATES_KEY, siteConfig: SITE_CONFIG_KEY };
 }
 const DEFAULT_SITE_CONFIG = {
-  brandName: 'RUMS', brandTagline: 'YOUR SERVER COMMUNITY', accent: '#3478f6', animations: true,
+  brandName: 'RUMS Plaza', brandTagline: 'YOUR SERVER COMMUNITY', accent: '#3478f6', animations: true,
   heroTitle: 'Your world.', heroText: 'Builds, screenshots and moments from everyone on the server.',
   showDiscover: true, showLumina: true, showUpdates: true, showSuggestions: true,
   customTabs: [], customWidgets: [], textOverrides: {}, elementPositions: {}, feedBoxOrder: ['hero', 'posts'],
@@ -258,6 +259,7 @@ function resizeEmojiImage(file, size = 96) {
 }
 
 export default function RUMS() {
+  useEffect(() => { document.title = PLATFORM_NAME; }, []);
   const [screen, setScreen] = useState('spaceSelect');
   const [rumsSpace, setRumsSpace] = useState(null);
   const [spaceSwitchBusy, setSpaceSwitchBusy] = useState(null);
@@ -745,6 +747,7 @@ export default function RUMS() {
       if (cfg) {
         try {
           const freshConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) };
+          if (freshConfig.brandName === 'RUMS') freshConfig.brandName = PLATFORM_NAME;
           setSiteConfig(isRums5 ? sanitizeConfigForRums5(freshConfig) : freshConfig);
         } catch { /* ignore malformed payload */ }
       }
@@ -836,6 +839,7 @@ export default function RUMS() {
       let loadedConfig;
       if (cfg) {
         loadedConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) };
+        if (loadedConfig.brandName === 'RUMS') loadedConfig.brandName = PLATFORM_NAME;
       } else if (space === 'rums5') {
         loadedConfig = sanitizeConfigForRums5(siteConfigRef.current);
         // Never hold the version switch hostage to a Firestore write.
@@ -893,9 +897,11 @@ export default function RUMS() {
       let loadedConfig;
       if (cfg) {
         loadedConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) };
+        if (loadedConfig.brandName === 'RUMS') loadedConfig.brandName = PLATFORM_NAME;
       } else if (space === 'rums5') {
         const rums4ConfigRecord = await safeGet(SITE_CONFIG_KEY, true);
         const rums4Config = rums4ConfigRecord ? { ...DEFAULT_SITE_CONFIG, ...JSON.parse(rums4ConfigRecord.value) } : DEFAULT_SITE_CONFIG;
+        if (rums4Config.brandName === 'RUMS') rums4Config.brandName = PLATFORM_NAME;
         loadedConfig = sanitizeConfigForRums5(rums4Config);
         try { await window.storage.set(keys.siteConfig, JSON.stringify(loadedConfig), true); } catch { /* first-load clone can retry later */ }
       } else {
@@ -1880,7 +1886,7 @@ export default function RUMS() {
   }
 
   async function sharePost(post) {
-    const text = `${post.username} shared a photo${post.tag === 'Lumina' ? ' from Lumina' : ''} on RUMS${post.caption ? `: "${post.caption}"` : ''}`;
+    const text = `${post.username} shared a photo${post.tag === 'Lumina' ? ' from Lumina' : ''} on ${PLATFORM_NAME}${post.caption ? `: "${post.caption}"` : ''}`;
     try {
       let file = null;
       try {
@@ -1891,7 +1897,7 @@ export default function RUMS() {
         file = null;
       }
       if (navigator.share && (!file || (navigator.canShare && navigator.canShare({ files: [file] })))) {
-        await navigator.share(file ? { title: 'RUMS', text, files: [file] } : { title: 'RUMS', text });
+        await navigator.share(file ? { title: PLATFORM_NAME, text, files: [file] } : { title: PLATFORM_NAME, text });
         setShareStatus((s) => ({ ...s, [post.id]: 'shared' }));
       } else {
         await navigator.clipboard.writeText(text);
@@ -2755,9 +2761,9 @@ export default function RUMS() {
         {screen === 'spaceSelect' && (
           <section className="rums-space-chooser" aria-labelledby="rums-space-title">
             <div className="space-chooser-mark">R</div>
-            <span className="space-chooser-kicker">RUMS COMMUNITY</span>
-            <h1 id="rums-space-title">Choose your RUMS</h1>
-            <p className="space-chooser-intro">Pick which era you want to enter. Your account works in both.</p>
+            <span className="space-chooser-kicker">RUMS PLAZA</span>
+            <h1 id="rums-space-title">Welcome to RUMS Plaza</h1>
+            <p className="space-chooser-intro">Choose which RUMS era you want to enter. Your Plaza account works in both.</p>
             <div className="space-choice-grid">
               <button type="button" className="space-choice-card rums4-choice" onClick={() => chooseRumsSpace('rums4')}>
                 <span className="space-choice-number">04</span>
@@ -2808,7 +2814,7 @@ export default function RUMS() {
               </button>
             </form>
             <p className="switch-line">
-              {authMode === 'signup' ? 'Already have an account? ' : 'New to RUMS? '}
+              {authMode === 'signup' ? 'Already have an account? ' : 'New to RUMS Plaza? '}
               <span
                 className="switch-link"
                 onClick={() => { setAuthMode(authMode === 'signup' ? 'login' : 'signup'); setError(''); }}
@@ -2839,7 +2845,7 @@ export default function RUMS() {
               {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
               {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onClick={() => setEditMode(true)}>{editMode ? <Check size={19} /> : <Eye size={19} />} {editMode ? 'Editing website' : 'Edit website'}</button>}
               <button className="rail-create" onClick={() => setScreen('upload')}><Plus size={19} /> Share a build</button>
-              <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS · Minecraft community</small></div>
+              <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS Plaza · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
               <div className="aero-brand aero-brand-version-switch">
@@ -3274,7 +3280,7 @@ export default function RUMS() {
                     <div className="admin-section-title"><Pencil size={16} /> Site settings <span>{siteConfigStatus}</span></div>
                     <p className="editor-intro">Changes publish to everyone. Jamie is always treated as the owner.</p>
                     <div className="editor-grid">
-                      <label>Site name<input value={siteConfig.brandName} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, brandName: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
+                      <label>Plaza name<input value={siteConfig.brandName} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, brandName: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
                       <label>Tagline<input value={siteConfig.brandTagline} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, brandTagline: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
                       <label>Feed headline<input value={siteConfig.heroTitle} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, heroTitle: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
                       <label>Accent colour<input type="color" value={siteConfig.accent} onChange={(e) => updateSiteConfig({ accent: e.target.value })} /></label>
