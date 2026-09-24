@@ -110,6 +110,28 @@ button,input,textarea { font:inherit; }
   .aero-root .post-card,.aero-root .update-card,.aero-root .suggestion-card {border-radius:21px;}
   .aero-root .community-hero,.aero-root .upload-wrap,.aero-root .search-wrap,.aero-root .admin-wrap,.aero-root .profile-wrap,.aero-root .feed-empty {border-radius:23px;}
 }
+
+/* Quiet glass bubbles: kept at the edges so decoration never competes with UI. */
+.aero-root .desktop-rail,.aero-root .aero-header,.aero-root .bottom-nav {
+  background-image:radial-gradient(circle at 9% 14%,#fff 0 3px,#9fcaff70 4px 6px,transparent 7px),radial-gradient(circle at 94% 78%,#ffffffd9 0 2px,#72d2aa69 3px 5px,transparent 6px),radial-gradient(circle at 88% 19%,transparent 0 7px,#9ac7ff4f 8px 9px,transparent 10px),linear-gradient(112deg,transparent 0 42%,#ffffff66 47%,transparent 53%);
+  background-repeat:no-repeat;
+}
+.aero-root .post-card,.aero-root .suggestion-card,.aero-root .update-card,.aero-root .user-row,.aero-root .admin-post-row {
+  background-image:radial-gradient(circle at 96% 12%,#fff 0 3px,#80baff59 4px 7px,transparent 8px),radial-gradient(circle at 91% 19%,transparent 0 4px,#68cba44f 5px 6px,transparent 7px),radial-gradient(circle at 4% 92%,#ffffffb8 0 2px,#9bc8ff48 3px 5px,transparent 6px),linear-gradient(145deg,#fff,#f7fbff 72%,#effaf5);
+  background-repeat:no-repeat;
+}
+.aero-root .community-hero,.aero-root .upload-wrap,.aero-root .search-wrap,.aero-root .profile-wrap,.aero-root .admin-wrap,.aero-root .feed-empty,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card {
+  background-image:radial-gradient(circle at 95% 11%,#fff 0 4px,#79b8ff66 5px 8px,transparent 9px),radial-gradient(circle at 90% 17%,transparent 0 6px,#59c99a52 7px 9px,transparent 10px),radial-gradient(circle at 5% 90%,#ffffffc9 0 2px,#8ac3ff50 3px 6px,transparent 7px),linear-gradient(145deg,#fffffff7,#f1f8fff2 65%,#edf9f2ef);
+  background-repeat:no-repeat;
+}
+.lumina-project-stats div,.lumina-station-detail {
+  background-image:radial-gradient(circle at 91% 18%,#fff 0 2px,#8abfff6b 3px 5px,transparent 6px),radial-gradient(circle at 84% 29%,transparent 0 3px,#5cc99b4a 4px 5px,transparent 6px),linear-gradient(145deg,#ffffffc9,#edf5ffad);
+  background-repeat:no-repeat;
+}
+@media(max-width:600px) {
+  .aero-root .desktop-rail,.aero-root .aero-header,.aero-root .bottom-nav {background-position:0 0,0 0,0 0,0 0;background-size:auto;}
+  .aero-root .post-card,.aero-root .suggestion-card,.aero-root .update-card {background-image:radial-gradient(circle at 96% 10%,#fff 0 2px,#80baff50 3px 5px,transparent 6px),radial-gradient(circle at 91% 16%,transparent 0 3px,#68cba443 4px 5px,transparent 6px),linear-gradient(145deg,#fff,#f7fbff 72%,#effaf5);}
+}
 @media(max-width:600px) {
   .aero-root .content {padding-bottom:122px;}
   .aero-root .bottom-nav {height:65px;border-radius:23px;}
@@ -246,9 +268,9 @@ button,input,textarea { font:inherit; }
 .lumina-hero-actions button,.lumina-wide-action,.lumina-share-card button {display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:39px;padding:0 15px;border:1px solid #ffffffc7;border-radius:999px;background:#ffffffc7;color:#2767bd;font-size:11px;font-weight:750;box-shadow:inset 0 1px #fff,0 4px 14px #315b8d27;backdrop-filter:blur(16px);cursor:pointer;}
 .lumina-hero-actions button:first-child {background:#3478f6;color:#fff;border-color:#74a8fa;box-shadow:inset 0 1px #ffffff7d,0 6px 16px #2865c34c;}
 .lumina-view-switch {position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(3,1fr);gap:0;padding:5px;border:1px solid #fff;border-radius:999px;background:#ffffff9e;box-shadow:inset 0 1px #fff,0 6px 19px #34547f17;backdrop-filter:blur(20px) saturate(1.35);overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none;}
-.lumina-view-switch::before {content:'';position:absolute;z-index:0;left:5px;top:5px;width:calc((100% - 10px)/3);height:calc(100% - 10px);border:1px solid #fff;border-radius:999px;background:radial-gradient(80px 28px at var(--lumina-reflection-x,30%) 0,#fff 0,#ffffff9d 34%,transparent 80%),linear-gradient(145deg,#ffffffeb,#dfecffbc);box-shadow:inset 0 1px 2px #fff,0 3px 12px #3a609634;transform:translateX(calc(var(--lumina-tab-index,0) * 100%));transition:width .5s cubic-bezier(.16,1.22,.28,1),transform .5s cubic-bezier(.16,1.22,.28,1),border-radius .32s ease,box-shadow .3s,filter .25s;pointer-events:none;}
-.lumina-view-switch.is-dragging::before {width:72px;border-radius:38% 62% 44% 56% / 59% 39% 61% 41%;box-shadow:inset 3px 3px 5px #fff,inset -4px -5px 8px #5f86ad3f,0 0 0 3px #ffffff68,0 8px 22px #3478f657;transform:translateX(calc(var(--lumina-pointer-x,41px) - 41px)) scaleY(1.08);transform-origin:center;transition:transform .07s linear,width .18s ease,border-radius .15s,box-shadow .15s;filter:saturate(1.25);}
-.lumina-view-switch.is-dragging::after {content:'';position:absolute;z-index:0;left:calc(var(--lumina-pointer-x,50%) - 8px + var(--lumina-tail-offset,0px));top:14px;width:16px;height:16px;border:1px solid #fff;border-radius:61% 39% 55% 45% / 43% 59% 41% 57%;background:radial-gradient(circle at 28% 18%,#fff,#c7dcffb8 56%,#82c7ae9c);box-shadow:inset 1px 1px 3px #fff,0 4px 12px #3478f64a;pointer-events:none;opacity:.82;}
+.lumina-view-switch::before {content:'';position:absolute;z-index:0;left:5px;top:5px;width:calc((100% - 10px)/3);height:calc(100% - 10px);border:1px solid #fff;border-radius:16px;background:radial-gradient(80px 28px at var(--lumina-reflection-x,30%) 0,#fff 0,#ffffff9d 34%,transparent 80%),linear-gradient(145deg,#ffffffeb,#dfecffbc);box-shadow:inset 0 1px 2px #fff,0 3px 12px #3a609634;transform:translateX(calc(var(--lumina-tab-index,0) * 100%));transition:width .5s cubic-bezier(.16,1.22,.28,1),transform .5s cubic-bezier(.16,1.22,.28,1),border-radius .32s ease,box-shadow .3s,filter .25s;pointer-events:none;}
+.lumina-view-switch.is-dragging::before {width:84px;border-radius:15px;box-shadow:inset 3px 3px 5px #fff,inset -4px -5px 8px #5f86ad3f,0 0 0 3px #ffffff68,0 8px 22px #3478f657;transform:translateX(calc(var(--lumina-pointer-x,47px) - 47px)) scaleY(1.03);transform-origin:center;transition:transform .07s linear,width .18s ease,border-radius .15s,box-shadow .15s;filter:saturate(1.25);}
+.lumina-view-switch.is-dragging::after {content:'';position:absolute;z-index:0;left:calc(var(--lumina-pointer-x,50%) - 6px + var(--lumina-tail-offset,0px));top:9px;width:12px;height:12px;border:1px solid #fff;border-radius:50%;background:radial-gradient(circle at 28% 18%,#fff,#c7dcffb8 56%,#82c7ae9c);box-shadow:inset 1px 1px 3px #fff,0 4px 12px #3478f64a,-22px 17px 0 -3px #dbeaffc9,-22px 17px 7px -2px #3478f638,23px 20px 0 -4px #c9f0e0d1,23px 20px 7px -3px #2f9b7040;pointer-events:none;opacity:.86;}
 .lumina-view-switch:active::before {border-radius:48% 52% 46% 54% / 57% 45% 55% 43%;filter:saturate(1.25);}
 .lumina-view-switch button {z-index:1;min-height:40px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:#778499;font-size:12px;font-weight:700;box-shadow:none;cursor:pointer;overflow:visible;}
 .aero-root .lumina-view-switch button::before {display:none;}
