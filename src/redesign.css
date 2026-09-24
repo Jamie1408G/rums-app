@@ -726,3 +726,8 @@ button,input,textarea { font:inherit; }
 .aero-brand-version-switch .universal-rums-switcher {margin-left:0;}
 .universal-rums-switcher button:disabled {cursor:wait;opacity:.82;}
 .universal-rums-switcher button strong {display:grid;place-items:center;min-width:14px;min-height:14px;}
+
+/* Tighten the RUMS 4/5 switch against the left edge of the floating top bar. */
+@media (min-width:901px) {
+  .aero-root .aero-header {padding-left:14px;}
+}
