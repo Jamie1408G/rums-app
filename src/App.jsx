@@ -14,6 +14,18 @@ const SESSION_KEY = 'rums-session';
 const SUGGESTIONS_KEY = 'rums-suggestions';
 const UPDATES_KEY = 'rums-updates';
 const SITE_CONFIG_KEY = 'rums-site-config';
+const RUMS5_POSTS_KEY = 'rums5-posts';
+const RUMS5_SUGGESTIONS_KEY = 'rums5-suggestions';
+const RUMS5_UPDATES_KEY = 'rums5-updates';
+const RUMS5_SITE_CONFIG_KEY = 'rums5-site-config';
+const RUMS_SPACES = {
+  rums4: { id: 'rums4', label: 'RUMS 4', subtitle: 'The current archive', description: 'Everything from the current site, including Project Lumina and all older posts.' },
+  rums5: { id: 'rums5', label: 'RUMS 5', subtitle: 'The new era', description: 'The same RUMS experience with a fresh feed and no Project Lumina.' },
+};
+function storageKeysForSpace(space) {
+  if (space === 'rums5') return { posts: RUMS5_POSTS_KEY, suggestions: RUMS5_SUGGESTIONS_KEY, updates: RUMS5_UPDATES_KEY, siteConfig: RUMS5_SITE_CONFIG_KEY };
+  return { posts: POSTS_KEY, suggestions: SUGGESTIONS_KEY, updates: UPDATES_KEY, siteConfig: SITE_CONFIG_KEY };
+}
 const DEFAULT_SITE_CONFIG = {
   brandName: 'RUMS', brandTagline: 'YOUR SERVER COMMUNITY', accent: '#3478f6', animations: true,
   heroTitle: 'Your world.', heroText: 'Builds, screenshots and moments from everyone on the server.',
@@ -33,7 +45,7 @@ const LUMINA_STATIONS = [
   { name: 'Luminelia', type: 'Skyline district', description: 'The station directly beneath Lumina’s skyline, surrounded by the city’s towers and most recognisable architecture.', accent: '#8d84f6' },
   { name: 'Luminarra', type: 'Gateway station', description: 'Lumina’s arrival point beside the teleporter: the gateway where visitors first enter and connect with the city.', accent: '#62bea1' },
 ];
-const lastSeenKey = (username) => `rums-lastseen-${username}`;
+const lastSeenKey = (username, space = 'rums4') => space === 'rums5' ? `rums5-lastseen-${username}` : `rums-lastseen-${username}`;
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
 
 const UNIVERSAL_EDIT_BOX_SELECTOR = [
@@ -100,7 +112,8 @@ function resizeImage(file, maxW = 900) {
 }
 
 export default function RUMS() {
-  const [screen, setScreen] = useState('loading');
+  const [screen, setScreen] = useState('spaceSelect');
+  const [rumsSpace, setRumsSpace] = useState(null);
   const [users, setUsers] = useState([]);
   const [posts, setPosts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
@@ -169,6 +182,9 @@ export default function RUMS() {
   const locationTabsRef = useRef(null);
   const locationTabsDragRef = useRef(null);
   const [locationTabsDragging, setLocationTabsDragging] = useState(false);
+  const activeStorageKeys = storageKeysForSpace(rumsSpace || 'rums4');
+  const isRums5 = rumsSpace === 'rums5';
+  const activeSpace = rumsSpace ? RUMS_SPACES[rumsSpace] : null;
 
   useEffect(() => {
     siteConfigRef.current = siteConfig;
@@ -389,11 +405,6 @@ export default function RUMS() {
   }, [currentUser]);
 
   useEffect(() => {
-    init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     try { window.localStorage.setItem('rums-glass-strength', String(glassStrength)); } catch { /* browser preferences unavailable */ }
   }, [glassStrength]);
 
@@ -405,11 +416,11 @@ export default function RUMS() {
     if (!currentUser) return;
     const id = setInterval(async () => {
       const [p, u, sg, up, cfg] = await Promise.all([
-        safeGet(POSTS_KEY, true),
+        safeGet(activeStorageKeys.posts, true),
         safeGet(USERS_KEY, true),
-        safeGet(SUGGESTIONS_KEY, true),
-        safeGet(UPDATES_KEY, true),
-        safeGet(SITE_CONFIG_KEY, true),
+        safeGet(activeStorageKeys.suggestions, true),
+        safeGet(activeStorageKeys.updates, true),
+        safeGet(activeStorageKeys.siteConfig, true),
       ]);
       if (p) {
         try {
@@ -433,7 +444,10 @@ export default function RUMS() {
         }
       }
       if (cfg) {
-        try { setSiteConfig({ ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) }); } catch { /* ignore malformed payload */ }
+        try {
+          const freshConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) };
+          setSiteConfig(isRums5 ? sanitizeConfigForRums5(freshConfig) : freshConfig);
+        } catch { /* ignore malformed payload */ }
       }
       if (u) {
         try {
@@ -457,12 +471,12 @@ export default function RUMS() {
       }
     }, 15000);
     return () => clearInterval(id);
-  }, [currentUser]);
+  }, [currentUser, rumsSpace]);
 
   // Mark the currently-viewed feed tab as "seen" once its newest post is on screen.
   useEffect(() => {
     if (screen !== 'feed' || !currentUser) return;
-    const activeTag = feedFilter === 'lumina' ? 'Lumina' : 'General';
+    const activeTag = !isRums5 && feedFilter === 'lumina' ? 'Lumina' : 'General';
     const latest = posts
       .filter((p) => (activeTag === 'Lumina' ? p.tag === 'Lumina' : p.tag !== 'Lumina'))
       .reduce((max, p) => Math.max(max, p.timestamp), 0);
@@ -472,42 +486,88 @@ export default function RUMS() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, feedFilter, posts, currentUser]);
 
-  async function init() {
+  function sanitizeConfigForRums5(config) {
+    return {
+      ...DEFAULT_SITE_CONFIG,
+      ...config,
+      showLumina: false,
+      customWidgets: (config?.customWidgets || []).filter((widget) => widget.placement !== 'lumina'),
+    };
+  }
+
+  async function chooseRumsSpace(space) {
+    if (!RUMS_SPACES[space]) return;
+    setEditMode(false);
+    setSelectedBoxId(null);
+    setFeedFilter('all');
+    setTag('General');
+    setNavStack([]);
+    setRumsSpace(space);
+    setScreen('loading');
+    await init(space);
+  }
+
+  function openRumsChooser() {
+    setEditMode(false);
+    setSelectedBoxId(null);
+    setFeedFilter('all');
+    setTag('General');
+    setNavStack([]);
+    setScreen('spaceSelect');
+  }
+
+  async function init(space = rumsSpace || 'rums4') {
     try {
-      const [u, p, s, sg, up, cfg] = await Promise.all([
+      const keys = storageKeysForSpace(space);
+      const [u, p, sessRec, sg, up, cfg] = await Promise.all([
         safeGet(USERS_KEY, true),
-        safeGet(POSTS_KEY, true),
+        safeGet(keys.posts, true),
         safeGet(SESSION_KEY, false),
-        safeGet(SUGGESTIONS_KEY, true),
-        safeGet(UPDATES_KEY, true),
-        safeGet(SITE_CONFIG_KEY, true),
+        safeGet(keys.suggestions, true),
+        safeGet(keys.updates, true),
+        safeGet(keys.siteConfig, true),
       ]);
       const loadedUsers = u ? JSON.parse(u.value) : [];
       const loadedPosts = p ? JSON.parse(p.value) : [];
+      let loadedConfig;
+      if (cfg) {
+        loadedConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) };
+      } else if (space === 'rums5') {
+        const rums4ConfigRecord = await safeGet(SITE_CONFIG_KEY, true);
+        const rums4Config = rums4ConfigRecord ? { ...DEFAULT_SITE_CONFIG, ...JSON.parse(rums4ConfigRecord.value) } : DEFAULT_SITE_CONFIG;
+        loadedConfig = sanitizeConfigForRums5(rums4Config);
+        try { await window.storage.set(keys.siteConfig, JSON.stringify(loadedConfig), true); } catch { /* first-load clone can retry later */ }
+      } else {
+        loadedConfig = DEFAULT_SITE_CONFIG;
+      }
+      if (space === 'rums5') loadedConfig = sanitizeConfigForRums5(loadedConfig);
       setUsers(loadedUsers);
       setPosts(loadedPosts);
       setSuggestions(sg ? JSON.parse(sg.value) : []);
       setUpdates(up ? JSON.parse(up.value) : []);
-      setSiteConfig(cfg ? { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) } : DEFAULT_SITE_CONFIG);
-      if (s) {
-        const sess = JSON.parse(s.value);
+      setSiteConfig(loadedConfig);
+      siteConfigRef.current = loadedConfig;
+      if (sessRec) {
+        const sess = JSON.parse(sessRec.value);
         const found = loadedUsers.find((x) => x.username === sess.username);
         if (found) {
           setCurrentUser(found);
-          await loadLastSeen(found.username);
+          await loadLastSeen(found.username, space, loadedPosts);
           setScreen('feed');
           return;
         }
       }
+      setCurrentUser(null);
       setScreen('login');
     } catch (e) {
       console.error(e);
+      setCurrentUser(null);
       setScreen('login');
     }
   }
 
-  async function loadLastSeen(username) {
-    const rec = await safeGet(lastSeenKey(username), false);
+  async function loadLastSeen(username, space = rumsSpace || 'rums4', sourcePosts = posts) {
+    const rec = await safeGet(lastSeenKey(username, space), false);
     if (rec) {
       try {
         setLastSeen(JSON.parse(rec.value));
@@ -516,15 +576,15 @@ export default function RUMS() {
         /* fall through to reseed */
       }
     }
-    // First time we've seen this user: don't flag existing posts as "new".
     const now = Date.now();
-    await saveLastSeen(username, { General: now, Lumina: now });
+    const seeded = space === 'rums5' ? { General: now, Lumina: 0 } : { General: now, Lumina: now };
+    await saveLastSeen(username, seeded, space);
   }
 
-  async function saveLastSeen(username, next) {
+  async function saveLastSeen(username, next, space = rumsSpace || 'rums4') {
     setLastSeen(next);
     try {
-      await window.storage.set(lastSeenKey(username), JSON.stringify(next), false);
+      await window.storage.set(lastSeenKey(username, space), JSON.stringify(next), false);
     } catch (e) {
       console.error(e);
     }
@@ -543,7 +603,7 @@ export default function RUMS() {
   async function savePosts(next) {
     setPosts(next);
     try {
-      await window.storage.set(POSTS_KEY, JSON.stringify(next), true);
+      await window.storage.set(activeStorageKeys.posts, JSON.stringify(next), true);
     } catch (e) {
       console.error(e);
       setError('Could not save — try again.');
@@ -553,7 +613,7 @@ export default function RUMS() {
   async function saveSuggestions(next) {
     setSuggestions(next);
     try {
-      await window.storage.set(SUGGESTIONS_KEY, JSON.stringify(next), true);
+      await window.storage.set(activeStorageKeys.suggestions, JSON.stringify(next), true);
     } catch (e) {
       console.error(e);
       setError('Could not save — try again.');
@@ -563,7 +623,7 @@ export default function RUMS() {
   async function saveUpdates(next) {
     setUpdates(next);
     try {
-      await window.storage.set(UPDATES_KEY, JSON.stringify(next), true);
+      await window.storage.set(activeStorageKeys.updates, JSON.stringify(next), true);
     } catch (e) {
       console.error(e);
       setError('Could not save — try again.');
@@ -592,6 +652,7 @@ export default function RUMS() {
   }
 
   async function saveSiteConfig(next, { recordHistory = true } = {}) {
+    if (isRums5) next = sanitizeConfigForRums5(next);
     const previous = siteConfigRef.current;
     if (recordHistory && JSON.stringify(previous) !== JSON.stringify(next)) recordSiteHistory(previous);
     siteConfigRef.current = next;
@@ -599,7 +660,7 @@ export default function RUMS() {
     setSiteConfigBusy(true);
     setSiteConfigStatus('Saving…');
     try {
-      await window.storage.set(SITE_CONFIG_KEY, JSON.stringify(next), true);
+      await window.storage.set(activeStorageKeys.siteConfig, JSON.stringify(isRums5 ? sanitizeConfigForRums5(next) : next), true);
       setSiteConfigStatus('Published');
     } catch (e) {
       console.error(e);
@@ -1071,7 +1132,7 @@ export default function RUMS() {
         await window.storage.set(USERS_KEY, JSON.stringify(next), true);
         setUsers(next);
         setCurrentUser(newUser);
-        await loadLastSeen(newUser.username);
+        await loadLastSeen(newUser.username, rumsSpace || 'rums4');
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: uname }), false);
         setScreen('feed');
       } else {
@@ -1084,7 +1145,7 @@ export default function RUMS() {
           return;
         }
         setCurrentUser(found);
-        await loadLastSeen(found.username);
+        await loadLastSeen(found.username, rumsSpace || 'rums4');
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: found.username }), false);
         setScreen('feed');
       }
@@ -1145,6 +1206,7 @@ export default function RUMS() {
   }
 
   function openLumina() {
+    if (isRums5) return;
     goTo('lumina');
   }
 
@@ -1171,7 +1233,7 @@ export default function RUMS() {
       username: currentUser.username,
       image: uploadPreview,
       caption: caption.trim(),
-      tag,
+      tag: isRums5 ? 'General' : tag,
       timestamp: Date.now(),
       likes: [],
       comments: [],
@@ -1310,7 +1372,7 @@ export default function RUMS() {
     const username = currentUser.username;
     await deleteAccountEverywhere(username);
     try { await window.storage.delete(SESSION_KEY, false); } catch { /* ignore */ }
-    try { await window.storage.delete(lastSeenKey(username), false); } catch { /* ignore */ }
+    for (const space of ['rums4', 'rums5']) { try { await window.storage.delete(lastSeenKey(username, space), false); } catch { /* ignore */ } }
     setCurrentUser(null);
     setScreen('login');
   }
@@ -1405,10 +1467,12 @@ export default function RUMS() {
       ]);
 
       try {
-        const rec = await safeGet(lastSeenKey(oldUsername), false);
-        if (rec) {
-          await window.storage.set(lastSeenKey(trimmed), rec.value, false);
-          await window.storage.delete(lastSeenKey(oldUsername), false);
+        for (const space of ['rums4', 'rums5']) {
+          const rec = await safeGet(lastSeenKey(oldUsername, space), false);
+          if (rec) {
+            await window.storage.set(lastSeenKey(trimmed, space), rec.value, false);
+            await window.storage.delete(lastSeenKey(oldUsername, space), false);
+          }
         }
       } catch {
         /* ignore */
@@ -1773,21 +1837,21 @@ export default function RUMS() {
   const unseenGeneral = currentUser
     ? posts.filter((p) => p.tag !== 'Lumina' && p.timestamp > (lastSeen.General || 0) && p.username !== currentUser.username).length
     : 0;
-  const unseenLumina = currentUser
+  const unseenLumina = !isRums5 && currentUser
     ? posts.filter((p) => p.tag === 'Lumina' && p.timestamp > (lastSeen.Lumina || 0) && p.username !== currentUser.username).length
     : 0;
   const hasNewPosts = unseenGeneral > 0 || unseenLumina > 0;
   const visiblePosts = posts
     .slice()
     .sort((a, b) => b.timestamp - a.timestamp)
-    .filter((p) => (feedFilter === 'lumina' ? p.tag === 'Lumina' : p.tag !== 'Lumina'));
+    .filter((p) => isRums5 || feedFilter !== 'lumina' ? p.tag !== 'Lumina' : p.tag === 'Lumina');
 
   const visibleSuggestions = suggestions
     .slice()
     .sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0) || b.timestamp - a.timestamp);
 
   const visibleUpdates = updates.slice().sort((a, b) => b.timestamp - a.timestamp);
-  const luminaPosts = posts.filter((p) => p.tag === 'Lumina').sort((a, b) => b.timestamp - a.timestamp);
+  const luminaPosts = isRums5 ? [] : posts.filter((p) => p.tag === 'Lumina').sort((a, b) => b.timestamp - a.timestamp);
   const feedBoxHandle = (id) => editMode && isOwner && selectedBoxId === `feed:${id}` ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
   function renderFeedBox(id) {
     if (id === 'hero') return <section data-feed-box="hero" data-edit-box-id="feed:hero" className={`editable-built-in-box ${selectedBoxId === 'feed:hero' ? 'is-editor-selected' : ''}`} key="hero" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:hero'); }}>{feedBoxHandle('hero')}<div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div></section>;
@@ -1795,6 +1859,7 @@ export default function RUMS() {
   }
 
   function renderFeedTabs() {
+    if (isRums5) return <button type="button" className="rums-space-header-pill" onClick={openRumsChooser} title="Switch RUMS version"><span>RUMS 5</span><small>NEW ERA</small></button>;
     return (
       <div ref={tabsRef} className={`feed-tabs ${tabsDragging ? 'is-dragging' : ''}`}
         style={{ '--seg-translate': tabsDragging ? `${tabOffset}px` : feedFilter === 'lumina' ? '100%' : '0%' }}
@@ -1973,7 +2038,7 @@ export default function RUMS() {
   }
 
   return (
-    <div className={`aero-root ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': siteConfig.accent }}>
+    <div className={`aero-root ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? `space-${rumsSpace}` : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': siteConfig.accent }}>
       <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
         <defs>
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
@@ -1984,17 +2049,39 @@ export default function RUMS() {
         </defs>
       </svg>
       <div className="aero-frame">
+        {screen === 'spaceSelect' && (
+          <section className="rums-space-chooser" aria-labelledby="rums-space-title">
+            <div className="space-chooser-mark">R</div>
+            <span className="space-chooser-kicker">RUMS COMMUNITY</span>
+            <h1 id="rums-space-title">Choose your RUMS</h1>
+            <p className="space-chooser-intro">Pick which era you want to enter. Your account works in both.</p>
+            <div className="space-choice-grid">
+              <button type="button" className="space-choice-card rums4-choice" onClick={() => chooseRumsSpace('rums4')}>
+                <span className="space-choice-number">04</span>
+                <span className="space-choice-copy"><strong>RUMS 4</strong><small>The current archive</small><em>Project Lumina · older posts · existing community content</em></span>
+                <span className="space-choice-arrow">→</span>
+              </button>
+              <button type="button" className="space-choice-card rums5-choice" onClick={() => chooseRumsSpace('rums5')}>
+                <span className="space-choice-number">05</span>
+                <span className="space-choice-copy"><strong>RUMS 5</strong><small>The new era</small><em>Fresh posts · same features · no Project Lumina</em></span>
+                <span className="space-choice-arrow">→</span>
+              </button>
+            </div>
+          </section>
+        )}
+
         {screen === 'loading' && (
           <div className="center-loading">
-            <Loader2 size={18} className="spin" /> Loading RUMS…
+            <Loader2 size={18} className="spin" /> Loading {activeSpace?.label || 'RUMS'}…
           </div>
         )}
 
         {(screen === 'login' || screen === 'signup') && (
           <div className="auth-wrap">
             <div className="auth-logo">R</div>
-            <h1 className="auth-title">RUMS</h1>
-            <p className="auth-sub">The server's photo feed — share builds and screenshots from anywhere on RUMS, with a special corner for Lumina.</p>
+            <h1 className="auth-title">{activeSpace?.label || 'RUMS'}</h1>
+            <p className="auth-sub">{isRums5 ? 'The new RUMS era — a fresh community feed with the same social features.' : "The server's photo feed — including the full Project Lumina archive and older posts."}</p>
+            <button type="button" className="auth-space-switch" onClick={openRumsChooser}>← Choose RUMS 4 or 5</button>
             <form className="auth-form" onSubmit={handleAuth}>
               {error && <div className="error-pill">{error}</div>}
               <input
@@ -2034,14 +2121,14 @@ export default function RUMS() {
           </div>
         )}
 
-        {screen !== 'loading' && screen !== 'login' && screen !== 'signup' && currentUser && (
+        {screen !== 'spaceSelect' && screen !== 'loading' && screen !== 'login' && screen !== 'signup' && currentUser && (
           <>
             <aside className="desktop-rail">
-              <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span></div>
+              <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span><button className="rail-space-chip" type="button" onClick={openRumsChooser}>{isRums5 ? '5' : '4'}</button></div>
               <div className="rail-label">EXPLORE</div>
               <button className={`rail-link ${screen === 'feed' ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); }}><Home size={19} /> Community feed {hasNewPosts && <span className="rail-dot" />}</button>
               {siteConfig.showDiscover && <button className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}><Search size={19} /> Discover</button>}
-              {siteConfig.showLumina && <button className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}><Droplet size={19} /> Project Lumina</button>}
+              {!isRums5 && siteConfig.showLumina && <button className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}><Droplet size={19} /> Project Lumina</button>}
               <div className="rail-label">COMMUNITY</div>
               {siteConfig.showUpdates && <button className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}><Megaphone size={19} /> Server updates</button>}
               {siteConfig.showSuggestions && <button className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}><Lightbulb size={19} /> Suggestions</button>}
@@ -2055,6 +2142,7 @@ export default function RUMS() {
               <div className="aero-brand">
                 <div className="r-badge">R</div>
                 {siteConfig.brandName}
+                <button type="button" className="header-space-chip" onClick={openRumsChooser} title="Switch between RUMS 4 and RUMS 5">{isRums5 ? '5' : '4'}</button>
               </div>
               {screen === 'feed' && <div className="aero-header-center">{renderFeedTabs()}</div>}
               <div className="aero-header-actions">
@@ -2113,7 +2201,7 @@ export default function RUMS() {
                 </div>
               )}
 
-              {screen === 'lumina' && (
+              {screen === 'lumina' && !isRums5 && (
                 <div className="lumina-page">
                   <div className="lumina-topbar"><button className="glass-circle-btn" onClick={goBack} aria-label="Back"><ArrowLeft size={19} /></button><span>Project</span><button className="glass-circle-btn" onClick={() => { setTag('Lumina'); setScreen('upload'); }} aria-label="Share from Lumina"><Plus size={19} /></button></div>
                   <section className="lumina-project-hero">
@@ -2163,19 +2251,23 @@ export default function RUMS() {
                   <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileSelect} />
 
                   <div className="field-label">Where was it taken?</div>
-                  <div ref={locationTabsRef} className={`tag-select location-tabs ${locationTabsDragging ? 'is-dragging' : ''}`} style={{ '--location-tab-index': tag === 'Lumina' ? 1 : 0 }} onPointerDown={handleLocationTabsPointerDown} onPointerMove={handleLocationTabsPointerMove} onPointerUp={handleLocationTabsPointerEnd} onPointerCancel={handleLocationTabsPointerEnd} onClickCapture={(e) => { if (locationTabsDragRef.current?.moved) { e.preventDefault(); e.stopPropagation(); } }}>
-                    {TAGS.map((t) => (
-                      <button
-                        key={t}
-                        className={`tag-chip ${tag === t ? 'active' : ''}`}
-                        onClick={() => setTag(t)}
-                        type="button"
-                      >
-                        {t === 'Lumina' && <Droplet size={13} />} {t}
-                      </button>
-                    ))}
-                    <span className="drag-refraction location-drag-refraction" aria-hidden="true"><span className="drag-refraction-content"><span className={tag === 'General' ? 'active' : ''}>General</span><span className={tag === 'Lumina' ? 'active' : ''}><Droplet size={13} /> Lumina</span></span></span>
-                  </div>
+                  {isRums5 ? (
+                    <div className="rums5-location-chip"><Check size={13} /> RUMS 5</div>
+                  ) : (
+                    <div ref={locationTabsRef} className={`tag-select location-tabs ${locationTabsDragging ? 'is-dragging' : ''}`} style={{ '--location-tab-index': tag === 'Lumina' ? 1 : 0 }} onPointerDown={handleLocationTabsPointerDown} onPointerMove={handleLocationTabsPointerMove} onPointerUp={handleLocationTabsPointerEnd} onPointerCancel={handleLocationTabsPointerEnd} onClickCapture={(e) => { if (locationTabsDragRef.current?.moved) { e.preventDefault(); e.stopPropagation(); } }}>
+                      {TAGS.map((t) => (
+                        <button
+                          key={t}
+                          className={`tag-chip ${tag === t ? 'active' : ''}`}
+                          onClick={() => setTag(t)}
+                          type="button"
+                        >
+                          {t === 'Lumina' && <Droplet size={13} />} {t}
+                        </button>
+                      ))}
+                      <span className="drag-refraction location-drag-refraction" aria-hidden="true"><span className="drag-refraction-content"><span className={tag === 'General' ? 'active' : ''}>General</span><span className={tag === 'Lumina' ? 'active' : ''}><Droplet size={13} /> Lumina</span></span></span>
+                    </div>
+                  )}
 
                   <div className="field-label">Caption</div>
                   <textarea
@@ -2478,7 +2570,7 @@ export default function RUMS() {
                       <label className="editor-wide">Feed description<textarea value={siteConfig.heroText} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, heroText: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
                     </div>
                     <div className="editor-toggles">
-                      {[['animations','Animations'],['showDiscover','Discover'],['showLumina','Project Lumina'],['showUpdates','Updates'],['showSuggestions','Suggestions']].map(([key,label]) => <button key={key} className={siteConfig[key] ? 'enabled' : ''} onClick={() => updateSiteConfig({ [key]: !siteConfig[key] })}><Check size={14} /> {label}</button>)}
+                      {[['animations','Animations'],['showDiscover','Discover'],...(!isRums5 ? [['showLumina','Project Lumina']] : []),['showUpdates','Updates'],['showSuggestions','Suggestions']].map(([key,label]) => <button key={key} className={siteConfig[key] ? 'enabled' : ''} onClick={() => updateSiteConfig({ [key]: !siteConfig[key] })}><Check size={14} /> {label}</button>)}
                     </div>
                     <div className="editor-subsection"><h3>Custom navigation tabs</h3><div className="editor-add-row"><input value={tabDraft} onChange={(e) => setTabDraft(e.target.value)} placeholder="New tab name" /><button onClick={addCustomTab}><Plus size={15} /> Add tab</button></div>{siteConfig.customTabs.map((tab) => <div className="editor-item" key={tab.id}><span>{tab.label}</span><button onClick={() => removeCustomTab(tab.id)}><Trash2 size={14} /></button></div>)}</div>
                   </section>
@@ -2549,7 +2641,7 @@ export default function RUMS() {
                     )}
                   </div>
 
-                  {!q && <p className="switch-line" style={{ padding: '0 4px' }}>Search covers all posts on RUMS, including Lumina. Tap a result to jump to it.</p>}
+                  {!q && <p className="switch-line" style={{ padding: '0 4px' }}>{isRums5 ? 'Search covers all RUMS 5 posts. Tap a result to jump to it.' : 'Search covers all RUMS 4 posts, including Lumina. Tap a result to jump to it.'}</p>}
 
                   {q && (
                     <>
