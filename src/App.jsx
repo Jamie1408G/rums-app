@@ -27,6 +27,7 @@ const ROBLOX_THEMES = [
   { id: 'roblox2016', name: 'Roblox 2016', year: '2016', description: 'Grey dashboard, white cards, bright cyan actions and the classic mid-2010s home layout', swatches: ['#e3e3e3', '#00a2ff', '#ffffff'] },
   { id: 'roblox2017', name: 'Roblox 2017', year: '2017', description: 'Post-rebrand blue navigation, crisp white cards, game-grid UI and lighter modern spacing', swatches: ['#f2f2f2', '#0074bd', '#e2231a'] },
   { id: 'roblox2020', name: 'Roblox 2020', year: '2020', description: 'Modern light Roblox web UI with soft grey surfaces, minimal borders and restrained controls', swatches: ['#f2f4f5', '#ffffff', '#00b06f'] },
+  { id: 'roblox2026', name: 'Roblox 2026', year: '2026', description: 'Current dark Roblox app shell with icon-first navigation, social circles and image-led discovery', swatches: ['#202020', '#2b2b2b', '#f7f7f7'] },
 ];
 const RUMS_THEMES = [
   { id: 'standard', name: 'Standard', description: 'Glossy modern RUMS Plaza', swatches: ['#f6f8fc', '#3478f6', '#b8d7ff'] },
@@ -3794,7 +3795,7 @@ export default function RUMS() {
                             onClick={() => setRobloxThemeMenuOpen((open) => !open)}
                           >
                             <span className="theme-option-preview roblox-family-preview" aria-hidden="true"><span /><span /><span /></span>
-                            <span className="theme-option-copy"><strong>Roblox</strong><small>Choose a researched website era from 2008–2020</small></span>
+                            <span className="theme-option-copy"><strong>Roblox</strong><small>Choose a researched Roblox era from 2008–2026</small></span>
                             <ChevronDown size={15} className={`theme-family-chevron ${robloxThemeMenuOpen ? 'open' : ''}`} />
                           </button>
 
