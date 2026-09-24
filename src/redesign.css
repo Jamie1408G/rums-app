@@ -552,3 +552,46 @@ button,input,textarea { font:inherit; }
   .aero-root .content {padding-top:72px;}
   .aero-root .aero-header-center .feed-tabs {width:100%;}
 }
+
+/* Header feed switch: keep the exact centered footprint, but visually integrate it with the top bar. */
+@media (min-width:681px) {
+  .aero-root .aero-header-center .feed-tabs {
+    width:242px;
+    min-height:42px;
+    padding:4px;
+    border-color:#ffffffc9;
+    border-radius:18px;
+    background:linear-gradient(145deg,#ffffff7d,#edf5ff72 58%,#ecf8f27a);
+    box-shadow:inset 1px 1px 1px #ffffffd9,inset -1px -2px 4px #6687aa16,0 3px 10px #294d7416;
+    backdrop-filter:blur(18px) saturate(1.35);
+    -webkit-backdrop-filter:blur(18px) saturate(1.35);
+  }
+  .aero-root .aero-header-center .feed-tabs::before {
+    left:4px;
+    top:4px;
+    width:calc((100% - 8px)/2);
+    height:calc(100% - 8px);
+    border-radius:14px;
+    box-shadow:inset 1px 1px 2px #fff,inset -1px -2px 4px #6283a51f,0 3px 9px #3a659526;
+  }
+  .aero-root .aero-header-center .feed-tabs .tab-btn,
+  .aero-root .aero-header-center .feed-tabs .tab-btn.active {
+    min-height:32px;
+    font-size:12px;
+    letter-spacing:-.01em;
+  }
+  .aero-root .aero-header-center .feed-tabs.is-dragging::before {
+    top:4px;
+    height:calc(100% - 8px);
+    border-radius:14px;
+  }
+  .aero-root .aero-header-center .feed-tabs.is-dragging::after {
+    top:7px;
+  }
+  .aero-root .aero-header-center .feed-drag-refraction {
+    left:4px;
+    top:4px;
+    height:calc(100% - 8px);
+    border-radius:14px;
+  }
+}
