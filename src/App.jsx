@@ -32,8 +32,48 @@ const DEFAULT_SITE_CONFIG = {
   heroTitle: 'Your world.', heroText: 'Builds, screenshots and moments from everyone on the server.',
   showDiscover: true, showLumina: true, showUpdates: true, showSuggestions: true,
   customTabs: [], customWidgets: [], textOverrides: {}, elementPositions: {}, feedBoxOrder: ['hero', 'posts'],
-  boxOrders: {}, boxStyles: {}, boxTextOverrides: {},
+  boxOrders: {}, boxStyles: {}, boxTextOverrides: {}, migrations: {},
 };
+
+const PLAZA_OVERHAUL_WIDGET_ID = 'plaza-overhaul-2026';
+const PLAZA_OVERHAUL_MIGRATION = 'plaza-overhaul-announcement-v1';
+const PLAZA_OVERHAUL_WIDGET = {
+  id: PLAZA_OVERHAUL_WIDGET_ID,
+  placement: 'feed',
+  title: '✨ RUMS Plaza has been completely overhauled!',
+  body: 'A fresh new look, smoother interactions and loads of new features — while keeping the glossy, modern RUMS aesthetic. Explore RUMS 4 and RUMS 5, emoji reactions, custom emojis, the visual editor and more.',
+  image: '',
+  actionLabel: '',
+  actionUrl: '',
+  color: '#eaf4ff',
+  animation: 'none',
+};
+
+function migratePlazaOverhaulAnnouncement(config) {
+  const next = { ...DEFAULT_SITE_CONFIG, ...(config || {}), migrations: { ...(config?.migrations || {}) } };
+  if (next.migrations[PLAZA_OVERHAUL_MIGRATION]) return { config: next, changed: false };
+  const isLegacyOverhaulBox = (widget) => {
+    const text = `${widget?.title || ''} ${widget?.body || ''}`
+      .toLowerCase()
+      .replace(/[’‘]/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+    return widget?.id === PLAZA_OVERHAUL_WIDGET_ID
+      || text.includes("our site's gotten a new look")
+      || text.includes("our site's gotten a complete overhaul")
+      || (text.includes('complete overhaul') && text.includes('glossy') && text.includes('modern aesthetic'));
+  };
+  const customWidgets = (next.customWidgets || []).filter((widget) => !isLegacyOverhaulBox(widget));
+  return {
+    config: {
+      ...next,
+      customWidgets: [PLAZA_OVERHAUL_WIDGET, ...customWidgets],
+      migrations: { ...next.migrations, [PLAZA_OVERHAUL_MIGRATION]: true },
+    },
+    changed: true,
+  };
+}
+
 const BUILT_IN_PAGES = [
   ['feed', 'Community feed'], ['lumina', 'Project Lumina'], ['upload', 'Add post'],
   ['suggestions', 'Suggestions'], ['updates', 'Server updates'], ['search', 'Discover'],
@@ -746,9 +786,13 @@ export default function RUMS() {
       }
       if (cfg) {
         try {
-          const freshConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) };
+          let freshConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) };
           if (freshConfig.brandName === 'RUMS') freshConfig.brandName = PLATFORM_NAME;
-          setSiteConfig(isRums5 ? sanitizeConfigForRums5(freshConfig) : freshConfig);
+          const migrated = migratePlazaOverhaulAnnouncement(freshConfig);
+          freshConfig = isRums5 ? sanitizeConfigForRums5(migrated.config) : migrated.config;
+          setSiteConfig(freshConfig);
+          siteConfigRef.current = freshConfig;
+          if (migrated.changed) void window.storage.set(activeStorageKeys.siteConfig, JSON.stringify(freshConfig), true).catch((e) => console.error(e));
         } catch { /* ignore malformed payload */ }
       }
       if (emojiRec) {
@@ -847,7 +891,10 @@ export default function RUMS() {
       } else {
         loadedConfig = DEFAULT_SITE_CONFIG;
       }
+      const migratedConfig = migratePlazaOverhaulAnnouncement(loadedConfig);
+      loadedConfig = migratedConfig.config;
       if (space === 'rums5') loadedConfig = sanitizeConfigForRums5(loadedConfig);
+      if (migratedConfig.changed) void window.storage.set(keys.siteConfig, JSON.stringify(loadedConfig), true).catch((e) => console.error(e));
 
       setEditMode(false);
       setSelectedBoxId(null);
@@ -907,7 +954,12 @@ export default function RUMS() {
       } else {
         loadedConfig = DEFAULT_SITE_CONFIG;
       }
+      const migratedConfig = migratePlazaOverhaulAnnouncement(loadedConfig);
+      loadedConfig = migratedConfig.config;
       if (space === 'rums5') loadedConfig = sanitizeConfigForRums5(loadedConfig);
+      if (migratedConfig.changed) {
+        try { await window.storage.set(keys.siteConfig, JSON.stringify(loadedConfig), true); } catch { /* migration can retry on a later load */ }
+      }
       if (requestId !== spaceLoadTokenRef.current) return;
       setUsers(loadedUsers);
       setPosts(loadedPosts);
@@ -2479,7 +2531,7 @@ export default function RUMS() {
     return (
       <div className="custom-widget-stack" data-widget-stack={placement}>
         {widgets.map((widget) => (
-          <article data-position-id={widget.id} data-widget-placement={widget.placement} className={`custom-site-widget ${widget.image ? 'has-widget-image' : 'no-widget-image'} widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''} ${selectedBoxId === `widget:${widget.id}` ? 'is-editor-selected' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDownCapture={(event) => { if (editMode && isOwner && !(event.target instanceof Element && event.target.closest('.widget-edit-controls'))) setSelectedBoxId(`widget:${widget.id}`); }}>
+          <article data-position-id={widget.id} data-widget-placement={widget.placement} className={`custom-site-widget ${widget.id === PLAZA_OVERHAUL_WIDGET_ID ? 'plaza-overhaul-announcement' : ''} ${widget.image ? 'has-widget-image' : 'no-widget-image'} widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''} ${selectedBoxId === `widget:${widget.id}` ? 'is-editor-selected' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDownCapture={(event) => { if (editMode && isOwner && !(event.target instanceof Element && event.target.closest('.widget-edit-controls'))) setSelectedBoxId(`widget:${widget.id}`); }}>
             {editMode && isOwner && selectedBoxId === `widget:${widget.id}` && <div className="widget-edit-controls"><button type="button" className="widget-drag-handle" onPointerDown={(event) => startWidgetReorder(widget.id, event)} title="Hold and drag to move this box"><GripVertical size={15} /> Move box</button><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
             {widget.image && <img src={widget.image} alt="" />}
             <div><h3 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { title: e.currentTarget.textContent.trim() })}>{widget.title}</h3>{widget.body && <p contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { body: e.currentTarget.textContent.trim() })}>{widget.body}</p>}

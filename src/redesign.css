@@ -1237,3 +1237,62 @@ button,input,textarea { font:inherit; }
 }
 .aero-root .reaction-picker-search-clear:hover { background: #eaf1fb; color: #3f536f; }
 .aero-root .reaction-picker-tabs.is-searching { opacity: .62; }
+
+/* Featured RUMS Plaza overhaul announcement. */
+.custom-site-widget.plaza-overhaul-announcement {
+  isolation:isolate;
+  overflow:hidden;
+  padding:23px 25px;
+  border-color:#ffffffed;
+  background:
+    radial-gradient(150px 90px at 8% 0,#fffffffa 0,transparent 74%),
+    radial-gradient(220px 130px at 94% 110%,#87d9bc69 0,transparent 72%),
+    linear-gradient(135deg,#fafdffed 0,#e6f1ffec 52%,#e9f7f2e8 100%);
+  box-shadow:inset 1px 1px 2px #fff,inset -2px -3px 8px #6c8eb022,0 13px 32px #31577f2b;
+}
+.custom-site-widget.plaza-overhaul-announcement::after {
+  content:'';
+  position:absolute;
+  z-index:-1;
+  right:-52px;
+  top:-75px;
+  width:190px;
+  height:190px;
+  border:1px solid #ffffff8c;
+  border-radius:44% 56% 52% 48% / 56% 45% 55% 44%;
+  background:linear-gradient(145deg,#ffffff5c,#8dbdff31 58%,#76d9b940);
+  box-shadow:inset 8px 8px 18px #ffffff73;
+  transform:rotate(17deg);
+  pointer-events:none;
+}
+.custom-site-widget.plaza-overhaul-announcement>div::before {
+  content:'RUMS PLAZA · NEW';
+  display:inline-flex;
+  margin:0 0 7px;
+  padding:5px 9px;
+  border:1px solid #ffffffed;
+  border-radius:999px;
+  background:#ffffff9e;
+  color:#3478f6;
+  box-shadow:inset 0 1px #fff,0 3px 10px #3478f61a;
+  font-size:9px;
+  font-weight:850;
+  letter-spacing:.09em;
+}
+.custom-site-widget.plaza-overhaul-announcement h3 {
+  max-width:720px;
+  margin:2px 0 8px;
+  color:#203f68;
+  font-size:21px;
+  letter-spacing:-.025em;
+}
+.custom-site-widget.plaza-overhaul-announcement p {
+  max-width:760px;
+  color:#60758f;
+  font-size:13px;
+  line-height:1.62;
+}
+@media(max-width:600px) {
+  .custom-site-widget.plaza-overhaul-announcement {padding:20px 19px;}
+  .custom-site-widget.plaza-overhaul-announcement h3 {font-size:18px;}
+}
