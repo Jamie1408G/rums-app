@@ -35,6 +35,11 @@ const RUMS_THEMES = [
   { id: 'dark', name: 'Dark', description: 'Deep graphite glass with cool blue accents', swatches: ['#12151b', '#2c3440', '#6da8ff'] },
   { id: 'minecraft', name: 'Minecraft', description: 'Blocky stone, grass and dirt-inspired UI', swatches: ['#7cab43', '#6b4c2e', '#9a9a9a'] },
   { id: 'frutiger', name: 'Frutiger Aero', description: 'Apple Aqua meets Windows Longhorn/Aero: silver glass, candy-blue controls and translucent chrome', swatches: ['#e9f5ff', '#2f9de0', '#aebfd0'] },
+  { id: 'frutigereco', name: 'Frutiger Eco', description: 'Bright eco-web optimism with blue sky, glossy white cards and vivid leaf-green accents', swatches: ['#effff0', '#72d26b', '#6fc7ff'] },
+  { id: 'liquidglass', name: 'Liquid Glass', description: 'Clear layered translucency inspired by Apple-style liquid glass interfaces', swatches: ['#f6fbff', '#cfe8ff', '#8bc5ff'] },
+  { id: 'solarpunk', name: 'Solarpunk', description: 'Warm natural materials, botanical greens and hopeful community energy', swatches: ['#f7f0dc', '#87b85d', '#d7c59a'] },
+  { id: 'cyberpunk', name: 'Cyberpunk', description: 'Neon cyan, magenta and yellow over a dark high-tech interface', swatches: ['#0d1018', '#22e6ff', '#ff4fd8'] },
+  { id: 'brutalism', name: 'Brutalism', description: 'Raw high-contrast editorial UI with hard edges, bold type and stark structure', swatches: ['#f3f0e8', '#111111', '#ff5f2e'] },
   { id: 'y2k', name: 'Y2K Futurism', description: 'Chrome, aqua and lavender 2000s futurism', swatches: ['#dce5f4', '#55d8e8', '#a693ff'] },
 ];
 const MAIN_THEME_OPTIONS = RUMS_THEMES.filter((item) => !item.id.startsWith('roblox'));

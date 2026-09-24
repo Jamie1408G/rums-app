@@ -3320,3 +3320,142 @@ button,input,textarea { font:inherit; }
   .aero-root[data-theme="roblox2026"] .nav-btn {color:#666!important;}
   .aero-root[data-theme="roblox2026"] .nav-btn.active {background:#f0f1f2!important;color:#111!important;}
 }
+
+/* ================================================================
+   ADDITIONAL THEMES: Liquid Glass, Solarpunk, Frutiger Eco,
+   Cyberpunk and Brutalism
+   ================================================================ */
+.aero-root[data-theme="liquidglass"] {
+  --theme-focus:#71b7ff;--site-accent:#71b7ff!important;
+  background:radial-gradient(circle at 10% 0%,#ffffff 0 10%,transparent 30%),linear-gradient(180deg,#dff0ff 0%,#f6fbff 38%,#edf5ff 100%)!important;
+  color:#17324e!important;text-shadow:none!important;
+}
+.aero-root[data-theme="liquidglass"] .aero-frame {background:rgba(255,255,255,.42)!important;box-shadow:0 20px 50px #7db2df24!important;backdrop-filter:blur(34px) saturate(1.22)!important;-webkit-backdrop-filter:blur(34px) saturate(1.22)!important;}
+.aero-root[data-theme="liquidglass"] :is(.desktop-rail,.aero-header,.bottom-nav,.post-card,.suggestion-card,.update-card,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero,.modal-card,.visual-edit-toolbar,.updates-composer,.reaction-picker,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card,.lumina-station-detail,.lumina-principles article,.lumina-project-stats div,.auth-wrap,.space-choice-card,.drop-zone,.comments-box,.preview-wrap,.profile-danger-zone) {background:linear-gradient(180deg,rgba(255,255,255,.52),rgba(238,246,255,.38))!important;border:1px solid rgba(255,255,255,.64)!important;border-radius:24px!important;box-shadow:0 10px 32px #74a7d31d,inset 0 1px rgba(255,255,255,.7)!important;backdrop-filter:blur(26px) saturate(1.18)!important;-webkit-backdrop-filter:blur(26px) saturate(1.18)!important;color:#17324e!important;}
+.aero-root[data-theme="liquidglass"] :is(.rail-link.selected,.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin,.universal-rums-switcher button.active,.universal-rums-switcher.is-dragging::before) {background:linear-gradient(180deg,#d5ecff,#a6d4ff)!important;color:#0f3b66!important;border-color:#ffffffd9!important;box-shadow:0 4px 16px #6aaae436!important;}
+.aero-root[data-theme="liquidglass"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:rgba(255,255,255,.56)!important;border-color:#ffffffcf!important;color:#183552!important;backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important;}
+.aero-root[data-theme="liquidglass"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(233,243,255,.35))!important;border-color:#ffffffd9!important;box-shadow:inset 0 1px rgba(255,255,255,.75),0 8px 24px #6aaae420!important;backdrop-filter:blur(26px)!important;-webkit-backdrop-filter:blur(26px)!important;}
+.aero-root[data-theme="liquidglass"] .chat-message-list {background:linear-gradient(180deg,rgba(255,255,255,.36),rgba(234,244,255,.28))!important;}
+.aero-root[data-theme="liquidglass"] .chat-message-bubble {background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(238,245,255,.52))!important;border-color:#ffffffd8!important;color:#17324e!important;}
+.aero-root[data-theme="liquidglass"] .chat-message.own .chat-message-bubble {background:linear-gradient(180deg,#92cbff,#5cafff)!important;color:#fff!important;border-color:#b8ddff!important;}
+.aero-root[data-theme="liquidglass"] .theme-option.active {border-color:#7ab9ff!important;box-shadow:0 0 0 2px #7ab9ff30!important;}
+
+.aero-root[data-theme="solarpunk"] {
+  --theme-focus:#74a94f;--site-accent:#74a94f!important;
+  background:radial-gradient(circle at 85% 8%,#fff4b7 0 5%,transparent 14%),linear-gradient(180deg,#e8f4d3 0%,#f7f0dd 45%,#f5f8ef 100%)!important;
+  color:#304330!important;text-shadow:none!important;
+}
+.aero-root[data-theme="solarpunk"] .aero-frame {background:#f7f2e6!important;box-shadow:0 16px 46px #58743a24!important;}
+.aero-root[data-theme="solarpunk"] :is(.desktop-rail,.aero-header,.bottom-nav,.post-card,.suggestion-card,.update-card,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero,.modal-card,.visual-edit-toolbar,.updates-composer,.reaction-picker,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card,.lumina-station-detail,.lumina-principles article,.lumina-project-stats div,.auth-wrap,.space-choice-card,.drop-zone,.comments-box,.preview-wrap,.profile-danger-zone) {background:linear-gradient(180deg,#fffdf7,#eef5e6)!important;border:1px solid #d4dfbf!important;border-radius:20px!important;box-shadow:0 8px 20px #6b865118!important;color:#304330!important;}
+.aero-root[data-theme="solarpunk"] .community-hero {background:linear-gradient(155deg,#fffef8 0 35%,#eaf7e0 36% 72%,#d5e9bc 73% 100%)!important;}
+.aero-root[data-theme="solarpunk"] :is(.rail-link.selected,.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:#edf6dd!important;border-color:#b8d094!important;color:#567a34!important;box-shadow:inset 3px 0 #76aa50!important;}
+.aero-root[data-theme="solarpunk"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:linear-gradient(180deg,#8fbe60,#6f9f41)!important;border:1px solid #5a8730!important;color:#fff!important;box-shadow:inset 0 1px #d9efb8,0 4px 12px #73984a2f!important;}
+.aero-root[data-theme="solarpunk"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#fffffb!important;border-color:#d4deb9!important;color:#304330!important;}
+.aero-root[data-theme="solarpunk"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:#f0f5e7!important;border-color:#cfdbbb!important;box-shadow:inset 0 1px #fff,0 6px 18px #607d4618!important;}
+.aero-root[data-theme="solarpunk"] .chat-message-list {background:linear-gradient(180deg,#f7fbf1,#eef7e5)!important;}
+.aero-root[data-theme="solarpunk"] .chat-message-bubble {background:#fffef9!important;border-color:#d8e4c7!important;color:#31442f!important;}
+.aero-root[data-theme="solarpunk"] .chat-message.own .chat-message-bubble {background:linear-gradient(180deg,#8bbe60,#709f44)!important;border-color:#7fae53!important;color:#fff!important;}
+
+.aero-root[data-theme="frutigereco"] {
+  --theme-focus:#4aba51;--site-accent:#4aba51!important;
+  background:radial-gradient(circle at 82% 7%,#fff7b2 0 4%,transparent 12%),linear-gradient(180deg,#7fd0ff 0%,#dff7ff 54%,#efffe9 100%)!important;
+  color:#17485a!important;text-shadow:none!important;
+}
+.aero-root[data-theme="frutigereco"] .aero-frame {background:#fbfff9db!important;box-shadow:0 18px 55px #2d899b20!important;}
+.aero-root[data-theme="frutigereco"] :is(.desktop-rail,.aero-header,.bottom-nav,.post-card,.suggestion-card,.update-card,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero,.modal-card,.visual-edit-toolbar,.updates-composer,.reaction-picker,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card,.lumina-station-detail,.lumina-principles article,.lumina-project-stats div,.auth-wrap,.space-choice-card,.drop-zone,.comments-box,.preview-wrap,.profile-danger-zone) {background:linear-gradient(150deg,#ffffffef,#ecfff2e7 72%,#e4fbffdf)!important;border:1px solid #ffffff!important;border-radius:22px!important;box-shadow:0 8px 24px #2b8b9e1c,inset 0 1px #fff!important;color:#17485a!important;}
+.aero-root[data-theme="frutigereco"] .community-hero {background:linear-gradient(155deg,#ffffff 0 48%,#dffaff 49% 72%,#d6f3be 73% 100%)!important;}
+.aero-root[data-theme="frutigereco"] :is(.rail-link.selected,.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:#ffffffeb!important;border-color:#ccefd0!important;color:#2c9b45!important;box-shadow:0 3px 12px #42aa4c1f!important;}
+.aero-root[data-theme="frutigereco"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:linear-gradient(180deg,#71d56c,#4cb84c)!important;border:1px solid #ffffff!important;color:#fff!important;box-shadow:inset 0 1px #ffffffad,0 5px 14px #4bb94a2f!important;}
+.aero-root[data-theme="frutigereco"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:linear-gradient(145deg,#ffffffdf,#e5fff0d5 65%,#dff7ffd8)!important;border-color:#ffffff!important;box-shadow:inset 0 1px #fff,0 6px 18px #2c8e9920!important;}
+.aero-root[data-theme="frutigereco"] .feed-tabs::before,
+.aero-root[data-theme="frutigereco"] .lumina-view-switch::before,
+.aero-root[data-theme="frutigereco"] .upload-wrap .location-tabs::before {background:linear-gradient(145deg,#fff,#e8fff2 62%,#e4f7ff)!important;border-color:#fff!important;box-shadow:inset 0 1px #fff,0 3px 9px #2c8e991c!important;}
+.aero-root[data-theme="frutigereco"] .universal-rums-switcher button.active,
+.aero-root[data-theme="frutigereco"] .universal-rums-switcher.is-dragging::before {background:linear-gradient(180deg,#72d56c,#4cb84d)!important;box-shadow:inset 0 1px #ffffffa3,0 4px 10px #40ae4b2f!important;}
+.aero-root[data-theme="frutigereco"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#ffffffde!important;border-color:#c4efdb!important;color:#17485a!important;}
+.aero-root[data-theme="frutigereco"] .chat-message-list {background:linear-gradient(180deg,#ebfcff,#f3fff1)!important;}
+.aero-root[data-theme="frutigereco"] .chat-message-bubble {background:#ffffffef!important;border-color:#d6f2df!important;color:#17485a!important;box-shadow:0 4px 12px #2e8f9914!important;}
+.aero-root[data-theme="frutigereco"] .chat-message.own .chat-message-bubble {background:linear-gradient(180deg,#71d56c,#4cb84c)!important;border-color:#8bdf88!important;color:#fff!important;}
+
+.aero-root[data-theme="cyberpunk"] {
+  --theme-focus:#1ef0ff;--site-accent:#1ef0ff!important;
+  background:radial-gradient(circle at 12% 0%,#2a1235 0 12%,transparent 34%),radial-gradient(circle at 100% 100%,#0a3945 0 20%,transparent 40%),#0b0f14!important;
+  color:#e8fdff!important;text-shadow:none!important;
+}
+.aero-root[data-theme="cyberpunk"] .aero-frame {background:#0d1219!important;box-shadow:0 20px 60px #0009!important;}
+.aero-root[data-theme="cyberpunk"] :is(.desktop-rail,.aero-header,.bottom-nav,.post-card,.suggestion-card,.update-card,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero,.modal-card,.visual-edit-toolbar,.updates-composer,.reaction-picker,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card,.lumina-station-detail,.lumina-principles article,.lumina-project-stats div,.auth-wrap,.space-choice-card,.drop-zone,.comments-box,.preview-wrap,.profile-danger-zone) {background:linear-gradient(180deg,#0e141d,#121a24)!important;border:1px solid #1ef0ff5a!important;border-radius:10px!important;box-shadow:0 0 0 1px #ff4fd818,0 10px 28px #0007!important;color:#e8fdff!important;}
+.aero-root[data-theme="cyberpunk"] .community-hero {background:linear-gradient(135deg,#111825 0,#0e2025 55%,#261129 100%)!important;}
+.aero-root[data-theme="cyberpunk"] :is(.rail-link,.eyebrow,.field-label,.switch-line,.post-time,.appearance-heading p,.glass-slider-labels,.chat-thread-copy strong,.chat-conversation-header strong) {color:#9fd3d8!important;}
+.aero-root[data-theme="cyberpunk"] .rail-link.selected {background:#131d27!important;border-color:#1ef0ff!important;color:#1ef0ff!important;box-shadow:inset 4px 0 #ffda3e,0 0 0 1px #1ef0ff33!important;}
+.aero-root[data-theme="cyberpunk"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:linear-gradient(180deg,#ff4fd8,#d72ab5)!important;border:1px solid #ff90ea!important;color:#fff!important;box-shadow:0 0 0 1px #ff4fd84a,0 6px 18px #a2198038!important;}
+.aero-root[data-theme="cyberpunk"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#0a1117!important;border-color:#1ef0ff61!important;color:#effcff!important;}
+.aero-root[data-theme="cyberpunk"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:#111923!important;border-color:#1ef0ff57!important;box-shadow:inset 0 1px #ffffff08,0 0 0 1px #ff4fd81a!important;}
+.aero-root[data-theme="cyberpunk"] .feed-tabs::before,
+.aero-root[data-theme="cyberpunk"] .lumina-view-switch::before,
+.aero-root[data-theme="cyberpunk"] .upload-wrap .location-tabs::before {background:linear-gradient(180deg,#0f1f29,#142737)!important;border-color:#1ef0ff69!important;box-shadow:none!important;}
+.aero-root[data-theme="cyberpunk"] .universal-rums-switcher button.active,
+.aero-root[data-theme="cyberpunk"] .universal-rums-switcher.is-dragging::before {background:linear-gradient(180deg,#1ef0ff,#0db5d7)!important;color:#081016!important;box-shadow:0 0 0 1px #9cf8ff33!important;}
+.aero-root[data-theme="cyberpunk"] :is(.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:#121c26!important;color:#1ef0ff!important;border-color:#1ef0ff7a!important;box-shadow:inset 0 0 0 1px #ffda3e33!important;}
+.aero-root[data-theme="cyberpunk"] .chat-message-list {background:#0b1218!important;}
+.aero-root[data-theme="cyberpunk"] .chat-message-bubble {background:#121b23!important;border-color:#1ef0ff5d!important;color:#effcff!important;}
+.aero-root[data-theme="cyberpunk"] .chat-message.own .chat-message-bubble {background:linear-gradient(180deg,#ff4fd8,#cb25a8)!important;border-color:#ff91eb!important;color:#fff!important;}
+.aero-root[data-theme="cyberpunk"] .theme-option.active {border-color:#1ef0ff!important;box-shadow:0 0 0 2px #1ef0ff33!important;}
+
+.aero-root[data-theme="brutalism"] {
+  --theme-focus:#111111;--site-accent:#111111!important;
+  background:#efeadf!important;color:#111!important;font-family:Arial Black,Arial,Helvetica,sans-serif!important;text-shadow:none!important;
+}
+.aero-root[data-theme="brutalism"] .aero-frame {background:#f7f2e9!important;box-shadow:none!important;}
+.aero-root[data-theme="brutalism"] :is(.desktop-rail,.aero-header,.bottom-nav,.post-card,.suggestion-card,.update-card,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero,.modal-card,.visual-edit-toolbar,.updates-composer,.reaction-picker,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card,.lumina-station-detail,.lumina-principles article,.lumina-project-stats div,.auth-wrap,.space-choice-card,.drop-zone,.comments-box,.preview-wrap,.profile-danger-zone) {background:#f7f2e9!important;border:2px solid #111!important;border-radius:0!important;box-shadow:none!important;color:#111!important;}
+.aero-root[data-theme="brutalism"] .aero-header,.aero-root[data-theme="brutalism"] .bottom-nav {background:#111!important;color:#f7f2e9!important;}
+.aero-root[data-theme="brutalism"] .aero-header :is(.aero-brand,.icon-btn,.pill),.aero-root[data-theme="brutalism"] .bottom-nav .rail-link {color:#f7f2e9!important;}
+.aero-root[data-theme="brutalism"] .community-hero {background:linear-gradient(180deg,#ff5f2e 0 18%,#f7f2e9 18% 100%)!important;}
+.aero-root[data-theme="brutalism"] :is(.rail-link,.rail-create,.aero-btn,.icon-btn,.pill,.tag-chip,.tab-btn,.admin-toggle,.post-card,.suggestion-card,.update-card,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.community-hero,.modal-card,.chat-page,.chat-sidebar,.chat-conversation,.theme-option,.chat-message-bubble,.reaction-chip,.reaction-add,.custom-emoji-upload,.custom-emoji-preview,.chat-attach-button,.appearance-current-theme,.selected-box-chip,.box-color-control,.box-animation-control) {border-radius:0!important;}
+.aero-root[data-theme="brutalism"] .rail-link.selected {background:#ff5f2e!important;color:#111!important;box-shadow:none!important;border-color:#111!important;}
+.aero-root[data-theme="brutalism"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:#111!important;border:2px solid #111!important;color:#f7f2e9!important;box-shadow:none!important;}
+.aero-root[data-theme="brutalism"] :is(.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin,.universal-rums-switcher button.active,.universal-rums-switcher.is-dragging::before) {background:#111!important;color:#f7f2e9!important;border-color:#111!important;box-shadow:none!important;}
+.aero-root[data-theme="brutalism"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#fff!important;border:2px solid #111!important;border-radius:0!important;color:#111!important;box-shadow:none!important;}
+.aero-root[data-theme="brutalism"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:#fff!important;border:2px solid #111!important;border-radius:0!important;box-shadow:none!important;}
+.aero-root[data-theme="brutalism"] .feed-tabs::before,
+.aero-root[data-theme="brutalism"] .lumina-view-switch::before,
+.aero-root[data-theme="brutalism"] .upload-wrap .location-tabs::before {background:#ff5f2e!important;border:2px solid #111!important;border-radius:0!important;box-shadow:none!important;}
+.aero-root[data-theme="brutalism"] .chat-message-list {background:#f7f2e9!important;}
+.aero-root[data-theme="brutalism"] .chat-message-bubble {background:#fff!important;border:2px solid #111!important;color:#111!important;}
+.aero-root[data-theme="brutalism"] .chat-message.own .chat-message-bubble {background:#ff5f2e!important;color:#111!important;border-color:#111!important;}
+.aero-root[data-theme="brutalism"] .theme-option.active {border-color:#111!important;box-shadow:inset 6px 0 #ff5f2e!important;}
+
+.aero-root[data-theme="liquidglass"] {
+  --theme-surface:rgba(255,255,255,.5);--theme-surface-2:rgba(240,247,255,.44);--theme-surface-3:rgba(227,238,249,.42);
+  --theme-border:rgba(255,255,255,.72);--theme-text:#17324e;--theme-muted:#67819a;
+  --theme-accent:#71b7ff;--theme-accent-soft:rgba(215,236,255,.78);--theme-accent-text:#123a5f;
+  --theme-danger:#ef6e86;--theme-focus:#71b7ff;--theme-radius:24px;--theme-radius-sm:17px;
+  --theme-shadow:0 10px 30px #76a9d624;--theme-soft-shadow:0 5px 16px #76a9d618;
+}
+.aero-root[data-theme="solarpunk"] {
+  --theme-surface:#fffdf7;--theme-surface-2:#f1f6ea;--theme-surface-3:#e6efd8;
+  --theme-border:#d1ddbf;--theme-text:#304330;--theme-muted:#6e8368;
+  --theme-accent:#76a74d;--theme-accent-soft:#ecf4de;--theme-accent-text:#fff;
+  --theme-danger:#cf6c64;--theme-focus:#76a74d;--theme-radius:20px;--theme-radius-sm:13px;
+  --theme-shadow:0 8px 20px #607d461a;--theme-soft-shadow:0 4px 12px #607d4610;
+}
+.aero-root[data-theme="frutigereco"] {
+  --theme-surface:#ffffffef;--theme-surface-2:#eefff0e8;--theme-surface-3:#e1f8f6e2;
+  --theme-border:#c8f0d2;--theme-text:#17485a;--theme-muted:#6c8791;
+  --theme-accent:#4cb84c;--theme-accent-soft:#ebffed;--theme-accent-text:#fff;
+  --theme-danger:#df6882;--theme-focus:#4cb84c;--theme-radius:22px;--theme-radius-sm:14px;
+  --theme-shadow:0 8px 22px #2d8b981a;--theme-soft-shadow:0 4px 13px #2d8b9810;
+}
+.aero-root[data-theme="cyberpunk"] {
+  --theme-surface:#0f161f;--theme-surface-2:#151e28;--theme-surface-3:#091017;
+  --theme-border:#1ef0ff62;--theme-text:#e8fdff;--theme-muted:#8ebbc2;
+  --theme-accent:#ff4fd8;--theme-accent-soft:#241425;--theme-accent-text:#fff;
+  --theme-danger:#ff7e67;--theme-focus:#1ef0ff;--theme-radius:10px;--theme-radius-sm:8px;
+  --theme-shadow:0 10px 26px #00000052;--theme-soft-shadow:0 5px 14px #00000038;
+}
+.aero-root[data-theme="brutalism"] {
+  --theme-surface:#f7f2e9;--theme-surface-2:#fff;--theme-surface-3:#ece4d5;
+  --theme-border:#111;--theme-text:#111;--theme-muted:#4f4a44;
+  --theme-accent:#111;--theme-accent-soft:#ffe3d7;--theme-accent-text:#f7f2e9;
+  --theme-danger:#e35335;--theme-focus:#111;--theme-radius:0px;--theme-radius-sm:0px;
+  --theme-shadow:none;--theme-soft-shadow:none;
+}
