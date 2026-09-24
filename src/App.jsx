@@ -1725,10 +1725,14 @@ export default function RUMS() {
       : <span className={className}>{key}</span>;
   }
 
-  async function togglePostReaction(postId, emoji) {
+  function canReactToPost(post, reactionContext = 'default') {
+    return Boolean(post) && (post.tag !== 'Lumina' || reactionContext === 'luminaFeed');
+  }
+
+  async function togglePostReaction(postId, emoji, reactionContext = 'default') {
     if (!currentUser || !reactionIsAvailable(emoji)) return;
     const post = posts.find((p) => p.id === postId);
-    if (!post || post.tag === 'Lumina') return;
+    if (!canReactToPost(post, reactionContext)) return;
     const next = posts.map((p) => p.id === postId
       ? { ...p, reactions: cleanedReactions(p.reactions, emoji, currentUser.username) }
       : p
@@ -1751,8 +1755,8 @@ export default function RUMS() {
     setReactionSearch('');
   }
 
-  function renderReactionAddButton(item, kind, className = '') {
-    if (!currentUser || (kind === 'post' && item.tag === 'Lumina')) return null;
+  function renderReactionAddButton(item, kind, className = '', reactionContext = 'default') {
+    if (!currentUser || (kind === 'post' && !canReactToPost(item, reactionContext))) return null;
     const menuKey = `${kind}:${item.id}`;
     const menuOpen = !!reactionMenus[menuKey];
     return (
@@ -1768,8 +1772,10 @@ export default function RUMS() {
     );
   }
 
-  function renderReactionPicker(item, kind, menuKey, reactions) {
-    const toggle = kind === 'post' ? togglePostReaction : toggleSuggestionReaction;
+  function renderReactionPicker(item, kind, menuKey, reactions, reactionContext = 'default') {
+    const toggle = kind === 'post'
+      ? (id, emoji) => togglePostReaction(id, emoji, reactionContext)
+      : toggleSuggestionReaction;
     const category = reactionPickerCategory;
     const query = reactionSearch.trim().toLowerCase();
     const searching = query.length > 0;
@@ -1858,14 +1864,16 @@ export default function RUMS() {
     );
   }
 
-  function renderReactionBar(item, kind) {
-    if (!currentUser || (kind === 'post' && item.tag === 'Lumina')) return null;
+  function renderReactionBar(item, kind, reactionContext = 'default') {
+    if (!currentUser || (kind === 'post' && !canReactToPost(item, reactionContext))) return null;
     const menuKey = `${kind}:${item.id}`;
     const reactions = item.reactions || {};
     const visible = Object.keys(reactions).filter((key) => reactionIsAvailable(key) && (reactions[key] || []).length > 0);
     const menuOpen = !!reactionMenus[menuKey];
     if (!visible.length && !menuOpen) return null;
-    const toggle = kind === 'post' ? togglePostReaction : toggleSuggestionReaction;
+    const toggle = kind === 'post'
+      ? (id, emoji) => togglePostReaction(id, emoji, reactionContext)
+      : toggleSuggestionReaction;
     return (
       <div className={`reaction-bar ${menuOpen ? 'is-open' : ''}`}>
         {visible.length > 0 && (
@@ -1888,7 +1896,7 @@ export default function RUMS() {
             })}
           </div>
         )}
-        {menuOpen && renderReactionPicker(item, kind, menuKey, reactions)}
+        {menuOpen && renderReactionPicker(item, kind, menuKey, reactions, reactionContext)}
       </div>
     );
   }
@@ -2563,7 +2571,7 @@ export default function RUMS() {
   const feedBoxHandle = (id) => editMode && isOwner && selectedBoxId === `feed:${id}` ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
   function renderFeedBox(id) {
     if (id === 'hero') return <section data-feed-box="hero" data-edit-box-id="feed:hero" className={`editable-built-in-box ${selectedBoxId === 'feed:hero' ? 'is-editor-selected' : ''}`} key="hero" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:hero'); }}>{feedBoxHandle('hero')}<div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div></section>;
-    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge"><Droplet size={18} color="white" /></div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post))}</section>;
+    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge"><Droplet size={18} color="white" /></div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default' }))}</section>;
   }
 
   function renderFeedTabs() {
@@ -2675,7 +2683,7 @@ export default function RUMS() {
 
   // Renders a single post card. Shared by the feed list and the single-post
   // detail view (reached by clicking a post from search results).
-  function renderPost(post) {
+  function renderPost(post, { reactionContext = 'default' } = {}) {
     const liked = post.likes.includes(currentUser.username);
     const showComments = !!openComments[post.id];
     return (
@@ -2723,9 +2731,9 @@ export default function RUMS() {
             {shareStatus[post.id] ? <Check size={17} color="#0fb8a6" /> : <Share2 size={17} />}
             {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
           </button>
-          {renderReactionAddButton(post, 'post')}
+          {renderReactionAddButton(post, 'post', '', reactionContext)}
         </div>
-        {renderReactionBar(post, 'post')}
+        {renderReactionBar(post, 'post', reactionContext)}
         {post.caption && (
           <div className="post-caption">
             <b className="clickable-text" onClick={() => openProfile(post.username)}>{post.username}</b>
