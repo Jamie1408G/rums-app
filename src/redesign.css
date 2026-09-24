@@ -868,3 +868,53 @@ button,input,textarea { font:inherit; }
 /* Appearance slider: avoid animated thumb catch-up and expensive whole-page repaints during pointer movement. */
 .glass-slider-shell.is-dragging .glass-range::-webkit-slider-thumb {transition:none!important;}
 .glass-slider-shell.is-dragging::after {transition:none!important;}
+
+/* Server Updates has its own layout. Keep the composer, heading and cards in distinct flow rows. */
+.aero-root .updates-page {
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+  min-width:0;
+  padding:29px;
+  border:1px solid var(--island-border,#ffffffd8);
+  border-radius:27px;
+  background-color:#ffffffcf;
+  background-image:radial-gradient(circle at 102% -7%,transparent 0 45px,#65adff66 46px 50px,#ffffff75 51px 52px,transparent 53px),radial-gradient(ellipse at -5% 107%,#66d3a15c 0,transparent 37%),linear-gradient(130deg,transparent 0 73%,#7cc4ff36 74% 80%,#83d9b331 81% 85%,transparent 86%),linear-gradient(145deg,#fffffff7,#f1f8fff2 65%,#edf9f2ef);
+  box-shadow:var(--island-shadow,0 10px 30px #31577f1c);
+  backdrop-filter:blur(24px) saturate(1.35);
+  -webkit-backdrop-filter:blur(24px) saturate(1.35);
+  overflow:visible;
+}
+.aero-root .updates-composer {
+  display:flex;
+  flex-direction:column;
+  gap:11px;
+  min-width:0;
+  padding:0 0 24px;
+  border-bottom:1px solid #dce6f0b8;
+}
+.aero-root .updates-composer .field-label {margin:0 0 1px;color:#4c586c;font-size:13px;}
+.aero-root .updates-composer .aero-input,
+.aero-root .updates-composer .caption-area {width:100%;min-width:0;margin:0;}
+.aero-root .updates-composer .caption-area {min-height:112px;resize:vertical;}
+.aero-root .updates-composer-actions {display:flex;justify-content:flex-start;align-items:center;margin-top:1px;}
+.aero-root .updates-composer-actions .aero-btn {min-height:44px;margin:0;}
+.aero-root .updates-feed {display:flex;flex-direction:column;gap:14px;min-width:0;}
+.aero-root .updates-heading {display:flex;align-items:center;gap:8px;margin:0;min-height:24px;}
+.aero-root .updates-empty {margin:0;color:#7ba3ac;font-size:13px;line-height:1.5;}
+.aero-root .updates-list {display:flex;flex-direction:column;gap:14px;min-width:0;}
+.aero-root .updates-list .update-card {position:relative;display:block;flex:0 0 auto;width:100%;min-width:0;margin:0;overflow:hidden;}
+.aero-root .updates-list .update-card .post-top {display:flex;align-items:flex-start;justify-content:space-between;gap:14px;min-width:0;padding:17px 19px 10px;}
+.aero-root .update-card-copy {flex:1 1 auto;min-width:0;}
+.aero-root .updates-list .update-card .post-user-name {overflow-wrap:anywhere;word-break:break-word;}
+.aero-root .updates-list .update-card .manage-btn {position:static;flex:0 0 auto;margin:0;}
+.aero-root .updates-list .update-card-body {display:block;margin:0;padding:3px 19px 17px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
+/* The visual editor may add a drag handle above one selected update; reserve the space without collapsing neighbours. */
+.visual-edit-mode .updates-list .update-card.is-universal-box-selected {margin-top:42px;margin-bottom:0;}
+@media(max-width:600px) {
+  .aero-root .updates-page {gap:20px;padding:19px;border-radius:19px;}
+  .aero-root .updates-composer {padding-bottom:20px;}
+  .aero-root .updates-list {gap:12px;}
+  .aero-root .updates-list .update-card .post-top {padding:15px 16px 9px;}
+  .aero-root .updates-list .update-card-body {padding:3px 16px 15px;}
+}

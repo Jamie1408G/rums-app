@@ -2577,10 +2577,10 @@ export default function RUMS() {
               )}
 
               {screen === 'updates' && (
-                <div className="upload-wrap">
+                <div className="updates-page">
                   {currentUser.isAdmin && (
-                    <>
-                      <div className="field-label" style={{ marginTop: 0 }}>Post an update</div>
+                    <section className="updates-composer" aria-label="Post a server update">
+                      <div className="field-label">Post an update</div>
                       <input
                         className="aero-input"
                         placeholder="Title"
@@ -2593,43 +2593,49 @@ export default function RUMS() {
                         value={updateDraft.body}
                         onChange={(e) => setUpdateDraft((d) => ({ ...d, body: e.target.value }))}
                       />
-                      <button
-                        className="aero-btn"
-                        style={{ marginTop: 12 }}
-                        onClick={submitUpdate}
-                        disabled={updateBusy || !updateDraft.title.trim()}
-                      >
-                        {updateBusy && <Loader2 size={15} className="spin" />}
-                        Post update
-                      </button>
-                    </>
+                      <div className="updates-composer-actions">
+                        <button
+                          className="aero-btn"
+                          onClick={submitUpdate}
+                          disabled={updateBusy || !updateDraft.title.trim()}
+                        >
+                          {updateBusy && <Loader2 size={15} className="spin" />}
+                          Post update
+                        </button>
+                      </div>
+                    </section>
                   )}
 
-                  <div className="admin-section-title" style={{ marginTop: currentUser.isAdmin ? 24 : 0 }}>
-                    <Megaphone size={16} /> Updates
-                  </div>
-                  {visibleUpdates.length === 0 && (
-                    <p style={{ fontSize: 13, color: '#7ba3ac' }}>No updates posted yet.</p>
-                  )}
-                  {visibleUpdates.map((u) => (
-                    <div className="update-card" data-edit-box-id={`update:${u.id}`} key={u.id}>
-                      <div className="post-top">
-                        <div>
-                          <div className="post-user-name">{u.title}</div>
-                          <div className="post-time">
-                            {timeAgo(u.timestamp)} ·{' '}
-                            <span className="clickable-text" onClick={() => openProfile(u.author)}>{u.author}</span>
-                          </div>
-                        </div>
-                        {currentUser.isAdmin && (
-                          <button className="icon-btn manage-btn" onClick={() => deleteUpdate(u.id)} title="Delete update">
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </div>
-                      {u.body && <div className="post-caption">{u.body}</div>}
+                  <section className="updates-feed" aria-label="Server updates">
+                    <div className="admin-section-title updates-heading">
+                      <Megaphone size={16} /> Updates
                     </div>
-                  ))}
+                    {visibleUpdates.length === 0 ? (
+                      <p className="updates-empty">No updates posted yet.</p>
+                    ) : (
+                      <div className="updates-list">
+                        {visibleUpdates.map((u) => (
+                          <article className="update-card" data-edit-box-id={`update:${u.id}`} key={u.id}>
+                            <div className="post-top">
+                              <div className="update-card-copy">
+                                <div className="post-user-name">{u.title}</div>
+                                <div className="post-time">
+                                  {timeAgo(u.timestamp)} ·{' '}
+                                  <span className="clickable-text" onClick={() => openProfile(u.author)}>{u.author}</span>
+                                </div>
+                              </div>
+                              {currentUser.isAdmin && (
+                                <button className="icon-btn manage-btn" onClick={() => deleteUpdate(u.id)} title="Delete update">
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </div>
+                            {u.body && <div className="post-caption update-card-body">{u.body}</div>}
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </section>
                 </div>
               )}
 
