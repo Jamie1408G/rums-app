@@ -30,6 +30,7 @@ const ROBLOX_THEMES = [
   { id: 'roblox2026', name: 'Roblox 2026', year: '2026', description: 'Current light Roblox Home UI: icon rail, pale search, bold sections, social circles and image-first discovery', swatches: ['#ffffff', '#f2f3f5', '#111111'] },
 ];
 const FRUTIGER_THEME_IDS = ['frutiger', 'frutigereco', 'frutigermetro', 'vectorflourish'];
+const PUNK_THEME_IDS = ['solarpunk', 'cyberpunk'];
 const RUMS_THEMES = [
   { id: 'standard', name: 'Standard', description: 'Glossy modern RUMS Plaza', swatches: ['#f6f8fc', '#3478f6', '#b8d7ff'] },
   ...ROBLOX_THEMES,
@@ -46,7 +47,8 @@ const RUMS_THEMES = [
   { id: 'y2k', name: 'Y2K Futurism', description: 'Chrome, aqua and lavender 2000s futurism', swatches: ['#dce5f4', '#55d8e8', '#a693ff'] },
 ];
 const FRUTIGER_THEMES = RUMS_THEMES.filter((item) => FRUTIGER_THEME_IDS.includes(item.id));
-const MAIN_THEME_OPTIONS = RUMS_THEMES.filter((item) => !item.id.startsWith('roblox') && !FRUTIGER_THEME_IDS.includes(item.id));
+const PUNK_THEMES = RUMS_THEMES.filter((item) => PUNK_THEME_IDS.includes(item.id));
+const MAIN_THEME_OPTIONS = RUMS_THEMES.filter((item) => !item.id.startsWith('roblox') && !FRUTIGER_THEME_IDS.includes(item.id) && !PUNK_THEME_IDS.includes(item.id));
 const RUMS_SPACES = {
   rums4: { id: 'rums4', label: 'RUMS 4', subtitle: 'The current archive', description: 'Everything from the current site, including Project Lumina and all older posts.' },
   rums5: { id: 'rums5', label: 'RUMS 5', subtitle: 'The new era', description: 'The same RUMS experience with a fresh feed and no Project Lumina.' },
@@ -407,6 +409,9 @@ export default function RUMS() {
   });
   const [frutigerThemeMenuOpen, setFrutigerThemeMenuOpen] = useState(() => {
     try { return FRUTIGER_THEME_IDS.includes(window.localStorage.getItem(THEME_STORAGE_KEY) || ''); } catch { return false; }
+  });
+  const [punkThemeMenuOpen, setPunkThemeMenuOpen] = useState(() => {
+    try { return PUNK_THEME_IDS.includes(window.localStorage.getItem(THEME_STORAGE_KEY) || ''); } catch { return false; }
   });
   const [glassDragging, setGlassDragging] = useState(false);
   const [luminaView, setLuminaView] = useState('overview');
@@ -3862,6 +3867,39 @@ export default function RUMS() {
                                     <span className="frutiger-theme-swatch" aria-hidden="true">{item.swatches.map((color, index) => <span key={`${item.id}-family-${index}`} style={{ background: color }} />)}</span>
                                     <span className="frutiger-theme-copy"><strong>{item.name}</strong><small>{item.description}</small></span>
                                     {theme === item.id && <Check size={14} className="frutiger-theme-check" />}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            className={`theme-option theme-family-option theme-family-punk ${PUNK_THEME_IDS.includes(theme) ? 'active' : ''}`}
+                            aria-expanded={punkThemeMenuOpen}
+                            onClick={() => setPunkThemeMenuOpen((open) => !open)}
+                          >
+                            <span className="theme-option-preview punk-family-preview" aria-hidden="true"><span /><span /><span /></span>
+                            <span className="theme-option-copy"><strong>Punk Family</strong><small>Solarpunk and Cyberpunk</small></span>
+                            <ChevronDown size={15} className={`theme-family-chevron ${punkThemeMenuOpen ? 'open' : ''}`} />
+                          </button>
+
+                          {punkThemeMenuOpen && (
+                            <div className="punk-theme-family-panel" role="group" aria-label="Punk Family themes">
+                              <div className="punk-theme-family-heading"><strong>Punk Family</strong><small>Two opposing futures: ecological optimism and neon high-tech dystopia.</small></div>
+                              <div className="punk-theme-grid">
+                                {PUNK_THEMES.map((item) => (
+                                  <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={theme === item.id}
+                                    key={item.id}
+                                    className={`punk-theme-item punk-theme-item-${item.id} ${theme === item.id ? 'active' : ''}`}
+                                    onClick={() => setTheme(item.id)}
+                                  >
+                                    <span className="punk-theme-swatch" aria-hidden="true">{item.swatches.map((color, index) => <span key={`${item.id}-punk-${index}`} style={{ background: color }} />)}</span>
+                                    <span className="punk-theme-copy"><strong>{item.name}</strong><small>{item.description}</small></span>
+                                    {theme === item.id && <Check size={14} className="punk-theme-check" />}
                                   </button>
                                 ))}
                               </div>

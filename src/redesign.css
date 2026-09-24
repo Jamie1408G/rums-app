@@ -3596,3 +3596,40 @@ button,input,textarea { font:inherit; }
 .aero-root[data-theme="frutigereco"] .frutiger-theme-item.active,
 .aero-root[data-theme="frutigermetro"] .frutiger-theme-item.active,
 .aero-root[data-theme="vectorflourish"] .frutiger-theme-item.active {background:var(--theme-accent-soft)!important;border-color:var(--theme-focus)!important;box-shadow:inset 3px 0 var(--theme-focus)!important;}
+
+/* Punk Family category in Appearance */
+.punk-family-preview {background:linear-gradient(135deg,#dff3c4 0 50%,#111827 50% 100%)!important;}
+.punk-family-preview span:nth-child(1) {background:linear-gradient(180deg,#9fd16f,#6fa74a)!important;}
+.punk-family-preview span:nth-child(2) {background:linear-gradient(180deg,#f6e7b6,#d7bd75)!important;}
+.punk-family-preview span:nth-child(3) {background:linear-gradient(180deg,#27e8ff,#ff4fd8)!important;}
+.punk-theme-family-panel {grid-column:1/-1;padding:12px;border:1px solid #dbe5f0;border-radius:16px;background:#f8fafdd9;box-shadow:inset 0 1px #fff,0 7px 20px #3a527014;}
+.punk-theme-family-heading {display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 2px 10px;}
+.punk-theme-family-heading strong {font-size:12px;color:#2f435a;}
+.punk-theme-family-heading small {font-size:9px;color:#8391a2;text-align:right;}
+.punk-theme-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.punk-theme-item {position:relative;display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:10px;min-width:0;padding:10px;border:1px solid #dbe4ee;border-radius:12px;background:#fff;color:#31465e;text-align:left;cursor:pointer;box-shadow:0 3px 10px #3345630c;}
+.punk-theme-item:hover {border-color:#afc8e4;background:#fbfdff;}
+.punk-theme-item.active {border-color:var(--theme-focus,#4f98d0);box-shadow:0 0 0 2px color-mix(in srgb,var(--theme-focus,#4f98d0) 18%,transparent);}
+.punk-theme-swatch {display:flex;width:48px;height:32px;padding:3px;gap:2px;border:1px solid #d4dce5;border-radius:8px;background:#edf1f5;overflow:hidden;}
+.punk-theme-swatch span {flex:1;border-radius:4px;}
+.punk-theme-copy {display:block;min-width:0;}
+.punk-theme-copy strong,.punk-theme-copy small {display:block;}
+.punk-theme-copy strong {font-size:10.5px;line-height:1.2;}
+.punk-theme-copy small {margin-top:2px;color:#7e8c9d;font-size:8px;line-height:1.3;}
+.punk-theme-check {color:var(--theme-focus,#3478f6);}
+@media(max-width:720px){.punk-theme-grid{grid-template-columns:1fr}.punk-theme-family-heading{align-items:flex-start;flex-direction:column;gap:3px}.punk-theme-family-heading small{text-align:left}}
+
+.aero-root[data-theme="solarpunk"] :is(.punk-theme-family-panel,.punk-theme-item),
+.aero-root[data-theme="cyberpunk"] :is(.punk-theme-family-panel,.punk-theme-item) {
+  border-color:var(--theme-border)!important;
+  border-radius:var(--theme-radius-sm)!important;
+  background:var(--theme-surface)!important;
+  color:var(--theme-text)!important;
+  box-shadow:var(--theme-soft-shadow)!important;
+}
+.aero-root[data-theme="solarpunk"] :is(.punk-theme-family-heading strong,.punk-theme-copy strong),
+.aero-root[data-theme="cyberpunk"] :is(.punk-theme-family-heading strong,.punk-theme-copy strong) {color:var(--theme-text)!important;}
+.aero-root[data-theme="solarpunk"] :is(.punk-theme-family-heading small,.punk-theme-copy small),
+.aero-root[data-theme="cyberpunk"] :is(.punk-theme-family-heading small,.punk-theme-copy small) {color:var(--theme-muted)!important;}
+.aero-root[data-theme="solarpunk"] .punk-theme-item.active,
+.aero-root[data-theme="cyberpunk"] .punk-theme-item.active {background:var(--theme-accent-soft)!important;border-color:var(--theme-focus)!important;box-shadow:inset 3px 0 var(--theme-focus)!important;}
