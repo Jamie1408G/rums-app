@@ -187,6 +187,30 @@ export default function RUMS() {
   }, []);
 
   useEffect(() => {
+    const root = rootRef.current;
+    const scroller = root?.querySelector('.content');
+    if (!root || !scroller || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let frame = 0;
+    const updateGlossMotion = () => {
+      frame = 0;
+      const y = scroller.scrollTop;
+      root.style.setProperty('--gloss-scroll-x', `${Math.sin(y / 135) * 13}px`);
+      root.style.setProperty('--gloss-scroll-y', `${Math.cos(y / 170) * 9}px`);
+      root.style.setProperty('--gloss-scroll-rotate', `${-9 + Math.sin(y / 210) * 8}deg`);
+      root.style.setProperty('--gloss-scroll-small', `${Math.sin(y / 92) * 5}px`);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateGlossMotion);
+    };
+    updateGlossMotion();
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      scroller.removeEventListener('scroll', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

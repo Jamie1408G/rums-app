@@ -127,11 +127,14 @@ button,input,textarea { font:inherit; }
 .aero-root .drop-zone {background:radial-gradient(95px 65px at 92% 8%,#a9d2ff65 0,transparent 76%),radial-gradient(75px 60px at 5% 95%,#a9e5ca52 0,transparent 75%),linear-gradient(145deg,#fafdff,#edf4ff);border-color:#b8cff1;}
 .aero-root .aero-input:focus,.aero-root .caption-area:focus,.aero-root .search-bar:focus-within {background:#ffffffd9;border-color:#72a7f5;box-shadow:inset 0 1px #fff,0 0 0 4px #70a7ff24,0 7px 20px #3d65982b;}
 .aero-root .tag-chip.active,.aero-root .admin-toggle.is-admin,.aero-root .pill {border-color:#fff;background:radial-gradient(55px 22px at 28% 0,#fff 0,transparent 78%),linear-gradient(145deg,#ffffffed,#cfe3ffcf 66%,#b5dfd0b8);box-shadow:inset 1px 1px 2px #fff,0 4px 13px #3f68952d;}
+.aero-root .community-hero::after,.aero-root .upload-wrap::after,.aero-root .search-wrap::after,.aero-root .profile-wrap::after,.aero-root .admin-wrap::after,.aero-root .feed-empty::after {transform:translate3d(var(--gloss-scroll-x,0),var(--gloss-scroll-y,0),0) rotate(var(--gloss-scroll-rotate,-9deg));transition:transform .12s linear;will-change:transform;}
+.aero-root .post-top::after,.aero-root .suggestion-card::after,.aero-root .section-heading h2::after,.aero-root .composer-heading h2::after,.aero-root .profile-name::after,.aero-root .admin-section-title::after {transform:translate3d(0,var(--gloss-scroll-small,0),0);transition:transform .12s linear;will-change:transform;}
 @media(max-width:600px) {
   .aero-root .community-hero::after {right:55px;top:18px;width:61px;height:55px;opacity:.8;}
   .aero-root .upload-wrap::after,.aero-root .search-wrap::after,.aero-root .profile-wrap::after,.aero-root .admin-wrap::after {right:10px;top:10px;width:48px;height:45px;opacity:.76;}
   .aero-root .post-top::after,.aero-root .suggestion-card::after {width:24px;height:14px;opacity:.7;}
 }
+@media(prefers-reduced-motion:reduce) {.aero-root .community-hero::after,.aero-root .upload-wrap::after,.aero-root .search-wrap::after,.aero-root .profile-wrap::after,.aero-root .admin-wrap::after,.aero-root .feed-empty::after,.aero-root .post-top::after,.aero-root .suggestion-card::after {transform:none!important;transition:none!important;}}
 @media(prefers-reduced-motion:reduce) {.aero-root .feed-tabs.is-dragging::after {display:none;}}
 
 /* Stronger mobile liquid thumb and a true icon dock. */
