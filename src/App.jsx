@@ -138,7 +138,6 @@ export default function RUMS() {
   const [historyRevision, setHistoryRevision] = useState(0);
   const [customPageId, setCustomPageId] = useState(null);
   const [tabDraft, setTabDraft] = useState('');
-  const [widgetDraft, setWidgetDraft] = useState({ title: '', body: '', image: '', actionLabel: '', actionUrl: '', placement: 'feed', color: '#ffffff', animation: 'float' });
   const [viewedProfile, setViewedProfile] = useState(null); // username being viewed, or null = own profile
   const [viewingPostId, setViewingPostId] = useState(null);
   const [navStack, setNavStack] = useState([]);
@@ -154,7 +153,6 @@ export default function RUMS() {
   const fileInputRef = useRef(null);
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
-  const widgetImageInputRef = useRef(null);
   const rootRef = useRef(null);
   const siteConfigRef = useRef(DEFAULT_SITE_CONFIG);
   const historyPastRef = useRef([]);
@@ -658,13 +656,6 @@ export default function RUMS() {
     saveSiteConfig({ ...siteConfig, customTabs: siteConfig.customTabs.map((tab) => tab.id === id ? { ...tab, label: nextLabel } : tab) });
   }
 
-  function addCustomWidget() {
-    if (!widgetDraft.title.trim() && !widgetDraft.body.trim() && !widgetDraft.image) return;
-    const widget = { ...widgetDraft, actionUrl: safeExternalUrl(widgetDraft.actionUrl), id: `widget-${Date.now()}` };
-    saveSiteConfig({ ...siteConfig, customWidgets: [...siteConfig.customWidgets, widget] });
-    setWidgetDraft({ title: '', body: '', image: '', actionLabel: '', actionUrl: '', placement: 'feed', color: '#ffffff', animation: 'float' });
-  }
-
   function addWidgetToPage(placement) {
     const widget = { id: `widget-${Date.now()}`, placement, title: 'New box', body: 'Tap this text to edit it.', image: '', actionLabel: '', actionUrl: '', color: '#ffffff', animation: 'float' };
     saveSiteConfig({ ...siteConfig, customWidgets: [...siteConfig.customWidgets, widget] });
@@ -1046,16 +1037,6 @@ export default function RUMS() {
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', end);
     window.addEventListener('pointercancel', end);
-  }
-
-  async function handleWidgetImage(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const image = await resizeImage(file, 1200);
-      setWidgetDraft((draft) => ({ ...draft, image }));
-    } catch { setSiteConfigStatus('Could not read image'); }
-    e.target.value = '';
   }
 
   async function handleInlineWidgetImage(id, e) {
@@ -2484,14 +2465,14 @@ export default function RUMS() {
               {screen === 'custom' && customPageId && (
                 <div className="custom-page-wrap">
                   <div className="section-heading"><div><span className="eyebrow">CUSTOM SPACE</span><h2 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => renameCustomTab(customPageId, e.currentTarget.textContent)}>{siteConfig.customTabs.find((tab) => tab.id === customPageId)?.label || 'Page'}</h2></div></div>
-                  {!siteConfig.customWidgets.some((widget) => widget.placement === customPageId) && <div className="feed-empty"><h3>Nothing here yet</h3><p>An admin can add widgets to this page in Site editor.</p></div>}
+                  {!siteConfig.customWidgets.some((widget) => widget.placement === customPageId) && <div className="feed-empty"><h3>Nothing here yet</h3><p>Use Edit website → Add box to add content to this page.</p></div>}
                 </div>
               )}
 
               {screen === 'admin' && canEditSite && (
                 <div className="admin-wrap">
                   <section className="site-editor">
-                    <div className="admin-section-title"><Pencil size={16} /> Site editor <span>{siteConfigStatus}</span></div>
+                    <div className="admin-section-title"><Pencil size={16} /> Site settings <span>{siteConfigStatus}</span></div>
                     <p className="editor-intro">Changes publish to everyone. Jamie is always treated as the owner.</p>
                     <div className="editor-grid">
                       <label>Site name<input value={siteConfig.brandName} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, brandName: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
@@ -2504,7 +2485,6 @@ export default function RUMS() {
                       {[['animations','Animations'],['showDiscover','Discover'],['showLumina','Project Lumina'],['showUpdates','Updates'],['showSuggestions','Suggestions']].map(([key,label]) => <button key={key} className={siteConfig[key] ? 'enabled' : ''} onClick={() => updateSiteConfig({ [key]: !siteConfig[key] })}><Check size={14} /> {label}</button>)}
                     </div>
                     <div className="editor-subsection"><h3>Custom navigation tabs</h3><div className="editor-add-row"><input value={tabDraft} onChange={(e) => setTabDraft(e.target.value)} placeholder="New tab name" /><button onClick={addCustomTab}><Plus size={15} /> Add tab</button></div>{siteConfig.customTabs.map((tab) => <div className="editor-item" key={tab.id}><span>{tab.label}</span><button onClick={() => removeCustomTab(tab.id)}><Trash2 size={14} /></button></div>)}</div>
-                    <div className="editor-subsection"><h3>Widgets and boxes</h3><div className="editor-grid"><label>Placement<select value={widgetDraft.placement} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, placement: e.target.value }))}>{BUILT_IN_PAGES.map(([id,label]) => <option key={id} value={id}>{label}</option>)}{siteConfig.customTabs.map((tab) => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select></label><label>Title<input value={widgetDraft.title} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, title: e.target.value }))} /></label><label>Box colour<input type="color" value={widgetDraft.color} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, color: e.target.value }))} /></label><label>Animation<select value={widgetDraft.animation} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, animation: e.target.value }))}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><label className="editor-wide">Text<textarea value={widgetDraft.body} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, body: e.target.value }))} /></label><label>Button label<input value={widgetDraft.actionLabel} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, actionLabel: e.target.value }))} /></label><label>Button URL<input value={widgetDraft.actionUrl} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, actionUrl: e.target.value }))} /></label></div><input ref={widgetImageInputRef} type="file" accept="image/*" hidden onChange={handleWidgetImage} /><div className="editor-actions"><button onClick={() => widgetImageInputRef.current?.click()}><ImagePlus size={15} /> {widgetDraft.image ? 'Replace image' : 'Add image'}</button><button className="primary" onClick={addCustomWidget}><Plus size={15} /> Add widget</button></div>{siteConfig.customWidgets.map((widget) => <div className="editor-item" key={widget.id}><span><b>{widget.title || 'Untitled widget'}</b><small>{BUILT_IN_PAGES.find(([id]) => id === widget.placement)?.[1] || siteConfig.customTabs.find((tab) => tab.id === widget.placement)?.label || widget.placement}</small></span><button onClick={() => removeCustomWidget(widget.id)}><Trash2 size={14} /></button></div>)}</div>
                   </section>
                   <div className="admin-section-title"><Shield size={16} /> Members ({users.length})</div>
                   {users.map((u) => (
