@@ -132,9 +132,6 @@ export default function RUMS() {
     tabsRef.current.style.setProperty('--tab-reflection-x', `${clientX - rect.left - offset}px`);
     tabsRef.current.style.setProperty('--tab-pointer-x', `${clientX - rect.left}px`);
     tabsRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
-    const index = clientX >= rect.left + rect.width / 2 ? 1 : 0;
-    const sampledButton = tabsRef.current.querySelectorAll('button')[index];
-    if (sampledButton) tabsRef.current.style.setProperty('--glass-edge-color', getComputedStyle(sampledButton).color);
     setFeedFilter(tabForPointer(clientX));
   }
 
@@ -186,9 +183,6 @@ export default function RUMS() {
     luminaTabsRef.current.style.setProperty('--lumina-reflection-x', `${clientX - rect.left - 5 - offset}px`);
     luminaTabsRef.current.style.setProperty('--lumina-pointer-x', `${clientX - rect.left}px`);
     luminaTabsRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
-    const index = Math.max(0, Math.min(2, Math.floor((clientX - rect.left) / (rect.width / 3))));
-    const sampledButton = luminaTabsRef.current.querySelectorAll('button')[index];
-    if (sampledButton) luminaTabsRef.current.style.setProperty('--glass-edge-color', getComputedStyle(sampledButton).color);
     setLuminaView(luminaViewForPointer(clientX));
   }
 
@@ -1133,17 +1127,7 @@ export default function RUMS() {
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
             <feTurbulence type="fractalNoise" baseFrequency="0.012 0.085" numOctaves="1" seed="8" result="lensNoise" />
             <feDisplacementMap in="SourceGraphic" in2="lensNoise" scale="8" xChannelSelector="R" yChannelSelector="B" result="refracted" />
-            <feColorMatrix in="refracted" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="redChannel" />
-            <feColorMatrix in="refracted" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="greenChannel" />
-            <feColorMatrix in="refracted" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blueChannel" />
-            <feOffset in="redChannel" dx="-1.8" result="redShift" />
-            <feOffset in="blueChannel" dx="1.8" result="blueShift" />
-            <feBlend in="redShift" in2="greenChannel" mode="screen" result="redGreen" />
-            <feBlend in="redGreen" in2="blueShift" mode="screen" result="dispersion" />
-            <feMorphology in="SourceAlpha" operator="erode" radius="2.6" result="innerGlass" />
-            <feComposite in="dispersion" in2="innerGlass" operator="out" result="edgeDispersion" />
-            <feBlend in="refracted" in2="edgeDispersion" mode="screen" result="lensedGlass" />
-            <feGaussianBlur in="lensedGlass" stdDeviation="0.18" />
+            <feGaussianBlur in="refracted" stdDeviation="0.18" />
           </filter>
         </defs>
       </svg>
