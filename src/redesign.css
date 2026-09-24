@@ -173,6 +173,21 @@ button,input,textarea { font:inherit; }
 .aero-root .avatar,.aero-root .profile-avatar-wrap .avatar,.aero-root .profile-avatar-wrap .avatar-img {background-image:radial-gradient(circle at 28% 18%,#fff 0,#d6efff 28%,#79baff 62%,#58c795 100%);}
 .aero-root .rail-orb,.aero-root .r-badge,.aero-root .auth-logo {background:linear-gradient(145deg,#86d6ff,#3d8cff 58%,#45c88e)!important;}
 @media(max-width:600px) {.aero-root .content {background-image:radial-gradient(circle at calc(1% + var(--orb-a-x,0px)) calc(18% + var(--orb-a-y,0px)),transparent 0 17px,#70b8ff55 18px 21px,#fff7 22px,transparent 23px),radial-gradient(circle at calc(99% + var(--orb-b-x,0px)) calc(64% + var(--orb-b-y,0px)),transparent 0 12px,#59ca9c48 13px 16px,#fff6 17px,transparent 18px);}}
+
+/* iOS 27 navigation island: detached, refractive and shared across layouts. */
+@media(min-width:901px) {
+  .aero-frame {grid-template-columns:272px minmax(0,1fr);background:transparent!important;box-shadow:none!important;}
+  .desktop-rail {align-self:start;height:calc(100vh - 28px);margin:14px 10px 14px 14px;padding:21px 13px 18px;border:1px solid #ffffffdf;border-radius:30px;background:radial-gradient(130px 90px at 88% 3%,#b7dcff8a 0,transparent 72%),radial-gradient(100px 80px at 5% 98%,#8edab95c 0,transparent 72%),linear-gradient(145deg,#ffffffe0,#edf5ffd1 62%,#ecf8f2c9);box-shadow:inset 1px 1px 2px #fff,inset -1px -2px 5px #7595b51f,0 18px 48px #294c7630;backdrop-filter:blur(32px) saturate(1.55);-webkit-backdrop-filter:blur(32px) saturate(1.55);overflow:hidden;}
+  .rail-brand {margin:3px 12px 27px;}.rail-label {margin-top:12px;}
+  .rail-link {min-height:44px;margin:2px 0;border-radius:16px;}
+  .rail-link.selected {border-color:#fff;border-radius:18px;background:radial-gradient(70px 28px at 28% 0,#fff 0,transparent 80%),linear-gradient(145deg,#ffffffed,#dceaffc7 68%,#ccebddad);box-shadow:inset 1px 1px 2px #fff,0 6px 17px #3b649333;}
+  .rail-create {min-height:46px;border:1px solid #91bdff;border-radius:18px;background:radial-gradient(70px 28px at 26% 0,#ffffff9e,transparent 75%),linear-gradient(145deg,#65a6ff,#3478f6 64%,#37b888);box-shadow:inset 1px 1px 2px #ffffffad,0 8px 20px #3478f64f;}
+  .aero-root .aero-header {padding-left:26px;border-bottom-color:#ffffff9e;background:#ffffff9e;}
+}
+@media(max-width:900px) {
+  .aero-root .bottom-nav {border:1px solid #ffffffe8;background:radial-gradient(100px 45px at 22% 0,#ffffffed 0,transparent 76%),radial-gradient(85px 48px at 86% 100%,#8bd4b75c 0,transparent 78%),linear-gradient(145deg,#ffffffdc,#e8f2ffd1 62%,#eaf7f1c9);box-shadow:inset 1px 1px 2px #fff,inset -2px -3px 7px #6388ab24,0 14px 38px #203f6647;backdrop-filter:blur(32px) saturate(1.6);-webkit-backdrop-filter:blur(32px) saturate(1.6);}
+  .aero-root .bottom-nav .nav-btn.active .nav-icon-wrap {border-color:#fff;background:radial-gradient(circle at 29% 17%,#fff 0,#e5f3ff 27%,#a9ceffba 68%,#79cdaea8 100%);box-shadow:inset 2px 2px 3px #fff,inset -2px -3px 5px #4b77a136,0 5px 15px #356dc34d;}
+}
 @media(prefers-reduced-motion:reduce) {.aero-root .feed-tabs.is-dragging::after {display:none;}}
 
 /* Stronger mobile liquid thumb and a true icon dock. */
