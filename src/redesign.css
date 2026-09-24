@@ -839,3 +839,32 @@ button,input,textarea { font:inherit; }
     transform:translate3d(calc(var(--version-pointer-x,23px) - 23px),0,0);
   }
 }
+
+
+/* Slider interaction correctness + low-latency drag pass. */
+/* Project Lumina and upload-location sliders use a lightweight compositor-only blob while dragging. */
+.aero-root .lumina-view-switch.is-dragging::before,
+.aero-root .upload-wrap .location-tabs.is-dragging::before {
+  transform:translate3d(calc(var(--lumina-pointer-x,var(--location-pointer-x,47px)) - 47px),0,0) scaleY(1.03)!important;
+  transition:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  filter:none!important;
+  box-shadow:inset 1px 1px 2px #fff,0 3px 10px #3478f638!important;
+}
+
+/* The cloned/refraction layer is visually expensive and is not needed to understand the drag target. */
+.aero-root .lumina-view-switch.is-dragging > .drag-refraction,
+.aero-root .upload-wrap .location-tabs.is-dragging > .drag-refraction,
+.aero-root .lumina-view-switch.is-dragging::after {
+  display:none!important;
+}
+
+/* Version switch: keep the original segmented appearance, but preview the target label without React renders. */
+.universal-rums-switcher.is-dragging button {color:#6f8299!important;}
+.universal-rums-switcher.is-dragging[data-drag-target="rums4"] button:nth-child(1),
+.universal-rums-switcher.is-dragging[data-drag-target="rums5"] button:nth-child(2) {color:#fff!important;}
+
+/* Appearance slider: avoid animated thumb catch-up and expensive whole-page repaints during pointer movement. */
+.glass-slider-shell.is-dragging .glass-range::-webkit-slider-thumb {transition:none!important;}
+.glass-slider-shell.is-dragging::after {transition:none!important;}

@@ -184,8 +184,8 @@ export default function RUMS() {
   const [locationTabsDragging, setLocationTabsDragging] = useState(false);
   const rumsVersionSwitchRef = useRef(null);
   const rumsVersionDragRef = useRef(null);
+  const rumsVersionSuppressClickRef = useRef(false);
   const [rumsVersionDragging, setRumsVersionDragging] = useState(false);
-  const [rumsVersionDragTarget, setRumsVersionDragTarget] = useState(null);
   const activeStorageKeys = storageKeysForSpace(rumsSpace || 'rums4');
   const isRums5 = rumsSpace === 'rums5';
   const activeSpace = rumsSpace ? RUMS_SPACES[rumsSpace] : null;
@@ -285,7 +285,7 @@ export default function RUMS() {
     const target = rumsVersionForPointer(clientX, rect);
     if (drag.target !== target) {
       drag.target = target;
-      setRumsVersionDragTarget(target);
+      node.dataset.dragTarget = target;
     }
   }
 
@@ -306,7 +306,7 @@ export default function RUMS() {
     if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) {
       drag.moved = true;
       setRumsVersionDragging(true);
-      setRumsVersionDragTarget(rumsSpace);
+      rumsVersionSwitchRef.current?.setAttribute('data-drag-target', rumsSpace);
     }
     if (!drag.moved) return;
     drag.pendingX = e.clientX;
@@ -324,15 +324,18 @@ export default function RUMS() {
     if (!drag || drag.pointerId !== e.pointerId) return;
     if (drag.frame) window.cancelAnimationFrame(drag.frame);
     if (drag.moved) applyRumsVersionDrag(e.clientX, drag);
-    const wasDrag = drag.moved;
     const target = e.type === 'pointercancel' ? rumsSpace : rumsVersionForPointer(e.clientX, drag.rect);
     setRumsVersionDragging(false);
-    setRumsVersionDragTarget(null);
+    rumsVersionSwitchRef.current?.removeAttribute('data-drag-target');
     if (rumsVersionSwitchRef.current?.hasPointerCapture?.(e.pointerId)) rumsVersionSwitchRef.current.releasePointerCapture(e.pointerId);
-    if (wasDrag && e.type !== 'pointercancel' && target && target !== rumsSpace && !spaceSwitchBusy) {
+
+    // Pointer capture lives on the segmented control itself, so a normal tap can
+    // be retargeted away from the child button. Handle both taps and drags here.
+    if (e.type !== 'pointercancel' && target && target !== rumsSpace && !spaceSwitchBusy) {
+      rumsVersionSuppressClickRef.current = true;
       void switchRumsSpace(target);
     }
-    setTimeout(() => { if (rumsVersionDragRef.current === drag) rumsVersionDragRef.current = null; }, 0);
+    rumsVersionDragRef.current = null;
   }
 
   function luminaViewForPointer(clientX, rect = luminaTabsDragRef.current?.rect || luminaTabsRef.current?.getBoundingClientRect()) {
@@ -444,15 +447,16 @@ export default function RUMS() {
     setTimeout(() => { if (locationTabsDragRef.current === drag) locationTabsDragRef.current = null; }, 0);
   }
 
-  function previewGlassStrength(rawValue, input) {
+  function previewGlassStrength(rawValue, input, applyGlobally = false) {
     const value = Math.max(35, Math.min(95, Number(rawValue) || 72));
-    rootRef.current?.style.setProperty('--glass-alpha', `${value / 100}`);
     const section = input?.closest('.appearance-section');
     const shell = input?.closest('.glass-slider-shell');
     shell?.style.setProperty('--slider-position', `${(value - 35) / 60 * 100}%`);
     const valueLabel = section?.querySelector('[data-glass-value]');
     const description = section?.querySelector('[data-glass-description]');
     const preview = section?.querySelector('.glass-live-preview');
+    preview?.style.setProperty('--glass-alpha', `${value / 100}`);
+    if (applyGlobally) rootRef.current?.style.setProperty('--glass-alpha', `${value / 100}`);
     if (valueLabel) valueLabel.textContent = `${value}%`;
     if (description) description.textContent = value < 55 ? 'Clear and light' : value < 78 ? 'Balanced glass' : 'Soft and frosted';
     preview?.setAttribute('aria-label', `Glass appearance preview at ${value} percent`);
@@ -460,7 +464,7 @@ export default function RUMS() {
   }
 
   function commitGlassStrength(input) {
-    const value = previewGlassStrength(input?.value, input);
+    const value = previewGlassStrength(input?.value, input, true);
     setGlassStrength(value);
   }
 
@@ -2067,9 +2071,7 @@ export default function RUMS() {
   }
 
   function renderRumsVersionSwitcher() {
-    const visualVersion = rumsVersionDragging
-      ? (rumsVersionDragTarget || rumsSpace)
-      : (spaceSwitchBusy || rumsSpace);
+    const visualVersion = spaceSwitchBusy || rumsSpace;
     return (
       <div
         ref={rumsVersionSwitchRef}
@@ -2082,7 +2084,8 @@ export default function RUMS() {
         onPointerUp={handleRumsVersionPointerEnd}
         onPointerCancel={handleRumsVersionPointerEnd}
         onClickCapture={(e) => {
-          if (rumsVersionDragRef.current?.moved) {
+          if (rumsVersionSuppressClickRef.current) {
+            rumsVersionSuppressClickRef.current = false;
             e.preventDefault();
             e.stopPropagation();
           }
