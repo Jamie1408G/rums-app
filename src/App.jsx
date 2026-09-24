@@ -118,6 +118,9 @@ export default function RUMS() {
   const luminaTabsDragRef = useRef(null);
   const [luminaTabsDragging, setLuminaTabsDragging] = useState(false);
   const [luminaTabOffset, setLuminaTabOffset] = useState(0);
+  const locationTabsRef = useRef(null);
+  const locationTabsDragRef = useRef(null);
+  const [locationTabsDragging, setLocationTabsDragging] = useState(false);
 
   function tabForPointer(clientX) {
     const rect = tabsRef.current?.getBoundingClientRect();
@@ -215,6 +218,46 @@ export default function RUMS() {
     setLuminaTabsDragging(false);
     if (luminaTabsRef.current?.hasPointerCapture(e.pointerId)) luminaTabsRef.current.releasePointerCapture(e.pointerId);
     setTimeout(() => { if (luminaTabsDragRef.current === drag) luminaTabsDragRef.current = null; }, 0);
+  }
+
+  function locationTagForPointer(clientX) {
+    const rect = locationTabsRef.current?.getBoundingClientRect();
+    return rect && clientX >= rect.left + rect.width / 2 ? 'Lumina' : 'General';
+  }
+
+  function updateLocationTabDrag(clientX) {
+    const rect = locationTabsRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    locationTabsRef.current.style.setProperty('--location-pointer-x', `${clientX - rect.left}px`);
+    locationTabsRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
+    setTag(locationTagForPointer(clientX));
+  }
+
+  function handleLocationTabsPointerDown(e) {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    locationTabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setLocationTabsDragging(true);
+    updateLocationTabDrag(e.clientX);
+    e.preventDefault();
+  }
+
+  function handleLocationTabsPointerMove(e) {
+    const drag = locationTabsDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) drag.moved = true;
+    updateLocationTabDrag(e.clientX);
+  }
+
+  function handleLocationTabsPointerEnd(e) {
+    const drag = locationTabsDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    if (e.type !== 'pointercancel') setTag(locationTagForPointer(e.clientX));
+    setLocationTabsDragging(false);
+    if (locationTabsRef.current?.hasPointerCapture(e.pointerId)) locationTabsRef.current.releasePointerCapture(e.pointerId);
+    setTimeout(() => { if (locationTabsDragRef.current === drag) locationTabsDragRef.current = null; }, 0);
   }
 
   useEffect(() => {
@@ -1341,7 +1384,7 @@ export default function RUMS() {
                   <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileSelect} />
 
                   <div className="field-label">Where was it taken?</div>
-                  <div className="tag-select">
+                  <div ref={locationTabsRef} className={`tag-select location-tabs ${locationTabsDragging ? 'is-dragging' : ''}`} style={{ '--location-tab-index': tag === 'Lumina' ? 1 : 0 }} onPointerDown={handleLocationTabsPointerDown} onPointerMove={handleLocationTabsPointerMove} onPointerUp={handleLocationTabsPointerEnd} onPointerCancel={handleLocationTabsPointerEnd} onClickCapture={(e) => { if (locationTabsDragRef.current?.moved) { e.preventDefault(); e.stopPropagation(); } }}>
                     {TAGS.map((t) => (
                       <button
                         key={t}
@@ -1352,6 +1395,7 @@ export default function RUMS() {
                         {t === 'Lumina' && <Droplet size={13} />} {t}
                       </button>
                     ))}
+                    <span className="drag-refraction location-drag-refraction" aria-hidden="true"><span className="drag-refraction-content"><span className={tag === 'General' ? 'active' : ''}>General</span><span className={tag === 'Lumina' ? 'active' : ''}><Droplet size={13} /> Lumina</span></span></span>
                   </div>
 
                   <div className="field-label">Caption</div>

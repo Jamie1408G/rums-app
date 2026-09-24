@@ -156,6 +156,11 @@ button,input,textarea { font:inherit; }
 }
 .aero-root .feed-tabs::before {left:5px;width:calc((100% - 10px)/2);transform:translateX(var(--seg-translate,0%));}
 .aero-root .lumina-view-switch::before {left:5px;width:calc((100% - 10px)/3);transform:translateX(calc(var(--lumina-tab-index,0) * 100%));}
+.aero-root .upload-wrap .location-tabs {position:relative;isolation:isolate;display:grid;grid-template-columns:repeat(2,1fr);gap:0;min-height:52px;padding:5px;border:1px solid #ffffffe8;border-radius:999px;background:linear-gradient(145deg,#eef9ffdc,#dff1ffcf 62%,#e8f8f1c9);overflow:hidden;touch-action:pan-y;user-select:none;-webkit-user-select:none;}
+.aero-root .upload-wrap .location-tabs::before {content:'';position:absolute;z-index:0;left:5px;top:5px;width:calc((100% - 10px)/2);height:calc(100% - 10px);border:1px solid #fff;border-radius:999px;background:radial-gradient(90px 30px at 30% 0,#fff 0,#ffffffa8 34%,transparent 80%),linear-gradient(145deg,#ffffffed,#e7f0ffcf 65%,#edf8f4c2);box-shadow:inset 2px 2px 3px #fff,inset -2px -3px 6px #6283a52c,0 5px 16px #3a659538;transform:translateX(calc(var(--location-tab-index,0) * 100%));transition:width .5s cubic-bezier(.16,1.22,.28,1),transform .5s cubic-bezier(.16,1.22,.28,1),border-radius .28s ease,box-shadow .25s;pointer-events:none;}
+.aero-root .upload-wrap .location-tabs.is-dragging::before {z-index:2;width:84px;border:2px solid transparent;border-radius:18px;background:radial-gradient(70px 24px at 32% -2px,#fff 0,#ffffff8f 28%,transparent 70%) padding-box,linear-gradient(145deg,#ffffff58,#ffffff0c 58%,#ffffff35) padding-box,linear-gradient(145deg,#fffffff2,#ffffff55 48%,#ffffffd5) border-box;transform:translateX(calc(var(--location-pointer-x,47px) - 47px)) scaleY(1.03);transition:transform .07s linear,width .18s ease,border-radius .15s,box-shadow .15s;backdrop-filter:blur(3px) saturate(1.25);-webkit-backdrop-filter:blur(3px) saturate(1.25);}
+.aero-root .upload-wrap .location-tabs .tag-chip,.aero-root .upload-wrap .location-tabs .tag-chip.active {z-index:1;min-height:40px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:#708096;box-shadow:none;}
+.aero-root .upload-wrap .location-tabs .tag-chip.active {color:#286bd5;}
 .liquid-glass-filters {position:absolute;width:0;height:0;overflow:hidden;pointer-events:none;}
 .aero-root .feed-tabs.is-dragging::before,.aero-root .lumina-view-switch.is-dragging::before {
   z-index:2;
@@ -175,10 +180,11 @@ button,input,textarea { font:inherit; }
   filter:saturate(1.25);
 }
 .drag-refraction {display:none;}
-.is-dragging>.drag-refraction {position:absolute;z-index:3;display:block;left:5px;top:5px;width:84px;height:calc(100% - 10px);overflow:hidden;border-radius:18px;transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,47px)) - 47px)) scaleY(1.03);pointer-events:none;}
-.drag-refraction-content {position:absolute;left:calc(47px - var(--tab-pointer-x,var(--lumina-pointer-x,47px)));top:0;display:grid;width:calc(var(--glass-control-width,250px) - 10px);height:100%;align-items:center;color:#708096;font-size:13px;font-weight:750;filter:url('#liquid-glass-refraction');}
+.is-dragging>.drag-refraction {position:absolute;z-index:3;display:block;left:5px;top:5px;width:84px;height:calc(100% - 10px);overflow:hidden;border-radius:18px;transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,var(--location-pointer-x,47px))) - 47px)) scaleY(1.03);pointer-events:none;}
+.drag-refraction-content {position:absolute;left:calc(47px - var(--tab-pointer-x,var(--lumina-pointer-x,var(--location-pointer-x,47px))));top:0;display:grid;width:calc(var(--glass-control-width,250px) - 10px);height:100%;align-items:center;color:#708096;font-size:13px;font-weight:750;filter:url('#liquid-glass-refraction');}
 .feed-drag-refraction .drag-refraction-content {grid-template-columns:repeat(2,1fr);}
 .lumina-drag-refraction .drag-refraction-content {grid-template-columns:repeat(3,1fr);}
+.location-drag-refraction .drag-refraction-content {grid-template-columns:repeat(2,1fr);}
 .drag-refraction-content>span {display:flex;align-items:center;justify-content:center;gap:5px;height:100%;white-space:nowrap;}
 .drag-refraction-content>span.active {color:#286bd5;}
 .aero-root .feed-tabs.is-dragging::after,.aero-root .lumina-view-switch.is-dragging::after {
