@@ -135,6 +135,18 @@ button,input,textarea { font:inherit; }
   .aero-root .post-top::after,.aero-root .suggestion-card::after {width:24px;height:14px;opacity:.7;}
 }
 @media(prefers-reduced-motion:reduce) {.aero-root .community-hero::after,.aero-root .upload-wrap::after,.aero-root .search-wrap::after,.aero-root .profile-wrap::after,.aero-root .admin-wrap::after,.aero-root .feed-empty::after,.aero-root .post-top::after,.aero-root .suggestion-card::after {transform:none!important;transition:none!important;}}
+
+/* Several small, genuinely scroll-reactive droplets replace the repeated large blob. */
+.aero-root .community-hero::after,.aero-root .upload-wrap::after,.aero-root .search-wrap::after,.aero-root .profile-wrap::after,.aero-root .admin-wrap::after,.aero-root .feed-empty::after {display:none!important;}
+.ambient-gloss {position:fixed;z-index:28;inset:0;overflow:hidden;pointer-events:none;}
+.ambient-gloss i {position:absolute;display:block;border:1px solid #ffffffe8;background:radial-gradient(circle at 27% 17%,#fff 0,#ffffffb5 24%,transparent 55%),linear-gradient(145deg,#dff2ffb8,#80b9ff80 62%,#6dd0aa73);box-shadow:inset 2px 2px 4px #fff,inset -3px -4px 7px #376b9738,0 5px 16px #336da536;backdrop-filter:blur(15px) saturate(1.45);-webkit-backdrop-filter:blur(15px) saturate(1.45);will-change:transform;transition:transform .1s linear;}
+.ambient-gloss i:nth-child(1) {left:17%;top:18%;width:34px;height:29px;border-radius:58% 42% 51% 49% / 44% 57% 43% 56%;transform:translate3d(var(--orb-a-x,0),var(--orb-a-y,0),0) rotate(var(--orb-tilt,0deg));}
+.ambient-gloss i:nth-child(2) {right:5%;top:31%;width:22px;height:25px;border-radius:45% 55% 43% 57% / 58% 42% 58% 42%;transform:translate3d(var(--orb-b-x,0),var(--orb-b-y,0),0) rotate(var(--orb-tilt-reverse,0deg));}
+.ambient-gloss i:nth-child(3) {left:27%;bottom:14%;width:18px;height:16px;border-radius:60% 40% 56% 44% / 46% 57% 43% 54%;transform:translate3d(var(--orb-c-x,0),var(--orb-c-y,0),0);opacity:.82;}
+.ambient-gloss i:nth-child(4) {right:25%;top:11%;width:27px;height:20px;border-radius:52% 48% 43% 57% / 57% 45% 55% 43%;transform:translate3d(var(--orb-a-y,0),var(--orb-c-x,0),0) rotate(var(--orb-tilt,0deg));opacity:.78;}
+.ambient-gloss i:nth-child(5) {right:9%;bottom:18%;width:31px;height:34px;border-radius:43% 57% 54% 46% / 58% 43% 57% 42%;transform:translate3d(var(--orb-c-y,0),var(--orb-b-x,0),0) rotate(var(--orb-tilt-soft,0deg));opacity:.72;}
+@media(max-width:900px) {.ambient-gloss i:nth-child(1) {left:3%;top:21%;}.ambient-gloss i:nth-child(2) {right:2%;top:41%;}.ambient-gloss i:nth-child(4) {right:6%;top:12%;}.ambient-gloss i:nth-child(5) {right:3%;bottom:15%;}}
+@media(prefers-reduced-motion:reduce) {.ambient-gloss i {transition:none!important;transform:none!important;}}
 @media(prefers-reduced-motion:reduce) {.aero-root .feed-tabs.is-dragging::after {display:none;}}
 
 /* Stronger mobile liquid thumb and a true icon dock. */

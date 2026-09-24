@@ -189,23 +189,38 @@ export default function RUMS() {
   useEffect(() => {
     const root = rootRef.current;
     const scroller = root?.querySelector('.content');
-    if (!root || !scroller || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let frame = 0;
+    let phase = Math.max(scroller?.scrollTop || 0, window.scrollY || 0);
     const updateGlossMotion = () => {
       frame = 0;
-      const y = scroller.scrollTop;
-      root.style.setProperty('--gloss-scroll-x', `${Math.sin(y / 135) * 13}px`);
-      root.style.setProperty('--gloss-scroll-y', `${Math.cos(y / 170) * 9}px`);
-      root.style.setProperty('--gloss-scroll-rotate', `${-9 + Math.sin(y / 210) * 8}deg`);
-      root.style.setProperty('--gloss-scroll-small', `${Math.sin(y / 92) * 5}px`);
+      root.style.setProperty('--orb-a-x', `${Math.sin(phase / 90) * 24}px`);
+      root.style.setProperty('--orb-a-y', `${Math.cos(phase / 120) * 18}px`);
+      root.style.setProperty('--orb-b-x', `${Math.cos(phase / 105) * 21}px`);
+      root.style.setProperty('--orb-b-y', `${Math.sin(phase / 75) * 26}px`);
+      root.style.setProperty('--orb-c-x', `${Math.sin(phase / 62) * -18}px`);
+      root.style.setProperty('--orb-c-y', `${Math.cos(phase / 88) * 22}px`);
+      root.style.setProperty('--orb-tilt', `${Math.sin(phase / 115) * 18}deg`);
+      root.style.setProperty('--orb-tilt-reverse', `${Math.sin(phase / 115) * -18}deg`);
+      root.style.setProperty('--orb-tilt-soft', `${Math.sin(phase / 115) * 11}deg`);
+      root.style.setProperty('--gloss-scroll-small', `${Math.sin(phase / 92) * 5}px`);
     };
     const onScroll = () => {
+      phase = Math.max(scroller?.scrollTop || 0, window.scrollY || 0);
+      if (!frame) frame = window.requestAnimationFrame(updateGlossMotion);
+    };
+    const onWheel = (event) => {
+      phase += event.deltaY;
       if (!frame) frame = window.requestAnimationFrame(updateGlossMotion);
     };
     updateGlossMotion();
-    scroller.addEventListener('scroll', onScroll, { passive: true });
+    scroller?.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
+    root.addEventListener('wheel', onWheel, { passive: true });
     return () => {
-      scroller.removeEventListener('scroll', onScroll);
+      scroller?.removeEventListener('scroll', onScroll);
+      window.removeEventListener('scroll', onScroll);
+      root.removeEventListener('wheel', onWheel);
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, [currentUser]);
@@ -1047,8 +1062,7 @@ export default function RUMS() {
 
   return (
     <div className="aero-root" ref={rootRef} style={{ '--glass-alpha': glassStrength / 100 }}>
-
-
+      <div className="ambient-gloss" aria-hidden="true"><i /><i /><i /><i /><i /></div>
       <div className="aero-frame">
         {screen === 'loading' && (
           <div className="center-loading">
