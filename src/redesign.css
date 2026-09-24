@@ -648,3 +648,74 @@ button,input,textarea { font:inherit; }
   .space-choice-copy strong {font-size:21px;}
   .header-space-chip {width:21px;height:21px;}
 }
+
+
+/* Universal RUMS 4 / RUMS 5 switcher — clear, persistent, and independent from RUMS 4's feed tabs. */
+.universal-rums-switcher {
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  flex:0 0 auto;
+  margin-left:9px;
+  padding:3px;
+  border:1px solid #ffffffd9;
+  border-radius:13px;
+  background:linear-gradient(145deg,#ffffff92,#edf5ff7d 62%,#eef8f382);
+  box-shadow:inset 0 1px 1px #fff,0 3px 10px #294d7415;
+  backdrop-filter:blur(18px) saturate(1.35);
+  -webkit-backdrop-filter:blur(18px) saturate(1.35);
+}
+.universal-rums-switcher button {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  min-width:68px;
+  height:29px;
+  padding:0 9px;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:#6f8299;
+  font:inherit;
+  cursor:pointer;
+  transition:background .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+.universal-rums-switcher button span {
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.055em;
+}
+.universal-rums-switcher button strong {
+  font-size:13px;
+  font-weight:900;
+  line-height:1;
+}
+.universal-rums-switcher button:not(.active):hover {
+  color:#3f6fa8;
+  background:#ffffff76;
+}
+.universal-rums-switcher button.active {
+  color:#fff;
+  background:linear-gradient(145deg,#68a5ff,#3478f6);
+  box-shadow:inset 0 1px 1px #ffffffa8,0 3px 9px #3478f63d;
+  cursor:default;
+}
+.universal-rums-switcher button:focus-visible {
+  outline:2px solid #3478f6;
+  outline-offset:2px;
+}
+
+/* The old tiny number badges are superseded by the universal labelled switcher. */
+.rail-space-chip,.header-space-chip {display:none!important;}
+
+@media(max-width:720px) {
+  .universal-rums-switcher {margin-left:5px;padding:2px;border-radius:11px;}
+  .universal-rums-switcher button {min-width:50px;height:27px;padding:0 6px;gap:2px;border-radius:9px;}
+  .universal-rums-switcher button span {font-size:0;}
+  .universal-rums-switcher button span::after {content:'R';font-size:9px;font-weight:900;}
+  .universal-rums-switcher button strong {font-size:12px;}
+}
+@media(max-width:430px) {
+  .universal-rums-switcher button {min-width:42px;padding:0 5px;}
+}

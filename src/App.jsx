@@ -1859,7 +1859,7 @@ export default function RUMS() {
   }
 
   function renderFeedTabs() {
-    if (isRums5) return <button type="button" className="rums-space-header-pill" onClick={openRumsChooser} title="Switch RUMS version"><span>RUMS 5</span><small>NEW ERA</small></button>;
+    if (isRums5) return null;
     return (
       <div ref={tabsRef} className={`feed-tabs ${tabsDragging ? 'is-dragging' : ''}`}
         style={{ '--seg-translate': tabsDragging ? `${tabOffset}px` : feedFilter === 'lumina' ? '100%' : '0%' }}
@@ -1875,6 +1875,31 @@ export default function RUMS() {
           {unseenLumina > 0 && <span className="tab-badge">{unseenLumina}</span>}
         </button>
         <span className="drag-refraction feed-drag-refraction" aria-hidden="true"><span className="drag-refraction-content"><span className={feedFilter === 'all' ? 'active' : ''}>All RUMS</span><span className={feedFilter === 'lumina' ? 'active' : ''}><Droplet size={12} /> Lumina</span></span></span>
+      </div>
+    );
+  }
+
+  function renderRumsVersionSwitcher() {
+    return (
+      <div className="universal-rums-switcher" role="group" aria-label="Switch between RUMS 4 and RUMS 5">
+        <button
+          type="button"
+          className={rumsSpace === 'rums4' ? 'active' : ''}
+          aria-pressed={rumsSpace === 'rums4'}
+          onClick={() => { if (rumsSpace !== 'rums4') chooseRumsSpace('rums4'); }}
+          title="Open RUMS 4"
+        >
+          <span>RUMS</span><strong>4</strong>
+        </button>
+        <button
+          type="button"
+          className={rumsSpace === 'rums5' ? 'active' : ''}
+          aria-pressed={rumsSpace === 'rums5'}
+          onClick={() => { if (rumsSpace !== 'rums5') chooseRumsSpace('rums5'); }}
+          title="Open RUMS 5"
+        >
+          <span>RUMS</span><strong>5</strong>
+        </button>
       </div>
     );
   }
@@ -2124,7 +2149,7 @@ export default function RUMS() {
         {screen !== 'spaceSelect' && screen !== 'loading' && screen !== 'login' && screen !== 'signup' && currentUser && (
           <>
             <aside className="desktop-rail">
-              <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span><button className="rail-space-chip" type="button" onClick={openRumsChooser}>{isRums5 ? '5' : '4'}</button></div>
+              <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span></div>
               <div className="rail-label">EXPLORE</div>
               <button className={`rail-link ${screen === 'feed' ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); }}><Home size={19} /> Community feed {hasNewPosts && <span className="rail-dot" />}</button>
               {siteConfig.showDiscover && <button className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}><Search size={19} /> Discover</button>}
@@ -2142,7 +2167,7 @@ export default function RUMS() {
               <div className="aero-brand">
                 <div className="r-badge">R</div>
                 {siteConfig.brandName}
-                <button type="button" className="header-space-chip" onClick={openRumsChooser} title="Switch between RUMS 4 and RUMS 5">{isRums5 ? '5' : '4'}</button>
+                {renderRumsVersionSwitcher()}
               </div>
               {screen === 'feed' && <div className="aero-header-center">{renderFeedTabs()}</div>}
               <div className="aero-header-actions">
