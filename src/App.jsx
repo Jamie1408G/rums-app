@@ -184,6 +184,10 @@ export default function RUMS() {
   const locationTabsRef = useRef(null);
   const locationTabsDragRef = useRef(null);
   const [locationTabsDragging, setLocationTabsDragging] = useState(false);
+  const rumsVersionSwitchRef = useRef(null);
+  const rumsVersionDragRef = useRef(null);
+  const [rumsVersionDragging, setRumsVersionDragging] = useState(false);
+  const [rumsVersionDragTarget, setRumsVersionDragTarget] = useState(null);
   const activeStorageKeys = storageKeysForSpace(rumsSpace || 'rums4');
   const isRums5 = rumsSpace === 'rums5';
   const activeSpace = rumsSpace ? RUMS_SPACES[rumsSpace] : null;
@@ -250,6 +254,61 @@ export default function RUMS() {
     if (tabsRef.current?.hasPointerCapture(e.pointerId)) tabsRef.current.releasePointerCapture(e.pointerId);
     // A browser may synthesize a click on the starting button after a drag.
     setTimeout(() => { if (tabsDragRef.current === drag) tabsDragRef.current = null; }, 0);
+  }
+
+  function rumsVersionForPointer(clientX) {
+    const rect = rumsVersionSwitchRef.current?.getBoundingClientRect();
+    return rect && clientX >= rect.left + rect.width / 2 ? 'rums5' : 'rums4';
+  }
+
+  function updateRumsVersionDrag(clientX) {
+    const rect = rumsVersionSwitchRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const localX = Math.max(0, Math.min(rect.width, clientX - rect.left));
+    rumsVersionSwitchRef.current.style.setProperty('--version-pointer-x', `${localX}px`);
+    rumsVersionSwitchRef.current.style.setProperty('--version-reflection-x', `${localX}px`);
+    rumsVersionSwitchRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
+    setRumsVersionDragTarget(rumsVersionForPointer(clientX));
+  }
+
+  function handleRumsVersionPointerDown(e) {
+    if (spaceSwitchBusy) return;
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    rumsVersionDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    e.currentTarget.style.setProperty('--version-drag-direction', rumsSpace === 'rums5' ? '-1' : '1');
+  }
+
+  function handleRumsVersionPointerMove(e) {
+    const drag = rumsVersionDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId || spaceSwitchBusy) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) {
+      drag.moved = true;
+      setRumsVersionDragging(true);
+      setRumsVersionDragTarget(rumsSpace);
+    }
+    if (!drag.moved) return;
+    const direction = e.clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
+    rumsVersionSwitchRef.current?.style.setProperty('--version-tail-offset', `${direction * -12}px`);
+    rumsVersionSwitchRef.current?.style.setProperty('--version-drag-direction', `${direction}`);
+    drag.lastX = e.clientX;
+    updateRumsVersionDrag(e.clientX);
+  }
+
+  function handleRumsVersionPointerEnd(e) {
+    const drag = rumsVersionDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const wasDrag = drag.moved;
+    const target = e.type === 'pointercancel' ? rumsSpace : rumsVersionForPointer(e.clientX);
+    setRumsVersionDragging(false);
+    setRumsVersionDragTarget(null);
+    if (rumsVersionSwitchRef.current?.hasPointerCapture?.(e.pointerId)) rumsVersionSwitchRef.current.releasePointerCapture(e.pointerId);
+    if (wasDrag && e.type !== 'pointercancel' && target && target !== rumsSpace && !spaceSwitchBusy) {
+      void switchRumsSpace(target);
+    }
+    setTimeout(() => { if (rumsVersionDragRef.current === drag) rumsVersionDragRef.current = null; }, 0);
   }
 
   function luminaViewForPointer(clientX) {
@@ -1940,13 +1999,32 @@ export default function RUMS() {
   }
 
   function renderRumsVersionSwitcher() {
+    const visualVersion = rumsVersionDragging
+      ? (rumsVersionDragTarget || rumsSpace)
+      : (spaceSwitchBusy || rumsSpace);
     return (
-      <div className="universal-rums-switcher" role="group" aria-label="Switch between RUMS 4 and RUMS 5">
+      <div
+        ref={rumsVersionSwitchRef}
+        className={`universal-rums-switcher ${rumsVersionDragging ? 'is-dragging' : ''}`}
+        role="group"
+        aria-label="Switch between RUMS 4 and RUMS 5"
+        style={{ '--version-seg-translate': visualVersion === 'rums5' ? '100%' : '0%' }}
+        onPointerDown={handleRumsVersionPointerDown}
+        onPointerMove={handleRumsVersionPointerMove}
+        onPointerUp={handleRumsVersionPointerEnd}
+        onPointerCancel={handleRumsVersionPointerEnd}
+        onClickCapture={(e) => {
+          if (rumsVersionDragRef.current?.moved) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+      >
         <button
           type="button"
-          className={rumsSpace === 'rums4' ? 'active' : ''}
+          className={visualVersion === 'rums4' ? 'active' : ''}
           aria-pressed={rumsSpace === 'rums4'}
-          onClick={() => { if (rumsSpace !== 'rums4') switchRumsSpace('rums4'); }}
+          onClick={() => { if (rumsSpace !== 'rums4' && !spaceSwitchBusy) void switchRumsSpace('rums4'); }}
           disabled={Boolean(spaceSwitchBusy)}
           title="Open RUMS 4"
         >
@@ -1954,14 +2032,20 @@ export default function RUMS() {
         </button>
         <button
           type="button"
-          className={rumsSpace === 'rums5' ? 'active' : ''}
+          className={visualVersion === 'rums5' ? 'active' : ''}
           aria-pressed={rumsSpace === 'rums5'}
-          onClick={() => { if (rumsSpace !== 'rums5') switchRumsSpace('rums5'); }}
+          onClick={() => { if (rumsSpace !== 'rums5' && !spaceSwitchBusy) void switchRumsSpace('rums5'); }}
           disabled={Boolean(spaceSwitchBusy)}
           title="Open RUMS 5"
         >
           <span>RUMS</span><strong>{spaceSwitchBusy === 'rums5' ? <Loader2 size={12} className="spin" /> : '5'}</strong>
         </button>
+        <span className="drag-refraction version-drag-refraction" aria-hidden="true">
+          <span className="drag-refraction-content">
+            <span className={visualVersion === 'rums4' ? 'active' : ''}><span>RUMS</span><strong>4</strong></span>
+            <span className={visualVersion === 'rums5' ? 'active' : ''}><span>RUMS</span><strong>5</strong></span>
+          </span>
+        </span>
       </div>
     );
   }
