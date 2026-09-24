@@ -2752,233 +2752,241 @@ button,input,textarea { font:inherit; }
 .aero-root[data-theme="dark"] .lumina-project-glow span {background:#7fb2ff14!important;}
 .aero-root[data-theme="dark"] .chat-message-list {background:#11171e!important;}
 
-/* ========================================================================== */
-/* ROBLOX ERA FAMILY — researched year-specific RUMS Plaza skins             */
-/* ========================================================================== */
 
-/* Appearance: Roblox is a category, not one flat preset. */
-.theme-family-option {grid-column:1/-1;}
-.theme-family-chevron {flex:0 0 auto;transition:transform .16s ease;}
-.theme-family-chevron.open {transform:rotate(180deg);}
-.roblox-family-preview {background:#e5e5e5!important;}
-.roblox-family-preview span:nth-child(1) {background:#4e86b8!important;}
-.roblox-family-preview span:nth-child(2) {background:#fff!important;}
-.roblox-family-preview span:nth-child(3) {background:#e2231a!important;}
-.roblox-theme-family-panel {grid-column:1/-1;padding:12px;border:1px solid #dbe5f0;border-radius:16px;background:#f8fafdd9;box-shadow:inset 0 1px #fff,0 7px 20px #3a527014;}
-.roblox-theme-family-heading {display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 2px 10px;}
-.roblox-theme-family-heading strong {font-size:12px;color:#2f435a;}
-.roblox-theme-family-heading small {font-size:9px;color:#8391a2;text-align:right;}
-.roblox-theme-year-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
-.roblox-theme-year {position:relative;display:grid;grid-template-columns:auto 42px minmax(0,1fr) auto;align-items:center;gap:9px;min-width:0;padding:9px 10px;border:1px solid #dbe4ee;border-radius:12px;background:#fff;color:#31465e;text-align:left;cursor:pointer;box-shadow:0 3px 10px #3345630c;}
-.roblox-theme-year:hover {border-color:#afc8e4;background:#fbfdff;}
-.roblox-theme-year.active {border-color:#4f98d0;box-shadow:0 0 0 2px #4f98d01c;}
-.roblox-year-number {min-width:36px;font-size:15px;font-weight:900;letter-spacing:-.04em;color:#406281;}
-.roblox-year-swatch {display:flex;width:42px;height:28px;padding:3px;gap:2px;border:1px solid #d4dce5;border-radius:7px;background:#edf1f5;overflow:hidden;}
-.roblox-year-swatch span {flex:1;border-radius:3px;}
-.roblox-year-copy {display:block;min-width:0;}
-.roblox-year-copy strong,.roblox-year-copy small {display:block;}
-.roblox-year-copy strong {font-size:10.5px;line-height:1.2;}
-.roblox-year-copy small {margin-top:2px;color:#7e8c9d;font-size:8px;line-height:1.3;}
-.roblox-year-check {color:#3478f6;}
-@media(max-width:720px){.roblox-theme-year-grid{grid-template-columns:1fr}.roblox-theme-family-heading{align-items:flex-start;flex-direction:column;gap:3px}.roblox-theme-family-heading small{text-align:left}}
-
-/* All Roblox years share the historical web-site geometry instead of glass. */
-.aero-root[data-theme^="roblox"] {
-  --site-accent:var(--rbx-accent)!important;
-  --theme-surface:var(--rbx-card);
-  --theme-surface-2:var(--rbx-card-2);
-  --theme-surface-3:var(--rbx-field);
-  --theme-border:var(--rbx-border);
-  --theme-text:var(--rbx-text);
-  --theme-muted:var(--rbx-muted);
-  --theme-accent:var(--rbx-accent);
-  --theme-accent-soft:var(--rbx-accent-soft);
-  --theme-accent-text:var(--rbx-accent-text);
-  --theme-danger:#d84a4a;
-  --theme-focus:var(--rbx-accent);
-  --theme-radius:var(--rbx-radius);
-  --theme-radius-sm:var(--rbx-radius-sm);
-  --theme-shadow:var(--rbx-shadow);
-  --theme-soft-shadow:var(--rbx-soft-shadow);
-  background:var(--rbx-page)!important;
-  color:var(--rbx-text)!important;
-  font-family:Arial,"Helvetica Neue",Helvetica,sans-serif!important;
+/* ================================================================
+   EARLY FRUTIGER AERO — 2002–2006
+   Transitional Aqua / XP Royale / Longhorn / early Web 2.0.
+   This final block intentionally overrides the later, greener FA pass.
+   ================================================================ */
+.aero-root[data-theme="frutiger"] {
+  --theme-surface:#f7fbff;
+  --theme-surface-2:#e8f4fb;
+  --theme-surface-3:#d7e9f4;
+  --theme-border:#9fc6de;
+  --theme-text:#173b58;
+  --theme-muted:#607d93;
+  --theme-accent:#168fd0;
+  --theme-accent-soft:#d8f2ff;
+  --theme-accent-text:#fff;
+  --theme-danger:#d64f63;
+  --theme-focus:#31a9e6;
+  --theme-radius:14px;
+  --theme-radius-sm:9px;
+  --theme-shadow:0 8px 22px #2c66842b, inset 0 1px #fff;
+  --theme-soft-shadow:0 4px 12px #2c66841f, inset 0 1px #fff;
+  --site-accent:#168fd0!important;
+  font-family:"Lucida Grande","Trebuchet MS","Segoe UI",Arial,sans-serif!important;
+  color:#173b58!important;
+  background:
+    radial-gradient(circle at 78% 6%,#ffffffee 0 3.5%,#ffffff6b 4%,transparent 15%),
+    radial-gradient(circle at 12% 92%,#8eeaef5c 0 9%,transparent 26%),
+    linear-gradient(180deg,#74c8f4 0%,#c9efff 40%,#eef8fd 72%,#dbeaf3 100%)!important;
   text-shadow:none!important;
 }
-.aero-root[data-theme^="roblox"] .aero-frame {background:var(--rbx-frame)!important;border:var(--rbx-frame-border)!important;border-radius:var(--rbx-frame-radius)!important;box-shadow:var(--rbx-frame-shadow)!important;}
-.aero-root[data-theme^="roblox"] .desktop-rail {background:var(--rbx-rail)!important;border-color:var(--rbx-rail-border)!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
-.aero-root[data-theme^="roblox"] .aero-header {background:var(--rbx-header)!important;border-color:var(--rbx-header-border)!important;border-radius:0!important;box-shadow:var(--rbx-header-shadow)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;color:var(--rbx-header-text)!important;}
-.aero-root[data-theme^="roblox"] .aero-header :is(button,.icon-btn,.pill,.aero-brand,.header-username) {color:var(--rbx-header-text)!important;}
-.aero-root[data-theme^="roblox"] :is(.post-card,.suggestion-card,.update-card,.user-row,.admin-post-row,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.site-editor,.profile-section,.community-hero,.modal-card,.chat-sidebar,.chat-conversation,.updates-composer,.visual-edit-toolbar,.auth-wrap,.space-choice-card) {
-  background:var(--rbx-card)!important;border:var(--rbx-card-border-width) solid var(--rbx-border)!important;border-radius:var(--rbx-radius)!important;color:var(--rbx-text)!important;box-shadow:var(--rbx-shadow)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
-}
-.aero-root[data-theme^="roblox"] :is(.rail-link,.rail-create,.aero-btn,.icon-btn,.pill,.tag-chip,.tab-btn,.admin-toggle,.theme-option,.reaction-chip,.reaction-add,.chat-thread-button,.chat-attach-button,.chat-send-button,.editor-actions button,.editor-toggles button,.built-in-box-handle,.widget-drag-handle) {border-radius:var(--rbx-radius-sm)!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
-.aero-root[data-theme^="roblox"] .rail-link {color:var(--rbx-rail-text)!important;border:1px solid transparent!important;}
-.aero-root[data-theme^="roblox"] .rail-link:hover {background:var(--rbx-hover)!important;border-color:var(--rbx-border)!important;}
-.aero-root[data-theme^="roblox"] .rail-link.selected {background:var(--rbx-selected)!important;border-color:var(--rbx-selected-border)!important;color:var(--rbx-selected-text)!important;box-shadow:var(--rbx-selected-shadow)!important;}
-.aero-root[data-theme^="roblox"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:var(--rbx-button)!important;border:1px solid var(--rbx-button-border)!important;color:var(--rbx-button-text)!important;box-shadow:var(--rbx-button-shadow)!important;}
-.aero-root[data-theme^="roblox"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button):hover {filter:brightness(.96);}
-.aero-root[data-theme^="roblox"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input,.reaction-picker-search input,.custom-emoji-name-input,.editor-grid input,.editor-grid textarea,.editor-grid select,.editor-add-row input,.username-edit-row input,.tag-select,.custom-emoji-create input) {background:var(--rbx-field)!important;border:1px solid var(--rbx-field-border)!important;border-radius:var(--rbx-field-radius)!important;color:var(--rbx-text)!important;box-shadow:var(--rbx-field-shadow)!important;}
-.aero-root[data-theme^="roblox"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:var(--rbx-control)!important;border:1px solid var(--rbx-control-border)!important;border-radius:var(--rbx-control-radius)!important;box-shadow:var(--rbx-control-shadow)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
-.aero-root[data-theme^="roblox"] .feed-tabs::before,
-.aero-root[data-theme^="roblox"] .lumina-view-switch::before,
-.aero-root[data-theme^="roblox"] .upload-wrap .location-tabs::before {background:var(--rbx-control-active)!important;border:1px solid var(--rbx-control-active-border)!important;border-radius:var(--rbx-control-active-radius)!important;box-shadow:var(--rbx-control-active-shadow)!important;filter:none!important;}
-.aero-root[data-theme^="roblox"] .universal-rums-switcher button.active,
-.aero-root[data-theme^="roblox"] .universal-rums-switcher.is-dragging::before {background:var(--rbx-control-active)!important;border-color:var(--rbx-control-active-border)!important;border-radius:var(--rbx-control-active-radius)!important;box-shadow:var(--rbx-control-active-shadow)!important;color:var(--rbx-control-active-text)!important;}
-.aero-root[data-theme^="roblox"] :is(.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:var(--rbx-selected)!important;border-color:var(--rbx-selected-border)!important;color:var(--rbx-selected-text)!important;box-shadow:none!important;}
-.aero-root[data-theme^="roblox"] :is(.post-caption,.suggestion-card p,.update-card p,.hero-copy p,.appearance-heading p,.switch-line,.post-time,.chat-thread-copy small,.chat-conversation-identity small,.chat-message-meta span) {color:var(--rbx-muted)!important;}
-.aero-root[data-theme^="roblox"] :is(.section-heading h2,.hero-copy h1,.auth-title,.field-label,.chat-thread-copy strong,.chat-conversation-identity strong,.chat-message-meta button) {color:var(--rbx-text)!important;text-shadow:none!important;}
-.aero-root[data-theme^="roblox"] .community-hero {background:var(--rbx-hero)!important;}
-.aero-root[data-theme^="roblox"] .rail-orb,.aero-root[data-theme^="roblox"] .r-badge,.aero-root[data-theme^="roblox"] .auth-logo {background:var(--rbx-logo-chip)!important;border:1px solid var(--rbx-logo-border)!important;border-radius:var(--rbx-logo-radius)!important;box-shadow:var(--rbx-logo-shadow)!important;color:var(--rbx-logo-text)!important;}
-.aero-root[data-theme^="roblox"] .chat-message-list {background:var(--rbx-chat-bg)!important;}
-.aero-root[data-theme^="roblox"] .chat-message-bubble {background:var(--rbx-card)!important;border-color:var(--rbx-border)!important;border-radius:var(--rbx-chat-radius)!important;color:var(--rbx-text)!important;box-shadow:var(--rbx-soft-shadow)!important;}
-.aero-root[data-theme^="roblox"] .chat-message.own .chat-message-bubble {background:var(--rbx-chat-own)!important;border-color:var(--rbx-chat-own-border)!important;color:var(--rbx-chat-own-text)!important;}
-.aero-root[data-theme^="roblox"] .chat-conversation-header,.aero-root[data-theme^="roblox"] .chat-composer {background:var(--rbx-card-2)!important;border-color:var(--rbx-border)!important;}
-.aero-root[data-theme^="roblox"] .bottom-nav {background:var(--rbx-mobile-nav)!important;border-color:var(--rbx-mobile-nav-border)!important;border-radius:var(--rbx-radius-sm)!important;box-shadow:var(--rbx-mobile-nav-shadow)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
-.aero-root[data-theme^="roblox"] .nav-btn {color:var(--rbx-mobile-muted)!important;}
-.aero-root[data-theme^="roblox"] .nav-btn.active {color:var(--rbx-mobile-active)!important;}
-.aero-root[data-theme^="roblox"] :is(.reaction-picker,.emoji-picker,.mention-dropdown,.custom-emoji-create,.custom-emoji-admin-item,.chat-image-preview,.lumina-project-stats div,.lumina-intro-card,.lumina-principles article,.lumina-metro-panel,.lumina-station-detail,.lumina-share-card,.lumina-gallery-empty) {background:var(--rbx-card)!important;border-color:var(--rbx-border)!important;border-radius:var(--rbx-radius)!important;color:var(--rbx-text)!important;box-shadow:var(--rbx-shadow)!important;}
-.aero-root[data-theme^="roblox"] :is(.reaction-chip,.reaction-add,.chat-attach-button,.chat-live-pill,.chat-user-search,.lumina-service-facts>span,.lumina-station,.lumina-station span,.station-number,.lumina-gallery button>span) {background:var(--rbx-card-2)!important;border-color:var(--rbx-border)!important;border-radius:var(--rbx-radius-sm)!important;color:var(--rbx-text)!important;box-shadow:none!important;}
-.aero-root[data-theme^="roblox"] .lumina-project-hero {background:var(--rbx-hero)!important;border-color:var(--rbx-border)!important;border-radius:var(--rbx-radius)!important;box-shadow:var(--rbx-shadow)!important;}
-.aero-root[data-theme^="roblox"] .lumina-project-hero::after,.aero-root[data-theme^="roblox"] .lumina-project-glow {display:none!important;}
-.aero-root[data-theme^="roblox"] .lumina-station.active {background:var(--rbx-accent-soft)!important;border-color:var(--rbx-accent)!important;color:var(--rbx-accent)!important;}
-.aero-root[data-theme^="roblox"] .lumina-view-switch::before {background:var(--rbx-control-active)!important;border-color:var(--rbx-control-active-border)!important;}
-.aero-root[data-theme^="roblox"] :is(button,a,input,textarea,select,[tabindex]):focus-visible {outline:0!important;box-shadow:0 0 0 2px var(--rbx-focus-inner),0 0 0 4px var(--rbx-accent)!important;}
-.aero-root[data-theme^="roblox"] :is(.feed-tabs,.lumina-view-switch,.location-tabs,.universal-rums-switcher) button:focus-visible {box-shadow:none!important;}
-.aero-root[data-theme^="roblox"] .theme-option.active,.aero-root[data-theme^="roblox"] .roblox-theme-year.active {border-color:var(--rbx-accent)!important;background:var(--rbx-accent-soft)!important;box-shadow:inset 3px 0 var(--rbx-accent)!important;}
 
-/* 2008 — fixed-width portal / Virtual Playworld era. */
-.aero-root[data-theme="roblox2008"] {
-  --rbx-page:#d6e5f3;--rbx-frame:#fff;--rbx-frame-border:1px solid #7d96ad;--rbx-frame-radius:0;--rbx-frame-shadow:0 2px 8px #4d698033;
-  --rbx-header:linear-gradient(#ffffff,#eef4f8);--rbx-header-border:#4b7fa8;--rbx-header-shadow:inset 0 -5px #4b7fa8;--rbx-header-text:#244b70;
-  --rbx-rail:#e8f0f7;--rbx-rail-border:#879fb5;--rbx-rail-text:#244b70;
-  --rbx-card:#fff;--rbx-card-2:#eef4f9;--rbx-field:#fff;--rbx-border:#8ba0b4;--rbx-card-border-width:1px;
-  --rbx-text:#1f3447;--rbx-muted:#65798a;--rbx-accent:#356f9f;--rbx-accent-soft:#e0edf7;--rbx-accent-text:#fff;
-  --rbx-radius:0px;--rbx-radius-sm:0px;--rbx-shadow:0 1px 0 #fff,0 2px 4px #36566f1d;--rbx-soft-shadow:none;
-  --rbx-hover:#dceaf5;--rbx-selected:#cbdfee;--rbx-selected-border:#6688a5;--rbx-selected-text:#173e63;--rbx-selected-shadow:inset 3px 0 #356f9f;
-  --rbx-button:linear-gradient(#ffdd5c,#f2b91f);--rbx-button-border:#a57705;--rbx-button-text:#362900;--rbx-button-shadow:inset 0 1px #fff3a8;
-  --rbx-field-border:#7f94a8;--rbx-field-radius:0px;--rbx-field-shadow:inset 1px 1px 2px #0002;
-  --rbx-control:#d6e5f1;--rbx-control-border:#6e8eaa;--rbx-control-radius:0px;--rbx-control-shadow:inset 0 1px #fff;
-  --rbx-control-active:#4b80aa;--rbx-control-active-border:#315d80;--rbx-control-active-radius:0px;--rbx-control-active-shadow:inset 0 1px #79a6c8;--rbx-control-active-text:#fff;
-  --rbx-hero:linear-gradient(180deg,#fff,#edf4f9);--rbx-logo-chip:#d92323;--rbx-logo-border:#8d1111;--rbx-logo-radius:0px;--rbx-logo-shadow:inset 0 1px #ff7272;--rbx-logo-text:#fff;
-  --rbx-chat-bg:#e9f1f7;--rbx-chat-radius:0px;--rbx-chat-own:#4b80aa;--rbx-chat-own-border:#315d80;--rbx-chat-own-text:#fff;
-  --rbx-mobile-nav:#4a7da7;--rbx-mobile-nav-border:#315d80;--rbx-mobile-nav-shadow:none;--rbx-mobile-muted:#dbeaf6;--rbx-mobile-active:#fff;--rbx-focus-inner:#fff;
-}
-.aero-root[data-theme="roblox2008"] .aero-header {border-bottom-width:5px!important;}
-.aero-root[data-theme="roblox2008"] :is(.section-heading,.admin-section-title,.chat-sidebar-label,.field-label) {font-family:Tahoma,Arial,sans-serif!important;font-weight:700!important;}
-.aero-root[data-theme="roblox2008"] :is(.post-card,.suggestion-card,.update-card,.custom-site-widget,.lumina-intro-card,.lumina-metro-panel,.chat-sidebar,.chat-conversation) {outline:1px solid #d8e3ec;outline-offset:-3px;}
-
-/* 2010 — sky header, blue tab strip, framed dashboard modules. */
-.aero-root[data-theme="roblox2010"] {
-  --rbx-page:linear-gradient(180deg,#bfe2fb 0,#eef7fd 210px,#dfeaf2 100%);--rbx-frame:#f8fbfd;--rbx-frame-border:1px solid #7da0bd;--rbx-frame-radius:0;--rbx-frame-shadow:0 3px 12px #456a8433;
-  --rbx-header:linear-gradient(180deg,#d8efff,#a9d5f4);--rbx-header-border:#4f86b2;--rbx-header-shadow:inset 0 -4px #4f86b2;--rbx-header-text:#214d73;
-  --rbx-rail:#e6f0f8;--rbx-rail-border:#7fa0bb;--rbx-rail-text:#24557d;
-  --rbx-card:#fff;--rbx-card-2:#edf5fa;--rbx-field:#fff;--rbx-border:#6f94b3;--rbx-card-border-width:1px;
-  --rbx-text:#253c4f;--rbx-muted:#698091;--rbx-accent:#4e86b8;--rbx-accent-soft:#dcebf7;--rbx-accent-text:#fff;
-  --rbx-radius:1px;--rbx-radius-sm:1px;--rbx-shadow:0 1px 3px #335f7e24;--rbx-soft-shadow:0 1px 2px #335f7e18;
-  --rbx-hover:#dbeaf5;--rbx-selected:#cfe4f3;--rbx-selected-border:#668dac;--rbx-selected-text:#1f527d;--rbx-selected-shadow:inset 3px 0 #4e86b8;
-  --rbx-button:linear-gradient(#78ba36,#4f9c1d);--rbx-button-border:#3c7818;--rbx-button-text:#fff;--rbx-button-shadow:inset 0 1px #a7dd74;
-  --rbx-field-border:#83a0b6;--rbx-field-radius:0px;--rbx-field-shadow:inset 1px 1px 2px #0002;
-  --rbx-control:linear-gradient(#6fa0c6,#4e83ad);--rbx-control-border:#365f80;--rbx-control-radius:0px;--rbx-control-shadow:inset 0 1px #9fc3df;
-  --rbx-control-active:linear-gradient(#fff,#dcebf6);--rbx-control-active-border:#365f80;--rbx-control-active-radius:0px;--rbx-control-active-shadow:none;--rbx-control-active-text:#24557d;
-  --rbx-hero:linear-gradient(180deg,#fff,#edf5fa);--rbx-logo-chip:#e52424;--rbx-logo-border:#9c1212;--rbx-logo-radius:1px;--rbx-logo-shadow:inset 0 1px #ff8585;--rbx-logo-text:#fff;
-  --rbx-chat-bg:#eaf3f9;--rbx-chat-radius:1px;--rbx-chat-own:#4e86b8;--rbx-chat-own-border:#37688f;--rbx-chat-own-text:#fff;
-  --rbx-mobile-nav:#4d82aa;--rbx-mobile-nav-border:#315c7d;--rbx-mobile-nav-shadow:inset 0 1px #7faacb;--rbx-mobile-muted:#e1edf6;--rbx-mobile-active:#fff;--rbx-focus-inner:#fff;
-}
-.aero-root[data-theme="roblox2010"] .aero-header::after {content:"";position:absolute;right:12%;top:7px;width:42px;height:42px;border-radius:50%;background:#ffd23c99;box-shadow:0 0 22px #fff38b88;pointer-events:none;}
-.aero-root[data-theme="roblox2010"] :is(.section-heading,.admin-section-title,.chat-sidebar-label) {padding:5px 7px;background:linear-gradient(#6f9fc4,#4d82ab)!important;color:#fff!important;border:1px solid #3e6f95!important;}
-
-/* 2014 — sidebar + global search redesign, flat blue navigation. */
-.aero-root[data-theme="roblox2014"] {
-  --rbx-page:#f0f0f0;--rbx-frame:#fff;--rbx-frame-border:0 solid transparent;--rbx-frame-radius:0;--rbx-frame-shadow:0 2px 8px #0002;
-  --rbx-header:#2f6ea5;--rbx-header-border:#23537d;--rbx-header-shadow:0 1px 3px #0003;--rbx-header-text:#fff;
-  --rbx-rail:#e3e5e8;--rbx-rail-border:#c6c9cd;--rbx-rail-text:#4b555f;
-  --rbx-card:#fff;--rbx-card-2:#f4f4f4;--rbx-field:#fff;--rbx-border:#d3d3d3;--rbx-card-border-width:1px;
-  --rbx-text:#3c3c3c;--rbx-muted:#7b7b7b;--rbx-accent:#2f6ea5;--rbx-accent-soft:#e7f0f7;--rbx-accent-text:#fff;
-  --rbx-radius:0px;--rbx-radius-sm:2px;--rbx-shadow:none;--rbx-soft-shadow:none;
-  --rbx-hover:#d7dade;--rbx-selected:#fff;--rbx-selected-border:#c0c5ca;--rbx-selected-text:#2f6ea5;--rbx-selected-shadow:inset 3px 0 #2f6ea5;
-  --rbx-button:#2f78b5;--rbx-button-border:#285f8d;--rbx-button-text:#fff;--rbx-button-shadow:none;
-  --rbx-field-border:#b7bcc1;--rbx-field-radius:2px;--rbx-field-shadow:inset 0 1px 2px #0001;
-  --rbx-control:#e5e5e5;--rbx-control-border:#bfc4c8;--rbx-control-radius:2px;--rbx-control-shadow:none;
-  --rbx-control-active:#fff;--rbx-control-active-border:#9faab2;--rbx-control-active-radius:1px;--rbx-control-active-shadow:none;--rbx-control-active-text:#2f6ea5;
-  --rbx-hero:#fff;--rbx-logo-chip:#e2231a;--rbx-logo-border:#b91a14;--rbx-logo-radius:1px;--rbx-logo-shadow:none;--rbx-logo-text:#fff;
-  --rbx-chat-bg:#f1f1f1;--rbx-chat-radius:2px;--rbx-chat-own:#2f78b5;--rbx-chat-own-border:#285f8d;--rbx-chat-own-text:#fff;
-  --rbx-mobile-nav:#2f6ea5;--rbx-mobile-nav-border:#23537d;--rbx-mobile-nav-shadow:none;--rbx-mobile-muted:#d7e6f3;--rbx-mobile-active:#fff;--rbx-focus-inner:#fff;
-}
-.aero-root[data-theme="roblox2014"] .desktop-rail {padding-top:8px!important;}
-.aero-root[data-theme="roblox2014"] .rail-link {border-radius:0!important;}
-.aero-root[data-theme="roblox2014"] .community-hero {border-left:0!important;border-right:0!important;}
-
-/* 2016 — logged-in mid-2016 grey dashboard and cyan-blue actions. */
-.aero-root[data-theme="roblox2016"] {
-  --rbx-page:#e3e3e3;--rbx-frame:#eee;--rbx-frame-border:0 solid transparent;--rbx-frame-radius:0;--rbx-frame-shadow:0 2px 8px #0002;
-  --rbx-header:#0074bd;--rbx-header-border:#00639f;--rbx-header-shadow:0 1px 3px #0003;--rbx-header-text:#fff;
-  --rbx-rail:#f3f3f3;--rbx-rail-border:#c9c9c9;--rbx-rail-text:#555;
-  --rbx-card:#fff;--rbx-card-2:#f4f4f4;--rbx-field:#fff;--rbx-border:#c9c9c9;--rbx-card-border-width:1px;
-  --rbx-text:#333;--rbx-muted:#777;--rbx-accent:#00a2ff;--rbx-accent-soft:#eaf7fe;--rbx-accent-text:#fff;
-  --rbx-radius:2px;--rbx-radius-sm:2px;--rbx-shadow:0 1px 2px #00000018;--rbx-soft-shadow:none;
-  --rbx-hover:#e5e5e5;--rbx-selected:#fff;--rbx-selected-border:#bdbdbd;--rbx-selected-text:#0074bd;--rbx-selected-shadow:inset 3px 0 #00a2ff;
-  --rbx-button:#00a2ff;--rbx-button-border:#008bd9;--rbx-button-text:#fff;--rbx-button-shadow:none;
-  --rbx-field-border:#b8b8b8;--rbx-field-radius:2px;--rbx-field-shadow:inset 0 1px 2px #00000012;
-  --rbx-control:#e5e5e5;--rbx-control-border:#bbb;--rbx-control-radius:2px;--rbx-control-shadow:inset 0 1px #fff;
-  --rbx-control-active:#fff;--rbx-control-active-border:#aaa;--rbx-control-active-radius:2px;--rbx-control-active-shadow:none;--rbx-control-active-text:#0074bd;
-  --rbx-hero:#fff;--rbx-logo-chip:#e2231a;--rbx-logo-border:#b91a14;--rbx-logo-radius:2px;--rbx-logo-shadow:none;--rbx-logo-text:#fff;
-  --rbx-chat-bg:#eee;--rbx-chat-radius:2px 8px 8px 8px;--rbx-chat-own:#00a2ff;--rbx-chat-own-border:#008bd9;--rbx-chat-own-text:#fff;
-  --rbx-mobile-nav:#0074bdf5;--rbx-mobile-nav-border:#00639f;--rbx-mobile-nav-shadow:0 2px 8px #0003;--rbx-mobile-muted:#d5ecfb;--rbx-mobile-active:#fff;--rbx-focus-inner:#fff;
+.aero-root[data-theme="frutiger"] .aero-frame {
+  background:linear-gradient(180deg,#f9fcffeb,#e7f2f8e8)!important;
+  border:1px solid #b9d6e7!important;
+  box-shadow:0 20px 52px #285f7b35,inset 0 1px #fff!important;
+  backdrop-filter:blur(10px) saturate(1.1)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.1)!important;
 }
 
-/* 2017 — post-rebrand blue site with cleaner grid cards. */
-.aero-root[data-theme="roblox2017"] {
-  --rbx-page:#e7e7e7;--rbx-frame:#f2f2f2;--rbx-frame-border:0 solid transparent;--rbx-frame-radius:0;--rbx-frame-shadow:0 2px 8px #0002;
-  --rbx-header:#0074bd;--rbx-header-border:#00639f;--rbx-header-shadow:0 1px 3px #0003;--rbx-header-text:#fff;
-  --rbx-rail:#f5f5f5;--rbx-rail-border:#d0d0d0;--rbx-rail-text:#555;
-  --rbx-card:#fff;--rbx-card-2:#f7f7f7;--rbx-field:#fff;--rbx-border:#d2d2d2;--rbx-card-border-width:1px;
-  --rbx-text:#2f2f2f;--rbx-muted:#777;--rbx-accent:#0074bd;--rbx-accent-soft:#e7f3fa;--rbx-accent-text:#fff;
-  --rbx-radius:2px;--rbx-radius-sm:2px;--rbx-shadow:0 1px 2px #0002;--rbx-soft-shadow:none;
-  --rbx-hover:#e8e8e8;--rbx-selected:#fff;--rbx-selected-border:#bbb;--rbx-selected-text:#0074bd;--rbx-selected-shadow:inset 3px 0 #0074bd;
-  --rbx-button:#00a2ff;--rbx-button-border:#008bd9;--rbx-button-text:#fff;--rbx-button-shadow:none;
-  --rbx-field-border:#bcbcbc;--rbx-field-radius:2px;--rbx-field-shadow:none;
-  --rbx-control:#dedede;--rbx-control-border:#b9b9b9;--rbx-control-radius:2px;--rbx-control-shadow:none;
-  --rbx-control-active:#fff;--rbx-control-active-border:#aaa;--rbx-control-active-radius:2px;--rbx-control-active-shadow:none;--rbx-control-active-text:#0074bd;
-  --rbx-hero:#fff;--rbx-logo-chip:#e2231a;--rbx-logo-border:#c21c15;--rbx-logo-radius:2px;--rbx-logo-shadow:none;--rbx-logo-text:#fff;
-  --rbx-chat-bg:#efefef;--rbx-chat-radius:2px 9px 9px 9px;--rbx-chat-own:#0074bd;--rbx-chat-own-border:#0067a7;--rbx-chat-own-text:#fff;
-  --rbx-mobile-nav:#0074bdf5;--rbx-mobile-nav-border:#00639f;--rbx-mobile-nav-shadow:0 2px 8px #0003;--rbx-mobile-muted:#d9eefb;--rbx-mobile-active:#fff;--rbx-focus-inner:#fff;
+.aero-root[data-theme="frutiger"] .desktop-rail,
+.aero-root[data-theme="frutiger"] .aero-header,
+.aero-root[data-theme="frutiger"] .bottom-nav {
+  background:linear-gradient(180deg,#eef9fffa 0%,#cfe8f6f4 48%,#b9d9ecf4 49%,#e4f2faf4 100%)!important;
+  border-color:#8eb9d3!important;
+  box-shadow:inset 0 1px #fff,inset 0 -1px #7daecb66,0 4px 14px #295e7826!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
 }
-.aero-root[data-theme="roblox2017"] :is(.post-card,.suggestion-card,.update-card,.custom-site-widget) {box-shadow:0 1px 2px #0000001c!important;}
-.aero-root[data-theme="roblox2017"] .rail-orb,.aero-root[data-theme="roblox2017"] .r-badge,.aero-root[data-theme="roblox2017"] .auth-logo {font-weight:900!important;}
 
-/* 2020 — late-2019/2020 modern light web UI. */
-.aero-root[data-theme="roblox2020"] {
-  --rbx-page:#f2f4f5;--rbx-frame:#f2f4f5;--rbx-frame-border:0 solid transparent;--rbx-frame-radius:0;--rbx-frame-shadow:none;
-  --rbx-header:#fff;--rbx-header-border:#d8dadd;--rbx-header-shadow:0 1px 2px #00000012;--rbx-header-text:#232527;
-  --rbx-rail:#fff;--rbx-rail-border:#dfe1e3;--rbx-rail-text:#393b3d;
-  --rbx-card:#fff;--rbx-card-2:#f7f7f8;--rbx-field:#fff;--rbx-border:#dfe1e3;--rbx-card-border-width:1px;
-  --rbx-text:#232527;--rbx-muted:#6b6f74;--rbx-accent:#00b06f;--rbx-accent-soft:#e7f7f0;--rbx-accent-text:#fff;
-  --rbx-radius:8px;--rbx-radius-sm:6px;--rbx-shadow:0 1px 3px #00000012;--rbx-soft-shadow:0 1px 2px #0000000d;
-  --rbx-hover:#f0f1f2;--rbx-selected:#f2f4f5;--rbx-selected-border:#d6d8da;--rbx-selected-text:#232527;--rbx-selected-shadow:inset 3px 0 #393b3d;
-  --rbx-button:#00b06f;--rbx-button-border:#009c63;--rbx-button-text:#fff;--rbx-button-shadow:none;
-  --rbx-field-border:#c8cbce;--rbx-field-radius:6px;--rbx-field-shadow:none;
-  --rbx-control:#fff;--rbx-control-border:#cfd2d4;--rbx-control-radius:7px;--rbx-control-shadow:none;
-  --rbx-control-active:#393b3d;--rbx-control-active-border:#393b3d;--rbx-control-active-radius:6px;--rbx-control-active-shadow:none;--rbx-control-active-text:#fff;
-  --rbx-hero:#fff;--rbx-logo-chip:#393b3d;--rbx-logo-border:#232527;--rbx-logo-radius:5px;--rbx-logo-shadow:none;--rbx-logo-text:#fff;
-  --rbx-chat-bg:#f7f7f8;--rbx-chat-radius:7px;--rbx-chat-own:#393b3d;--rbx-chat-own-border:#232527;--rbx-chat-own-text:#fff;
-  --rbx-mobile-nav:#fff;--rbx-mobile-nav-border:#d7dadd;--rbx-mobile-nav-shadow:0 -1px 5px #0001;--rbx-mobile-muted:#6f7478;--rbx-mobile-active:#232527;--rbx-focus-inner:#fff;
+.aero-root[data-theme="frutiger"] :is(
+  .post-card,.suggestion-card,.update-card,.user-row,.admin-post-row,
+  .upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,
+  .custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,
+  .modal-card,.visual-edit-toolbar,.updates-composer,.reaction-picker,.mention-dropdown,
+  .custom-emoji-create,.custom-emoji-admin-item,.custom-emoji-empty,.chat-image-preview,
+  .editor-item,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card,
+  .lumina-station-detail,.lumina-principles article,.lumina-project-stats div,
+  .auth-wrap,.space-choice-card,.drop-zone,.comments-box,.preview-wrap,.profile-danger-zone
+) {
+  color:#173b58!important;
+  background:linear-gradient(180deg,#fffffffa 0%,#f8fcfffa 54%,#e9f3f9f6 100%)!important;
+  border:1px solid #a9ccdf!important;
+  border-radius:14px!important;
+  box-shadow:inset 0 1px #fff,0 5px 16px #2a62811f!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
 }
-.aero-root[data-theme="roblox2020"] :is(.post-card,.suggestion-card,.update-card,.custom-site-widget,.community-hero,.profile-section,.site-editor,.chat-sidebar,.chat-conversation) {border-color:#e1e3e5!important;box-shadow:none!important;}
-.aero-root[data-theme="roblox2020"] .rail-link.selected {background:#f2f4f5!important;color:#232527!important;box-shadow:inset 3px 0 #393b3d!important;}
-.aero-root[data-theme="roblox2020"] .feed-tabs::before,
-.aero-root[data-theme="roblox2020"] .lumina-view-switch::before,
-.aero-root[data-theme="roblox2020"] .upload-wrap .location-tabs::before {background:#393b3d!important;border-color:#393b3d!important;}
-.aero-root[data-theme="roblox2020"] :is(.feed-tabs button.active,.lumina-view-switch button.active,.location-tabs button.active) {color:#fff!important;}
 
-/* Make the Roblox family itself read correctly in Appearance under any active year. */
-.aero-root[data-theme^="roblox"] .roblox-theme-family-panel {border-color:var(--rbx-border)!important;border-radius:var(--rbx-radius)!important;background:var(--rbx-card-2)!important;box-shadow:var(--rbx-shadow)!important;}
-.aero-root[data-theme^="roblox"] .roblox-theme-family-heading strong,.aero-root[data-theme^="roblox"] .roblox-year-copy strong,.aero-root[data-theme^="roblox"] .roblox-year-number {color:var(--rbx-text)!important;}
-.aero-root[data-theme^="roblox"] .roblox-theme-family-heading small,.aero-root[data-theme^="roblox"] .roblox-year-copy small {color:var(--rbx-muted)!important;}
-.aero-root[data-theme^="roblox"] .roblox-theme-year {border-color:var(--rbx-border)!important;border-radius:var(--rbx-radius-sm)!important;background:var(--rbx-card)!important;color:var(--rbx-text)!important;box-shadow:var(--rbx-soft-shadow)!important;}
-.aero-root[data-theme^="roblox"] .roblox-theme-year.active {background:var(--rbx-accent-soft)!important;border-color:var(--rbx-accent)!important;}
-
-@media(max-width:760px){
-  .aero-root[data-theme^="roblox"] .aero-frame {border-radius:0!important;border-left:0!important;border-right:0!important;}
-  .aero-root[data-theme^="roblox"] .desktop-rail {border-right:0!important;}
+.aero-root[data-theme="frutiger"] .community-hero,
+.aero-root[data-theme="frutiger"] .lumina-project-hero,
+.aero-root[data-theme="frutiger"] .rums-space-chooser {
+  color:#173b58!important;
+  background:
+    radial-gradient(circle at 84% 18%,#ffffffd9 0 7%,transparent 18%),
+    linear-gradient(180deg,#fafdff 0%,#e4f5ff 56%,#c7e7f8 100%)!important;
+  border:1px solid #91bdd7!important;
+  border-radius:16px!important;
+  box-shadow:inset 0 1px #fff,0 8px 22px #2b628125!important;
 }
+.aero-root[data-theme="frutiger"] .community-hero::after,
+.aero-root[data-theme="frutiger"] .lumina-project-hero::after {
+  opacity:.12!important;
+  filter:saturate(.85)!important;
+}
+.aero-root[data-theme="frutiger"] .lumina-project-glow span {
+  display:block!important;
+  background:radial-gradient(circle,#d8fbffb5 0,#8edcf14a 42%,transparent 72%)!important;
+}
+
+/* Early-Aqua / Royale style controls */
+.aero-root[data-theme="frutiger"] :is(
+  .rail-create,.aero-btn,.hero-create,.chat-send-button,.lumina-hero-actions button,
+  .lumina-wide-action,.preview-action,.editor-actions button,.editor-add-row button
+) {
+  color:#fff!important;
+  background:linear-gradient(180deg,#64c7f0 0%,#2da9df 43%,#0b87c8 52%,#0876b6 100%)!important;
+  border:1px solid #0875ad!important;
+  border-radius:12px!important;
+  box-shadow:inset 0 1px #c9f5ff,inset 0 -1px #075f99,0 3px 8px #1c658733!important;
+  text-shadow:0 1px #07578099!important;
+}
+.aero-root[data-theme="frutiger"] :is(
+  .rail-create,.aero-btn,.hero-create,.chat-send-button,.lumina-hero-actions button,
+  .lumina-wide-action,.preview-action,.editor-actions button,.editor-add-row button
+):hover {
+  background:linear-gradient(180deg,#76d3f6 0%,#40b8e8 43%,#1597d1 52%,#0d82c0 100%)!important;
+}
+
+.aero-root[data-theme="frutiger"] :is(
+  .feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell,
+  .theme-option,.roblox-theme-year,.chat-thread-button,.reaction-chip,.reaction-add,
+  .chat-attach-button,.tag-pill,.selected-box-chip,.appearance-current-theme
+) {
+  color:#244b66!important;
+  background:linear-gradient(180deg,#ffffff 0%,#eff8fd 52%,#dcecf5 53%,#f7fbfe 100%)!important;
+  border:1px solid #9fc6de!important;
+  border-radius:11px!important;
+  box-shadow:inset 0 1px #fff,0 2px 6px #356d8b1d!important;
+}
+
+.aero-root[data-theme="frutiger"] .feed-tabs::before,
+.aero-root[data-theme="frutiger"] .lumina-view-switch::before,
+.aero-root[data-theme="frutiger"] .upload-wrap .location-tabs::before,
+.aero-root[data-theme="frutiger"] .universal-rums-switcher button.active,
+.aero-root[data-theme="frutiger"] .universal-rums-switcher.is-dragging::before {
+  background:linear-gradient(180deg,#74d2f4 0%,#39b8e8 43%,#1093d1 52%,#0879ba 100%)!important;
+  border:1px solid #0875ad!important;
+  border-radius:9px!important;
+  box-shadow:inset 0 1px #d7fbff,inset 0 -1px #06679e,0 2px 7px #1b6e9630!important;
+}
+.aero-root[data-theme="frutiger"] :is(.feed-tabs,.lumina-view-switch,.location-tabs) button.active,
+.aero-root[data-theme="frutiger"] .universal-rums-switcher button.active {color:#fff!important;text-shadow:0 1px #07578099!important;}
+
+/* Royale/early Web 2.0 green secondary accent */
+.aero-root[data-theme="frutiger"] :is(.admin-toggle.is-admin,.chat-live-pill,.page-new-indicator,.reaction-chip.reacted) {
+  color:#fff!important;
+  background:linear-gradient(180deg,#a7df68 0%,#76c640 45%,#4fa724 55%,#3e8c1b 100%)!important;
+  border:1px solid #4b941f!important;
+  box-shadow:inset 0 1px #e8ffc7,0 2px 6px #39731d2d!important;
+}
+
+.aero-root[data-theme="frutiger"] :is(
+  .aero-input,.caption-area,.search-bar,.comment-input-row input,
+  .chat-composer textarea,.chat-user-search input,.box-color-control input,
+  .box-animation-control select,.custom-emoji-create input,.custom-emoji-create select
+) {
+  color:#173b58!important;
+  background:linear-gradient(180deg,#ffffff 0%,#fbfdff 72%,#eef5f9 100%)!important;
+  border:1px solid #8fbad4!important;
+  border-radius:9px!important;
+  box-shadow:inset 0 1px 3px #47728d1b,0 1px #fff!important;
+}
+.aero-root[data-theme="frutiger"] :is(
+  .aero-input,.caption-area,.search-bar,.comment-input-row input,
+  .chat-composer textarea,.chat-user-search input
+):focus {
+  border-color:#2aa7df!important;
+  box-shadow:0 0 0 2px #b8e9ff,inset 0 1px 3px #47728d1b!important;
+}
+
+/* Chat: glossy but compact, like mid-2000s messenger/web UI. */
+.aero-root[data-theme="frutiger"] .chat-conversation-header,
+.aero-root[data-theme="frutiger"] .chat-composer {
+  background:linear-gradient(180deg,#fafdff 0%,#e6f2f9 100%)!important;
+  border-color:#a4c7dc!important;
+}
+.aero-root[data-theme="frutiger"] .chat-message-list {
+  background:linear-gradient(180deg,#edf7fc 0%,#f8fbfd 50%,#e4f0f6 100%)!important;
+}
+.aero-root[data-theme="frutiger"] .chat-message-bubble {
+  color:#173b58!important;
+  background:linear-gradient(180deg,#fff 0%,#f5fbff 62%,#e7f1f7 100%)!important;
+  border:1px solid #accbde!important;
+  border-radius:6px 13px 13px 13px!important;
+  box-shadow:inset 0 1px #fff,0 3px 8px #3568841c!important;
+}
+.aero-root[data-theme="frutiger"] .chat-message.own .chat-message-bubble {
+  color:#fff!important;
+  background:linear-gradient(180deg,#62c7ef 0%,#269fd7 48%,#0b82c0 52%,#076fa9 100%)!important;
+  border-color:#0873aa!important;
+  box-shadow:inset 0 1px #c6f5ff,0 3px 8px #1b60852b!important;
+}
+.aero-root[data-theme="frutiger"] .chat-image-preview,
+.aero-root[data-theme="frutiger"] .chat-message-image-button {
+  border-radius:10px!important;
+  border-color:#9fc6de!important;
+  box-shadow:inset 0 1px #fff,0 4px 12px #35688420!important;
+}
+
+/* Lumina: early Aero tech, not mature eco-Aero. */
+.aero-root[data-theme="frutiger"] .lumina-kicker,
+.aero-root[data-theme="frutiger"] .eyebrow {color:#147fae!important;letter-spacing:.12em!important;}
+.aero-root[data-theme="frutiger"] .lumina-principles article,
+.aero-root[data-theme="frutiger"] .lumina-project-stats div,
+.aero-root[data-theme="frutiger"] .lumina-station,
+.aero-root[data-theme="frutiger"] .lumina-fact-row span {
+  background:linear-gradient(180deg,#ffffff 0%,#eef8fd 62%,#ddebf4 100%)!important;
+  border:1px solid #a7c9dc!important;
+  border-radius:11px!important;
+  box-shadow:inset 0 1px #fff,0 3px 9px #2a66851c!important;
+}
+.aero-root[data-theme="frutiger"] .lumina-station.active {
+  color:#fff!important;
+  background:linear-gradient(180deg,#65c9ef 0%,#2aa7dc 48%,#0c86c3 52%,#0871ae 100%)!important;
+  border-color:#0871aa!important;
+}
+
+/* Editor / reactions / menus use same period-correct chrome. */
+.aero-root[data-theme="frutiger"] :is(
+  .visual-edit-toolbar,.reaction-picker,.mention-dropdown,.updates-composer,
+  .custom-emoji-create,.custom-emoji-admin-item,.emoji-picker,.emoji-picker-header,
+  .emoji-picker-categories,.selected-box-controls
+) {
+  background:linear-gradient(180deg,#fafdff 0%,#eaf4fa 100%)!important;
+  border-color:#9fc5dc!important;
+  box-shadow:inset 0 1px #fff,0 6px 16px #2d678521!important;
+}
+
+/* Avoid later-era giant rounded pills and square browser focus artifacts. */
+.aero-root[data-theme="frutiger"] :is(button,a,input,textarea,select,[tabindex]):focus-visible {
+  outline:none!important;
+  box-shadow:0 0 0 2px #f8fdff,0 0 0 4px #27a5df!important;
+}
+.aero-root[data-theme="frutiger"] :is(.theme-option.active,.roblox-theme-year.active) {
+  border-color:#249fd6!important;
+  background:linear-gradient(180deg,#ffffff,#e9f7ff)!important;
+  box-shadow:inset 0 1px #fff,0 0 0 2px #64c9f05c!important;
+}
+
+/* Theme preview itself should communicate 2002–2006 Aqua / Longhorn. */
+.theme-option-frutiger .theme-option-preview {
+  background:linear-gradient(180deg,#8ed8f7 0 44%,#d9f4ff 45% 70%,#7bc93e 71% 100%)!important;
+  border-color:#8fbfd8!important;
+}
+.theme-option-frutiger .theme-option-preview span:nth-child(1) {background:#ffffffd9!important;box-shadow:0 1px 3px #4b7a9440!important;}
+.theme-option-frutiger .theme-option-preview span:nth-child(2) {background:linear-gradient(180deg,#5fc5ee,#0d88c8)!important;}
+.theme-option-frutiger .theme-option-preview span:nth-child(3) {background:linear-gradient(180deg,#a7df68,#4fa724)!important;}
