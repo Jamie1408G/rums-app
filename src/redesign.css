@@ -86,6 +86,29 @@ button,input,textarea { font:inherit; }
   .aero-root .nav-icon-wrap {display:grid;place-items:center;}
   .aero-root .nav-badge-dot {top:-4px;right:-6px;border-color:#f8faff;}
 }
+
+/* One floating-island material for every formerly attached bar and surface. */
+.aero-root {--island-bg:linear-gradient(145deg,#ffffffe8,#edf5ffd8 62%,#edf9f3d0);--island-border:#ffffffe8;--island-shadow:inset 1px 1px 2px #fff,inset -2px -3px 7px #6388ab1c,0 12px 34px #294b7428;}
+.aero-root .aero-header,.aero-root .desktop-rail,.aero-root .feed-tabs,.aero-root .bottom-nav,.aero-root .auth-wrap,.aero-root .modal-card,.aero-root .mention-dropdown {border:1px solid var(--island-border);background:radial-gradient(110px 50px at 20% 0,#fff 0,transparent 76%),radial-gradient(90px 55px at 92% 100%,#8bd4b752 0,transparent 78%),var(--island-bg);box-shadow:var(--island-shadow);backdrop-filter:blur(30px) saturate(1.55);-webkit-backdrop-filter:blur(30px) saturate(1.55);}
+.aero-root .post-card,.aero-root .update-card,.aero-root .suggestion-card,.aero-root .user-row,.aero-root .admin-post-row,.aero-root .community-hero,.aero-root .upload-wrap,.aero-root .search-wrap,.aero-root .admin-wrap,.aero-root .profile-wrap,.aero-root .feed-empty,.aero-root .lumina-intro-card,.aero-root .lumina-metro-panel,.aero-root .lumina-share-card {border:1px solid var(--island-border);background-color:#ffffffcf;box-shadow:var(--island-shadow);backdrop-filter:blur(24px) saturate(1.35);-webkit-backdrop-filter:blur(24px) saturate(1.35);}
+.aero-root .post-card,.aero-root .update-card,.aero-root .suggestion-card {border-radius:24px;}.aero-root .community-hero,.aero-root .upload-wrap,.aero-root .search-wrap,.aero-root .admin-wrap,.aero-root .profile-wrap,.aero-root .feed-empty {border-radius:27px;}
+.aero-root .aero-input,.aero-root .caption-area,.aero-root .search-bar,.aero-root .comment-input-row input,.aero-root .drop-zone,.aero-root .tag-select {border:1px solid #fff;border-radius:17px;background-color:#ffffffa8;box-shadow:inset 1px 1px 2px #fff,0 5px 16px #385c8615;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);}
+.aero-root .pill,.aero-root .tag-chip,.aero-root .admin-toggle,.aero-root .modal-btn,.aero-root .lumina-service-facts>span {border:1px solid #fff;border-radius:999px;background-color:#ffffffb5;box-shadow:inset 1px 1px 2px #fff,0 4px 13px #385c8620;backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);}
+@media(min-width:901px) {
+  .aero-root .aero-header {align-self:start;height:52px;margin:10px 18px 0 6px;padding:10px 18px;border-radius:24px;}
+  .aero-root .content {padding-top:22px;}
+  .aero-root .feed-tabs {top:84px;right:38px;}
+}
+@media(max-width:900px) {
+  .aero-root .aero-header {align-self:start;height:50px;margin:7px 10px 0;padding:9px 14px;border-radius:22px;}
+  .aero-root .content {padding-top:61px;}
+  .aero-root .feed-tabs {top:73px;}
+}
+@media(max-width:600px) {
+  .aero-root .aero-header {margin-left:8px;margin-right:8px;border-radius:20px;}
+  .aero-root .post-card,.aero-root .update-card,.aero-root .suggestion-card {border-radius:21px;}
+  .aero-root .community-hero,.aero-root .upload-wrap,.aero-root .search-wrap,.aero-root .admin-wrap,.aero-root .profile-wrap,.aero-root .feed-empty {border-radius:23px;}
+}
 @media(max-width:600px) {
   .aero-root .content {padding-bottom:122px;}
   .aero-root .bottom-nav {height:65px;border-radius:23px;}
