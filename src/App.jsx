@@ -5,6 +5,7 @@ import {
   Heart, MessageCircle, LogOut, ShieldCheck, Shield, User as UserIcon,
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
   Lightbulb, Megaphone, Pencil,
+  GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff,
 } from 'lucide-react';
 
 const USERS_KEY = 'rums-users';
@@ -17,8 +18,13 @@ const DEFAULT_SITE_CONFIG = {
   brandName: 'RUMS', brandTagline: 'YOUR SERVER COMMUNITY', accent: '#3478f6', animations: true,
   heroTitle: 'Your world.', heroText: 'Builds, screenshots and moments from everyone on the server.',
   showDiscover: true, showLumina: true, showUpdates: true, showSuggestions: true,
-  customTabs: [], customWidgets: [],
+  customTabs: [], customWidgets: [], textOverrides: {},
 };
+const BUILT_IN_PAGES = [
+  ['feed', 'Community feed'], ['lumina', 'Project Lumina'], ['upload', 'Add post'],
+  ['suggestions', 'Suggestions'], ['updates', 'Server updates'], ['search', 'Discover'],
+  ['profile', 'Profiles'], ['postDetail', 'Post detail'],
+];
 const TAGS = ['General', 'Lumina'];
 const LUMINA_SECTIONS = [['overview', 'Overview'], ['metro', 'Districts'], ['community', 'Community']];
 const LUMINA_STATIONS = [
@@ -116,9 +122,10 @@ export default function RUMS() {
   const [siteConfig, setSiteConfig] = useState(DEFAULT_SITE_CONFIG);
   const [siteConfigBusy, setSiteConfigBusy] = useState(false);
   const [siteConfigStatus, setSiteConfigStatus] = useState('');
+  const [editMode, setEditMode] = useState(false);
   const [customPageId, setCustomPageId] = useState(null);
   const [tabDraft, setTabDraft] = useState('');
-  const [widgetDraft, setWidgetDraft] = useState({ title: '', body: '', image: '', actionLabel: '', actionUrl: '', placement: 'feed' });
+  const [widgetDraft, setWidgetDraft] = useState({ title: '', body: '', image: '', actionLabel: '', actionUrl: '', placement: 'feed', color: '#ffffff', animation: 'float' });
   const [viewedProfile, setViewedProfile] = useState(null); // username being viewed, or null = own profile
   const [viewingPostId, setViewingPostId] = useState(null);
   const [navStack, setNavStack] = useState([]);
@@ -563,11 +570,53 @@ export default function RUMS() {
     if (customPageId === id) { setCustomPageId(null); setScreen('feed'); }
   }
 
+  function renameCustomTab(id, label) {
+    const nextLabel = label.trim();
+    if (!nextLabel) return;
+    saveSiteConfig({ ...siteConfig, customTabs: siteConfig.customTabs.map((tab) => tab.id === id ? { ...tab, label: nextLabel } : tab) });
+  }
+
   function addCustomWidget() {
     if (!widgetDraft.title.trim() && !widgetDraft.body.trim() && !widgetDraft.image) return;
     const widget = { ...widgetDraft, actionUrl: safeExternalUrl(widgetDraft.actionUrl), id: `widget-${Date.now()}` };
     saveSiteConfig({ ...siteConfig, customWidgets: [...siteConfig.customWidgets, widget] });
-    setWidgetDraft({ title: '', body: '', image: '', actionLabel: '', actionUrl: '', placement: 'feed' });
+    setWidgetDraft({ title: '', body: '', image: '', actionLabel: '', actionUrl: '', placement: 'feed', color: '#ffffff', animation: 'float' });
+  }
+
+  function addWidgetToPage(placement) {
+    const widget = { id: `widget-${Date.now()}`, placement, title: 'New box', body: 'Tap this text to edit it.', image: '', actionLabel: '', actionUrl: '', color: '#ffffff', animation: 'float' };
+    saveSiteConfig({ ...siteConfig, customWidgets: [...siteConfig.customWidgets, widget] });
+  }
+
+  function updateCustomWidget(id, patch) {
+    saveSiteConfig({ ...siteConfig, customWidgets: siteConfig.customWidgets.map((widget) => widget.id === id ? { ...widget, ...patch } : widget) });
+  }
+
+  function moveCustomWidget(id, direction) {
+    const widgets = [...siteConfig.customWidgets];
+    const index = widgets.findIndex((widget) => widget.id === id);
+    if (index < 0) return;
+    const siblingIndexes = widgets.map((widget, i) => widget.placement === widgets[index].placement ? i : -1).filter((i) => i >= 0);
+    const siblingPosition = siblingIndexes.indexOf(index);
+    const swapIndex = siblingIndexes[siblingPosition + direction];
+    if (swapIndex == null) return;
+    [widgets[index], widgets[swapIndex]] = [widgets[swapIndex], widgets[index]];
+    saveSiteConfig({ ...siteConfig, customWidgets: widgets });
+  }
+
+  function dropCustomWidget(draggedId, targetId) {
+    if (!draggedId || draggedId === targetId) return;
+    const widgets = [...siteConfig.customWidgets];
+    const from = widgets.findIndex((widget) => widget.id === draggedId);
+    const to = widgets.findIndex((widget) => widget.id === targetId);
+    if (from < 0 || to < 0 || widgets[from].placement !== widgets[to].placement) return;
+    const [moved] = widgets.splice(from, 1);
+    widgets.splice(to, 0, moved);
+    saveSiteConfig({ ...siteConfig, customWidgets: widgets });
+  }
+
+  function updateSiteText(key, value) {
+    saveSiteConfig({ ...siteConfig, textOverrides: { ...(siteConfig.textOverrides || {}), [key]: value.trim() } });
   }
 
   function removeCustomWidget(id) {
@@ -581,6 +630,14 @@ export default function RUMS() {
       const image = await resizeImage(file, 1200);
       setWidgetDraft((draft) => ({ ...draft, image }));
     } catch { setSiteConfigStatus('Could not read image'); }
+    e.target.value = '';
+  }
+
+  async function handleInlineWidgetImage(id, e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try { updateCustomWidget(id, { image: await resizeImage(file, 1200) }); }
+    catch { setSiteConfigStatus('Could not read image'); }
     e.target.value = '';
   }
 
@@ -1093,13 +1150,23 @@ export default function RUMS() {
   const canManageComment = (c) => currentUser?.isAdmin || currentUser?.username === c.username;
   const canManageSuggestion = (s) => currentUser?.isAdmin || currentUser?.username === s.username;
   const isLastAdmin = (u) => u.isAdmin && users.filter((x) => x.isAdmin).length === 1;
-  const canEditSite = Boolean(currentUser?.isAdmin || currentUser?.username?.toLowerCase() === 'jamie');
+  const isOwner = currentUser?.username?.toLowerCase() === 'jamie';
+  const canEditSite = Boolean(currentUser?.isAdmin || isOwner);
+  const activePlacement = screen === 'custom' ? customPageId : screen;
+  const siteText = (key, fallback) => siteConfig.textOverrides?.[key] || fallback;
+  const editableTextProps = (key) => ({
+    contentEditable: Boolean(editMode && isOwner),
+    suppressContentEditableWarning: true,
+    className: editMode && isOwner ? 'inline-site-text-edit' : undefined,
+    onBlur: editMode && isOwner ? (event) => updateSiteText(key, event.currentTarget.textContent) : undefined,
+  });
   const renderCustomWidgets = (placement) => siteConfig.customWidgets
     .filter((widget) => widget.placement === placement)
     .map((widget) => (
-      <article className="custom-site-widget" key={widget.id}>
+      <article className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onDragOver={(e) => { if (editMode && isOwner) e.preventDefault(); }} onDrop={(e) => { e.preventDefault(); dropCustomWidget(e.dataTransfer.getData('text/rums-widget'), widget.id); }}>
+        {editMode && isOwner && <div className="widget-edit-controls"><span className="widget-drag-handle" draggable onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/rums-widget', widget.id); }} title="Drag to move"><GripVertical size={15} /></span><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
         {widget.image && <img src={widget.image} alt="" />}
-        <div><h3>{widget.title}</h3>{widget.body && <p>{widget.body}</p>}
+        <div><h3 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { title: e.currentTarget.textContent.trim() })}>{widget.title}</h3>{widget.body && <p contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { body: e.currentTarget.textContent.trim() })}>{widget.body}</p>}
           {widget.actionLabel && widget.actionUrl && <a href={widget.actionUrl} target="_blank" rel="noreferrer">{widget.actionLabel}</a>}
         </div>
       </article>
@@ -1255,7 +1322,7 @@ export default function RUMS() {
   }
 
   return (
-    <div className={`aero-root ${siteConfig.animations ? '' : 'site-motion-off'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': siteConfig.accent }}>
+    <div className={`aero-root ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': siteConfig.accent }}>
       <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
         <defs>
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
@@ -1329,6 +1396,7 @@ export default function RUMS() {
               {siteConfig.showSuggestions && <button className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}><Lightbulb size={19} /> Suggestions</button>}
               {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}><Pencil size={19} /> {tab.label}</button>)}
               {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
+              {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onClick={() => setEditMode((value) => !value)}>{editMode ? <EyeOff size={19} /> : <Eye size={19} />} {editMode ? 'Finish editing' : 'Edit website'}</button>}
               <button className="rail-create" onClick={() => setScreen('upload')}><Plus size={19} /> Share a build</button>
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS · Minecraft community</small></div>
             </aside>
@@ -1338,6 +1406,7 @@ export default function RUMS() {
                 {siteConfig.brandName}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {isOwner && <button className={`icon-btn ${editMode ? 'edit-mode-active' : ''}`} onClick={() => setEditMode((value) => !value)} title={editMode ? 'Finish editing' : 'Edit website'}>{editMode ? <EyeOff size={18} /> : <Pencil size={18} />}</button>}
                 {siteConfig.showDiscover && <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   <Search size={18} />
                 </button>}
@@ -1372,16 +1441,18 @@ export default function RUMS() {
 
             <div className="content">
               {siteConfig.customTabs.length > 0 && <div className="custom-mobile-tabs">{siteConfig.customTabs.map((tab) => <button key={tab.id} className={screen === 'custom' && customPageId === tab.id ? 'active' : ''} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{tab.label}</button>)}</div>}
+              {editMode && isOwner && screen !== 'admin' && <div className="visual-edit-toolbar"><span><Pencil size={14} /> Editing <b>{screen === 'custom' ? siteConfig.customTabs.find((tab) => tab.id === customPageId)?.label : BUILT_IN_PAGES.find(([id]) => id === screen)?.[1] || screen}</b></span><button onClick={() => addWidgetToPage(activePlacement)}><Plus size={14} /> Add box</button><label><Palette size={14} /><input type="color" value={siteConfig.accent} onChange={(e) => updateSiteConfig({ accent: e.target.value })} /></label><button onClick={() => updateSiteConfig({ animations: !siteConfig.animations })}>{siteConfig.animations ? <Sparkles size={14} /> : <EyeOff size={14} />} Motion</button><button onClick={() => setEditMode(false)}><Check size={14} /> Done</button></div>}
               {error && (
                 <div style={{ padding: '10px 16px 0' }}>
                   <div className="error-pill">{error}</div>
                 </div>
               )}
 
+              {activePlacement && screen !== 'admin' && renderCustomWidgets(activePlacement)}
+
               {screen === 'feed' && (
                 <>
-                  <div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1>{feedFilter === 'lumina' ? 'Lumina' : siteConfig.heroTitle}</h1><p>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteConfig.heroText}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div>
-                  {feedFilter === 'all' && renderCustomWidgets('feed')}
+                  <div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div>
                   <div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>
                   {feedFilter === 'lumina' && (
                     <div className="lumina-banner clickable-row" onClick={openLumina}>
@@ -1433,7 +1504,7 @@ export default function RUMS() {
                   <div className="lumina-topbar"><button className="glass-circle-btn" onClick={goBack} aria-label="Back"><ArrowLeft size={19} /></button><span>Project</span><button className="glass-circle-btn" onClick={() => { setTag('Lumina'); setScreen('upload'); }} aria-label="Share from Lumina"><Plus size={19} /></button></div>
                   <section className="lumina-project-hero">
                     <div className="lumina-project-glow" aria-hidden="true"><span /><span /></div>
-                    <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1>Project<br />Lumina</h1><p>A bright community city where Frutiger Aero optimism, Frutiger Eco nature and solarpunk urbanism meet.</p><div className="lumina-hero-actions"><button onClick={() => setLuminaView('metro')}>Explore the metro</button><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}><Plus size={14} /> Share a view</button></div></div>
+                    <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1 {...editableTextProps('lumina.heading')}>{siteText('lumina.heading', 'Project Lumina')}</h1><p {...editableTextProps('lumina.description')}>{siteText('lumina.description', 'A bright community city where Frutiger Aero optimism, Frutiger Eco nature and solarpunk urbanism meet.')}</p><div className="lumina-hero-actions"><button onClick={() => setLuminaView('metro')}>Explore the metro</button><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}><Plus size={14} /> Share a view</button></div></div>
                     <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>M1</strong><span>every minute</span></div></div>
                   </section>
 
@@ -1462,7 +1533,7 @@ export default function RUMS() {
 
               {screen === 'upload' && (
                 <div className="upload-wrap">
-                  <div className="composer-heading"><span className="eyebrow">NEW POST</span><h2>Share a moment</h2><p>Show everyone what you’ve built or discovered on RUMS.</p></div>
+                  <div className="composer-heading"><span className="eyebrow">NEW POST</span><h2 {...editableTextProps('upload.heading')}>{siteText('upload.heading', 'Share a moment')}</h2><p {...editableTextProps('upload.description')}>{siteText('upload.description', 'Show everyone what you’ve built or discovered on RUMS.')}</p></div>
                   {!uploadPreview ? (
                     <div className="drop-zone" role="button" tabIndex={0} onClick={() => fileInputRef.current?.click()}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}>
@@ -1775,8 +1846,7 @@ export default function RUMS() {
 
               {screen === 'custom' && customPageId && (
                 <div className="custom-page-wrap">
-                  <div className="section-heading"><div><span className="eyebrow">CUSTOM SPACE</span><h2>{siteConfig.customTabs.find((tab) => tab.id === customPageId)?.label || 'Page'}</h2></div></div>
-                  {renderCustomWidgets(customPageId)}
+                  <div className="section-heading"><div><span className="eyebrow">CUSTOM SPACE</span><h2 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => renameCustomTab(customPageId, e.currentTarget.textContent)}>{siteConfig.customTabs.find((tab) => tab.id === customPageId)?.label || 'Page'}</h2></div></div>
                   {!siteConfig.customWidgets.some((widget) => widget.placement === customPageId) && <div className="feed-empty"><h3>Nothing here yet</h3><p>An admin can add widgets to this page in Site editor.</p></div>}
                 </div>
               )}
@@ -1797,7 +1867,7 @@ export default function RUMS() {
                       {[['animations','Animations'],['showDiscover','Discover'],['showLumina','Project Lumina'],['showUpdates','Updates'],['showSuggestions','Suggestions']].map(([key,label]) => <button key={key} className={siteConfig[key] ? 'enabled' : ''} onClick={() => updateSiteConfig({ [key]: !siteConfig[key] })}><Check size={14} /> {label}</button>)}
                     </div>
                     <div className="editor-subsection"><h3>Custom navigation tabs</h3><div className="editor-add-row"><input value={tabDraft} onChange={(e) => setTabDraft(e.target.value)} placeholder="New tab name" /><button onClick={addCustomTab}><Plus size={15} /> Add tab</button></div>{siteConfig.customTabs.map((tab) => <div className="editor-item" key={tab.id}><span>{tab.label}</span><button onClick={() => removeCustomTab(tab.id)}><Trash2 size={14} /></button></div>)}</div>
-                    <div className="editor-subsection"><h3>Widgets and boxes</h3><div className="editor-grid"><label>Placement<select value={widgetDraft.placement} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, placement: e.target.value }))}><option value="feed">Community feed</option>{siteConfig.customTabs.map((tab) => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select></label><label>Title<input value={widgetDraft.title} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, title: e.target.value }))} /></label><label className="editor-wide">Text<textarea value={widgetDraft.body} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, body: e.target.value }))} /></label><label>Button label<input value={widgetDraft.actionLabel} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, actionLabel: e.target.value }))} /></label><label>Button URL<input value={widgetDraft.actionUrl} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, actionUrl: e.target.value }))} /></label></div><input ref={widgetImageInputRef} type="file" accept="image/*" hidden onChange={handleWidgetImage} /><div className="editor-actions"><button onClick={() => widgetImageInputRef.current?.click()}><ImagePlus size={15} /> {widgetDraft.image ? 'Replace image' : 'Add image'}</button><button className="primary" onClick={addCustomWidget}><Plus size={15} /> Add widget</button></div>{siteConfig.customWidgets.map((widget) => <div className="editor-item" key={widget.id}><span><b>{widget.title || 'Untitled widget'}</b><small>{widget.placement === 'feed' ? 'Community feed' : siteConfig.customTabs.find((tab) => tab.id === widget.placement)?.label}</small></span><button onClick={() => removeCustomWidget(widget.id)}><Trash2 size={14} /></button></div>)}</div>
+                    <div className="editor-subsection"><h3>Widgets and boxes</h3><div className="editor-grid"><label>Placement<select value={widgetDraft.placement} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, placement: e.target.value }))}>{BUILT_IN_PAGES.map(([id,label]) => <option key={id} value={id}>{label}</option>)}{siteConfig.customTabs.map((tab) => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select></label><label>Title<input value={widgetDraft.title} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, title: e.target.value }))} /></label><label>Box colour<input type="color" value={widgetDraft.color} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, color: e.target.value }))} /></label><label>Animation<select value={widgetDraft.animation} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, animation: e.target.value }))}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><label className="editor-wide">Text<textarea value={widgetDraft.body} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, body: e.target.value }))} /></label><label>Button label<input value={widgetDraft.actionLabel} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, actionLabel: e.target.value }))} /></label><label>Button URL<input value={widgetDraft.actionUrl} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, actionUrl: e.target.value }))} /></label></div><input ref={widgetImageInputRef} type="file" accept="image/*" hidden onChange={handleWidgetImage} /><div className="editor-actions"><button onClick={() => widgetImageInputRef.current?.click()}><ImagePlus size={15} /> {widgetDraft.image ? 'Replace image' : 'Add image'}</button><button className="primary" onClick={addCustomWidget}><Plus size={15} /> Add widget</button></div>{siteConfig.customWidgets.map((widget) => <div className="editor-item" key={widget.id}><span><b>{widget.title || 'Untitled widget'}</b><small>{BUILT_IN_PAGES.find(([id]) => id === widget.placement)?.[1] || siteConfig.customTabs.find((tab) => tab.id === widget.placement)?.label || widget.placement}</small></span><button onClick={() => removeCustomWidget(widget.id)}><Trash2 size={14} /></button></div>)}</div>
                   </section>
                   <div className="admin-section-title"><Shield size={16} /> Members ({users.length})</div>
                   {users.map((u) => (
