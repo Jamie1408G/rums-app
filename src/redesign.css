@@ -161,8 +161,9 @@ button,input,textarea { font:inherit; }
   width:84px;
   height:calc(100% - 10px);
   border-radius:18px;
+  background:radial-gradient(70px 24px at var(--tab-reflection-x,var(--lumina-reflection-x,32%)) -2px,#fff 0,#ffffffc7 27%,transparent 70%),radial-gradient(25px 42px at 0 50%,#22d7ffcf 0,#4f8dff8f 28%,#d858ff70 48%,transparent 72%),radial-gradient(28px 44px at 100% 52%,#ff4fc4b8 0,#ffd84f9c 28%,#52efb67d 49%,transparent 73%),linear-gradient(145deg,#ffffffed,#dceeffc9 58%,#e8fbf2c7);
   transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,47px)) - 47px)) scaleY(1.03);
-  box-shadow:inset 3px 3px 5px #fff,inset -4px -5px 8px #5f86ad3f,0 0 0 3px #ffffff68,0 8px 22px #3478f657;
+  box-shadow:inset 3px 3px 5px #fff,inset 5px 0 8px #17cffff0,inset -5px 0 8px #ff4fc0cf,inset 0 -4px 7px #a8ef75a3,0 0 0 2px #ffffffb8,0 0 0 4px #7dd8ff35,0 8px 22px #3478f657;
   transition:transform .07s linear,width .18s ease,border-radius .15s,box-shadow .15s;
   filter:saturate(1.25);
 }
