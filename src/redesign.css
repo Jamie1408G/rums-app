@@ -477,3 +477,10 @@ button,input,textarea { font:inherit; }
     transform: translateX(-58px);
   }
 }
+
+/* Keep the feed selector vertically aligned with the editor toolbar while editing. */
+@media (min-width: 901px) {
+  .aero-root.visual-edit-mode .feed-tabs {
+    top: 94px;
+  }
+}
