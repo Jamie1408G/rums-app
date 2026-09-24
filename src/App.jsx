@@ -2074,15 +2074,16 @@ export default function RUMS() {
                   <button type="button" onClick={() => addWidgetToPage(activePlacement)}><Plus size={14} /> Add box</button>
                   <label title="Site accent colour"><Palette size={14} /><input type="color" value={siteConfig.accent} onChange={(e) => updateSiteConfig({ accent: e.target.value })} /></label>
                   <button type="button" onClick={() => updateSiteConfig({ animations: !siteConfig.animations })}>{siteConfig.animations ? <Sparkles size={14} /> : <EyeOff size={14} />} Motion</button>
-                  {selectedBoxId && <>
-                    <i className="editor-toolbar-divider" aria-hidden="true" />
-                    <strong className="selected-box-chip" title={selectedBoxId}>Selected box</strong>
-                    <button type="button" onClick={() => moveUniversalBoxByDirection(selectedBoxId, -1)} title="Move selected box one slot up/left"><ChevronUp size={14} /></button>
-                    <button type="button" onClick={() => moveUniversalBoxByDirection(selectedBoxId, 1)} title="Move selected box one slot down/right"><ChevronDown size={14} /></button>
-                    <label className="box-color-control" style={{ '--selected-box-color': selectedBoxStyle.color || '#ffffff' }} title="Selected box colour"><Palette size={14} /><input type="color" value={selectedBoxStyle.color || '#ffffff'} onChange={(e) => updateUniversalBoxStyle(selectedBoxId, { color: e.target.value })} /></label>
-                    <label className="box-animation-control" title="Selected box animation"><Sparkles size={14} /><select value={selectedBoxStyle.animation || 'none'} onChange={(e) => updateUniversalBoxStyle(selectedBoxId, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label>
-                    <button type="button" onClick={() => resetUniversalBoxStyle(selectedBoxId)} title="Reset selected box style"><RotateCcw size={14} /> Reset</button>
-                  </>}
+                  {selectedBoxId && (
+                    <div className="selected-box-toolbar">
+                      <strong className="selected-box-chip" title={selectedBoxId}>Selected box</strong>
+                      <button type="button" onClick={() => moveUniversalBoxByDirection(selectedBoxId, -1)} title="Move selected box one slot up/left"><ChevronUp size={14} /></button>
+                      <button type="button" onClick={() => moveUniversalBoxByDirection(selectedBoxId, 1)} title="Move selected box one slot down/right"><ChevronDown size={14} /></button>
+                      <label className="box-color-control" style={{ '--selected-box-color': selectedBoxStyle.color || '#ffffff' }} title="Selected box colour"><Palette size={14} /><input type="color" value={selectedBoxStyle.color || '#ffffff'} onChange={(e) => updateUniversalBoxStyle(selectedBoxId, { color: e.target.value })} /></label>
+                      <label className="box-animation-control" title="Selected box animation"><Sparkles size={14} /><select value={selectedBoxStyle.animation || 'none'} onChange={(e) => updateUniversalBoxStyle(selectedBoxId, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label>
+                      <button type="button" onClick={() => resetUniversalBoxStyle(selectedBoxId)} title="Reset selected box style"><RotateCcw size={14} /> Reset</button>
+                    </div>
+                  )}
                 </div>
               )}
               {error && (
