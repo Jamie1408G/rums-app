@@ -3459,3 +3459,95 @@ button,input,textarea { font:inherit; }
   --theme-danger:#e35335;--theme-focus:#111;--theme-radius:0px;--theme-radius-sm:0px;
   --theme-shadow:none;--theme-soft-shadow:none;
 }
+
+/* ================================================================
+   Frutiger Metro / Vectordelia — researched mid-2000s vector style
+   Flat, maximalist, high-energy vectors rather than Aero realism.
+   ================================================================ */
+.aero-root[data-theme="frutigermetro"] {
+  --site-accent:#ec4392!important;--theme-focus:#12acc4;
+  --theme-surface:#fffdfd;--theme-surface-2:#f5f7ef;--theme-surface-3:#edf4e5;
+  --theme-border:#202020;--theme-text:#202020;--theme-muted:#6a6570;
+  --theme-accent:#ec4392;--theme-accent-soft:#fce0ee;--theme-accent-text:#fff;
+  --theme-danger:#ee4a48;--theme-radius:10px;--theme-radius-sm:7px;
+  --theme-shadow:5px 5px 0 #202020;--theme-soft-shadow:3px 3px 0 #202020;
+  background:
+    radial-gradient(circle at 10% 12%,#f7b52b 0 3%,transparent 3.3%),
+    radial-gradient(circle at 17% 18%,#ef4e9a 0 5%,transparent 5.3%),
+    radial-gradient(circle at 91% 19%,#9bd82d 0 6%,transparent 6.3%),
+    linear-gradient(116deg,transparent 0 66%,#18b9d528 66% 73%,transparent 73%),
+    linear-gradient(180deg,#fcfbf5,#f4f8e8 60%,#fbf4fb)!important;
+  color:#202020!important;font-family:Arial,Helvetica,sans-serif!important;text-shadow:none!important;
+}
+.aero-root[data-theme="frutigermetro"] .aero-frame {position:relative;background:#fffdf8!important;box-shadow:8px 8px 0 #202020!important;overflow:hidden;}
+.aero-root[data-theme="frutigermetro"] .aero-frame::before {content:"";position:absolute;z-index:0;pointer-events:none;width:360px;height:360px;right:-150px;top:70px;border:20px solid #ec4392;border-radius:48% 52% 62% 38%;opacity:.12;transform:rotate(26deg);}
+.aero-root[data-theme="frutigermetro"] .aero-frame>* {position:relative;z-index:1;}
+.aero-root[data-theme="frutigermetro"] :is(.desktop-rail,.aero-header,.bottom-nav,.post-card,.suggestion-card,.update-card,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.modal-card,.visual-edit-toolbar,.updates-composer,.reaction-picker,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card,.lumina-station-detail,.lumina-principles article,.lumina-project-stats div,.auth-wrap,.space-choice-card,.drop-zone,.comments-box,.preview-wrap,.profile-danger-zone) {background:#fff!important;border:2px solid #202020!important;border-radius:10px!important;box-shadow:4px 4px 0 #202020!important;color:#202020!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+.aero-root[data-theme="frutigermetro"] .aero-header {background:linear-gradient(90deg,#ec4392 0 27%,#f59b27 27% 49%,#9bd82d 49% 72%,#12aec8 72%)!important;color:#111!important;box-shadow:0 4px 0 #202020!important;}
+.aero-root[data-theme="frutigermetro"] .desktop-rail {background:#f6f4e8!important;}
+.aero-root[data-theme="frutigermetro"] .community-hero {position:relative;overflow:hidden;background:linear-gradient(115deg,#fb5a9d 0 31%,#f9ad2d 31% 48%,#a7dc32 48% 68%,#15b4cb 68%)!important;border:2px solid #202020!important;border-radius:14px!important;box-shadow:5px 5px 0 #202020!important;color:#111!important;}
+.aero-root[data-theme="frutigermetro"] .community-hero::after {content:"";position:absolute;width:240px;height:240px;right:-68px;bottom:-110px;border:16px solid #fff;border-radius:50%;box-shadow:0 0 0 14px #202020,0 0 0 32px #fff;opacity:.6;pointer-events:none;}
+.aero-root[data-theme="frutigermetro"] .community-hero :is(h1,p,.eyebrow) {color:#111!important;text-shadow:1px 1px 0 #ffffff99!important;}
+.aero-root[data-theme="frutigermetro"] :is(.rail-link,.rail-create,.aero-btn,.hero-create,.icon-btn,.pill,.tag-chip,.tab-btn,.admin-toggle,.chat-send-button,.chat-attach-button,.reaction-chip,.reaction-add) {border-radius:8px!important;box-shadow:none!important;}
+.aero-root[data-theme="frutigermetro"] .rail-link.selected {background:#ec4392!important;border:2px solid #202020!important;color:#fff!important;box-shadow:3px 3px 0 #202020!important;}
+.aero-root[data-theme="frutigermetro"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:#12aec8!important;border:2px solid #202020!important;color:#111!important;box-shadow:3px 3px 0 #202020!important;font-weight:800!important;}
+.aero-root[data-theme="frutigermetro"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button):hover {background:#9bd82d!important;}
+.aero-root[data-theme="frutigermetro"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#fff!important;border:2px solid #202020!important;border-radius:7px!important;color:#202020!important;box-shadow:2px 2px 0 #d8d2c4!important;}
+.aero-root[data-theme="frutigermetro"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:#fff!important;border:2px solid #202020!important;border-radius:9px!important;box-shadow:3px 3px 0 #202020!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+.aero-root[data-theme="frutigermetro"] .feed-tabs::before,
+.aero-root[data-theme="frutigermetro"] .lumina-view-switch::before,
+.aero-root[data-theme="frutigermetro"] .upload-wrap .location-tabs::before {background:#9bd82d!important;border:1px solid #202020!important;border-radius:6px!important;box-shadow:none!important;}
+.aero-root[data-theme="frutigermetro"] .universal-rums-switcher button.active,
+.aero-root[data-theme="frutigermetro"] .universal-rums-switcher.is-dragging::before {background:#ec4392!important;border:1px solid #202020!important;color:#fff!important;box-shadow:none!important;}
+.aero-root[data-theme="frutigermetro"] :is(.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:#f7ad2c!important;border:2px solid #202020!important;color:#111!important;box-shadow:2px 2px 0 #202020!important;}
+.aero-root[data-theme="frutigermetro"] :is(.section-heading h2,.auth-title,.chat-conversation-header strong,.lumina-intro-card h2) {font-weight:900!important;letter-spacing:-.02em!important;color:#202020!important;}
+.aero-root[data-theme="frutigermetro"] .chat-message-list {background:linear-gradient(145deg,#f8f7ed,#f9ebf3)!important;}
+.aero-root[data-theme="frutigermetro"] .chat-message-bubble {background:#fff!important;border:2px solid #202020!important;color:#202020!important;box-shadow:3px 3px 0 #202020!important;border-radius:5px 12px 12px 12px!important;}
+.aero-root[data-theme="frutigermetro"] .chat-message.own .chat-message-bubble {background:#ec4392!important;color:#fff!important;}
+.aero-root[data-theme="frutigermetro"] .theme-option.active {border-color:#202020!important;box-shadow:4px 4px 0 #ec4392!important;}
+
+/* ================================================================
+   Vector Flourish — early/mid-2000s ornamental vector bloom.
+   Intricate floral curves, Art Nouveau influence and psychedelic color.
+   ================================================================ */
+.aero-root[data-theme="vectorflourish"] {
+  --site-accent:#b43170!important;--theme-focus:#b43170;
+  --theme-surface:#fffaf0;--theme-surface-2:#f8efdd;--theme-surface-3:#f0e4cb;
+  --theme-border:#7e6149;--theme-text:#4a2d3c;--theme-muted:#8b6d73;
+  --theme-accent:#b43170;--theme-accent-soft:#f5d9e7;--theme-accent-text:#fff;
+  --theme-danger:#b74343;--theme-radius:18px;--theme-radius-sm:12px;
+  --theme-shadow:0 8px 20px #5e3d4720;--theme-soft-shadow:0 4px 12px #5e3d4717;
+  background:
+    radial-gradient(ellipse at 92% 0%,#d44b8a2d 0 14%,transparent 35%),
+    radial-gradient(ellipse at 4% 94%,#7e9d3428 0 13%,transparent 34%),
+    radial-gradient(circle at 80% 85%,#ef9f3526 0 10%,transparent 26%),
+    #f6f0df!important;
+  color:#4a2d3c!important;font-family:Georgia,'Trebuchet MS',serif!important;text-shadow:none!important;
+}
+.aero-root[data-theme="vectorflourish"] .aero-frame {position:relative;background:#fffaf0!important;border:1px solid #b49776!important;box-shadow:0 18px 44px #63484b24!important;overflow:hidden;}
+.aero-root[data-theme="vectorflourish"] .aero-frame::before,.aero-root[data-theme="vectorflourish"] .aero-frame::after {content:"";position:absolute;pointer-events:none;z-index:0;border:8px solid transparent;border-top-color:#b43170;border-right-color:#7b973b;border-radius:50%;opacity:.15;}
+.aero-root[data-theme="vectorflourish"] .aero-frame::before {width:300px;height:300px;left:-145px;top:120px;transform:rotate(28deg);box-shadow:28px -18px 0 -16px #d88d2e,55px 12px 0 -26px #7698b9;}
+.aero-root[data-theme="vectorflourish"] .aero-frame::after {width:250px;height:250px;right:-105px;bottom:80px;transform:rotate(195deg);box-shadow:24px -12px 0 -16px #dc6da0,50px 8px 0 -25px #91ad54;}
+.aero-root[data-theme="vectorflourish"] .aero-frame>* {position:relative;z-index:1;}
+.aero-root[data-theme="vectorflourish"] :is(.desktop-rail,.aero-header,.bottom-nav,.post-card,.suggestion-card,.update-card,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.modal-card,.visual-edit-toolbar,.updates-composer,.reaction-picker,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card,.lumina-station-detail,.lumina-principles article,.lumina-project-stats div,.auth-wrap,.space-choice-card,.drop-zone,.comments-box,.preview-wrap,.profile-danger-zone) {background:linear-gradient(145deg,#fffdf7,#f8eedb)!important;border:1px solid #b69a7c!important;border-radius:18px!important;box-shadow:0 7px 17px #59413f18!important;color:#4a2d3c!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+.aero-root[data-theme="vectorflourish"] .aero-header {background:linear-gradient(100deg,#6f8f39,#b43170 42%,#d37b2f 72%,#66849d)!important;border-color:#694d43!important;color:#fff!important;}
+.aero-root[data-theme="vectorflourish"] .desktop-rail {background:linear-gradient(180deg,#f8efd8,#f5e9d1)!important;}
+.aero-root[data-theme="vectorflourish"] .community-hero {position:relative;overflow:hidden;background:linear-gradient(125deg,#fff8e7 0 38%,#f4d7e5 38% 60%,#dfe9c7 60% 79%,#f5d7af 79%)!important;border:1px solid #9b775c!important;border-radius:22px!important;box-shadow:0 9px 22px #63484b22!important;color:#4a2d3c!important;}
+.aero-root[data-theme="vectorflourish"] .community-hero::after {content:"❦";position:absolute;right:24px;bottom:-24px;font-size:150px;line-height:1;color:#9d2e68;opacity:.17;transform:rotate(-15deg);pointer-events:none;font-family:Georgia,serif;}
+.aero-root[data-theme="vectorflourish"] :is(.rail-link.selected,.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:linear-gradient(180deg,#c84b86,#a52b66)!important;border-color:#81435f!important;color:#fff!important;box-shadow:0 3px 9px #8d365128!important;}
+.aero-root[data-theme="vectorflourish"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:linear-gradient(180deg,#8eaa47,#6f8f38)!important;border:1px solid #536d2b!important;color:#fff!important;box-shadow:inset 0 1px #cfe59a,0 4px 10px #536d2b2b!important;}
+.aero-root[data-theme="vectorflourish"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#fffdf6!important;border-color:#c8aa8d!important;border-radius:12px!important;color:#4a2d3c!important;box-shadow:inset 0 1px 2px #6e4c3720!important;}
+.aero-root[data-theme="vectorflourish"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:linear-gradient(180deg,#fff8ea,#eddec6)!important;border-color:#b69a7c!important;border-radius:14px!important;box-shadow:inset 0 1px #fff,0 5px 14px #61483d18!important;}
+.aero-root[data-theme="vectorflourish"] .feed-tabs::before,
+.aero-root[data-theme="vectorflourish"] .lumina-view-switch::before,
+.aero-root[data-theme="vectorflourish"] .upload-wrap .location-tabs::before {background:linear-gradient(180deg,#e6b3c9,#c75388)!important;border-color:#9b4e6d!important;border-radius:11px!important;box-shadow:none!important;}
+.aero-root[data-theme="vectorflourish"] .universal-rums-switcher button.active,
+.aero-root[data-theme="vectorflourish"] .universal-rums-switcher.is-dragging::before {background:linear-gradient(180deg,#c04a82,#9d2860)!important;color:#fff!important;border:1px solid #82405b!important;box-shadow:none!important;}
+.aero-root[data-theme="vectorflourish"] :is(.section-heading h2,.auth-title,.chat-conversation-header strong,.lumina-intro-card h2) {font-family:Georgia,'Trebuchet MS',serif!important;color:#4a2d3c!important;}
+.aero-root[data-theme="vectorflourish"] .chat-message-list {background:linear-gradient(180deg,#fff9ec,#f7eddb)!important;}
+.aero-root[data-theme="vectorflourish"] .chat-message-bubble {background:#fffdf7!important;border-color:#b99c80!important;color:#4a2d3c!important;box-shadow:0 4px 11px #674b4018!important;}
+.aero-root[data-theme="vectorflourish"] .chat-message.own .chat-message-bubble {background:linear-gradient(180deg,#bf4b82,#a02e66)!important;border-color:#843f5e!important;color:#fff!important;}
+.aero-root[data-theme="vectorflourish"] .theme-option.active {border-color:#b43170!important;box-shadow:0 0 0 2px #b4317026!important;}
+
+.aero-root[data-theme="frutigermetro"] {--theme-surface:#fff;--theme-surface-2:#f6f4e8;--theme-surface-3:#f1ecdd;--theme-border:#202020;--theme-text:#202020;--theme-muted:#6b6570;--theme-accent:#ec4392;--theme-accent-soft:#fce0ee;--theme-accent-text:#fff;--theme-danger:#ee4a48;--theme-focus:#12aec8;--theme-radius:10px;--theme-radius-sm:7px;--theme-shadow:4px 4px 0 #202020;--theme-soft-shadow:2px 2px 0 #202020;}
+.aero-root[data-theme="vectorflourish"] {--theme-surface:#fffdf7;--theme-surface-2:#f8eedb;--theme-surface-3:#eddec6;--theme-border:#b69a7c;--theme-text:#4a2d3c;--theme-muted:#8b6d73;--theme-accent:#b43170;--theme-accent-soft:#f5d9e7;--theme-accent-text:#fff;--theme-danger:#b74343;--theme-focus:#b43170;--theme-radius:18px;--theme-radius-sm:12px;--theme-shadow:0 7px 17px #59413f18;--theme-soft-shadow:0 4px 11px #59413f12;}
