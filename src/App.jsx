@@ -47,7 +47,85 @@ const LUMINA_STATIONS = [
 ];
 const lastSeenKey = (username, space = 'rums4') => space === 'rums5' ? `rums5-lastseen-${username}` : `rums-lastseen-${username}`;
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
-const REACTION_EMOJIS = ['👍', '😂', '🔥', '😮', '🎉', '💯'];
+const CUSTOM_EMOJIS_KEY = 'rums-custom-emojis';
+const EMOJI_SKIN_TONES = ['🏻', '🏼', '🏽', '🏾', '🏿'];
+const EMOJI_CATEGORY_META = [
+  ['smileys', '😀'], ['people', '👋'], ['nature', '🌿'], ['food', '🍕'], ['activities', '⚽'],
+  ['travel', '🚆'], ['objects', '💡'], ['symbols', '✨'], ['flags', '🏳️'], ['other', '🪩'], ['custom', 'R'],
+];
+
+function nativeEmojiCategory(cp) {
+  if ((cp >= 0x1f600 && cp <= 0x1f64f) || (cp >= 0x1f910 && cp <= 0x1f97f) || (cp >= 0x1fae0 && cp <= 0x1faef)) return 'smileys';
+  if ((cp >= 0x1f440 && cp <= 0x1f487) || cp === 0x1f4aa || (cp >= 0x1f574 && cp <= 0x1f57a) || (cp >= 0x1f645 && cp <= 0x1f64f) || (cp >= 0x1f90c && cp <= 0x1f93a) || (cp >= 0x1f9b0 && cp <= 0x1f9df)) return 'people';
+  if ((cp >= 0x1f300 && cp <= 0x1f344) || (cp >= 0x1f400 && cp <= 0x1f43f) || (cp >= 0x1f980 && cp <= 0x1f9af) || (cp >= 0x1fab0 && cp <= 0x1fabf)) return 'nature';
+  if ((cp >= 0x1f345 && cp <= 0x1f37f) || (cp >= 0x1f950 && cp <= 0x1f96f)) return 'food';
+  if ((cp >= 0x1f3a0 && cp <= 0x1f3ff) || (cp >= 0x1f93c && cp <= 0x1f945)) return 'activities';
+  if (cp >= 0x1f680 && cp <= 0x1f6ff) return 'travel';
+  if ((cp >= 0x1f4a0 && cp <= 0x1f5ff) || (cp >= 0x1f7e0 && cp <= 0x1f7eb)) return 'objects';
+  if ((cp >= 0x2600 && cp <= 0x27bf) || (cp >= 0x1f500 && cp <= 0x1f53d)) return 'symbols';
+  return 'other';
+}
+
+function buildNativeEmojiCatalog() {
+  let pictographic = null;
+  let modifierBase = null;
+  try {
+    pictographic = new RegExp('\\p{Extended_Pictographic}', 'u');
+    modifierBase = new RegExp('\\p{Emoji_Modifier_Base}', 'u');
+  } catch { /* modern Chromium supports these; fallback still keeps the seeded set */ }
+  const byCategory = Object.fromEntries(EMOJI_CATEGORY_META.map(([key]) => [key, []]));
+  const seen = new Set();
+  const add = (value, category) => {
+    if (!value || seen.has(value)) return;
+    seen.add(value);
+    (byCategory[category] || byCategory.other).push(value);
+  };
+  const ranges = [[0x2600, 0x27bf], [0x1f000, 0x1faff]];
+  for (const [start, end] of ranges) {
+    for (let cp = start; cp <= end; cp += 1) {
+      const raw = String.fromCodePoint(cp);
+      if (pictographic && !pictographic.test(raw)) continue;
+      const rendered = cp <= 0x27bf ? `${raw}️` : raw;
+      const category = nativeEmojiCategory(cp);
+      add(rendered, category);
+      if (modifierBase?.test(raw)) EMOJI_SKIN_TONES.forEach((tone) => add(`${raw}${tone}`, 'people'));
+    }
+  }
+  ['#️⃣', '*️⃣', '0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'].forEach((emoji) => add(emoji, 'symbols'));
+  const peopleZwjs = [
+    '👨‍⚕️','👩‍⚕️','🧑‍⚕️','👨‍🎓','👩‍🎓','🧑‍🎓','👨‍🏫','👩‍🏫','🧑‍🏫','👨‍⚖️','👩‍⚖️','🧑‍⚖️',
+    '👨‍🌾','👩‍🌾','🧑‍🌾','👨‍🍳','👩‍🍳','🧑‍🍳','👨‍🔧','👩‍🔧','🧑‍🔧','👨‍🏭','👩‍🏭','🧑‍🏭',
+    '👨‍💼','👩‍💼','🧑‍💼','👨‍🔬','👩‍🔬','🧑‍🔬','👨‍💻','👩‍💻','🧑‍💻','👨‍🎤','👩‍🎤','🧑‍🎤',
+    '👨‍🎨','👩‍🎨','🧑‍🎨','👨‍✈️','👩‍✈️','🧑‍✈️','👨‍🚀','👩‍🚀','🧑‍🚀','👨‍🚒','👩‍🚒','🧑‍🚒',
+    '👨‍🦰','👩‍🦰','👨‍🦱','👩‍🦱','👨‍🦳','👩‍🦳','👨‍🦲','👩‍🦲','🧑‍🦰','🧑‍🦱','🧑‍🦳','🧑‍🦲',
+    '👪','👨‍👩‍👦','👨‍👩‍👧','👨‍👩‍👧‍👦','👨‍👩‍👦‍👦','👨‍👩‍👧‍👧','👩‍👩‍👦','👩‍👩‍👧','👨‍👨‍👦','👨‍👨‍👧',
+    '👩‍❤️‍👨','👩‍❤️‍👩','👨‍❤️‍👨','👩‍❤️‍💋‍👨','👩‍❤️‍💋‍👩','👨‍❤️‍💋‍👨',
+  ];
+  peopleZwjs.forEach((emoji) => add(emoji, 'people'));
+  try {
+    const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+    for (let a = 65; a <= 90; a += 1) {
+      for (let b = 65; b <= 90; b += 1) {
+        const code = String.fromCharCode(a, b);
+        if (regionNames.of(code) === code) continue;
+        const flag = String.fromCodePoint(0x1f1e6 + a - 65, 0x1f1e6 + b - 65);
+        add(flag, 'flags');
+      }
+    }
+  } catch { ['🇳🇱','🇺🇸','🇬🇧','🇫🇷','🇩🇪','🇯🇵','🇨🇦','🇦🇺','🇧🇷','🇰🇷'].forEach((emoji) => add(emoji, 'flags')); }
+  ['🏴','🏳️','🏳️‍🌈','🏳️‍⚧️','🏴‍☠️'].forEach((emoji) => add(emoji, 'flags'));
+  // Make the most familiar reactions easy to find at the start of their groups.
+  ['👍','😂','🔥','😮','🎉','💯'].forEach((emoji) => {
+    const category = nativeEmojiCategory(emoji.codePointAt(0));
+    const list = byCategory[category] || byCategory.other;
+    const index = list.indexOf(emoji);
+    if (index > 0) list.unshift(list.splice(index, 1)[0]);
+  });
+  return byCategory;
+}
+const NATIVE_EMOJIS_BY_CATEGORY = buildNativeEmojiCatalog();
+const NATIVE_REACTION_EMOJIS = Object.values(NATIVE_EMOJIS_BY_CATEGORY).flat();
+const NATIVE_REACTION_EMOJI_SET = new Set(NATIVE_REACTION_EMOJIS);
 
 const UNIVERSAL_EDIT_BOX_SELECTOR = [
   '.post-card', '.lumina-banner', '.feed-empty', '.lumina-project-hero',
@@ -112,6 +190,31 @@ function resizeImage(file, maxW = 900) {
   });
 }
 
+function resizeEmojiImage(file, size = 96) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, size / Math.max(img.width, img.height));
+        const width = Math.max(1, Math.round(img.width * scale));
+        const height = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, size, size);
+        ctx.drawImage(img, Math.round((size - width) / 2), Math.round((size - height) / 2), width, height);
+        resolve(canvas.toDataURL('image/webp', 0.86));
+      };
+      img.onerror = () => reject(new Error('bad image'));
+      img.src = ev.target.result;
+    };
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function RUMS() {
   const [screen, setScreen] = useState('spaceSelect');
   const [rumsSpace, setRumsSpace] = useState(null);
@@ -134,6 +237,11 @@ export default function RUMS() {
   const [searchQuery, setSearchQuery] = useState('');
   const [shareStatus, setShareStatus] = useState({});
   const [reactionMenus, setReactionMenus] = useState({});
+  const [reactionPickerCategory, setReactionPickerCategory] = useState('smileys');
+  const [customEmojis, setCustomEmojis] = useState([]);
+  const [customEmojiDraft, setCustomEmojiDraft] = useState({ name: '', image: '' });
+  const [customEmojiBusy, setCustomEmojiBusy] = useState(false);
+  const [customEmojiStatus, setCustomEmojiStatus] = useState('');
   const [mention, setMention] = useState(null); // { postId, query, start }
   const [lastSeen, setLastSeen] = useState({ General: 0, Lumina: 0 });
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -195,6 +303,18 @@ export default function RUMS() {
   useEffect(() => {
     siteConfigRef.current = siteConfig;
   }, [siteConfig]);
+
+  useEffect(() => {
+    let cancelled = false;
+    safeGet(CUSTOM_EMOJIS_KEY, true).then((record) => {
+      if (cancelled || !record) return;
+      try {
+        const parsed = JSON.parse(record.value);
+        if (Array.isArray(parsed)) setCustomEmojis(parsed);
+      } catch { /* ignore malformed custom emoji payload */ }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (editMode) {
@@ -550,12 +670,13 @@ export default function RUMS() {
   useEffect(() => {
     if (!currentUser) return;
     const id = setInterval(async () => {
-      const [p, u, sg, up, cfg] = await Promise.all([
+      const [p, u, sg, up, cfg, emojiRec] = await Promise.all([
         safeGet(activeStorageKeys.posts, true),
         safeGet(USERS_KEY, true),
         safeGet(activeStorageKeys.suggestions, true),
         safeGet(activeStorageKeys.updates, true),
         safeGet(activeStorageKeys.siteConfig, true),
+        safeGet(CUSTOM_EMOJIS_KEY, true),
       ]);
       if (p) {
         try {
@@ -583,6 +704,12 @@ export default function RUMS() {
           const freshConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) };
           setSiteConfig(isRums5 ? sanitizeConfigForRums5(freshConfig) : freshConfig);
         } catch { /* ignore malformed payload */ }
+      }
+      if (emojiRec) {
+        try {
+          const freshEmojis = JSON.parse(emojiRec.value);
+          if (Array.isArray(freshEmojis)) setCustomEmojis(freshEmojis);
+        } catch { /* ignore malformed custom emoji payload */ }
       }
       if (u) {
         try {
@@ -790,6 +917,20 @@ export default function RUMS() {
     } catch (e) {
       console.error(e);
       setError('Could not save — try again.');
+    }
+  }
+
+  async function saveCustomEmojis(next) {
+    setCustomEmojis(next);
+    setCustomEmojiStatus('Saving…');
+    try {
+      await window.storage.set(CUSTOM_EMOJIS_KEY, JSON.stringify(next), true);
+      setCustomEmojiStatus('Saved');
+    } catch (e) {
+      console.error(e);
+      setCustomEmojiStatus('Could not save');
+    } finally {
+      setTimeout(() => setCustomEmojiStatus(''), 1600);
     }
   }
 
@@ -1461,8 +1602,30 @@ export default function RUMS() {
     return next;
   }
 
+  function customEmojiForKey(key) {
+    if (!key?.startsWith('custom:')) return null;
+    const id = key.slice('custom:'.length);
+    return customEmojis.find((emoji) => emoji.id === id) || null;
+  }
+
+  function reactionIsAvailable(key) {
+    return NATIVE_REACTION_EMOJI_SET.has(key) || Boolean(customEmojiForKey(key));
+  }
+
+  function reactionLabel(key) {
+    const custom = customEmojiForKey(key);
+    return custom ? `:${custom.name}:` : key;
+  }
+
+  function renderReactionGlyph(key, className = '') {
+    const custom = customEmojiForKey(key);
+    return custom
+      ? <img className={`custom-reaction-emoji ${className}`} src={custom.image} alt={`:${custom.name}:`} />
+      : <span className={className}>{key}</span>;
+  }
+
   async function togglePostReaction(postId, emoji) {
-    if (!currentUser || !REACTION_EMOJIS.includes(emoji)) return;
+    if (!currentUser || !reactionIsAvailable(emoji)) return;
     const post = posts.find((p) => p.id === postId);
     if (!post || post.tag === 'Lumina') return;
     const next = posts.map((p) => p.id === postId
@@ -1473,7 +1636,7 @@ export default function RUMS() {
   }
 
   async function toggleSuggestionReaction(suggestionId, emoji) {
-    if (!currentUser || !REACTION_EMOJIS.includes(emoji)) return;
+    if (!currentUser || !reactionIsAvailable(emoji)) return;
     const next = suggestions.map((s) => s.id === suggestionId
       ? { ...s, reactions: cleanedReactions(s.reactions, emoji, currentUser.username) }
       : s
@@ -1481,58 +1644,120 @@ export default function RUMS() {
     await saveSuggestions(next);
   }
 
-  function renderReactionBar(item, kind) {
+  function toggleReactionMenu(menuKey) {
+    setReactionMenus((menus) => ({ [menuKey]: !menus[menuKey] }));
+    setReactionPickerCategory('smileys');
+  }
+
+  function renderReactionAddButton(item, kind, className = '') {
     if (!currentUser || (kind === 'post' && item.tag === 'Lumina')) return null;
     const menuKey = `${kind}:${item.id}`;
-    const reactions = item.reactions || {};
-    const visible = REACTION_EMOJIS.filter((emoji) => (reactions[emoji] || []).length > 0);
     const menuOpen = !!reactionMenus[menuKey];
-    const toggle = kind === 'post' ? togglePostReaction : toggleSuggestionReaction;
     return (
-      <div className={`reaction-bar ${menuOpen ? 'is-open' : ''}`}>
-        <div className="reaction-chips">
-          {visible.map((emoji) => {
-            const users = reactions[emoji] || [];
-            const mine = users.includes(currentUser.username);
+      <button
+        type="button"
+        className={`reaction-add reaction-action ${menuOpen ? 'active' : ''} ${className}`}
+        onClick={() => toggleReactionMenu(menuKey)}
+        aria-label={menuOpen ? 'Close emoji picker' : 'Add reaction'}
+        title={menuOpen ? 'Close emoji picker' : 'Add reaction'}
+      >
+        <Plus size={16} />
+      </button>
+    );
+  }
+
+  function renderReactionPicker(item, kind, menuKey, reactions) {
+    const toggle = kind === 'post' ? togglePostReaction : toggleSuggestionReaction;
+    const category = reactionPickerCategory;
+    const native = category === 'custom' ? [] : (NATIVE_EMOJIS_BY_CATEGORY[category] || []);
+    const custom = category === 'custom' ? customEmojis : [];
+    return (
+      <div className="reaction-picker" aria-label="Choose a reaction">
+        <div className="reaction-picker-tabs" role="tablist" aria-label="Emoji categories">
+          {EMOJI_CATEGORY_META.map(([key, icon]) => {
+            if (key === 'custom' && customEmojis.length === 0) return null;
+            return (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={category === key}
+                className={category === key ? 'selected' : ''}
+                key={key}
+                onClick={() => setReactionPickerCategory(key)}
+                title={key.charAt(0).toUpperCase() + key.slice(1)}
+              >
+                {key === 'custom' ? <b>R</b> : icon}
+              </button>
+            );
+          })}
+        </div>
+        <div className="reaction-picker-grid">
+          {custom.map((emoji) => {
+            const key = `custom:${emoji.id}`;
+            const mine = (reactions[key] || []).includes(currentUser.username);
+            return (
+              <button
+                type="button"
+                key={key}
+                className={mine ? 'selected' : ''}
+                onClick={() => toggle(item.id, key)}
+                aria-pressed={mine}
+                title={`:${emoji.name}:`}
+              >
+                <img className="custom-reaction-emoji picker-custom-emoji" src={emoji.image} alt={`:${emoji.name}:`} />
+              </button>
+            );
+          })}
+          {native.map((emoji) => {
+            const mine = (reactions[emoji] || []).includes(currentUser.username);
             return (
               <button
                 type="button"
                 key={emoji}
-                className={`reaction-chip ${mine ? 'mine' : ''}`}
+                className={mine ? 'selected' : ''}
                 onClick={() => toggle(item.id, emoji)}
-                title={users.length ? `${users.length} reaction${users.length === 1 ? '' : 's'}` : 'React'}
                 aria-pressed={mine}
-              >
-                <span>{emoji}</span><b>{users.length}</b>
-              </button>
+                title={emoji}
+              >{emoji}</button>
             );
           })}
-          <button
-            type="button"
-            className={`reaction-add ${menuOpen ? 'active' : ''}`}
-            onClick={() => setReactionMenus((menus) => ({ ...menus, [menuKey]: !menus[menuKey] }))}
-            aria-label={menuOpen ? 'Close reactions' : 'Add reaction'}
-            title={menuOpen ? 'Close reactions' : 'Add reaction'}
-          >
-            <Plus size={14} />
-          </button>
+          {category === 'custom' && custom.length === 0 && <div className="reaction-picker-empty">No custom emoji yet.</div>}
         </div>
-        {menuOpen && (
-          <div className="reaction-picker" aria-label="Choose a reaction">
-            {REACTION_EMOJIS.map((emoji) => {
-              const mine = (reactions[emoji] || []).includes(currentUser.username);
+      </div>
+    );
+  }
+
+  function renderReactionBar(item, kind) {
+    if (!currentUser || (kind === 'post' && item.tag === 'Lumina')) return null;
+    const menuKey = `${kind}:${item.id}`;
+    const reactions = item.reactions || {};
+    const visible = Object.keys(reactions).filter((key) => reactionIsAvailable(key) && (reactions[key] || []).length > 0);
+    const menuOpen = !!reactionMenus[menuKey];
+    if (!visible.length && !menuOpen) return null;
+    const toggle = kind === 'post' ? togglePostReaction : toggleSuggestionReaction;
+    return (
+      <div className={`reaction-bar ${menuOpen ? 'is-open' : ''}`}>
+        {visible.length > 0 && (
+          <div className="reaction-chips">
+            {visible.map((emoji) => {
+              const users = reactions[emoji] || [];
+              const mine = users.includes(currentUser.username);
               return (
                 <button
                   type="button"
                   key={emoji}
-                  className={mine ? 'selected' : ''}
+                  className={`reaction-chip ${mine ? 'mine' : ''}`}
                   onClick={() => toggle(item.id, emoji)}
+                  title={`${reactionLabel(emoji)} · ${users.length} reaction${users.length === 1 ? '' : 's'}`}
                   aria-pressed={mine}
-                >{emoji}</button>
+                >
+                  {renderReactionGlyph(emoji)}<b>{users.length}</b>
+                </button>
               );
             })}
           </div>
         )}
+        {menuOpen && renderReactionPicker(item, kind, menuKey, reactions)}
       </div>
     );
   }
@@ -1622,6 +1847,75 @@ export default function RUMS() {
     if (currentUser?.username === username) {
       setCurrentUser(next.find((u) => u.username === username));
     }
+  }
+
+  async function handleCustomEmojiFile(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setCustomEmojiBusy(true);
+    setCustomEmojiStatus('Processing…');
+    try {
+      const image = await resizeEmojiImage(file, 96);
+      setCustomEmojiDraft((draft) => ({ ...draft, image }));
+      setCustomEmojiStatus('Ready');
+    } catch (e) {
+      console.error(e);
+      setCustomEmojiStatus('Could not read image');
+    } finally {
+      setCustomEmojiBusy(false);
+      event.target.value = '';
+      setTimeout(() => setCustomEmojiStatus(''), 1600);
+    }
+  }
+
+  async function addCustomEmoji() {
+    const name = customEmojiDraft.name.trim().replace(/^:+|:+$/g, '').replace(/[^A-Za-z0-9_-]/g, '').toLowerCase();
+    if (!name || !customEmojiDraft.image || customEmojiBusy) {
+      setCustomEmojiStatus(!name ? 'Add a name' : 'Choose an image');
+      return;
+    }
+    if (customEmojis.some((emoji) => emoji.name.toLowerCase() === name)) {
+      setCustomEmojiStatus('That name already exists');
+      return;
+    }
+    if (customEmojis.length >= 80) {
+      setCustomEmojiStatus('Custom emoji limit reached');
+      return;
+    }
+    const next = [...customEmojis, { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, name, image: customEmojiDraft.image }];
+    await saveCustomEmojis(next);
+    setCustomEmojiDraft({ name: '', image: '' });
+  }
+
+  async function removeCustomEmoji(id) {
+    const key = `custom:${id}`;
+    const next = customEmojis.filter((emoji) => emoji.id !== id);
+    await saveCustomEmojis(next);
+    const strip = (reactions) => {
+      const cleaned = { ...(reactions || {}) };
+      delete cleaned[key];
+      return cleaned;
+    };
+    // Custom emoji are universal, so removing one also cleans its stored reactions in both RUMS spaces.
+    await Promise.all(['rums4', 'rums5'].map(async (space) => {
+      const keys = storageKeysForSpace(space);
+      const [postRecord, suggestionRecord] = await Promise.all([
+        safeGet(keys.posts, true),
+        safeGet(keys.suggestions, true),
+      ]);
+      const spacePosts = postRecord ? JSON.parse(postRecord.value) : [];
+      const spaceSuggestions = suggestionRecord ? JSON.parse(suggestionRecord.value) : [];
+      const cleanedPosts = spacePosts.map((post) => ({ ...post, reactions: strip(post.reactions) }));
+      const cleanedSuggestions = spaceSuggestions.map((suggestion) => ({ ...suggestion, reactions: strip(suggestion.reactions) }));
+      await Promise.all([
+        window.storage.set(keys.posts, JSON.stringify(cleanedPosts), true),
+        window.storage.set(keys.suggestions, JSON.stringify(cleanedSuggestions), true),
+      ]);
+      if (space === rumsSpace) {
+        setPosts(cleanedPosts);
+        setSuggestions(cleanedSuggestions);
+      }
+    }));
   }
 
   // Removes a user account plus every trace of them across posts: their own
@@ -2298,6 +2592,7 @@ export default function RUMS() {
             {shareStatus[post.id] ? <Check size={17} color="#0fb8a6" /> : <Share2 size={17} />}
             {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
           </button>
+          {renderReactionAddButton(post, 'post')}
         </div>
         {renderReactionBar(post, 'post')}
         {post.caption && (
@@ -2656,13 +2951,16 @@ export default function RUMS() {
                           )}
                         </div>
                         <div className="suggestion-text">{s.text}</div>
-                        <button
-                          className={`like-btn suggestion-vote-btn ${voted ? 'liked' : ''}`}
-                          onClick={() => toggleSuggestionVote(s.id)}
-                        >
-                          <Heart size={14} fill={voted ? '#e0546b' : 'none'} />
-                          {(s.votes || []).length > 0 ? (s.votes || []).length : 'Upvote'}
-                        </button>
+                        <div className="suggestion-actions">
+                          <button
+                            className={`like-btn suggestion-vote-btn ${voted ? 'liked' : ''}`}
+                            onClick={() => toggleSuggestionVote(s.id)}
+                          >
+                            <Heart size={14} fill={voted ? '#e0546b' : 'none'} />
+                            {(s.votes || []).length > 0 ? (s.votes || []).length : 'Upvote'}
+                          </button>
+                          {renderReactionAddButton(s, 'suggestion')}
+                        </div>
                         {renderReactionBar(s, 'suggestion')}
                       </div>
                     );
@@ -2914,6 +3212,39 @@ export default function RUMS() {
                     </div>
                     <div className="editor-subsection"><h3>Custom navigation tabs</h3><div className="editor-add-row"><input value={tabDraft} onChange={(e) => setTabDraft(e.target.value)} placeholder="New tab name" /><button onClick={addCustomTab}><Plus size={15} /> Add tab</button></div>{siteConfig.customTabs.map((tab) => <div className="editor-item" key={tab.id}><span>{tab.label}</span><button onClick={() => removeCustomTab(tab.id)}><Trash2 size={14} /></button></div>)}</div>
                   </section>
+
+                  <section className="site-editor custom-emoji-admin">
+                    <div className="admin-section-title"><ImagePlus size={16} /> Custom emojis <span>{customEmojiStatus}</span></div>
+                    <p className="editor-intro">Custom emojis are shared across RUMS 4 and RUMS 5 and appear in the same reaction picker as the native emoji library.</p>
+                    <div className="custom-emoji-create">
+                      <div className={`custom-emoji-preview ${customEmojiDraft.image ? 'has-image' : ''}`}>
+                        {customEmojiDraft.image ? <img src={customEmojiDraft.image} alt="Custom emoji preview" /> : <span>+</span>}
+                      </div>
+                      <label className="custom-emoji-name">
+                        Emoji name
+                        <div className="custom-emoji-name-input"><span>:</span><input value={customEmojiDraft.name} maxLength={28} placeholder="metro" onChange={(e) => setCustomEmojiDraft((draft) => ({ ...draft, name: e.target.value }))} /><span>:</span></div>
+                      </label>
+                      <label className="custom-emoji-upload">
+                        <ImagePlus size={15} /> {customEmojiDraft.image ? 'Replace image' : 'Choose image'}
+                        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleCustomEmojiFile} disabled={customEmojiBusy} />
+                      </label>
+                      <button className="aero-btn custom-emoji-add" type="button" onClick={addCustomEmoji} disabled={customEmojiBusy || !customEmojiDraft.name.trim() || !customEmojiDraft.image}>
+                        {customEmojiBusy ? <Loader2 size={14} className="spin" /> : <Plus size={14} />} Add emoji
+                      </button>
+                    </div>
+                    {customEmojis.length > 0 ? (
+                      <div className="custom-emoji-library">
+                        {customEmojis.map((emoji) => (
+                          <div className="custom-emoji-admin-item" key={emoji.id}>
+                            <img src={emoji.image} alt={`:${emoji.name}:`} />
+                            <span>:{emoji.name}:</span>
+                            <button type="button" className="row-del-btn" onClick={() => removeCustomEmoji(emoji.id)} title={`Delete :${emoji.name}:`}><Trash2 size={13} /></button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : <p className="custom-emoji-empty">No custom emojis yet.</p>}
+                  </section>
+
                   <div className="admin-section-title"><Shield size={16} /> Members ({users.length})</div>
                   {users.map((u) => (
                     <div className="user-row" data-edit-box-id={`admin-user:${u.username}`} key={u.username}>
