@@ -19,6 +19,15 @@ const RUMS5_SUGGESTIONS_KEY = 'rums5-suggestions';
 const RUMS5_UPDATES_KEY = 'rums5-updates';
 const RUMS5_SITE_CONFIG_KEY = 'rums5-site-config';
 const PLATFORM_NAME = 'RUMS Plaza';
+const THEME_STORAGE_KEY = 'rums-plaza-theme';
+const RUMS_THEMES = [
+  { id: 'standard', name: 'Standard', description: 'Glossy modern RUMS Plaza', swatches: ['#f6f8fc', '#3478f6', '#b8d7ff'] },
+  { id: 'roblox2016', name: 'Roblox 2016', description: 'Classic red, grey and web-era panels', swatches: ['#e5e5e5', '#d92727', '#3a3a3a'] },
+  { id: 'dark', name: 'Dark', description: 'Deep graphite glass with cool blue accents', swatches: ['#12151b', '#2c3440', '#6da8ff'] },
+  { id: 'minecraft', name: 'Minecraft', description: 'Blocky stone, grass and dirt-inspired UI', swatches: ['#7cab43', '#6b4c2e', '#9a9a9a'] },
+  { id: 'frutiger', name: 'Frutiger Aero', description: 'Blue skies, green glass and bubbly optimism', swatches: ['#5bbcff', '#5dcf70', '#f7ffff'] },
+  { id: 'y2k', name: 'Y2K Futurism', description: 'Chrome, aqua and lavender 2000s futurism', swatches: ['#dce5f4', '#55d8e8', '#a693ff'] },
+];
 const RUMS_SPACES = {
   rums4: { id: 'rums4', label: 'RUMS 4', subtitle: 'The current archive', description: 'Everything from the current site, including Project Lumina and all older posts.' },
   rums5: { id: 'rums5', label: 'RUMS 5', subtitle: 'The new era', description: 'The same RUMS experience with a fresh feed and no Project Lumina.' },
@@ -367,6 +376,12 @@ export default function RUMS() {
       const saved = Number(window.localStorage.getItem('rums-glass-strength'));
       return Number.isFinite(saved) && saved >= 35 && saved <= 95 ? saved : 72;
     } catch { return 72; }
+  });
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
+      return RUMS_THEMES.some((item) => item.id === saved) ? saved : 'standard';
+    } catch { return 'standard'; }
   });
   const [glassDragging, setGlassDragging] = useState(false);
   const [luminaView, setLuminaView] = useState('overview');
@@ -979,6 +994,10 @@ export default function RUMS() {
   useEffect(() => {
     try { window.localStorage.setItem('rums-glass-strength', String(glassStrength)); } catch { /* browser preferences unavailable */ }
   }, [glassStrength]);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(THEME_STORAGE_KEY, theme); } catch { /* browser preferences unavailable */ }
+  }, [theme]);
 
   // Poll the shared stores so new posts/suggestions/updates (and their
   // notification badges) show up without needing to log out/in, and so an
@@ -3176,7 +3195,7 @@ export default function RUMS() {
   }
 
   return (
-    <div className={`aero-root ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? `space-${rumsSpace}` : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': siteConfig.accent }}>
+    <div data-theme={theme} className={`aero-root ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? `space-${rumsSpace}` : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': siteConfig.accent }}>
       <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
         <defs>
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
@@ -3737,7 +3756,26 @@ export default function RUMS() {
                       </div>
 
                       <div className="profile-section appearance-section">
-                        <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Adjust the transparency of the glass controls on this device.</p></div><span data-glass-value>{glassStrength}%</span></div>
+                        <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Choose a RUMS Plaza theme, then fine-tune its glass transparency on this device.</p></div><span className="appearance-current-theme">{RUMS_THEMES.find((item) => item.id === theme)?.name || 'Standard'}</span></div>
+                        <div className="theme-picker" role="radiogroup" aria-label="RUMS Plaza theme">
+                          {RUMS_THEMES.map((item) => (
+                            <button
+                              type="button"
+                              role="radio"
+                              aria-checked={theme === item.id}
+                              key={item.id}
+                              className={`theme-option theme-option-${item.id} ${theme === item.id ? 'active' : ''}`}
+                              onClick={() => setTheme(item.id)}
+                            >
+                              <span className="theme-option-preview" aria-hidden="true">
+                                {item.swatches.map((color, index) => <span key={`${item.id}-${index}`} style={{ background: color }} />)}
+                              </span>
+                              <span className="theme-option-copy"><strong>{item.name}</strong><small>{item.description}</small></span>
+                              {theme === item.id && <Check size={15} className="theme-option-check" />}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="appearance-heading glass-strength-heading"><div><div className="field-label">Glass strength</div><p>Adjust the transparency of glass controls for the selected theme.</p></div><span data-glass-value>{glassStrength}%</span></div>
                         <div className="glass-live-preview" aria-label={`Glass appearance preview at ${glassStrength} percent`}>
                           <div className="preview-sun" /><div className="preview-hill" />
                           <div className="preview-island"><span className="preview-icon"><Droplet size={16} /></span><span><b>Glass preview</b><small data-glass-description>{glassStrength < 55 ? 'Clear and light' : glassStrength < 78 ? 'Balanced glass' : 'Soft and frosted'}</small></span><span className="preview-action"><Plus size={14} /></span></div>
