@@ -1817,12 +1817,14 @@ export default function RUMS() {
   function renderVisualEditToolbar() {
     return (
       <div className="visual-edit-toolbar">
-        <span><Pencil size={14} /> Editing <b>{screen === 'custom' ? siteConfig.customTabs.find((tab) => tab.id === customPageId)?.label : BUILT_IN_PAGES.find(([id]) => id === screen)?.[1] || screen}</b></span>
-        <button type="button" onClick={undoSiteEdit} disabled={!canUndoSiteEdit} title="Undo · Command/Control Z"><Undo2 size={14} /> Undo</button>
-        <button type="button" onClick={redoSiteEdit} disabled={!canRedoSiteEdit} title="Redo · Command/Control Y or Shift+Command/Control Z"><Redo2 size={14} /> Redo</button>
-        <button type="button" onClick={() => addWidgetToPage(activePlacement)}><Plus size={14} /> Add box</button>
-        <label title="Site accent colour"><Palette size={14} /><input type="color" value={siteConfig.accent} onChange={(e) => updateSiteConfig({ accent: e.target.value })} /></label>
-        <button type="button" onClick={() => updateSiteConfig({ animations: !siteConfig.animations })}>{siteConfig.animations ? <Sparkles size={14} /> : <EyeOff size={14} />} Motion</button>
+        <span className="editor-context-label"><Pencil size={14} /> Editing <b>{screen === 'custom' ? siteConfig.customTabs.find((tab) => tab.id === customPageId)?.label : BUILT_IN_PAGES.find(([id]) => id === screen)?.[1] || screen}</b></span>
+        <div className="editor-primary-actions">
+          <button type="button" onClick={undoSiteEdit} disabled={!canUndoSiteEdit} title="Undo · Command/Control Z"><Undo2 size={14} /> Undo</button>
+          <button type="button" onClick={redoSiteEdit} disabled={!canRedoSiteEdit} title="Redo · Command/Control Y or Shift+Command/Control Z"><Redo2 size={14} /> Redo</button>
+          <button type="button" onClick={() => addWidgetToPage(activePlacement)}><Plus size={14} /> Add box</button>
+          <label title="Site accent colour"><Palette size={14} /><input type="color" value={siteConfig.accent} onChange={(e) => updateSiteConfig({ accent: e.target.value })} /></label>
+          <button type="button" onClick={() => updateSiteConfig({ animations: !siteConfig.animations })}>{siteConfig.animations ? <Sparkles size={14} /> : <EyeOff size={14} />} Motion</button>
+        </div>
         {selectedBoxId && (
           <div className="selected-box-toolbar">
             <strong className="selected-box-chip" title={selectedBoxId}>Selected box</strong>

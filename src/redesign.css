@@ -134,13 +134,17 @@ button,input,textarea { font:inherit; }
 .inline-site-text-edit {position:relative;border-radius:7px;outline:1px dashed transparent;outline-offset:4px;cursor:text;transform:translate(var(--position-x,0),var(--position-y,0));}.inline-site-text-edit:hover,.inline-site-text-edit:focus {outline-color:color-mix(in srgb,var(--site-accent) 48%,transparent);}.visual-edit-mode .custom-site-widget [contenteditable=true] {outline:1px dashed transparent;outline-offset:3px;}.visual-edit-mode .custom-site-widget [contenteditable=true]:hover,.visual-edit-mode .custom-site-widget [contenteditable=true]:focus {outline-color:color-mix(in srgb,var(--site-accent) 45%,transparent);}.text-position-handle {position:absolute;z-index:8;right:-19px;top:-17px;display:grid;place-items:center;width:23px;height:23px;border:1px solid #fff;border-radius:9px;background:var(--site-accent,#3478f6);color:#fff;box-shadow:0 4px 12px #24569b4d;cursor:grab;touch-action:none;opacity:0;pointer-events:none;transform:scale(.88);transition:opacity .14s,transform .14s;}.inline-site-text-edit:hover>.text-position-handle,.inline-site-text-edit:focus>.text-position-handle,.text-position-handle:active {opacity:1;pointer-events:auto;transform:scale(1);}.text-position-handle:active,.widget-drag-handle:active {cursor:grabbing;}.is-position-dragging {z-index:40!important;transition:none!important;user-select:none!important;outline-style:solid!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--site-accent) 18%,transparent),0 12px 32px #244f8338!important;}
 .visual-edit-toolbar {position:sticky;z-index:180;top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 15px;padding:8px 10px;border:1px solid #fff;border-radius:18px;background:#f8fbffe3;box-shadow:0 8px 24px #244b7935;backdrop-filter:blur(24px) saturate(1.4);}
 .visual-edit-toolbar span {display:flex;align-items:center;gap:5px;min-width:0;margin-right:auto;color:#64758d;font-size:11px;}
+.visual-edit-toolbar .editor-context-label {flex:1 1 auto;max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.visual-edit-toolbar .editor-context-label b {overflow:hidden;text-overflow:ellipsis;}
+.editor-primary-actions {display:flex;flex:0 0 auto;align-items:center;gap:6px;min-width:0;white-space:nowrap;}
+.editor-primary-actions button,.editor-primary-actions label {flex:0 0 auto;}
 .selected-box-toolbar {flex:0 0 100%;min-width:0;display:flex;align-items:center;gap:7px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--site-accent,#3478f6) 14%,#dfe8f4);overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;}
 .selected-box-toolbar::-webkit-scrollbar {display:none;}
 .selected-box-toolbar .selected-box-chip {margin-right:2px;}
 .visual-edit-toolbar button,.visual-edit-toolbar label {display:flex;align-items:center;gap:5px;min-height:31px;padding:0 10px;border:1px solid #fff;border-radius:11px;background:#ffffffd1;color:#376da9;font-size:10px;font-weight:750;cursor:pointer;}.visual-edit-toolbar label {position:relative;padding:0 9px;}.visual-edit-toolbar input[type=color] {position:absolute;width:1px;height:1px;opacity:0;}.edit-mode-active {background:var(--site-accent)!important;color:#fff!important;}
 .widget-animation-float {animation:site-widget-float 5s ease-in-out infinite;}.widget-animation-pulse {animation:site-widget-pulse 3.2s ease-in-out infinite;}.widget-animation-shimmer::after {content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,#ffffff7d 48%,transparent 65%);transform:translateX(-120%);animation:site-widget-shimmer 4s ease-in-out infinite;pointer-events:none;}@keyframes site-widget-float {0%,100% {transform:translate(var(--position-x,0),var(--position-y,0));}50% {transform:translate(var(--position-x,0),calc(var(--position-y,0px) - 4px));}}@keyframes site-widget-pulse {50% {box-shadow:inset 0 1px #fff,0 10px 30px color-mix(in srgb,var(--site-accent) 28%,transparent);}}@keyframes site-widget-shimmer {55%,100% {transform:translateX(120%);}}
 .finish-editing-button {position:static!important;z-index:220;display:flex;align-items:center;gap:7px;min-height:42px;padding:0 17px;border:1px solid #9bc4ff;border-radius:15px;background:linear-gradient(145deg,#62a2ff,#2874eb);color:#fff;font-size:12px;font-weight:800;box-shadow:inset 0 1px #ffffff9c,0 9px 25px #2364c761;cursor:pointer;backdrop-filter:blur(18px);transform:none!important;}
-@media(max-width:600px) {.visual-edit-toolbar {overflow:visible;top:4px;border-radius:15px;scrollbar-width:none;}.visual-edit-toolbar span {display:none;}.visual-edit-toolbar button,.visual-edit-toolbar label {flex:0 0 auto;}.widget-edit-controls {overflow-x:auto;}.widget-edit-controls select {max-width:76px;}.finish-editing-button {min-height:38px;padding:0 13px;border-radius:13px;font-size:11px;}}
+@media(max-width:600px) {.visual-edit-toolbar {overflow:visible;top:4px;border-radius:15px;scrollbar-width:none;}.visual-edit-toolbar span {display:none;}.visual-edit-toolbar button,.visual-edit-toolbar label {flex:0 0 auto;}.editor-primary-actions {width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;}.editor-primary-actions::-webkit-scrollbar {display:none;}.widget-edit-controls {overflow-x:auto;}.widget-edit-controls select {max-width:76px;}.finish-editing-button {min-height:38px;padding:0 13px;border-radius:13px;font-size:11px;}}
 
 /* Quiet glass bubbles: kept at the edges so decoration never competes with UI. */
 .aero-root .desktop-rail,.aero-root .aero-header,.aero-root .bottom-nav {
@@ -473,6 +477,11 @@ button,input,textarea { font:inherit; }
 
 /* Structural editor/feed alignment: while editing the feed, both controls share one row. */
 @media (min-width: 901px) {
+  .visual-edit-toolbar {align-content:flex-start;}
+  .visual-edit-toolbar > .editor-context-label {margin-right:4px;}
+  .visual-edit-toolbar > .editor-primary-actions {margin-left:auto;}
+  .visual-edit-toolbar > .editor-primary-actions button,
+  .visual-edit-toolbar > .editor-primary-actions label {min-height:31px;padding-left:8px;padding-right:8px;}
   .visual-edit-feed-row {
     position:sticky;
     z-index:180;
