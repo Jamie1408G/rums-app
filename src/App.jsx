@@ -29,6 +29,7 @@ const ROBLOX_THEMES = [
   { id: 'roblox2020', name: 'Roblox 2020', year: '2020', description: 'Modern light Roblox web UI with soft grey surfaces, minimal borders and restrained controls', swatches: ['#f2f4f5', '#ffffff', '#00b06f'] },
   { id: 'roblox2026', name: 'Roblox 2026', year: '2026', description: 'Current light Roblox Home UI: icon rail, pale search, bold sections, social circles and image-first discovery', swatches: ['#ffffff', '#f2f3f5', '#111111'] },
 ];
+const FRUTIGER_THEME_IDS = ['frutiger', 'frutigereco', 'frutigermetro', 'vectorflourish'];
 const RUMS_THEMES = [
   { id: 'standard', name: 'Standard', description: 'Glossy modern RUMS Plaza', swatches: ['#f6f8fc', '#3478f6', '#b8d7ff'] },
   ...ROBLOX_THEMES,
@@ -44,7 +45,8 @@ const RUMS_THEMES = [
   { id: 'brutalism', name: 'Brutalism', description: 'Raw high-contrast editorial UI with hard edges, bold type and stark structure', swatches: ['#f3f0e8', '#111111', '#ff5f2e'] },
   { id: 'y2k', name: 'Y2K Futurism', description: 'Chrome, aqua and lavender 2000s futurism', swatches: ['#dce5f4', '#55d8e8', '#a693ff'] },
 ];
-const MAIN_THEME_OPTIONS = RUMS_THEMES.filter((item) => !item.id.startsWith('roblox'));
+const FRUTIGER_THEMES = RUMS_THEMES.filter((item) => FRUTIGER_THEME_IDS.includes(item.id));
+const MAIN_THEME_OPTIONS = RUMS_THEMES.filter((item) => !item.id.startsWith('roblox') && !FRUTIGER_THEME_IDS.includes(item.id));
 const RUMS_SPACES = {
   rums4: { id: 'rums4', label: 'RUMS 4', subtitle: 'The current archive', description: 'Everything from the current site, including Project Lumina and all older posts.' },
   rums5: { id: 'rums5', label: 'RUMS 5', subtitle: 'The new era', description: 'The same RUMS experience with a fresh feed and no Project Lumina.' },
@@ -402,6 +404,9 @@ export default function RUMS() {
   });
   const [robloxThemeMenuOpen, setRobloxThemeMenuOpen] = useState(() => {
     try { return (window.localStorage.getItem(THEME_STORAGE_KEY) || '').startsWith('roblox'); } catch { return false; }
+  });
+  const [frutigerThemeMenuOpen, setFrutigerThemeMenuOpen] = useState(() => {
+    try { return FRUTIGER_THEME_IDS.includes(window.localStorage.getItem(THEME_STORAGE_KEY) || ''); } catch { return false; }
   });
   const [glassDragging, setGlassDragging] = useState(false);
   const [luminaView, setLuminaView] = useState('overview');
@@ -3823,6 +3828,40 @@ export default function RUMS() {
                                     <span className="roblox-year-swatch" aria-hidden="true">{item.swatches.map((color, index) => <span key={`${item.id}-year-${index}`} style={{ background: color }} />)}</span>
                                     <span className="roblox-year-copy"><strong>{item.name}</strong><small>{item.description}</small></span>
                                     {theme === item.id && <Check size={14} className="roblox-year-check" />}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+
+                          <button
+                            type="button"
+                            className={`theme-option theme-family-option theme-family-frutiger ${FRUTIGER_THEME_IDS.includes(theme) ? 'active' : ''}`}
+                            aria-expanded={frutigerThemeMenuOpen}
+                            onClick={() => setFrutigerThemeMenuOpen((open) => !open)}
+                          >
+                            <span className="theme-option-preview frutiger-family-preview" aria-hidden="true"><span /><span /><span /></span>
+                            <span className="theme-option-copy"><strong>Frutiger Family</strong><small>Aqua/Aero, Eco, Metro and Vector Flourish</small></span>
+                            <ChevronDown size={15} className={`theme-family-chevron ${frutigerThemeMenuOpen ? 'open' : ''}`} />
+                          </button>
+
+                          {frutigerThemeMenuOpen && (
+                            <div className="frutiger-theme-family-panel" role="group" aria-label="Frutiger Family themes">
+                              <div className="frutiger-theme-family-heading"><strong>Frutiger Family</strong><small>Four related 2000s aesthetics, from glossy Aero to vector-heavy Metro.</small></div>
+                              <div className="frutiger-theme-grid">
+                                {FRUTIGER_THEMES.map((item) => (
+                                  <button
+                                    type="button"
+                                    role="radio"
+                                    aria-checked={theme === item.id}
+                                    key={item.id}
+                                    className={`frutiger-theme-item frutiger-theme-item-${item.id} ${theme === item.id ? 'active' : ''}`}
+                                    onClick={() => setTheme(item.id)}
+                                  >
+                                    <span className="frutiger-theme-swatch" aria-hidden="true">{item.swatches.map((color, index) => <span key={`${item.id}-family-${index}`} style={{ background: color }} />)}</span>
+                                    <span className="frutiger-theme-copy"><strong>{item.name}</strong><small>{item.description}</small></span>
+                                    {theme === item.id && <Check size={14} className="frutiger-theme-check" />}
                                   </button>
                                 ))}
                               </div>
