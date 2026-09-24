@@ -12,6 +12,13 @@ const POSTS_KEY = 'rums-posts';
 const SESSION_KEY = 'rums-session';
 const SUGGESTIONS_KEY = 'rums-suggestions';
 const UPDATES_KEY = 'rums-updates';
+const SITE_CONFIG_KEY = 'rums-site-config';
+const DEFAULT_SITE_CONFIG = {
+  brandName: 'RUMS', brandTagline: 'YOUR SERVER COMMUNITY', accent: '#3478f6', animations: true,
+  heroTitle: 'Your world.', heroText: 'Builds, screenshots and moments from everyone on the server.',
+  showDiscover: true, showLumina: true, showUpdates: true, showSuggestions: true,
+  customTabs: [], customWidgets: [],
+};
 const TAGS = ['General', 'Lumina'];
 const LUMINA_SECTIONS = [['overview', 'Overview'], ['metro', 'Districts'], ['community', 'Community']];
 const LUMINA_STATIONS = [
@@ -39,6 +46,18 @@ function timeAgo(ts) {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   return `${d}d ago`;
+}
+
+function safeExternalUrl(value) {
+  const raw = value?.trim();
+  if (!raw) return '';
+  try {
+    const candidate = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    const url = new URL(candidate);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
+  }
 }
 
 function resizeImage(file, maxW = 900) {
@@ -94,6 +113,12 @@ export default function RUMS() {
   const [suggestionBusy, setSuggestionBusy] = useState(false);
   const [updateDraft, setUpdateDraft] = useState({ title: '', body: '' });
   const [updateBusy, setUpdateBusy] = useState(false);
+  const [siteConfig, setSiteConfig] = useState(DEFAULT_SITE_CONFIG);
+  const [siteConfigBusy, setSiteConfigBusy] = useState(false);
+  const [siteConfigStatus, setSiteConfigStatus] = useState('');
+  const [customPageId, setCustomPageId] = useState(null);
+  const [tabDraft, setTabDraft] = useState('');
+  const [widgetDraft, setWidgetDraft] = useState({ title: '', body: '', image: '', actionLabel: '', actionUrl: '', placement: 'feed' });
   const [viewedProfile, setViewedProfile] = useState(null); // username being viewed, or null = own profile
   const [viewingPostId, setViewingPostId] = useState(null);
   const [navStack, setNavStack] = useState([]);
@@ -109,6 +134,7 @@ export default function RUMS() {
   const fileInputRef = useRef(null);
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
+  const widgetImageInputRef = useRef(null);
   const rootRef = useRef(null);
   const tabsRef = useRef(null);
   const tabsDragRef = useRef(null);
@@ -338,11 +364,12 @@ export default function RUMS() {
   useEffect(() => {
     if (!currentUser) return;
     const id = setInterval(async () => {
-      const [p, u, sg, up] = await Promise.all([
+      const [p, u, sg, up, cfg] = await Promise.all([
         safeGet(POSTS_KEY, true),
         safeGet(USERS_KEY, true),
         safeGet(SUGGESTIONS_KEY, true),
         safeGet(UPDATES_KEY, true),
+        safeGet(SITE_CONFIG_KEY, true),
       ]);
       if (p) {
         try {
@@ -364,6 +391,9 @@ export default function RUMS() {
         } catch {
           /* ignore malformed payload */
         }
+      }
+      if (cfg) {
+        try { setSiteConfig({ ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) }); } catch { /* ignore malformed payload */ }
       }
       if (u) {
         try {
@@ -404,12 +434,13 @@ export default function RUMS() {
 
   async function init() {
     try {
-      const [u, p, s, sg, up] = await Promise.all([
+      const [u, p, s, sg, up, cfg] = await Promise.all([
         safeGet(USERS_KEY, true),
         safeGet(POSTS_KEY, true),
         safeGet(SESSION_KEY, false),
         safeGet(SUGGESTIONS_KEY, true),
         safeGet(UPDATES_KEY, true),
+        safeGet(SITE_CONFIG_KEY, true),
       ]);
       const loadedUsers = u ? JSON.parse(u.value) : [];
       const loadedPosts = p ? JSON.parse(p.value) : [];
@@ -417,6 +448,7 @@ export default function RUMS() {
       setPosts(loadedPosts);
       setSuggestions(sg ? JSON.parse(sg.value) : []);
       setUpdates(up ? JSON.parse(up.value) : []);
+      setSiteConfig(cfg ? { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) } : DEFAULT_SITE_CONFIG);
       if (s) {
         const sess = JSON.parse(s.value);
         const found = loadedUsers.find((x) => x.username === sess.username);
@@ -496,6 +528,60 @@ export default function RUMS() {
       console.error(e);
       setError('Could not save — try again.');
     }
+  }
+
+  async function saveSiteConfig(next) {
+    setSiteConfig(next);
+    setSiteConfigBusy(true);
+    setSiteConfigStatus('Saving…');
+    try {
+      await window.storage.set(SITE_CONFIG_KEY, JSON.stringify(next), true);
+      setSiteConfigStatus('Published');
+    } catch (e) {
+      console.error(e);
+      setSiteConfigStatus('Could not save');
+    } finally {
+      setSiteConfigBusy(false);
+      setTimeout(() => setSiteConfigStatus(''), 1800);
+    }
+  }
+
+  function updateSiteConfig(patch) {
+    saveSiteConfig({ ...siteConfig, ...patch });
+  }
+
+  function addCustomTab() {
+    const label = tabDraft.trim();
+    if (!label) return;
+    const id = `tab-${Date.now()}`;
+    saveSiteConfig({ ...siteConfig, customTabs: [...siteConfig.customTabs, { id, label }] });
+    setTabDraft('');
+  }
+
+  function removeCustomTab(id) {
+    saveSiteConfig({ ...siteConfig, customTabs: siteConfig.customTabs.filter((tab) => tab.id !== id), customWidgets: siteConfig.customWidgets.filter((widget) => widget.placement !== id) });
+    if (customPageId === id) { setCustomPageId(null); setScreen('feed'); }
+  }
+
+  function addCustomWidget() {
+    if (!widgetDraft.title.trim() && !widgetDraft.body.trim() && !widgetDraft.image) return;
+    const widget = { ...widgetDraft, actionUrl: safeExternalUrl(widgetDraft.actionUrl), id: `widget-${Date.now()}` };
+    saveSiteConfig({ ...siteConfig, customWidgets: [...siteConfig.customWidgets, widget] });
+    setWidgetDraft({ title: '', body: '', image: '', actionLabel: '', actionUrl: '', placement: 'feed' });
+  }
+
+  function removeCustomWidget(id) {
+    saveSiteConfig({ ...siteConfig, customWidgets: siteConfig.customWidgets.filter((widget) => widget.id !== id) });
+  }
+
+  async function handleWidgetImage(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const image = await resizeImage(file, 1200);
+      setWidgetDraft((draft) => ({ ...draft, image }));
+    } catch { setSiteConfigStatus('Could not read image'); }
+    e.target.value = '';
   }
 
   async function handleAuth(e) {
@@ -1007,6 +1093,17 @@ export default function RUMS() {
   const canManageComment = (c) => currentUser?.isAdmin || currentUser?.username === c.username;
   const canManageSuggestion = (s) => currentUser?.isAdmin || currentUser?.username === s.username;
   const isLastAdmin = (u) => u.isAdmin && users.filter((x) => x.isAdmin).length === 1;
+  const canEditSite = Boolean(currentUser?.isAdmin || currentUser?.username?.toLowerCase() === 'jamie');
+  const renderCustomWidgets = (placement) => siteConfig.customWidgets
+    .filter((widget) => widget.placement === placement)
+    .map((widget) => (
+      <article className="custom-site-widget" key={widget.id}>
+        {widget.image && <img src={widget.image} alt="" />}
+        <div><h3>{widget.title}</h3>{widget.body && <p>{widget.body}</p>}
+          {widget.actionLabel && widget.actionUrl && <a href={widget.actionUrl} target="_blank" rel="noreferrer">{widget.actionLabel}</a>}
+        </div>
+      </article>
+    ));
   const unseenGeneral = currentUser
     ? posts.filter((p) => p.tag !== 'Lumina' && p.timestamp > (lastSeen.General || 0) && p.username !== currentUser.username).length
     : 0;
@@ -1158,7 +1255,7 @@ export default function RUMS() {
   }
 
   return (
-    <div className="aero-root" ref={rootRef} style={{ '--glass-alpha': glassStrength / 100 }}>
+    <div className={`aero-root ${siteConfig.animations ? '' : 'site-motion-off'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': siteConfig.accent }}>
       <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
         <defs>
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
@@ -1222,27 +1319,28 @@ export default function RUMS() {
         {screen !== 'loading' && screen !== 'login' && screen !== 'signup' && currentUser && (
           <>
             <aside className="desktop-rail">
-              <div className="rail-brand"><span className="rail-orb">R</span><span>RUMS<small>YOUR SERVER COMMUNITY</small></span></div>
+              <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span></div>
               <div className="rail-label">EXPLORE</div>
               <button className={`rail-link ${screen === 'feed' ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); }}><Home size={19} /> Community feed {hasNewPosts && <span className="rail-dot" />}</button>
-              <button className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}><Search size={19} /> Discover</button>
-              <button className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}><Droplet size={19} /> Project Lumina</button>
+              {siteConfig.showDiscover && <button className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}><Search size={19} /> Discover</button>}
+              {siteConfig.showLumina && <button className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}><Droplet size={19} /> Project Lumina</button>}
               <div className="rail-label">COMMUNITY</div>
-              <button className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}><Megaphone size={19} /> Server updates</button>
-              <button className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}><Lightbulb size={19} /> Suggestions</button>
-              {currentUser.isAdmin && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
+              {siteConfig.showUpdates && <button className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}><Megaphone size={19} /> Server updates</button>}
+              {siteConfig.showSuggestions && <button className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}><Lightbulb size={19} /> Suggestions</button>}
+              {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}><Pencil size={19} /> {tab.label}</button>)}
+              {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
               <button className="rail-create" onClick={() => setScreen('upload')}><Plus size={19} /> Share a build</button>
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
               <div className="aero-brand">
                 <div className="r-badge">R</div>
-                RUMS
+                {siteConfig.brandName}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
+                {siteConfig.showDiscover && <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   <Search size={18} />
-                </button>
+                </button>}
                 <button className="pill pill-btn" onClick={openOwnProfile} title="Your profile">
                   {avatarNode(currentUser.username, 18, 8)}
                   {currentUser.username}
@@ -1273,6 +1371,7 @@ export default function RUMS() {
             )}
 
             <div className="content">
+              {siteConfig.customTabs.length > 0 && <div className="custom-mobile-tabs">{siteConfig.customTabs.map((tab) => <button key={tab.id} className={screen === 'custom' && customPageId === tab.id ? 'active' : ''} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{tab.label}</button>)}</div>}
               {error && (
                 <div style={{ padding: '10px 16px 0' }}>
                   <div className="error-pill">{error}</div>
@@ -1281,7 +1380,8 @@ export default function RUMS() {
 
               {screen === 'feed' && (
                 <>
-                  <div className="community-hero"><div className="hero-copy"><span className="eyebrow">RUMS COMMUNITY</span><h1>{feedFilter === 'lumina' ? 'Lumina' : 'Your world.'}</h1><p>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : 'Builds, screenshots and moments from everyone on the server.'}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div>
+                  <div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1>{feedFilter === 'lumina' ? 'Lumina' : siteConfig.heroTitle}</h1><p>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteConfig.heroText}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div>
+                  {feedFilter === 'all' && renderCustomWidgets('feed')}
                   <div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>
                   {feedFilter === 'lumina' && (
                     <div className="lumina-banner clickable-row" onClick={openLumina}>
@@ -1673,8 +1773,32 @@ export default function RUMS() {
                 </div>
               )}
 
-              {screen === 'admin' && currentUser.isAdmin && (
+              {screen === 'custom' && customPageId && (
+                <div className="custom-page-wrap">
+                  <div className="section-heading"><div><span className="eyebrow">CUSTOM SPACE</span><h2>{siteConfig.customTabs.find((tab) => tab.id === customPageId)?.label || 'Page'}</h2></div></div>
+                  {renderCustomWidgets(customPageId)}
+                  {!siteConfig.customWidgets.some((widget) => widget.placement === customPageId) && <div className="feed-empty"><h3>Nothing here yet</h3><p>An admin can add widgets to this page in Site editor.</p></div>}
+                </div>
+              )}
+
+              {screen === 'admin' && canEditSite && (
                 <div className="admin-wrap">
+                  <section className="site-editor">
+                    <div className="admin-section-title"><Pencil size={16} /> Site editor <span>{siteConfigStatus}</span></div>
+                    <p className="editor-intro">Changes publish to everyone. Jamie is always treated as the owner.</p>
+                    <div className="editor-grid">
+                      <label>Site name<input value={siteConfig.brandName} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, brandName: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
+                      <label>Tagline<input value={siteConfig.brandTagline} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, brandTagline: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
+                      <label>Feed headline<input value={siteConfig.heroTitle} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, heroTitle: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
+                      <label>Accent colour<input type="color" value={siteConfig.accent} onChange={(e) => updateSiteConfig({ accent: e.target.value })} /></label>
+                      <label className="editor-wide">Feed description<textarea value={siteConfig.heroText} onChange={(e) => setSiteConfig((cfg) => ({ ...cfg, heroText: e.target.value }))} onBlur={() => saveSiteConfig(siteConfig)} /></label>
+                    </div>
+                    <div className="editor-toggles">
+                      {[['animations','Animations'],['showDiscover','Discover'],['showLumina','Project Lumina'],['showUpdates','Updates'],['showSuggestions','Suggestions']].map(([key,label]) => <button key={key} className={siteConfig[key] ? 'enabled' : ''} onClick={() => updateSiteConfig({ [key]: !siteConfig[key] })}><Check size={14} /> {label}</button>)}
+                    </div>
+                    <div className="editor-subsection"><h3>Custom navigation tabs</h3><div className="editor-add-row"><input value={tabDraft} onChange={(e) => setTabDraft(e.target.value)} placeholder="New tab name" /><button onClick={addCustomTab}><Plus size={15} /> Add tab</button></div>{siteConfig.customTabs.map((tab) => <div className="editor-item" key={tab.id}><span>{tab.label}</span><button onClick={() => removeCustomTab(tab.id)}><Trash2 size={14} /></button></div>)}</div>
+                    <div className="editor-subsection"><h3>Widgets and boxes</h3><div className="editor-grid"><label>Placement<select value={widgetDraft.placement} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, placement: e.target.value }))}><option value="feed">Community feed</option>{siteConfig.customTabs.map((tab) => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select></label><label>Title<input value={widgetDraft.title} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, title: e.target.value }))} /></label><label className="editor-wide">Text<textarea value={widgetDraft.body} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, body: e.target.value }))} /></label><label>Button label<input value={widgetDraft.actionLabel} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, actionLabel: e.target.value }))} /></label><label>Button URL<input value={widgetDraft.actionUrl} onChange={(e) => setWidgetDraft((draft) => ({ ...draft, actionUrl: e.target.value }))} /></label></div><input ref={widgetImageInputRef} type="file" accept="image/*" hidden onChange={handleWidgetImage} /><div className="editor-actions"><button onClick={() => widgetImageInputRef.current?.click()}><ImagePlus size={15} /> {widgetDraft.image ? 'Replace image' : 'Add image'}</button><button className="primary" onClick={addCustomWidget}><Plus size={15} /> Add widget</button></div>{siteConfig.customWidgets.map((widget) => <div className="editor-item" key={widget.id}><span><b>{widget.title || 'Untitled widget'}</b><small>{widget.placement === 'feed' ? 'Community feed' : siteConfig.customTabs.find((tab) => tab.id === widget.placement)?.label}</small></span><button onClick={() => removeCustomWidget(widget.id)}><Trash2 size={14} /></button></div>)}</div>
+                  </section>
                   <div className="admin-section-title"><Shield size={16} /> Members ({users.length})</div>
                   {users.map((u) => (
                     <div className="user-row" key={u.username}>
@@ -1788,16 +1912,16 @@ export default function RUMS() {
                 </span>
                 <span className="nav-label">Feed</span>
               </button>
-              <button className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
+              {siteConfig.showSuggestions && <button className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
                 <span className="nav-icon-wrap"><Lightbulb size={19} /></span><span className="nav-label">Ideas</span>
-              </button>
+              </button>}
               <button className="nav-upload" onClick={() => { setError(''); setScreen('upload'); }}>
                 <Plus size={24} />
               </button>
-              <button className={`nav-btn ${screen === 'updates' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('updates'); }}>
+              {siteConfig.showUpdates && <button className={`nav-btn ${screen === 'updates' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('updates'); }}>
                 <span className="nav-icon-wrap"><Megaphone size={19} /></span><span className="nav-label">Updates</span>
-              </button>
-              {currentUser.isAdmin ? (
+              </button>}
+              {canEditSite ? (
                 <button className={`nav-btn ${screen === 'admin' ? 'active' : ''}`} onClick={() => setScreen('admin')}>
                   <span className="nav-icon-wrap"><ShieldCheck size={19} /></span><span className="nav-label">Admin</span>
                 </button>
