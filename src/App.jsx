@@ -20,6 +20,7 @@ const RUMS5_UPDATES_KEY = 'rums5-updates';
 const RUMS5_SITE_CONFIG_KEY = 'rums5-site-config';
 const PLATFORM_NAME = 'RUMS Plaza';
 const THEME_STORAGE_KEY = 'rums-plaza-theme';
+const TUTORIAL_VERSION = 2;
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
   { id: 'roblox2010', name: 'Roblox 2010', year: '2010', description: 'Sky-blue classic site with framed dashboard modules, blue tabs and bevelled buttons', swatches: ['#dcecf9', '#4e86b8', '#f6c33d'] },
@@ -353,6 +354,9 @@ export default function RUMS() {
   const [authMode, setAuthMode] = useState('login');
   const [authForm, setAuthForm] = useState({ username: '', password: '' });
   const [busy, setBusy] = useState(false);
+  const [tutorialActive, setTutorialActive] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [tutorialRect, setTutorialRect] = useState(null);
   const [uploadPreview, setUploadPreview] = useState(null);
   const [caption, setCaption] = useState('');
   const [tag, setTag] = useState('General');
@@ -552,6 +556,216 @@ export default function RUMS() {
     if (activeChat === 'plaza') return 'Plaza Chat';
     return activeChat.startsWith('dm:') ? activeChat.slice(3) : 'Chat';
   }
+
+  function buildTutorialSteps() {
+    return [
+      {
+        id: 'welcome',
+        title: `Welcome to ${PLATFORM_NAME}`,
+        body: 'Here’s a quick guided tour. I’ll take you through the parts of RUMS Plaza people use most, one step at a time.',
+        screen: 'feed',
+      },
+      {
+        id: 'versions',
+        title: 'RUMS 4 and RUMS 5',
+        body: 'Use this switch anywhere to move between RUMS 4 and RUMS 5. RUMS 4 keeps the older community content and Project Lumina; RUMS 5 is the newer space with its own fresh feed.',
+        screen: 'feed',
+        target: '[data-tutorial="version-switch"]',
+      },
+      !isRums5 && siteConfig.showLumina ? {
+        id: 'feed-filter',
+        title: 'All RUMS or Lumina',
+        body: 'On RUMS 4, this slider switches the feed between everything and posts from Lumina. It also shows unread counts when something new appears.',
+        screen: 'feed',
+        target: '[data-tutorial="feed-tabs"]',
+      } : null,
+      {
+        id: 'feed',
+        title: 'Your community feed',
+        body: 'This is the main timeline. New posts and widgets get a NEW label, and page icons show a number until you actually scroll the new item into view.',
+        screen: 'feed',
+        target: '[data-tutorial="feed-layout"]',
+      },
+      posts.length > 0 ? {
+        id: 'post-actions',
+        title: 'Interact with posts',
+        body: 'Posts support likes, comments, sharing and emoji reactions. Tap a username or avatar to open that person’s profile.',
+        screen: 'feed',
+        target: '[data-tutorial="post-card"]',
+      } : null,
+      !isRums5 && siteConfig.showLumina ? {
+        id: 'project-lumina',
+        title: 'Project Lumina',
+        body: 'Project Lumina has its own dedicated space with the city overview, metro districts and community gallery. Reactions stay in the Lumina feed, not inside the project pages themselves.',
+        screen: 'lumina',
+        target: '[data-tutorial="lumina-page"]',
+      } : null,
+      {
+        id: 'share',
+        title: 'Share a build',
+        body: 'Choose a screenshot, pick where it was taken, add a caption and post it to the community. On RUMS 4 you can post to General or Lumina.',
+        screen: 'upload',
+        target: '[data-tutorial="upload-page"]',
+      },
+      {
+        id: 'chat',
+        title: 'Plaza Chat and DMs',
+        body: 'Chat includes a public Plaza room and direct messages. You can send text or images, and unread counts appear on the Chat icon until you open the conversation.',
+        screen: 'chat',
+        target: '[data-tutorial="chat-page"]',
+      },
+      siteConfig.showSuggestions ? {
+        id: 'suggestions',
+        title: 'Suggestions',
+        body: 'Share ideas for RUMS here. Other members can upvote and react with emoji, so popular ideas are easy to spot.',
+        screen: 'suggestions',
+        target: '[data-tutorial="suggestions-page"]',
+      } : null,
+      siteConfig.showUpdates ? {
+        id: 'updates',
+        title: 'Server Updates',
+        body: 'Official server news and changes live here. When a new update is posted, the navigation badge tells you there’s something you haven’t seen yet.',
+        screen: 'updates',
+        target: '[data-tutorial="updates-page"]',
+      } : null,
+      siteConfig.showDiscover ? {
+        id: 'discover',
+        title: 'Discover',
+        body: 'Search across members and posts from the RUMS space you’re currently in. Open any result to jump straight to the person or post.',
+        screen: 'search',
+        target: '[data-tutorial="discover-page"]',
+      } : null,
+      {
+        id: 'profile',
+        title: 'Your profile',
+        body: 'Your profile is where you change your avatar or username and see everything you’ve posted.',
+        screen: 'profile',
+        target: '[data-tutorial="profile-page"]',
+      },
+      {
+        id: 'appearance',
+        title: 'Make Plaza look yours',
+        body: 'Appearance lets you adjust glass strength and switch between Light, Dark, Roblox eras, Frutiger families and the other themes. These settings are personal to your device.',
+        screen: 'profile',
+        target: '[data-tutorial="appearance"]',
+      },
+      {
+        id: 'done',
+        title: 'You’re ready',
+        body: 'That’s the essentials. You can replay this tour anytime from your Profile → Appearance section.',
+        screen: 'feed',
+      },
+    ].filter(Boolean);
+  }
+
+  function startTutorial() {
+    setEditMode(false);
+    setViewedProfile(null);
+    setFeedFilter('all');
+    setTutorialStep(0);
+    setTutorialRect(null);
+    setTutorialActive(true);
+    setScreen('feed');
+  }
+
+  async function completeTutorial() {
+    setTutorialActive(false);
+    setTutorialRect(null);
+    setTutorialStep(0);
+    setViewedProfile(null);
+    setFeedFilter('all');
+    setScreen('feed');
+    if (!currentUser) return;
+    try {
+      const record = await safeGet(USERS_KEY, true);
+      let latestUsers = users;
+      if (record) {
+        try {
+          const parsed = JSON.parse(record.value);
+          if (Array.isArray(parsed)) latestUsers = parsed;
+        } catch { /* use local users */ }
+      }
+      const next = latestUsers.map((user) => user.username === currentUser.username ? { ...user, tutorialVersion: TUTORIAL_VERSION } : user);
+      await window.storage.set(USERS_KEY, JSON.stringify(next), true);
+      setUsers(next);
+      setCurrentUser((user) => user ? { ...user, tutorialVersion: TUTORIAL_VERSION } : user);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  function moveTutorial(direction) {
+    const steps = buildTutorialSteps();
+    const nextIndex = tutorialStep + direction;
+    if (nextIndex < 0) return;
+    if (nextIndex >= steps.length) {
+      void completeTutorial();
+      return;
+    }
+    setTutorialRect(null);
+    setTutorialStep(nextIndex);
+  }
+
+  useEffect(() => {
+    if (!tutorialActive) return undefined;
+    const steps = buildTutorialSteps();
+    const step = steps[Math.min(tutorialStep, steps.length - 1)];
+    if (!step) return undefined;
+
+    if (step.screen === 'profile') {
+      setViewedProfile(null);
+      if (screen !== 'profile') setScreen('profile');
+    } else if (step.screen && screen !== step.screen) {
+      setScreen(step.screen);
+    }
+    if (step.screen === 'feed' && feedFilter !== 'all') setFeedFilter('all');
+
+    let cancelled = false;
+    let timer = 0;
+    let retryCount = 0;
+    const contentScroller = document.querySelector('.content');
+
+    const findVisibleTarget = () => {
+      if (!step.target) {
+        setTutorialRect(null);
+        return null;
+      }
+      const candidates = [...document.querySelectorAll(step.target)];
+      return candidates.find((node) => {
+        const rect = node.getBoundingClientRect();
+        const style = window.getComputedStyle(node);
+        return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+      }) || null;
+    };
+
+    const measure = (scrollIntoView = false) => {
+      if (cancelled) return;
+      const target = findVisibleTarget();
+      if (!target) {
+        if (step.target && retryCount < 10) {
+          retryCount += 1;
+          timer = window.setTimeout(() => measure(retryCount === 1), 80);
+        }
+        return;
+      }
+      if (scrollIntoView) target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+      const rect = target.getBoundingClientRect();
+      setTutorialRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+    };
+
+    timer = window.setTimeout(() => measure(true), 100);
+    const update = () => measure(false);
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', update, { passive: true });
+    contentScroller?.addEventListener('scroll', update, { passive: true });
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update);
+      contentScroller?.removeEventListener('scroll', update);
+    };
+  }, [tutorialActive, tutorialStep, screen, feedFilter, rumsSpace]);
 
   useEffect(() => {
     siteConfigRef.current = siteConfig;
@@ -1258,6 +1472,10 @@ export default function RUMS() {
         if (found) {
           setCurrentUser(found);
           setScreen('feed');
+          if (Number(found.tutorialVersion || 0) < TUTORIAL_VERSION) {
+            setTutorialStep(0);
+            setTutorialActive(true);
+          }
           void loadLastSeen(found.username, space, loadedPosts).catch((e) => console.error(e));
           return;
         }
@@ -1845,7 +2063,7 @@ export default function RUMS() {
           setBusy(false);
           return;
         }
-        const newUser = { username: uname, password: pass, isAdmin: users.length === 0 };
+        const newUser = { username: uname, password: pass, isAdmin: users.length === 0, tutorialVersion: 0 };
         const next = [...users, newUser];
         // Account creation must wait for a successful write. Do not show a
         // signed-in account that only exists in this tab's React state.
@@ -1855,6 +2073,8 @@ export default function RUMS() {
         await loadLastSeen(newUser.username, rumsSpace || 'rums4');
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: uname }), false);
         setScreen('feed');
+        setTutorialStep(0);
+        setTutorialActive(true);
       } else {
         const found = users.find(
           (u) => u.username.toLowerCase() === uname.toLowerCase() && u.password === pass
@@ -1868,6 +2088,10 @@ export default function RUMS() {
         await loadLastSeen(found.username, rumsSpace || 'rums4');
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: found.username }), false);
         setScreen('feed');
+        if (Number(found.tutorialVersion || 0) < TUTORIAL_VERSION) {
+          setTutorialStep(0);
+          setTutorialActive(true);
+        }
       }
       setAuthForm({ username: '', password: '' });
     } catch (e) {
@@ -2994,7 +3218,7 @@ export default function RUMS() {
   function renderFeedTabs() {
     if (isRums5) return null;
     return (
-      <div ref={tabsRef} className={`feed-tabs ${tabsDragging ? 'is-dragging' : ''}`}
+      <div ref={tabsRef} data-tutorial="feed-tabs" className={`feed-tabs ${tabsDragging ? 'is-dragging' : ''}`}
         style={{ '--seg-translate': feedFilter === 'lumina' ? '100%' : '0%' }}
         onPointerDown={handleTabsPointerDown} onPointerMove={handleTabsPointerMove}
         onPointerUp={handleTabsPointerEnd} onPointerCancel={handleTabsPointerEnd}
@@ -3017,6 +3241,7 @@ export default function RUMS() {
     return (
       <div
         ref={rumsVersionSwitchRef}
+        data-tutorial="version-switch"
         className={`universal-rums-switcher ${rumsVersionDragging ? 'is-dragging' : ''}`}
         role="group"
         aria-label="Switch between RUMS 4 and RUMS 5"
@@ -3104,7 +3329,7 @@ export default function RUMS() {
     const liked = post.likes.includes(currentUser.username);
     const showComments = !!openComments[post.id];
     return (
-      <div className="post-card" data-edit-box-id={`post:${post.id}`} data-session-new-key={newPageKey ? sessionNewKey(newPageKey, 'post', post.id) : undefined} key={post.id}>
+      <div className="post-card" data-tutorial="post-card" data-edit-box-id={`post:${post.id}`} data-session-new-key={newPageKey ? sessionNewKey(newPageKey, 'post', post.id) : undefined} key={post.id}>
         <div className="post-top">
           {newPageKey && newContentLabel(newPageKey, 'post', post.id)}
           <div className="post-user clickable-row" onClick={() => openProfile(post.username)}>
@@ -3223,6 +3448,11 @@ export default function RUMS() {
       </div>
     );
   }
+
+  const tutorialSteps = buildTutorialSteps();
+  const tutorialCurrent = tutorialSteps[Math.min(tutorialStep, Math.max(0, tutorialSteps.length - 1))] || null;
+  const tutorialProgress = tutorialSteps.length ? Math.round(((Math.min(tutorialStep, tutorialSteps.length - 1) + 1) / tutorialSteps.length) * 100) : 0;
+  const tutorialCardAtTop = Boolean(tutorialRect && tutorialRect.top > window.innerHeight * 0.55);
 
   return (
     <div data-theme={theme} className={`aero-root ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? `space-${rumsSpace}` : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': siteConfig.accent }}>
@@ -3362,7 +3592,7 @@ export default function RUMS() {
               {activePlacement && screen !== 'admin' && renderCustomWidgets(activePlacement)}
 
               {screen === 'feed' && (
-                <div className="feed-box-layout">{(siteConfig.feedBoxOrder || ['hero', 'posts']).map(renderFeedBox)}</div>
+                <div className="feed-box-layout" data-tutorial="feed-layout">{(siteConfig.feedBoxOrder || ['hero', 'posts']).map(renderFeedBox)}</div>
               )}
 
               {screen === 'postDetail' && (
@@ -3389,7 +3619,7 @@ export default function RUMS() {
               )}
 
               {screen === 'lumina' && !isRums5 && (
-                <div className="lumina-page">
+                <div className="lumina-page" data-tutorial="lumina-page">
                   <div className="lumina-topbar"><button className="glass-circle-btn" onClick={goBack} aria-label="Back"><ArrowLeft size={19} /></button><span>Project</span><button className="glass-circle-btn" onClick={() => { setTag('Lumina'); setScreen('upload'); }} aria-label="Share from Lumina"><Plus size={19} /></button></div>
                   <section className="lumina-project-hero">
                     <div className="lumina-project-glow" aria-hidden="true"><span /><span /></div>
@@ -3421,7 +3651,7 @@ export default function RUMS() {
               )}
 
               {screen === 'upload' && (
-                <div className="upload-wrap">
+                <div className="upload-wrap" data-tutorial="upload-page">
                   <div className="composer-heading"><span className="eyebrow">NEW POST</span><h2 {...editableTextProps('upload.heading')}>{siteText('upload.heading', 'Share a moment')}{textDragHandle('upload.heading')}</h2><p {...editableTextProps('upload.description')}>{siteText('upload.description', 'Show everyone what you’ve built or discovered on RUMS.')}{textDragHandle('upload.description')}</p></div>
                   {!uploadPreview ? (
                     <div className="drop-zone" role="button" tabIndex={0} onClick={() => fileInputRef.current?.click()}
@@ -3471,7 +3701,7 @@ export default function RUMS() {
               )}
 
               {screen === 'chat' && (
-                <div className="chat-page">
+                <div className="chat-page" data-tutorial="chat-page">
                   <aside className="chat-sidebar" aria-label="Conversations">
                     <div className="chat-sidebar-heading">
                       <div><span className="eyebrow">RUMS PLAZA</span><h2>Chat</h2></div>
@@ -3567,7 +3797,7 @@ export default function RUMS() {
               )}
 
               {screen === 'suggestions' && (
-                <div className="upload-wrap">
+                <div className="upload-wrap" data-tutorial="suggestions-page">
                   <div className="field-label" style={{ marginTop: 0 }}>Share an idea</div>
                   <textarea
                     className="caption-area"
@@ -3625,7 +3855,7 @@ export default function RUMS() {
               )}
 
               {screen === 'updates' && (
-                <div className="updates-page">
+                <div className="updates-page" data-tutorial="updates-page">
                   {currentUser.isAdmin && (
                     <section className="updates-composer" aria-label="Post a server update">
                       <div className="field-label">Post an update</div>
@@ -3689,7 +3919,7 @@ export default function RUMS() {
               )}
 
               {screen === 'profile' && (
-                <div className="profile-wrap">
+                <div className="profile-wrap" data-tutorial="profile-page">
                   <div className="profile-back-row">
                     <button className="icon-btn detail-back-btn" onClick={goBack}>
                       <ArrowLeft size={18} /> Back
@@ -3785,7 +4015,7 @@ export default function RUMS() {
                         {usernameError && <div className="error-pill" style={{ marginTop: 8 }}>{usernameError}</div>}
                       </div>
 
-                      <div className="profile-section appearance-section">
+                      <div className="profile-section appearance-section" data-tutorial="appearance">
                         <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Choose a RUMS Plaza theme, then fine-tune its glass transparency on this device.</p></div><span className="appearance-current-theme">{RUMS_THEMES.find((item) => item.id === theme)?.name || 'Light'}</span></div>
                         <div className="appearance-heading glass-strength-heading"><div><div className="field-label">Glass strength</div><p>Adjust the transparency of glass controls for the selected theme.</p></div><span data-glass-value>{glassStrength}%</span></div>
                         <div className="glass-live-preview" aria-label={`Glass appearance preview at ${glassStrength} percent`}>
@@ -3933,6 +4163,10 @@ export default function RUMS() {
                               {theme === item.id && <Check size={15} className="theme-option-check" />}
                             </button>
                           ))}
+                        </div>
+                        <div className="tutorial-replay-row">
+                          <div><strong>Need a refresher?</strong><small>Replay the guided RUMS Plaza tour anytime.</small></div>
+                          <button type="button" className="tutorial-replay-button" onClick={startTutorial}><Sparkles size={14} /> Replay tutorial</button>
                         </div>
                       </div>
 
@@ -4092,7 +4326,7 @@ export default function RUMS() {
               )}
 
               {screen === 'search' && (
-                <div className="search-wrap">
+                <div className="search-wrap" data-tutorial="discover-page">
                   <div className="search-bar">
                     <Search size={16} color="#7ba3ac" />
                     <input
@@ -4174,6 +4408,42 @@ export default function RUMS() {
               )}
             </div>
           </>
+        )}
+
+        {tutorialActive && tutorialCurrent && (
+          <div className="tutorial-layer" aria-live="polite">
+            <div className="tutorial-blocker" />
+            {tutorialRect && tutorialCurrent.target && (
+              <div
+                className="tutorial-spotlight"
+                style={{
+                  top: Math.max(8, tutorialRect.top - 8),
+                  left: Math.max(8, tutorialRect.left - 8),
+                  width: Math.max(24, tutorialRect.width + 16),
+                  height: Math.max(24, tutorialRect.height + 16),
+                }}
+              />
+            )}
+            <section className={`tutorial-card ${tutorialCardAtTop ? 'tutorial-card-top' : 'tutorial-card-bottom'} ${tutorialCurrent.target ? '' : 'tutorial-card-center'}`} role="dialog" aria-modal="true" aria-label="RUMS Plaza tutorial">
+              <div className="tutorial-card-topline">
+                <span className="tutorial-step-count">{Math.min(tutorialStep + 1, tutorialSteps.length)} / {tutorialSteps.length}</span>
+                <button type="button" className="tutorial-skip" onClick={() => { void completeTutorial(); }}>Skip tutorial</button>
+              </div>
+              <div className="tutorial-progress"><span style={{ width: `${tutorialProgress}%` }} /></div>
+              <div className="tutorial-icon"><Sparkles size={19} /></div>
+              <h2>{tutorialCurrent.title}</h2>
+              <p>{tutorialCurrent.body}</p>
+              <div className="tutorial-actions">
+                <button type="button" className="tutorial-back" onClick={() => moveTutorial(-1)} disabled={tutorialStep === 0}><ArrowLeft size={15} /> Back</button>
+                <button type="button" className="tutorial-next" onClick={() => {
+                  if (tutorialStep >= tutorialSteps.length - 1) void completeTutorial();
+                  else moveTutorial(1);
+                }}>
+                  {tutorialStep >= tutorialSteps.length - 1 ? <><Check size={15} /> Finish</> : <>Next <span>→</span></>}
+                </button>
+              </div>
+            </section>
+          </div>
         )}
 
         {confirmDelete && (
