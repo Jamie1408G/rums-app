@@ -357,6 +357,8 @@ export default function RUMS() {
   const [tutorialActive, setTutorialActive] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [tutorialRect, setTutorialRect] = useState(null);
+  const [tutorialNavRect, setTutorialNavRect] = useState(null);
+  const [tutorialReturningUser, setTutorialReturningUser] = useState(false);
   const [uploadPreview, setUploadPreview] = useState(null);
   const [caption, setCaption] = useState('');
   const [tag, setTag] = useState('General');
@@ -562,7 +564,7 @@ export default function RUMS() {
       {
         id: 'welcome',
         title: `Welcome to ${PLATFORM_NAME}`,
-        body: 'Here’s a quick guided tour. I’ll take you through the parts of RUMS Plaza people use most, one step at a time.',
+        body: tutorialReturningUser ? 'You’ve been here before — this one-time refresher is just to make sure you know your way around after all the recent changes to RUMS Plaza.' : 'Here’s a quick guided tour. I’ll take you through the parts of RUMS Plaza people use most, one step at a time.',
         screen: 'feed',
       },
       {
@@ -578,6 +580,7 @@ export default function RUMS() {
         body: 'On RUMS 4, this slider switches the feed between everything and posts from Lumina. It also shows unread counts when something new appears.',
         screen: 'feed',
         target: '[data-tutorial="feed-tabs"]',
+        navTarget: '[data-tutorial-nav="feed"]',
       } : null,
       {
         id: 'feed',
@@ -585,6 +588,7 @@ export default function RUMS() {
         body: 'This is the main timeline. New posts and widgets get a NEW label, and page icons show a number until you actually scroll the new item into view.',
         screen: 'feed',
         target: '[data-tutorial="feed-layout"]',
+        navTarget: '[data-tutorial-nav="feed"]',
       },
       posts.length > 0 ? {
         id: 'post-actions',
@@ -592,6 +596,7 @@ export default function RUMS() {
         body: 'Posts support likes, comments, sharing and emoji reactions. Tap a username or avatar to open that person’s profile.',
         screen: 'feed',
         target: '[data-tutorial="post-card"]',
+        navTarget: '[data-tutorial-nav="feed"]',
       } : null,
       !isRums5 && siteConfig.showLumina ? {
         id: 'project-lumina',
@@ -599,6 +604,7 @@ export default function RUMS() {
         body: 'Project Lumina has its own dedicated space with the city overview, metro districts and community gallery. Reactions stay in the Lumina feed, not inside the project pages themselves.',
         screen: 'lumina',
         target: '[data-tutorial="lumina-page"]',
+        navTarget: '[data-tutorial-nav="lumina"]',
       } : null,
       {
         id: 'share',
@@ -606,6 +612,7 @@ export default function RUMS() {
         body: 'Choose a screenshot, pick where it was taken, add a caption and post it to the community. On RUMS 4 you can post to General or Lumina.',
         screen: 'upload',
         target: '[data-tutorial="upload-page"]',
+        navTarget: '[data-tutorial-nav="upload"]',
       },
       {
         id: 'chat',
@@ -613,6 +620,7 @@ export default function RUMS() {
         body: 'Chat includes a public Plaza room and direct messages. You can send text or images, and unread counts appear on the Chat icon until you open the conversation.',
         screen: 'chat',
         target: '[data-tutorial="chat-page"]',
+        navTarget: '[data-tutorial-nav="chat"]',
       },
       siteConfig.showSuggestions ? {
         id: 'suggestions',
@@ -620,6 +628,7 @@ export default function RUMS() {
         body: 'Share ideas for RUMS here. Other members can upvote and react with emoji, so popular ideas are easy to spot.',
         screen: 'suggestions',
         target: '[data-tutorial="suggestions-page"]',
+        navTarget: '[data-tutorial-nav="suggestions"]',
       } : null,
       siteConfig.showUpdates ? {
         id: 'updates',
@@ -627,6 +636,7 @@ export default function RUMS() {
         body: 'Official server news and changes live here. When a new update is posted, the navigation badge tells you there’s something you haven’t seen yet.',
         screen: 'updates',
         target: '[data-tutorial="updates-page"]',
+        navTarget: '[data-tutorial-nav="updates"]',
       } : null,
       siteConfig.showDiscover ? {
         id: 'discover',
@@ -634,6 +644,7 @@ export default function RUMS() {
         body: 'Search across members and posts from the RUMS space you’re currently in. Open any result to jump straight to the person or post.',
         screen: 'search',
         target: '[data-tutorial="discover-page"]',
+        navTarget: '[data-tutorial-nav="search"]',
       } : null,
       {
         id: 'profile',
@@ -641,6 +652,7 @@ export default function RUMS() {
         body: 'Your profile is where you change your avatar or username and see everything you’ve posted.',
         screen: 'profile',
         target: '[data-tutorial="profile-page"]',
+        navTarget: '[data-tutorial-nav="profile"]',
       },
       {
         id: 'appearance',
@@ -648,6 +660,7 @@ export default function RUMS() {
         body: 'Appearance lets you adjust glass strength and switch between Light, Dark, Roblox eras, Frutiger families and the other themes. These settings are personal to your device.',
         screen: 'profile',
         target: '[data-tutorial="appearance"]',
+        navTarget: '[data-tutorial-nav="profile"]',
       },
       {
         id: 'done',
@@ -664,6 +677,8 @@ export default function RUMS() {
     setFeedFilter('all');
     setTutorialStep(0);
     setTutorialRect(null);
+    setTutorialNavRect(null);
+    setTutorialReturningUser(false);
     setTutorialActive(true);
     setScreen('feed');
   }
@@ -671,6 +686,7 @@ export default function RUMS() {
   async function completeTutorial() {
     setTutorialActive(false);
     setTutorialRect(null);
+    setTutorialNavRect(null);
     setTutorialStep(0);
     setViewedProfile(null);
     setFeedFilter('all');
@@ -703,6 +719,7 @@ export default function RUMS() {
       return;
     }
     setTutorialRect(null);
+    setTutorialNavRect(null);
     setTutorialStep(nextIndex);
   }
 
@@ -725,12 +742,9 @@ export default function RUMS() {
     let retryCount = 0;
     const contentScroller = document.querySelector('.content');
 
-    const findVisibleTarget = () => {
-      if (!step.target) {
-        setTutorialRect(null);
-        return null;
-      }
-      const candidates = [...document.querySelectorAll(step.target)];
+    const findVisible = (selector) => {
+      if (!selector) return null;
+      const candidates = [...document.querySelectorAll(selector)];
       return candidates.find((node) => {
         const rect = node.getBoundingClientRect();
         const style = window.getComputedStyle(node);
@@ -740,17 +754,21 @@ export default function RUMS() {
 
     const measure = (scrollIntoView = false) => {
       if (cancelled) return;
-      const target = findVisibleTarget();
+      const target = findVisible(step.target);
+      const navTarget = findVisible(step.navTarget);
       if (!target) {
+        if (!step.target) setTutorialRect(null);
         if (step.target && retryCount < 10) {
           retryCount += 1;
           timer = window.setTimeout(() => measure(retryCount === 1), 80);
         }
+        if (navTarget) { const nr = navTarget.getBoundingClientRect(); setTutorialNavRect({ top:nr.top,left:nr.left,width:nr.width,height:nr.height }); } else setTutorialNavRect(null);
         return;
       }
       if (scrollIntoView) target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
       const rect = target.getBoundingClientRect();
       setTutorialRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+      if (navTarget) { const nr = navTarget.getBoundingClientRect(); setTutorialNavRect({ top:nr.top,left:nr.left,width:nr.width,height:nr.height }); } else setTutorialNavRect(null);
     };
 
     timer = window.setTimeout(() => measure(true), 100);
@@ -1474,6 +1492,7 @@ export default function RUMS() {
           setScreen('feed');
           if (Number(found.tutorialVersion || 0) < TUTORIAL_VERSION) {
             setTutorialStep(0);
+            setTutorialReturningUser(true);
             setTutorialActive(true);
           }
           void loadLastSeen(found.username, space, loadedPosts).catch((e) => console.error(e));
@@ -2074,6 +2093,7 @@ export default function RUMS() {
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: uname }), false);
         setScreen('feed');
         setTutorialStep(0);
+        setTutorialReturningUser(false);
         setTutorialActive(true);
       } else {
         const found = users.find(
@@ -2090,6 +2110,7 @@ export default function RUMS() {
         setScreen('feed');
         if (Number(found.tutorialVersion || 0) < TUTORIAL_VERSION) {
           setTutorialStep(0);
+          setTutorialReturningUser(true);
           setTutorialActive(true);
         }
       }
@@ -3543,17 +3564,17 @@ export default function RUMS() {
             <aside className="desktop-rail">
               <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span></div>
               <div className="rail-label">EXPLORE</div>
-              <button className={`rail-link ${screen === 'feed' ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); }}>{navIconWithNew(<Home size={19} />, 'feed')} Community feed</button>
-              {siteConfig.showDiscover && <button className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}>{navIconWithNew(<Search size={19} />, 'search')} Discover</button>}
-              {!isRums5 && siteConfig.showLumina && <button className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
+              <button data-tutorial-nav="feed" className={`rail-link ${screen === 'feed' ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); }}>{navIconWithNew(<Home size={19} />, 'feed')} Community feed</button>
+              {siteConfig.showDiscover && <button data-tutorial-nav="search" className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}>{navIconWithNew(<Search size={19} />, 'search')} Discover</button>}
+              {!isRums5 && siteConfig.showLumina && <button data-tutorial-nav="lumina" className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
               <div className="rail-label">COMMUNITY</div>
-              <button className={`rail-link ${screen === 'chat' ? 'selected' : ''}`} onClick={() => setScreen('chat')}>{chatNavIcon(19)} Chat</button>
-              {siteConfig.showUpdates && <button className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
-              {siteConfig.showSuggestions && <button className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
+              <button data-tutorial-nav="chat" className={`rail-link ${screen === 'chat' ? 'selected' : ''}`} onClick={() => setScreen('chat')}>{chatNavIcon(19)} Chat</button>
+              {siteConfig.showUpdates && <button data-tutorial-nav="updates" className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
+              {siteConfig.showSuggestions && <button data-tutorial-nav="suggestions" className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
               {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{navIconWithNew(<Pencil size={19} />, `custom:${tab.id}`)} {tab.label}</button>)}
               {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
               {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onClick={() => setEditMode(true)}>{editMode ? <Check size={19} /> : <Eye size={19} />} {editMode ? 'Editing website' : 'Edit website'}</button>}
-              <button className="rail-create" onClick={() => setScreen('upload')}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>
+              <button data-tutorial-nav="upload" className="rail-create" onClick={() => setScreen('upload')}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS Plaza · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
@@ -3568,7 +3589,7 @@ export default function RUMS() {
                 {siteConfig.showDiscover && <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   {navIconWithNew(<Search size={18} />, 'search')}
                 </button>}
-                <button className="pill pill-btn profile-pill-with-new" onClick={openOwnProfile} title="Your profile">
+                <button data-tutorial-nav="profile" className="pill pill-btn profile-pill-with-new" onClick={openOwnProfile} title="Your profile">
                   <span className="profile-avatar-new-wrap">{avatarNode(currentUser.username, 18, 8)}{sessionNewCountOnPage('profile') > 0 && <span className="page-new-indicator page-new-count" title={`${sessionNewCountOnPage('profile')} new profile ${sessionNewCountOnPage('profile') === 1 ? 'item' : 'items'}`}>{sessionNewCountOnPage('profile') > 99 ? '99+' : sessionNewCountOnPage('profile')}</span>}</span>
                   {currentUser.username}
                   {currentUser.isAdmin && <ShieldCheck size={13} color="#0fb8a6" />}
@@ -4379,22 +4400,22 @@ export default function RUMS() {
             </div>
 
             <div className="bottom-nav">
-              <button className={`nav-btn ${screen === 'feed' ? 'active' : ''}`} onClick={() => setScreen('feed')}>
+              <button data-tutorial-nav="feed" className={`nav-btn ${screen === 'feed' ? 'active' : ''}`} onClick={() => setScreen('feed')}>
                 <span className="nav-icon-wrap">
                   {navIconWithNew(<Home size={19} />, 'feed')}
                 </span>
                 <span className="nav-label">Feed</span>
               </button>
-              <button className={`nav-btn ${screen === 'chat' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('chat'); }}>
+              <button data-tutorial-nav="chat" className={`nav-btn ${screen === 'chat' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('chat'); }}>
                 <span className="nav-icon-wrap">{chatNavIcon(19)}</span><span className="nav-label">Chat</span>
               </button>
-              {siteConfig.showSuggestions && <button className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
+              {siteConfig.showSuggestions && <button data-tutorial-nav="suggestions" className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
                 <span className="nav-icon-wrap">{navIconWithNew(<Lightbulb size={19} />, 'suggestions')}</span><span className="nav-label">Ideas</span>
               </button>}
-              <button className="nav-upload" onClick={() => { setError(''); setScreen('upload'); }}>
+              <button data-tutorial-nav="upload" className="nav-upload" onClick={() => { setError(''); setScreen('upload'); }}>
                 {navIconWithNew(<Plus size={24} />, 'upload')}
               </button>
-              {siteConfig.showUpdates && <button className={`nav-btn ${screen === 'updates' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('updates'); }}>
+              {siteConfig.showUpdates && <button data-tutorial-nav="updates" className={`nav-btn ${screen === 'updates' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('updates'); }}>
                 <span className="nav-icon-wrap">{navIconWithNew(<Megaphone size={19} />, 'updates')}</span><span className="nav-label">Updates</span>
               </button>}
               {canEditSite ? (
@@ -4413,6 +4434,9 @@ export default function RUMS() {
         {tutorialActive && tutorialCurrent && (
           <div className="tutorial-layer" aria-live="polite">
             <div className="tutorial-blocker" />
+            {tutorialNavRect && tutorialCurrent.navTarget && (
+              <div className="tutorial-spotlight tutorial-nav-spotlight" style={{ top:Math.max(6,tutorialNavRect.top-5), left:Math.max(6,tutorialNavRect.left-5), width:Math.max(20,tutorialNavRect.width+10), height:Math.max(20,tutorialNavRect.height+10) }} />
+            )}
             {tutorialRect && tutorialCurrent.target && (
               <div
                 className="tutorial-spotlight"
