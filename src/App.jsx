@@ -131,6 +131,8 @@ export default function RUMS() {
     setTabOffset(offset);
     tabsRef.current.style.setProperty('--tab-reflection-x', `${clientX - rect.left - offset}px`);
     tabsRef.current.style.setProperty('--tab-pointer-x', `${clientX - rect.left}px`);
+    const prismProgress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    tabsRef.current.style.setProperty('--glass-prism-angle', `${prismProgress * 240 - 120}deg`);
     const index = clientX >= rect.left + rect.width / 2 ? 1 : 0;
     const sampledButton = tabsRef.current.querySelectorAll('button')[index];
     if (sampledButton) tabsRef.current.style.setProperty('--glass-edge-color', getComputedStyle(sampledButton).color);
@@ -184,6 +186,8 @@ export default function RUMS() {
     setLuminaTabOffset(offset);
     luminaTabsRef.current.style.setProperty('--lumina-reflection-x', `${clientX - rect.left - 5 - offset}px`);
     luminaTabsRef.current.style.setProperty('--lumina-pointer-x', `${clientX - rect.left}px`);
+    const prismProgress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    luminaTabsRef.current.style.setProperty('--glass-prism-angle', `${prismProgress * 240 - 120}deg`);
     const index = Math.max(0, Math.min(2, Math.floor((clientX - rect.left) / (rect.width / 3))));
     const sampledButton = luminaTabsRef.current.querySelectorAll('button')[index];
     if (sampledButton) luminaTabsRef.current.style.setProperty('--glass-edge-color', getComputedStyle(sampledButton).color);
