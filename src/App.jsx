@@ -13,6 +13,7 @@ const SESSION_KEY = 'rums-session';
 const SUGGESTIONS_KEY = 'rums-suggestions';
 const UPDATES_KEY = 'rums-updates';
 const TAGS = ['General', 'Lumina'];
+const LUMINA_SECTIONS = [['overview', 'Overview'], ['metro', 'Districts'], ['community', 'Community']];
 const LUMINA_STATIONS = [
   { name: 'Lumen', type: 'Shopping district', description: 'The station beneath Lumina’s main shopping district, putting shops and lively public spaces directly above the platforms.', accent: '#72a8ff' },
   { name: 'Luminelia', type: 'Skyline district', description: 'The station directly beneath Lumina’s skyline, surrounded by the city’s towers and most recognisable architecture.', accent: '#8d84f6' },
@@ -113,6 +114,10 @@ export default function RUMS() {
   const tabsDragRef = useRef(null);
   const [tabsDragging, setTabsDragging] = useState(false);
   const [tabOffset, setTabOffset] = useState(0);
+  const luminaTabsRef = useRef(null);
+  const luminaTabsDragRef = useRef(null);
+  const [luminaTabsDragging, setLuminaTabsDragging] = useState(false);
+  const [luminaTabOffset, setLuminaTabOffset] = useState(0);
 
   function tabForPointer(clientX) {
     const rect = tabsRef.current?.getBoundingClientRect();
@@ -155,6 +160,50 @@ export default function RUMS() {
     if (tabsRef.current?.hasPointerCapture(e.pointerId)) tabsRef.current.releasePointerCapture(e.pointerId);
     // A browser may synthesize a click on the starting button after a drag.
     setTimeout(() => { if (tabsDragRef.current === drag) tabsDragRef.current = null; }, 0);
+  }
+
+  function luminaViewForPointer(clientX) {
+    const rect = luminaTabsRef.current?.getBoundingClientRect();
+    if (!rect) return luminaView;
+    const index = Math.max(0, Math.min(2, Math.floor((clientX - rect.left) / (rect.width / 3))));
+    return LUMINA_SECTIONS[index][0];
+  }
+
+  function updateLuminaTabDrag(clientX) {
+    const rect = luminaTabsRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const segment = (rect.width - 10) / 3;
+    const offset = Math.max(0, Math.min(segment * 2, clientX - rect.left - 5 - segment / 2));
+    setLuminaTabOffset(offset);
+    luminaTabsRef.current.style.setProperty('--lumina-reflection-x', `${clientX - rect.left - 5 - offset}px`);
+    setLuminaView(luminaViewForPointer(clientX));
+  }
+
+  function handleLuminaTabsPointerDown(e) {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    luminaTabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setLuminaTabsDragging(true);
+    updateLuminaTabDrag(e.clientX);
+    e.preventDefault();
+  }
+
+  function handleLuminaTabsPointerMove(e) {
+    const drag = luminaTabsDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const dx = e.clientX - drag.x;
+    const dy = e.clientY - drag.y;
+    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) drag.moved = true;
+    updateLuminaTabDrag(e.clientX);
+  }
+
+  function handleLuminaTabsPointerEnd(e) {
+    const drag = luminaTabsDragRef.current;
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    if (e.type !== 'pointercancel') setLuminaView(luminaViewForPointer(e.clientX));
+    setLuminaTabsDragging(false);
+    if (luminaTabsRef.current?.hasPointerCapture(e.pointerId)) luminaTabsRef.current.releasePointerCapture(e.pointerId);
+    setTimeout(() => { if (luminaTabsDragRef.current === drag) luminaTabsDragRef.current = null; }, 0);
   }
 
   useEffect(() => {
@@ -1230,7 +1279,7 @@ export default function RUMS() {
                     <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>M1</strong><span>every minute</span></div></div>
                   </section>
 
-                  <nav className="lumina-view-switch" style={{ '--lumina-tab-index': ['overview', 'metro', 'community'].indexOf(luminaView) }} aria-label="Project Lumina sections">{[['overview','Overview'],['metro','Districts'],['community','Community']].map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => setLuminaView(value)}>{label}</button>)}</nav>
+                  <nav ref={luminaTabsRef} className={`lumina-view-switch ${luminaTabsDragging ? 'is-dragging' : ''}`} style={{ '--lumina-tab-index': LUMINA_SECTIONS.findIndex(([value]) => value === luminaView), ...(luminaTabsDragging ? { '--lumina-drag-translate': `${luminaTabOffset}px` } : {}) }} aria-label="Project Lumina sections" onPointerDown={handleLuminaTabsPointerDown} onPointerMove={handleLuminaTabsPointerMove} onPointerUp={handleLuminaTabsPointerEnd} onPointerCancel={handleLuminaTabsPointerEnd}>{LUMINA_SECTIONS.map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => { if (!luminaTabsDragRef.current?.moved) setLuminaView(value); }}>{label}</button>)}</nav>
 
                   {luminaView === 'overview' && <div className="lumina-view-panel lumina-overview-view">
                     <section className="lumina-intro-card"><span className="eyebrow">THE IDEA</span><h2>Optimism built into a city.</h2><p>Lumina mixes the glossy blue skies and friendly technology of Frutiger Aero, the natural calm of Frutiger Eco and the green, people-first future of solarpunk. Each district has its own role, while the metro keeps everything close.</p><div className="lumina-fact-row"><span><b>Community built</b>Made together on RUMS</span><span><b>Transit first</b>Three connected districts</span><span><b>Always evolving</b>New views and builds</span></div></section>
