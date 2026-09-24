@@ -22,7 +22,7 @@ const PLATFORM_NAME = 'RUMS Plaza';
 const THEME_STORAGE_KEY = 'rums-plaza-theme';
 const RUMS_THEMES = [
   { id: 'standard', name: 'Standard', description: 'Glossy modern RUMS Plaza', swatches: ['#f6f8fc', '#3478f6', '#b8d7ff'] },
-  { id: 'roblox2016', name: 'Roblox 2016', description: 'Classic red, grey and web-era panels', swatches: ['#e5e5e5', '#d92727', '#3a3a3a'] },
+  { id: 'roblox2016', name: 'Roblox 2016', description: 'Late-2016 grey, white and ROBLOX blue web UI', swatches: ['#e3e3e3', '#00a2ff', '#393b3d'] },
   { id: 'dark', name: 'Dark', description: 'Deep graphite glass with cool blue accents', swatches: ['#12151b', '#2c3440', '#6da8ff'] },
   { id: 'minecraft', name: 'Minecraft', description: 'Blocky stone, grass and dirt-inspired UI', swatches: ['#7cab43', '#6b4c2e', '#9a9a9a'] },
   { id: 'frutiger', name: 'Frutiger Aero', description: 'Blue skies, green glass and bubbly optimism', swatches: ['#5bbcff', '#5dcf70', '#f7ffff'] },

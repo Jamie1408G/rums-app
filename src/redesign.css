@@ -1615,3 +1615,171 @@ button,input,textarea { font:inherit; }
 .aero-root[data-theme="y2k"] .space-chooser-mark {border-radius:999px!important;background:linear-gradient(145deg,#eaffff,#61d4e8 38%,#727dea 70%,#e7d8ff)!important;border-color:#fff!important;}
 .aero-root[data-theme="y2k"] .space-choice-card {background:linear-gradient(145deg,#fff,#e5edf7 60%,#ebe2f8)!important;border-color:#fff!important;border-radius:28px!important;}
 .aero-root[data-theme="y2k"] .space-choice-number,.aero-root[data-theme="y2k"] .space-choice-arrow {border-radius:999px!important;background:linear-gradient(145deg,#fff,#d7e3f1)!important;}
+
+
+/* ========================================================================== */
+/* Theme refinement pass: stable shared geometry, polished materials, no      */
+/* square focus/selection artifacts. Standard remains completely untouched.   */
+/* ========================================================================== */
+
+/* Keep all alternative themes on the same reliable component geometry. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(
+  .post-card,.suggestion-card,.update-card,.user-row,.admin-post-row,
+  .upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,
+  .chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero
+) {overflow:hidden;}
+
+/* Accessible focus without the ugly square browser outline. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(button,.clickable-row,.profile-grid-thumb,.drop-zone,.theme-option):focus-visible {
+  outline:none!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-focus,var(--site-accent,#3478f6)) 30%,transparent),0 0 0 1px color-mix(in srgb,var(--theme-focus,var(--site-accent,#3478f6)) 72%,white)!important;
+}
+.aero-root[data-theme]:not([data-theme="standard"]) :is(.feed-tabs,.lumina-view-switch,.location-tabs,.universal-rums-switcher) button:focus-visible {
+  outline:none!important;
+  box-shadow:none!important;
+}
+.aero-root[data-theme]:not([data-theme="standard"]) :is(.feed-tabs,.lumina-view-switch,.location-tabs,.universal-rums-switcher):has(button:focus-visible) {
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-focus,var(--site-accent,#3478f6)) 22%,transparent),0 0 0 1px color-mix(in srgb,var(--theme-focus,var(--site-accent,#3478f6)) 70%,white)!important;
+}
+.aero-root[data-theme]:not([data-theme="standard"]) .theme-option.active {
+  outline:0!important;
+  transform:none!important;
+}
+.aero-root[data-theme]:not([data-theme="standard"]) ::selection {background:color-mix(in srgb,var(--site-accent,#3478f6) 24%,transparent);}
+
+/* Slider highlights inherit each theme instead of retaining the Standard blob. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(.feed-tabs,.lumina-view-switch) > button,
+.aero-root[data-theme]:not([data-theme="standard"]) .location-tabs > button {position:relative;z-index:1;background:transparent!important;box-shadow:none!important;}
+
+/* ---------- ROBLOX 2016: late-2016 web UI, not the older glossy/red era ---------- */
+.aero-root[data-theme="roblox2016"] {
+  --site-accent:#00a2ff!important;--theme-focus:#00a2ff;
+  background:#e3e3e3!important;color:#191919!important;
+  font-family:Arial,'Helvetica Neue',Helvetica,sans-serif!important;text-shadow:none!important;
+}
+.aero-root[data-theme="roblox2016"] .aero-frame {background:#f2f2f2!important;box-shadow:0 2px 12px #0002!important;}
+.aero-root[data-theme="roblox2016"] .desktop-rail {background:#f7f7f7!important;border-right:1px solid #ccc!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2016"] .aero-header {background:#393b3d!important;border-bottom:0!important;box-shadow:0 1px 3px #0005!important;color:#fff!important;}
+.aero-root[data-theme="roblox2016"] :is(.rail-brand,.section-heading h2,.hero-copy h1,.auth-title) {color:#333!important;text-shadow:none!important;}
+.aero-root[data-theme="roblox2016"] :is(.aero-header .icon-btn,.aero-header .pill) {color:#f5f5f5!important;}
+.aero-root[data-theme="roblox2016"] :is(.rail-link,.rail-create,.aero-btn,.icon-btn,.pill,.tag-chip,.tab-btn,.admin-toggle,.theme-option) {border-radius:4px!important;}
+.aero-root[data-theme="roblox2016"] :is(.post-card,.suggestion-card,.update-card,.user-row,.admin-post-row,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero,.modal-card) {
+  border-radius:3px!important;background:#fff!important;border:1px solid #ccc!important;box-shadow:0 1px 2px #00000018!important;color:#333!important;
+}
+.aero-root[data-theme="roblox2016"] .community-hero {background:#fff!important;}
+.aero-root[data-theme="roblox2016"] .rail-link {color:#555!important;border:0!important;border-radius:0!important;}
+.aero-root[data-theme="roblox2016"] .rail-link:hover {background:#e8e8e8!important;}
+.aero-root[data-theme="roblox2016"] .rail-link.selected {background:#e1e1e1!important;color:#00a2ff!important;border:0!important;box-shadow:inset 3px 0 #00a2ff!important;}
+.aero-root[data-theme="roblox2016"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:#00a2ff!important;border:1px solid #0788d1!important;color:#fff!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2016"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button):hover {background:#1593d8!important;}
+.aero-root[data-theme="roblox2016"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#fff!important;border:1px solid #b8b8b8!important;border-radius:3px!important;color:#333!important;box-shadow:inset 0 1px 2px #00000012!important;}
+.aero-root[data-theme="roblox2016"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:#e5e5e5!important;border:1px solid #bbb!important;border-radius:4px!important;box-shadow:inset 0 1px #fff!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+.aero-root[data-theme="roblox2016"] .feed-tabs::before,
+.aero-root[data-theme="roblox2016"] .lumina-view-switch::before,
+.aero-root[data-theme="roblox2016"] .upload-wrap .location-tabs::before {background:#fff!important;border:1px solid #aaa!important;border-radius:3px!important;box-shadow:0 1px 2px #0002!important;}
+.aero-root[data-theme="roblox2016"] .universal-rums-switcher button.active,
+.aero-root[data-theme="roblox2016"] .universal-rums-switcher.is-dragging::before {background:#00a2ff!important;box-shadow:none!important;border-radius:3px!important;}
+.aero-root[data-theme="roblox2016"] :is(.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {color:#00a2ff!important;background:#fff!important;border-color:#aaa!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2016"] .rail-orb,.aero-root[data-theme="roblox2016"] .r-badge,.aero-root[data-theme="roblox2016"] .auth-logo {background:#e2231a!important;border:0!important;border-radius:3px!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2016"] .chat-message-list {background:#f2f2f2!important;}
+.aero-root[data-theme="roblox2016"] .chat-message-bubble {background:#fff!important;border:1px solid #ccc!important;border-radius:3px 10px 10px 10px!important;color:#333!important;box-shadow:none!important;}
+.aero-root[data-theme="roblox2016"] .chat-message.own .chat-message-bubble {background:#00a2ff!important;border-color:#0788d1!important;color:#fff!important;}
+.aero-root[data-theme="roblox2016"] .bottom-nav {background:#393b3df5!important;border:0!important;border-radius:4px!important;box-shadow:0 2px 8px #0004!important;}
+.aero-root[data-theme="roblox2016"] .nav-btn.active {color:#52b9f5!important;}
+.aero-root[data-theme="roblox2016"] .theme-option.active {border-color:#00a2ff!important;box-shadow:inset 3px 0 #00a2ff!important;}
+
+/* ---------- DARK: quiet graphite, consistent contrast ---------- */
+.aero-root[data-theme="dark"] {--theme-focus:#7fb0ff;--site-accent:#6da8ff!important;background:#0d1117!important;color:#e8edf5!important;text-shadow:none!important;}
+.aero-root[data-theme="dark"] .aero-frame {background:#11161d!important;box-shadow:0 18px 60px #0008!important;}
+.aero-root[data-theme="dark"] :is(.desktop-rail,.aero-header,.bottom-nav) {background:#151b23eb!important;border-color:#2b3440!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] :is(.post-card,.suggestion-card,.update-card,.user-row,.admin-post-row,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero,.modal-card) {background:#181e26!important;border:1px solid #2b3541!important;color:#e8edf5!important;box-shadow:0 5px 18px #0003!important;border-radius:18px!important;}
+.aero-root[data-theme="dark"] :is(.rail-brand,.section-heading h2,.hero-copy h1,.auth-title,.post-user-name,.field-label) {color:#eef4fd!important;}
+.aero-root[data-theme="dark"] :is(.post-caption,.suggestion-card p,.update-card p,.hero-copy p,.appearance-heading p,.switch-line,.post-time) {color:#aab5c5!important;}
+.aero-root[data-theme="dark"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#10151b!important;border-color:#303a47!important;color:#edf3fc!important;}
+.aero-root[data-theme="dark"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:#202833!important;border-color:#344150!important;box-shadow:inset 0 1px #ffffff10!important;}
+.aero-root[data-theme="dark"] .feed-tabs::before,
+.aero-root[data-theme="dark"] .lumina-view-switch::before,
+.aero-root[data-theme="dark"] .upload-wrap .location-tabs::before {background:#303b4a!important;border-color:#455368!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] .universal-rums-switcher button.active,
+.aero-root[data-theme="dark"] .universal-rums-switcher.is-dragging::before {background:#4b83d7!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] :is(.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:#263344!important;color:#8cbaff!important;border-color:#3a4a5e!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] .chat-message-list {background:#11171e!important;}
+.aero-root[data-theme="dark"] .theme-option.active {border-color:#5f8fd5!important;box-shadow:0 0 0 2px #5f8fd52e!important;}
+
+/* ---------- MINECRAFT: inspired by menus, not a noisy texture dump ---------- */
+.aero-root[data-theme="minecraft"] {--theme-focus:#86c653;--site-accent:#72b043!important;background:#59606a!important;color:#f5f5f5!important;font-family:Arial,'Helvetica Neue',sans-serif!important;text-shadow:none!important;}
+.aero-root[data-theme="minecraft"] .aero-frame {background:#c6c6c6!important;box-shadow:0 0 0 3px #1f1f1f,0 18px 55px #0007!important;}
+.aero-root[data-theme="minecraft"] .desktop-rail {background:#2d2d2d!important;border-right:2px solid #111!important;}
+.aero-root[data-theme="minecraft"] .aero-header {background:#202020!important;border-bottom:2px solid #111!important;color:#fff!important;}
+.aero-root[data-theme="minecraft"] :is(.rail-brand,.section-heading h2,.hero-copy h1,.auth-title) {color:#fff!important;text-shadow:1px 1px #222!important;}
+.aero-root[data-theme="minecraft"] :is(.post-card,.suggestion-card,.update-card,.user-row,.admin-post-row,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero,.modal-card) {background:#3b3b3b!important;border:2px solid #707070!important;border-right-color:#1b1b1b!important;border-bottom-color:#1b1b1b!important;border-radius:3px!important;color:#fff!important;box-shadow:none!important;}
+.aero-root[data-theme="minecraft"] .community-hero {background:linear-gradient(180deg,#70b7e6 0 57%,#6aa344 57% 66%,#765133 66%)!important;}
+.aero-root[data-theme="minecraft"] .rail-link {border-radius:2px!important;color:#ddd!important;}
+.aero-root[data-theme="minecraft"] .rail-link:hover {background:#3b3b3b!important;}
+.aero-root[data-theme="minecraft"] .rail-link.selected {background:#4c4c4c!important;border:2px solid #8c8c8c!important;border-right-color:#1c1c1c!important;border-bottom-color:#1c1c1c!important;color:#fff!important;box-shadow:inset 4px 0 #72b043!important;}
+.aero-root[data-theme="minecraft"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:#6eaa40!important;border:2px solid #9fd06a!important;border-right-color:#365520!important;border-bottom-color:#365520!important;color:#fff!important;box-shadow:none!important;border-radius:2px!important;}
+.aero-root[data-theme="minecraft"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#1d1d1d!important;border:2px solid #676767!important;border-right-color:#0b0b0b!important;border-bottom-color:#0b0b0b!important;border-radius:2px!important;color:#fff!important;box-shadow:none!important;}
+.aero-root[data-theme="minecraft"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:#2c2c2c!important;border:2px solid #666!important;border-right-color:#111!important;border-bottom-color:#111!important;border-radius:3px!important;box-shadow:none!important;}
+.aero-root[data-theme="minecraft"] .feed-tabs::before,
+.aero-root[data-theme="minecraft"] .lumina-view-switch::before,
+.aero-root[data-theme="minecraft"] .upload-wrap .location-tabs::before {background:#4b4b4b!important;border:2px solid #7b7b7b!important;border-right-color:#202020!important;border-bottom-color:#202020!important;border-radius:2px!important;box-shadow:none!important;}
+.aero-root[data-theme="minecraft"] .universal-rums-switcher button.active,
+.aero-root[data-theme="minecraft"] .universal-rums-switcher.is-dragging::before {background:#6eaa40!important;border-radius:2px!important;box-shadow:none!important;}
+.aero-root[data-theme="minecraft"] :is(.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:#4a4a4a!important;color:#d6ffb3!important;border:1px solid #777!important;box-shadow:none!important;}
+.aero-root[data-theme="minecraft"] :is(.post-caption,.suggestion-card p,.update-card p,.hero-copy p,.appearance-heading p,.switch-line,.post-time) {color:#d3d3d3!important;text-shadow:none!important;}
+.aero-root[data-theme="minecraft"] .chat-message-list {background:#292929!important;}
+.aero-root[data-theme="minecraft"] .chat-message-bubble {background:#424242!important;border:2px solid #6d6d6d!important;border-right-color:#222!important;border-bottom-color:#222!important;color:#fff!important;box-shadow:none!important;border-radius:2px!important;}
+.aero-root[data-theme="minecraft"] .chat-message.own .chat-message-bubble {background:#507b34!important;border-color:#7dac59 #2c491c #2c491c #7dac59!important;}
+.aero-root[data-theme="minecraft"] .bottom-nav {background:#202020f5!important;border:2px solid #666!important;border-right-color:#111!important;border-bottom-color:#111!important;border-radius:3px!important;box-shadow:none!important;}
+.aero-root[data-theme="minecraft"] .theme-option.active {border-color:#91c864!important;box-shadow:inset 3px 0 #72b043!important;}
+
+/* ---------- FRUTIGER AERO: polished 2000s eco-tech, not neon soup ---------- */
+.aero-root[data-theme="frutiger"] {--theme-focus:#159bc9;--site-accent:#159bc9!important;background:radial-gradient(circle at 82% 8%,#fff8b8 0 3.5%,transparent 12%),linear-gradient(180deg,#67bff2 0%,#dff6ff 62%,#f6ffff 100%)!important;color:#16425d!important;text-shadow:none!important;}
+.aero-root[data-theme="frutiger"] .aero-frame {background:#f5ffffd9!important;box-shadow:0 18px 58px #126c9130!important;}
+.aero-root[data-theme="frutiger"] .desktop-rail {background:linear-gradient(160deg,#ffffffdc,#e7fff5d2)!important;border-color:#fff!important;}
+.aero-root[data-theme="frutiger"] .aero-header {background:linear-gradient(180deg,#ffffffed,#e5f8ffdf)!important;border-color:#b9e5ef!important;}
+.aero-root[data-theme="frutiger"] :is(.post-card,.suggestion-card,.update-card,.user-row,.admin-post-row,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.modal-card) {background:linear-gradient(145deg,#ffffffef,#f2fffbe8)!important;border:1px solid #fff!important;border-radius:20px!important;box-shadow:0 7px 20px #13789918,inset 0 1px #fff!important;color:#16425d!important;}
+.aero-root[data-theme="frutiger"] .community-hero {background:linear-gradient(155deg,#f9ffff 0 63%,#d9f6ff 64% 78%,#c8efc6 79%)!important;border:1px solid #fff!important;border-radius:22px!important;box-shadow:0 7px 22px #13789918!important;}
+.aero-root[data-theme="frutiger"] .rail-link.selected {background:#ffffffd8!important;border-color:#fff!important;color:#0788b4!important;box-shadow:0 4px 14px #127fa41f!important;}
+.aero-root[data-theme="frutiger"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:linear-gradient(180deg,#38bde4,#108fbd)!important;border:1px solid #c5f8ff!important;color:#fff!important;box-shadow:inset 0 1px #ffffffaa,0 5px 14px #0f7c9e38!important;}
+.aero-root[data-theme="frutiger"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:linear-gradient(145deg,#ffffffdb,#dff7ffcc 60%,#e9fae8ce)!important;border-color:#fff!important;box-shadow:inset 0 1px #fff,0 6px 18px #1378991e!important;}
+.aero-root[data-theme="frutiger"] .feed-tabs::before,
+.aero-root[data-theme="frutiger"] .lumina-view-switch::before,
+.aero-root[data-theme="frutiger"] .upload-wrap .location-tabs::before {background:linear-gradient(145deg,#fff,#ddf7ff 62%,#e4f8e2)!important;border-color:#fff!important;box-shadow:inset 0 1px #fff,0 3px 9px #147ca522!important;}
+.aero-root[data-theme="frutiger"] .universal-rums-switcher button.active,
+.aero-root[data-theme="frutiger"] .universal-rums-switcher.is-dragging::before {background:linear-gradient(180deg,#38bde4,#118fbd)!important;box-shadow:inset 0 1px #ffffff99,0 3px 9px #147ca52d!important;}
+.aero-root[data-theme="frutiger"] :is(.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:#ffffffdf!important;color:#0788b4!important;border-color:#bcebf2!important;box-shadow:0 2px 8px #147ca51c!important;}
+.aero-root[data-theme="frutiger"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#ffffffdb!important;border-color:#b8e4ec!important;color:#16425d!important;}
+.aero-root[data-theme="frutiger"] .chat-message-list {background:linear-gradient(180deg,#e6f8ff,#f3fff7)!important;}
+.aero-root[data-theme="frutiger"] .chat-message-bubble {background:#ffffffee!important;border-color:#d5f1f4!important;color:#16425d!important;box-shadow:0 4px 12px #147ca516!important;}
+.aero-root[data-theme="frutiger"] .chat-message.own .chat-message-bubble {background:linear-gradient(145deg,#31b4dc,#108fbd)!important;border-color:#8ce2f4!important;color:#fff!important;}
+.aero-root[data-theme="frutiger"] .theme-option.active {border-color:#46b6d4!important;box-shadow:0 0 0 2px #46b6d428!important;}
+
+/* ---------- Y2K FUTURISM: restrained chrome + aqua, cleaner than the first pass ---------- */
+.aero-root[data-theme="y2k"] {--theme-focus:#7188e8;--site-accent:#7188e8!important;background:linear-gradient(135deg,#cbd4df 0%,#eff5fa 42%,#dce0ef 70%,#bedcde 100%)!important;color:#26364d!important;font-family:Verdana,'Trebuchet MS',Arial,sans-serif!important;text-shadow:none!important;}
+.aero-root[data-theme="y2k"] .aero-frame {background:linear-gradient(135deg,#f6f9fbe9,#e5ebf2e8)!important;border:1px solid #fff!important;box-shadow:0 20px 60px #53637935,inset 0 1px #fff!important;}
+.aero-root[data-theme="y2k"] .desktop-rail {background:linear-gradient(165deg,#f8fbfddf,#d9e1e9e8)!important;border-color:#fff!important;}
+.aero-root[data-theme="y2k"] .aero-header {background:linear-gradient(180deg,#ffffffea,#dde4ebea)!important;border-color:#aebbc9!important;}
+.aero-root[data-theme="y2k"] :is(.post-card,.suggestion-card,.update-card,.user-row,.admin-post-row,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty,.custom-site-widget,.chat-sidebar,.chat-conversation,.site-editor,.profile-section,.community-hero,.modal-card) {background:linear-gradient(145deg,#ffffffef,#e9eef4e8)!important;border:1px solid #fff!important;border-radius:18px!important;color:#26364d!important;box-shadow:inset 0 1px #fff,0 7px 18px #56688024!important;}
+.aero-root[data-theme="y2k"] .community-hero {background:linear-gradient(125deg,#faffff,#e0edf0 58%,#e3ddf4)!important;}
+.aero-root[data-theme="y2k"] .rail-link {border-radius:12px!important;color:#586579!important;}
+.aero-root[data-theme="y2k"] .rail-link.selected {background:linear-gradient(180deg,#fff,#dfe7ed)!important;border-color:#c5ced9!important;color:#5c6dcc!important;box-shadow:inset 0 1px #fff,0 4px 12px #53667b20!important;}
+.aero-root[data-theme="y2k"] :is(.rail-create,.aero-btn,.hero-create,.chat-send-button) {background:linear-gradient(180deg,#72d4dc,#697fe1)!important;border:1px solid #f6ffff!important;color:#fff!important;box-shadow:inset 0 1px #fff9,0 5px 14px #536ac044!important;}
+.aero-root[data-theme="y2k"] :is(.feed-tabs,.lumina-view-switch,.universal-rums-switcher,.location-tabs,.glass-slider-shell) {background:linear-gradient(180deg,#f8ffffe8,#d9e2e9e6)!important;border-color:#fff!important;box-shadow:inset 0 1px #fff,0 7px 18px #53667b28!important;}
+.aero-root[data-theme="y2k"] .feed-tabs::before,
+.aero-root[data-theme="y2k"] .lumina-view-switch::before,
+.aero-root[data-theme="y2k"] .upload-wrap .location-tabs::before {background:linear-gradient(180deg,#fff,#dce8ec)!important;border-color:#fff!important;box-shadow:inset 0 1px #fff,0 3px 9px #53667b25!important;}
+.aero-root[data-theme="y2k"] .universal-rums-switcher button.active,
+.aero-root[data-theme="y2k"] .universal-rums-switcher.is-dragging::before {background:linear-gradient(180deg,#75d6de,#6b7fe0)!important;box-shadow:inset 0 1px #ffffffaa,0 3px 9px #5b70bf35!important;}
+.aero-root[data-theme="y2k"] :is(.tab-btn.active,.tag-chip.active,.admin-toggle.is-admin) {background:linear-gradient(180deg,#fff,#e1eaef)!important;color:#5d6dcc!important;border-color:#c4d1da!important;box-shadow:inset 0 1px #fff,0 2px 7px #53667b1e!important;}
+.aero-root[data-theme="y2k"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input) {background:#f9fbfddd!important;border-color:#aebac7!important;color:#26364d!important;border-radius:12px!important;box-shadow:inset 0 1px 2px #52677c14!important;}
+.aero-root[data-theme="y2k"] .chat-message-list {background:linear-gradient(145deg,#e0e8ed,#edf1f5)!important;}
+.aero-root[data-theme="y2k"] .chat-message-bubble {background:linear-gradient(145deg,#fff,#e8eef2)!important;border-color:#fff!important;color:#26364d!important;box-shadow:0 4px 12px #53667b1e!important;border-radius:16px!important;}
+.aero-root[data-theme="y2k"] .chat-message.own .chat-message-bubble {background:linear-gradient(145deg,#71d2dc,#6a7fe0)!important;border-color:#dffcff!important;color:#fff!important;}
+.aero-root[data-theme="y2k"] .bottom-nav {background:linear-gradient(180deg,#f8ffffed,#dce4eaf2)!important;border-color:#fff!important;box-shadow:0 8px 24px #53667b35!important;}
+.aero-root[data-theme="y2k"] .theme-option.active {border-color:#8090d8!important;box-shadow:0 0 0 2px #8090d82b!important;}
+
+/* Theme picker itself should never inherit exaggerated theme geometry. */
+.aero-root[data-theme]:not([data-theme="standard"]) .theme-option {border-radius:14px!important;min-height:58px;}
+.aero-root[data-theme]:not([data-theme="standard"]) .theme-option-preview {border-radius:9px!important;}
+.aero-root[data-theme]:not([data-theme="standard"]) .theme-option-preview span {border-radius:4px!important;}
