@@ -470,17 +470,36 @@ button,input,textarea { font:inherit; }
 .visual-edit-mode .editable-built-in-box.universal-edit-box::before,.visual-edit-mode .editable-built-in-box.universal-edit-box::after {display:none;}
 .editable-built-in-box.has-universal-box-color>.community-hero {background:linear-gradient(145deg,color-mix(in srgb,var(--universal-box-color) 90%,white),color-mix(in srgb,var(--universal-box-color) 76%,#dcecff))!important;}
 
-/* Keep the visual editor clear of the floating All RUMS / Lumina switch. */
-@media (min-width: 901px) {
-  .visual-edit-toolbar {
-    width: calc(100% - 88px);
-    transform: translateX(-58px);
-  }
-}
 
-/* Keep the feed selector vertically aligned with the editor toolbar while editing. */
+/* Structural editor/feed alignment: while editing the feed, both controls share one row. */
 @media (min-width: 901px) {
-  .aero-root.visual-edit-mode .feed-tabs {
-    top: 94px;
+  .visual-edit-feed-row {
+    position:sticky;
+    z-index:180;
+    top:8px;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    width:100%;
+    margin:0 0 15px;
+  }
+  .visual-edit-feed-row .visual-edit-toolbar {
+    position:relative;
+    top:auto;
+    flex:1 1 auto;
+    width:auto;
+    min-width:0;
+    margin:0;
+    transform:none;
+  }
+  .aero-root.visual-edit-mode .visual-edit-feed-row .feed-tabs {
+    position:relative;
+    top:auto;
+    right:auto;
+    left:auto;
+    z-index:181;
+    flex:0 0 242px;
+    width:242px;
+    margin:0;
   }
 }
