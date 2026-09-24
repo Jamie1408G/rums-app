@@ -157,20 +157,23 @@ button,input,textarea { font:inherit; }
 .aero-root .feed-tabs::before {left:5px;width:calc((100% - 10px)/2);transform:translateX(var(--seg-translate,0%));}
 .aero-root .lumina-view-switch::before {left:5px;width:calc((100% - 10px)/3);transform:translateX(calc(var(--lumina-tab-index,0) * 100%));}
 .aero-root .feed-tabs.is-dragging::before,.aero-root .lumina-view-switch.is-dragging::before {
+  z-index:2;
   top:5px;
   width:84px;
   height:calc(100% - 10px);
   border-radius:18px;
-  background:radial-gradient(70px 24px at var(--tab-reflection-x,var(--lumina-reflection-x,32%)) -2px,#fff 0,#ffffffc7 27%,transparent 70%),radial-gradient(25px 42px at 0 50%,#22d7ffcf 0,#4f8dff8f 28%,#d858ff70 48%,transparent 72%),radial-gradient(28px 44px at 100% 52%,#ff4fc4b8 0,#ffd84f9c 28%,#52efb67d 49%,transparent 73%),linear-gradient(145deg,#ffffffed,#dceeffc9 58%,#e8fbf2c7);
+  background:radial-gradient(70px 24px at var(--tab-reflection-x,var(--lumina-reflection-x,32%)) -2px,#fff 0,#ffffffa8 28%,transparent 70%),radial-gradient(28px 44px at 0 50%,#ffffff70 0,#ffffff24 48%,transparent 74%),radial-gradient(28px 44px at 100% 52%,#ffffff54 0,#ffffff1c 50%,transparent 75%),linear-gradient(145deg,#ffffff75,#ffffff22 58%,#ffffff4a);
   transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,47px)) - 47px)) scaleY(1.03);
-  box-shadow:inset 3px 3px 5px #fff,inset 5px 0 8px #17cffff0,inset -5px 0 8px #ff4fc0cf,inset 0 -4px 7px #a8ef75a3,0 0 0 2px #ffffffb8,0 0 0 4px #7dd8ff35,0 8px 22px #3478f657;
+  box-shadow:inset 3px 3px 5px #fff,inset 6px 0 9px #ffffff70,inset -6px 0 9px #ffffff55,inset 0 -4px 7px #ffffff42,0 0 0 2px #ffffffb8,0 0 0 4px #ffffff2f,0 8px 22px #345b8a4f;
+  backdrop-filter:blur(7px) saturate(1.9) contrast(1.12) brightness(1.08);
+  -webkit-backdrop-filter:blur(7px) saturate(1.9) contrast(1.12) brightness(1.08);
   transition:transform .07s linear,width .18s ease,border-radius .15s,box-shadow .15s;
   filter:saturate(1.25);
 }
 .aero-root .feed-tabs.is-dragging::after,.aero-root .lumina-view-switch.is-dragging::after {
   content:'';
   position:absolute;
-  z-index:0;
+  z-index:3;
   left:calc(var(--tab-pointer-x,var(--lumina-pointer-x,50%)) - 6px + var(--tab-tail-offset,var(--lumina-tail-offset,0px)));
   top:9px;
   width:12px;
