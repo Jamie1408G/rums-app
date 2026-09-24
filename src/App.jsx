@@ -143,9 +143,6 @@ export default function RUMS() {
     tabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
     e.currentTarget.setPointerCapture(e.pointerId);
     e.currentTarget.style.setProperty('--tab-drag-direction', feedFilter === 'lumina' ? '-1' : '1');
-    setTabsDragging(true);
-    updateTabDrag(e.clientX);
-    e.preventDefault();
   }
 
   function handleTabsPointerMove(e) {
@@ -153,7 +150,8 @@ export default function RUMS() {
     if (!drag || drag.pointerId !== e.pointerId) return;
     const dx = e.clientX - drag.x;
     const dy = e.clientY - drag.y;
-    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) drag.moved = true;
+    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) { drag.moved = true; setTabsDragging(true); }
+    if (!drag.moved) return;
     const direction = e.clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
     tabsRef.current?.style.setProperty('--tab-tail-offset', `${direction * -15}px`);
     drag.lastX = e.clientX;
@@ -193,9 +191,6 @@ export default function RUMS() {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     luminaTabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
     e.currentTarget.setPointerCapture(e.pointerId);
-    setLuminaTabsDragging(true);
-    updateLuminaTabDrag(e.clientX);
-    e.preventDefault();
   }
 
   function handleLuminaTabsPointerMove(e) {
@@ -203,7 +198,8 @@ export default function RUMS() {
     if (!drag || drag.pointerId !== e.pointerId) return;
     const dx = e.clientX - drag.x;
     const dy = e.clientY - drag.y;
-    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) drag.moved = true;
+    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) { drag.moved = true; setLuminaTabsDragging(true); }
+    if (!drag.moved) return;
     const direction = e.clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
     luminaTabsRef.current?.style.setProperty('--lumina-drag-tilt', `${direction * 3.5}deg`);
     luminaTabsRef.current?.style.setProperty('--lumina-tail-offset', `${direction * -15}px`);
@@ -237,9 +233,6 @@ export default function RUMS() {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     locationTabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
     e.currentTarget.setPointerCapture(e.pointerId);
-    setLocationTabsDragging(true);
-    updateLocationTabDrag(e.clientX);
-    e.preventDefault();
   }
 
   function handleLocationTabsPointerMove(e) {
@@ -247,7 +240,8 @@ export default function RUMS() {
     if (!drag || drag.pointerId !== e.pointerId) return;
     const dx = e.clientX - drag.x;
     const dy = e.clientY - drag.y;
-    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) drag.moved = true;
+    if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) { drag.moved = true; setLocationTabsDragging(true); }
+    if (!drag.moved) return;
     updateLocationTabDrag(e.clientX);
   }
 
