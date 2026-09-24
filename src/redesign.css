@@ -719,3 +719,10 @@ button,input,textarea { font:inherit; }
 @media(max-width:430px) {
   .universal-rums-switcher button {min-width:42px;padding:0 5px;}
 }
+
+
+/* Header version switch replaces the old RUMS logo without changing the centered feed switch. */
+.aero-brand-version-switch {display:flex;align-items:center;min-width:0!important;}
+.aero-brand-version-switch .universal-rums-switcher {margin-left:0;}
+.universal-rums-switcher button:disabled {cursor:wait;opacity:.82;}
+.universal-rums-switcher button strong {display:grid;place-items:center;min-width:14px;min-height:14px;}

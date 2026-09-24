@@ -114,6 +114,7 @@ function resizeImage(file, maxW = 900) {
 export default function RUMS() {
   const [screen, setScreen] = useState('spaceSelect');
   const [rumsSpace, setRumsSpace] = useState(null);
+  const [spaceSwitchBusy, setSpaceSwitchBusy] = useState(null);
   const [users, setUsers] = useState([]);
   const [posts, setPosts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
@@ -168,6 +169,7 @@ export default function RUMS() {
   const avatarInputRef = useRef(null);
   const rootRef = useRef(null);
   const siteConfigRef = useRef(DEFAULT_SITE_CONFIG);
+  const spaceLoadTokenRef = useRef(0);
   const historyPastRef = useRef([]);
   const historyFutureRef = useRef([]);
   const historyApplyingRef = useRef(false);
@@ -497,6 +499,7 @@ export default function RUMS() {
 
   async function chooseRumsSpace(space) {
     if (!RUMS_SPACES[space]) return;
+    const requestId = ++spaceLoadTokenRef.current;
     setEditMode(false);
     setSelectedBoxId(null);
     setFeedFilter('all');
@@ -504,7 +507,62 @@ export default function RUMS() {
     setNavStack([]);
     setRumsSpace(space);
     setScreen('loading');
-    await init(space);
+    await init(space, requestId);
+  }
+
+  async function switchRumsSpace(space) {
+    if (!RUMS_SPACES[space] || space === rumsSpace || spaceSwitchBusy) return;
+    if (!currentUser) {
+      await chooseRumsSpace(space);
+      return;
+    }
+
+    const requestId = ++spaceLoadTokenRef.current;
+    setSpaceSwitchBusy(space);
+    try {
+      const keys = storageKeysForSpace(space);
+      const [p, sg, up, cfg] = await Promise.all([
+        safeGet(keys.posts, true),
+        safeGet(keys.suggestions, true),
+        safeGet(keys.updates, true),
+        safeGet(keys.siteConfig, true),
+      ]);
+      if (requestId !== spaceLoadTokenRef.current) return;
+
+      const loadedPosts = p ? JSON.parse(p.value) : [];
+      let loadedConfig;
+      if (cfg) {
+        loadedConfig = { ...DEFAULT_SITE_CONFIG, ...JSON.parse(cfg.value) };
+      } else if (space === 'rums5') {
+        loadedConfig = sanitizeConfigForRums5(siteConfigRef.current);
+        // Never hold the version switch hostage to a Firestore write.
+        void window.storage.set(keys.siteConfig, JSON.stringify(loadedConfig), true).catch((e) => console.error(e));
+      } else {
+        loadedConfig = DEFAULT_SITE_CONFIG;
+      }
+      if (space === 'rums5') loadedConfig = sanitizeConfigForRums5(loadedConfig);
+
+      setEditMode(false);
+      setSelectedBoxId(null);
+      setFeedFilter('all');
+      setTag('General');
+      setNavStack([]);
+      setCustomPageId(null);
+      setRumsSpace(space);
+      setPosts(loadedPosts);
+      setSuggestions(sg ? JSON.parse(sg.value) : []);
+      setUpdates(up ? JSON.parse(up.value) : []);
+      setSiteConfig(loadedConfig);
+      siteConfigRef.current = loadedConfig;
+      setScreen('feed');
+
+      // Last-seen bookkeeping must never block navigation.
+      void loadLastSeen(currentUser.username, space, loadedPosts).catch((e) => console.error(e));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      if (requestId === spaceLoadTokenRef.current) setSpaceSwitchBusy(null);
+    }
   }
 
   function openRumsChooser() {
@@ -516,7 +574,7 @@ export default function RUMS() {
     setScreen('spaceSelect');
   }
 
-  async function init(space = rumsSpace || 'rums4') {
+  async function init(space = rumsSpace || 'rums4', requestId = spaceLoadTokenRef.current) {
     try {
       const keys = storageKeysForSpace(space);
       const [u, p, sessRec, sg, up, cfg] = await Promise.all([
@@ -541,6 +599,7 @@ export default function RUMS() {
         loadedConfig = DEFAULT_SITE_CONFIG;
       }
       if (space === 'rums5') loadedConfig = sanitizeConfigForRums5(loadedConfig);
+      if (requestId !== spaceLoadTokenRef.current) return;
       setUsers(loadedUsers);
       setPosts(loadedPosts);
       setSuggestions(sg ? JSON.parse(sg.value) : []);
@@ -552,8 +611,8 @@ export default function RUMS() {
         const found = loadedUsers.find((x) => x.username === sess.username);
         if (found) {
           setCurrentUser(found);
-          await loadLastSeen(found.username, space, loadedPosts);
           setScreen('feed');
+          void loadLastSeen(found.username, space, loadedPosts).catch((e) => console.error(e));
           return;
         }
       }
@@ -578,7 +637,8 @@ export default function RUMS() {
     }
     const now = Date.now();
     const seeded = space === 'rums5' ? { General: now, Lumina: 0 } : { General: now, Lumina: now };
-    await saveLastSeen(username, seeded, space);
+    setLastSeen(seeded);
+    void window.storage.set(lastSeenKey(username, space), JSON.stringify(seeded), false).catch((e) => console.error(e));
   }
 
   async function saveLastSeen(username, next, space = rumsSpace || 'rums4') {
@@ -1886,19 +1946,21 @@ export default function RUMS() {
           type="button"
           className={rumsSpace === 'rums4' ? 'active' : ''}
           aria-pressed={rumsSpace === 'rums4'}
-          onClick={() => { if (rumsSpace !== 'rums4') chooseRumsSpace('rums4'); }}
+          onClick={() => { if (rumsSpace !== 'rums4') switchRumsSpace('rums4'); }}
+          disabled={Boolean(spaceSwitchBusy)}
           title="Open RUMS 4"
         >
-          <span>RUMS</span><strong>4</strong>
+          <span>RUMS</span><strong>{spaceSwitchBusy === 'rums4' ? <Loader2 size={12} className="spin" /> : '4'}</strong>
         </button>
         <button
           type="button"
           className={rumsSpace === 'rums5' ? 'active' : ''}
           aria-pressed={rumsSpace === 'rums5'}
-          onClick={() => { if (rumsSpace !== 'rums5') chooseRumsSpace('rums5'); }}
+          onClick={() => { if (rumsSpace !== 'rums5') switchRumsSpace('rums5'); }}
+          disabled={Boolean(spaceSwitchBusy)}
           title="Open RUMS 5"
         >
-          <span>RUMS</span><strong>5</strong>
+          <span>RUMS</span><strong>{spaceSwitchBusy === 'rums5' ? <Loader2 size={12} className="spin" /> : '5'}</strong>
         </button>
       </div>
     );
@@ -2164,9 +2226,7 @@ export default function RUMS() {
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
-              <div className="aero-brand">
-                <div className="r-badge">R</div>
-                {siteConfig.brandName}
+              <div className="aero-brand aero-brand-version-switch">
                 {renderRumsVersionSwitcher()}
               </div>
               {screen === 'feed' && <div className="aero-header-center">{renderFeedTabs()}</div>}
