@@ -5,7 +5,7 @@ import {
   Heart, MessageCircle, LogOut, ShieldCheck, Shield, User as UserIcon,
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
   Lightbulb, Megaphone, Pencil,
-  GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff,
+  GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff, Undo2, Redo2, RotateCcw,
 } from 'lucide-react';
 
 const USERS_KEY = 'rums-users';
@@ -18,7 +18,8 @@ const DEFAULT_SITE_CONFIG = {
   brandName: 'RUMS', brandTagline: 'YOUR SERVER COMMUNITY', accent: '#3478f6', animations: true,
   heroTitle: 'Your world.', heroText: 'Builds, screenshots and moments from everyone on the server.',
   showDiscover: true, showLumina: true, showUpdates: true, showSuggestions: true,
-  customTabs: [], customWidgets: [], textOverrides: {}, elementPositions: {},
+  customTabs: [], customWidgets: [], textOverrides: {}, elementPositions: {}, feedBoxOrder: ['hero', 'posts'],
+  boxOrders: {}, boxStyles: {}, boxTextOverrides: {},
 };
 const BUILT_IN_PAGES = [
   ['feed', 'Community feed'], ['lumina', 'Project Lumina'], ['upload', 'Add post'],
@@ -34,6 +35,16 @@ const LUMINA_STATIONS = [
 ];
 const lastSeenKey = (username) => `rums-lastseen-${username}`;
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
+
+const UNIVERSAL_EDIT_BOX_SELECTOR = [
+  '.post-card', '.lumina-banner', '.feed-empty', '.lumina-project-hero',
+  '.lumina-intro-card', '.lumina-principles > article', '.lumina-wide-action', '.lumina-metro-panel',
+  '.lumina-station-detail', '.lumina-community-section', '.lumina-share-card', '.upload-wrap',
+  '.drop-zone', '.preview-wrap', '.suggestion-card', '.update-card', '.profile-wrap', '.profile-section',
+  '.profile-danger-zone', '.search-wrap', '.user-row', '.admin-post-row', '.site-editor', '.modal-card'
+].join(',');
+const UNIVERSAL_EDIT_TEXT_SELECTOR = 'h1,h2,h3,h4,p,small,span,b,strong,em';
+
 
 async function safeGet(key, shared) {
   try {
@@ -123,6 +134,8 @@ export default function RUMS() {
   const [siteConfigBusy, setSiteConfigBusy] = useState(false);
   const [siteConfigStatus, setSiteConfigStatus] = useState('');
   const [editMode, setEditMode] = useState(false);
+  const [selectedBoxId, setSelectedBoxId] = useState(null);
+  const [historyRevision, setHistoryRevision] = useState(0);
   const [customPageId, setCustomPageId] = useState(null);
   const [tabDraft, setTabDraft] = useState('');
   const [widgetDraft, setWidgetDraft] = useState({ title: '', body: '', image: '', actionLabel: '', actionUrl: '', placement: 'feed', color: '#ffffff', animation: 'float' });
@@ -143,6 +156,10 @@ export default function RUMS() {
   const avatarInputRef = useRef(null);
   const widgetImageInputRef = useRef(null);
   const rootRef = useRef(null);
+  const siteConfigRef = useRef(DEFAULT_SITE_CONFIG);
+  const historyPastRef = useRef([]);
+  const historyFutureRef = useRef([]);
+  const historyApplyingRef = useRef(false);
   const tabsRef = useRef(null);
   const tabsDragRef = useRef(null);
   const [tabsDragging, setTabsDragging] = useState(false);
@@ -154,6 +171,24 @@ export default function RUMS() {
   const locationTabsRef = useRef(null);
   const locationTabsDragRef = useRef(null);
   const [locationTabsDragging, setLocationTabsDragging] = useState(false);
+
+  useEffect(() => {
+    siteConfigRef.current = siteConfig;
+  }, [siteConfig]);
+
+  useEffect(() => {
+    if (editMode) {
+      historyPastRef.current = [];
+      historyFutureRef.current = [];
+      bumpHistory();
+    } else {
+      setSelectedBoxId(null);
+    }
+  }, [editMode]);
+
+  useEffect(() => {
+    if (editMode) setSelectedBoxId(null);
+  }, [screen, customPageId, feedFilter, luminaView]);
 
   function tabForPointer(clientX) {
     const rect = tabsRef.current?.getBoundingClientRect();
@@ -537,7 +572,31 @@ export default function RUMS() {
     }
   }
 
-  async function saveSiteConfig(next) {
+  function cloneSiteConfig(value) {
+    if (typeof structuredClone === 'function') return structuredClone(value);
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function bumpHistory() {
+    setHistoryRevision((value) => value + 1);
+  }
+
+  function recordSiteHistory(previous) {
+    if (historyApplyingRef.current || !editMode || currentUser?.username?.toLowerCase() !== 'jamie') return;
+    const stack = historyPastRef.current;
+    const snapshot = cloneSiteConfig(previous);
+    const last = stack[stack.length - 1];
+    if (last && JSON.stringify(last) === JSON.stringify(snapshot)) return;
+    stack.push(snapshot);
+    if (stack.length > 80) stack.shift();
+    historyFutureRef.current = [];
+    bumpHistory();
+  }
+
+  async function saveSiteConfig(next, { recordHistory = true } = {}) {
+    const previous = siteConfigRef.current;
+    if (recordHistory && JSON.stringify(previous) !== JSON.stringify(next)) recordSiteHistory(previous);
+    siteConfigRef.current = next;
     setSiteConfig(next);
     setSiteConfigBusy(true);
     setSiteConfigStatus('Saving…');
@@ -553,8 +612,31 @@ export default function RUMS() {
     }
   }
 
+  function applyHistorySnapshot(next) {
+    historyApplyingRef.current = true;
+    saveSiteConfig(cloneSiteConfig(next), { recordHistory: false }).finally(() => {
+      historyApplyingRef.current = false;
+    });
+  }
+
+  function undoSiteEdit() {
+    const previous = historyPastRef.current.pop();
+    if (!previous) return;
+    historyFutureRef.current.push(cloneSiteConfig(siteConfigRef.current));
+    applyHistorySnapshot(previous);
+    bumpHistory();
+  }
+
+  function redoSiteEdit() {
+    const next = historyFutureRef.current.pop();
+    if (!next) return;
+    historyPastRef.current.push(cloneSiteConfig(siteConfigRef.current));
+    applyHistorySnapshot(next);
+    bumpHistory();
+  }
+
   function updateSiteConfig(patch) {
-    saveSiteConfig({ ...siteConfig, ...patch });
+    saveSiteConfig({ ...siteConfigRef.current, ...patch });
   }
 
   function addCustomTab() {
@@ -623,7 +705,10 @@ export default function RUMS() {
     const element = document.querySelector(`[data-position-id="${CSS.escape(id)}"]`);
     if (!widget || !element) return;
     const startY = event.clientY;
+    const handle = event.currentTarget;
+    handle.setPointerCapture?.(event.pointerId);
     element.classList.add('is-widget-reordering');
+    document.documentElement.classList.add('is-reordering-widget');
     const move = (moveEvent) => element.style.setProperty('--reorder-y', `${moveEvent.clientY - startY}px`);
     const end = (endEvent) => {
       window.removeEventListener('pointermove', move);
@@ -635,8 +720,43 @@ export default function RUMS() {
         return !closest || distance < closest.distance ? { node, distance } : closest;
       }, null)?.node;
       element.classList.remove('is-widget-reordering');
+      document.documentElement.classList.remove('is-reordering-widget');
       element.style.removeProperty('--reorder-y');
+      if (handle.hasPointerCapture?.(event.pointerId)) handle.releasePointerCapture(event.pointerId);
       if (target) dropCustomWidget(id, target.dataset.positionId);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
+  }
+
+  function startFeedBoxReorder(id, event) {
+    if (!editMode || !isOwner) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const element = document.querySelector(`[data-feed-box="${id}"]`);
+    if (!element) return;
+    const startY = event.clientY;
+    const handle = event.currentTarget;
+    handle.setPointerCapture?.(event.pointerId);
+    element.classList.add('is-widget-reordering');
+    document.documentElement.classList.add('is-reordering-widget');
+    const move = (moveEvent) => element.style.setProperty('--reorder-y', `${moveEvent.clientY - startY}px`);
+    const end = (endEvent) => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      const target = [...document.querySelectorAll('[data-feed-box]')].filter((node) => node !== element).sort((a, b) => Math.abs(a.getBoundingClientRect().top + a.getBoundingClientRect().height / 2 - endEvent.clientY) - Math.abs(b.getBoundingClientRect().top + b.getBoundingClientRect().height / 2 - endEvent.clientY))[0];
+      element.classList.remove('is-widget-reordering');
+      element.style.removeProperty('--reorder-y');
+      document.documentElement.classList.remove('is-reordering-widget');
+      if (handle.hasPointerCapture?.(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+      if (target) {
+        const order = [...(siteConfig.feedBoxOrder || ['hero', 'posts'])];
+        const from = order.indexOf(id);
+        const to = order.indexOf(target.dataset.feedBox);
+        if (from >= 0 && to >= 0 && from !== to) { const [moved] = order.splice(from, 1); order.splice(to, 0, moved); saveSiteConfig({ ...siteConfig, feedBoxOrder: order }); }
+      }
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', end);
@@ -692,7 +812,125 @@ export default function RUMS() {
   }
 
   function removeCustomWidget(id) {
-    saveSiteConfig({ ...siteConfig, customWidgets: siteConfig.customWidgets.filter((widget) => widget.id !== id) });
+    saveSiteConfig({ ...siteConfigRef.current, customWidgets: siteConfigRef.current.customWidgets.filter((widget) => widget.id !== id) });
+  }
+
+  function updateUniversalBoxStyle(id, patch) {
+    if (!id) return;
+    const current = siteConfigRef.current;
+    saveSiteConfig({
+      ...current,
+      boxStyles: {
+        ...(current.boxStyles || {}),
+        [id]: { ...(current.boxStyles?.[id] || {}), ...patch },
+      },
+    });
+  }
+
+  function resetUniversalBoxStyle(id) {
+    if (!id) return;
+    const current = siteConfigRef.current;
+    const nextStyles = { ...(current.boxStyles || {}) };
+    delete nextStyles[id];
+    saveSiteConfig({ ...current, boxStyles: nextStyles });
+  }
+
+  function updateUniversalBoxText(boxId, textKey, value) {
+    if (!boxId || !textKey) return;
+    const current = siteConfigRef.current;
+    saveSiteConfig({
+      ...current,
+      boxTextOverrides: {
+        ...(current.boxTextOverrides || {}),
+        [boxId]: { ...(current.boxTextOverrides?.[boxId] || {}), [textKey]: value.trim() },
+      },
+    });
+  }
+
+  function reorderUniversalBoxes(parentKey, draggedId, targetId) {
+    if (!parentKey || !draggedId || !targetId || draggedId === targetId) return;
+    const root = rootRef.current;
+    const parent = root?.querySelector(`[data-editor-parent-key="${CSS.escape(parentKey)}"]`);
+    if (!parent) return;
+    const liveIds = [...parent.children]
+      .filter((child) => child.classList?.contains('universal-edit-box'))
+      .map((child) => child.dataset.editorBoxId)
+      .filter(Boolean);
+    const saved = siteConfigRef.current.boxOrders?.[parentKey] || [];
+    const order = [...saved.filter((id) => liveIds.includes(id)), ...liveIds.filter((id) => !saved.includes(id))];
+    const from = order.indexOf(draggedId);
+    const to = order.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = order.splice(from, 1);
+    order.splice(to, 0, moved);
+    const current = siteConfigRef.current;
+    saveSiteConfig({ ...current, boxOrders: { ...(current.boxOrders || {}), [parentKey]: order } });
+  }
+
+  function moveUniversalBoxByDirection(boxId, direction) {
+    if (!boxId) return;
+    const box = rootRef.current?.querySelector(`[data-editor-box-id="${CSS.escape(boxId)}"]`);
+    const parent = box?.parentElement;
+    const parentKey = box?.dataset.editorParentKey;
+    if (!box || !parent || !parentKey) return;
+    if (box.dataset.feedBox) {
+      const current = siteConfigRef.current;
+      const order = [...(current.feedBoxOrder || ['hero', 'posts'])];
+      const index = order.indexOf(box.dataset.feedBox);
+      const swapIndex = index + direction;
+      if (index < 0 || swapIndex < 0 || swapIndex >= order.length) return;
+      [order[index], order[swapIndex]] = [order[swapIndex], order[index]];
+      saveSiteConfig({ ...current, feedBoxOrder: order });
+      return;
+    }
+    const liveIds = [...parent.children]
+      .filter((child) => child.classList?.contains('universal-edit-box'))
+      .map((child) => child.dataset.editorBoxId)
+      .filter(Boolean);
+    const saved = siteConfigRef.current.boxOrders?.[parentKey] || [];
+    const order = [...saved.filter((id) => liveIds.includes(id)), ...liveIds.filter((id) => !saved.includes(id))];
+    const index = order.indexOf(boxId);
+    const target = order[index + direction];
+    if (index < 0 || !target) return;
+    reorderUniversalBoxes(parentKey, boxId, target);
+  }
+
+  function startUniversalBoxReorder(element, event) {
+    if (!editMode || currentUser?.username?.toLowerCase() !== 'jamie') return;
+    const parentKey = element?.dataset.editorParentKey;
+    const boxId = element?.dataset.editorBoxId;
+    const parent = element?.parentElement;
+    if (!parentKey || !boxId || !parent) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedBoxId(boxId);
+    const startX = event.clientX;
+    const startY = event.clientY;
+    element.classList.add('is-universal-box-dragging');
+    document.documentElement.classList.add('is-reordering-widget');
+    const move = (moveEvent) => {
+      element.style.setProperty('--universal-drag-x', `${moveEvent.clientX - startX}px`);
+      element.style.setProperty('--universal-drag-y', `${moveEvent.clientY - startY}px`);
+    };
+    const end = (endEvent) => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', end);
+      window.removeEventListener('pointercancel', end);
+      const siblings = [...parent.children].filter((child) => child !== element && child.classList?.contains('universal-edit-box'));
+      const target = siblings.reduce((closest, node) => {
+        const rect = node.getBoundingClientRect();
+        const distance = Math.hypot(rect.left + rect.width / 2 - endEvent.clientX, rect.top + rect.height / 2 - endEvent.clientY);
+        return !closest || distance < closest.distance ? { node, distance } : closest;
+      }, null)?.node;
+      element.classList.remove('is-universal-box-dragging');
+      document.documentElement.classList.remove('is-reordering-widget');
+      element.style.removeProperty('--universal-drag-x');
+      element.style.removeProperty('--universal-drag-y');
+      if (target) reorderUniversalBoxes(parentKey, boxId, target.dataset.editorBoxId);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    window.addEventListener('pointercancel', end);
   }
 
   async function handleWidgetImage(e) {
@@ -1225,6 +1463,189 @@ export default function RUMS() {
   const isOwner = currentUser?.username?.toLowerCase() === 'jamie';
   const canEditSite = Boolean(currentUser?.isAdmin || isOwner);
   const activePlacement = screen === 'custom' ? customPageId : screen;
+  const canUndoSiteEdit = historyRevision >= 0 && historyPastRef.current.length > 0;
+  const canRedoSiteEdit = historyRevision >= 0 && historyFutureRef.current.length > 0;
+  const selectedBoxStyle = selectedBoxId ? (siteConfig.boxStyles?.[selectedBoxId] || {}) : {};
+
+  useEffect(() => {
+    if (!editMode || !isOwner) return undefined;
+    const onKeyDown = (event) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest('input,textarea,select,[contenteditable="true"]')) return;
+      const key = event.key.toLowerCase();
+      if (key === 'z' && !event.shiftKey) {
+        if (!historyPastRef.current.length) return;
+        event.preventDefault();
+        undoSiteEdit();
+      } else if (key === 'y' || (key === 'z' && event.shiftKey)) {
+        if (!historyFutureRef.current.length) return;
+        event.preventDefault();
+        redoSiteEdit();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editMode, isOwner]);
+
+  useEffect(() => {
+    const content = rootRef.current?.querySelector('.content');
+    if (!content) return undefined;
+    let frame = 0;
+    const touchedParents = new Set();
+    const touchedBoxes = new Set();
+
+    const stableClass = (element) => [...element.classList].find((name) => ![
+      'universal-edit-box', 'is-universal-box-selected', 'is-universal-box-dragging',
+      'has-universal-box-color', 'universal-box-animation-float', 'universal-box-animation-pulse',
+      'universal-box-animation-shimmer', 'clickable-row'
+    ].includes(name)) || element.tagName.toLowerCase();
+
+    const nodeToken = (element) => {
+      const name = stableClass(element);
+      const parent = element.parentElement;
+      if (!parent) return name;
+      const peers = [...parent.children].filter((node) => stableClass(node) === name);
+      return `${name}-${Math.max(0, peers.indexOf(element))}`;
+    };
+
+    const parentKeyFor = (parent) => {
+      if (parent === content) return `${activePlacement || screen}:root`;
+      const parts = [];
+      let node = parent;
+      while (node && node !== content) {
+        parts.unshift(nodeToken(node));
+        node = node.parentElement;
+      }
+      return `${activePlacement || screen}:root/${parts.join('/')}`;
+    };
+
+    const decorate = () => {
+      frame = 0;
+      const candidates = [...content.querySelectorAll('*')].filter((element) => {
+        const looksLikeBox = element.matches(UNIVERSAL_EDIT_BOX_SELECTOR) || [...element.classList].some((name) => /(?:card|wrap|panel|section|row|box|banner|shell|zone|grid)$/i.test(name));
+        return looksLikeBox &&
+          !element.closest('.visual-edit-toolbar,.widget-edit-controls,.mention-dropdown') &&
+          !element.classList.contains('editable-built-in-box') &&
+          !element.classList.contains('custom-site-widget') &&
+          !element.classList.contains('content');
+      });
+      const groups = new Map();
+      const localCounters = new Map();
+
+      candidates.forEach((box) => {
+        const parent = box.parentElement;
+        if (!parent) return;
+        const parentKey = parentKeyFor(parent);
+        const base = box.dataset.editBoxId || stableClass(box);
+        const counterKey = `${parentKey}|${base}`;
+        const index = localCounters.get(counterKey) || 0;
+        localCounters.set(counterKey, index + 1);
+        const boxId = box.dataset.editBoxId || `${parentKey}:${base}:${index}`;
+        box.dataset.editorBoxId = boxId;
+        box.dataset.editorParentKey = parentKey;
+        box.classList.add('universal-edit-box');
+        box.classList.toggle('is-universal-box-selected', Boolean(editMode && isOwner && selectedBoxId === boxId));
+        touchedBoxes.add(box);
+        parent.dataset.editorParentKey = parentKey;
+        touchedParents.add(parent);
+        if (!groups.has(parent)) groups.set(parent, []);
+        groups.get(parent).push(box);
+
+        const style = siteConfig.boxStyles?.[boxId] || {};
+        box.classList.remove('universal-box-animation-float', 'universal-box-animation-pulse', 'universal-box-animation-shimmer');
+        if (style.animation && style.animation !== 'none') box.classList.add(`universal-box-animation-${style.animation}`);
+        if (style.color) {
+          box.classList.add('has-universal-box-color');
+          box.style.setProperty('--universal-box-color', style.color);
+        } else {
+          box.classList.remove('has-universal-box-color');
+          box.style.removeProperty('--universal-box-color');
+        }
+
+        const leafText = [...box.querySelectorAll(UNIVERSAL_EDIT_TEXT_SELECTOR)].filter((node) =>
+          node.closest('.universal-edit-box') === box &&
+          !node.closest('button,a,label,input,textarea,select,.widget-edit-controls') &&
+          node.children.length === 0 && node.textContent.trim()
+        );
+        leafText.forEach((node, textIndex) => {
+          const textKey = `${node.tagName.toLowerCase()}-${textIndex}`;
+          node.dataset.editorTextKey = textKey;
+          node.classList.toggle('universal-editable-text', Boolean(editMode && isOwner));
+          const override = siteConfig.boxTextOverrides?.[boxId]?.[textKey];
+          if (override != null && document.activeElement !== node && node.textContent !== override) node.textContent = override;
+        });
+      });
+
+      groups.forEach((boxes, parent) => {
+        const parentKey = parent.dataset.editorParentKey;
+        const liveIds = boxes.map((box) => box.dataset.editorBoxId);
+        const saved = siteConfig.boxOrders?.[parentKey] || [];
+        const effective = [...saved.filter((id) => liveIds.includes(id)), ...liveIds.filter((id) => !saved.includes(id))];
+        if (!parent.dataset.editorOriginalDisplay) parent.dataset.editorOriginalDisplay = getComputedStyle(parent).display;
+        const originalDisplay = parent.dataset.editorOriginalDisplay;
+        parent.classList.toggle('universal-box-order-stack', Boolean(boxes.length > 1 && (saved.length || (editMode && isOwner)) && !originalDisplay.includes('flex') && !originalDisplay.includes('grid')));
+        boxes.forEach((box) => { box.style.order = saved.length || (editMode && isOwner) ? String(100 + effective.indexOf(box.dataset.editorBoxId)) : ''; });
+      });
+    };
+
+    const scheduleDecorate = () => {
+      if (!frame) frame = requestAnimationFrame(decorate);
+    };
+    scheduleDecorate();
+    const observer = new MutationObserver(scheduleDecorate);
+    observer.observe(content, { childList: true, subtree: true });
+
+    const onPointerDown = (event) => {
+      if (!editMode || !isOwner || !(event.target instanceof Element)) return;
+      const box = event.target.closest('.universal-edit-box');
+      if (!box || !content.contains(box)) return;
+      setSelectedBoxId(box.dataset.editorBoxId || null);
+      const rect = box.getBoundingClientRect();
+      const inHandle = event.target === box && event.clientX >= rect.left + 6 && event.clientX <= rect.left + 132 && event.clientY >= rect.top + 5 && event.clientY <= rect.top + 39;
+      if (inHandle) startUniversalBoxReorder(box, event);
+    };
+
+    const onDoubleClick = (event) => {
+      if (!editMode || !isOwner || !(event.target instanceof Element)) return;
+      const textNode = event.target.closest('[data-editor-text-key]');
+      const box = textNode?.closest('.universal-edit-box');
+      if (!textNode || !box || textNode.closest('button,a,label,input,textarea,select')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setSelectedBoxId(box.dataset.editorBoxId || null);
+      textNode.contentEditable = 'true';
+      textNode.classList.add('is-live-box-text-edit');
+      textNode.focus();
+      const range = document.createRange();
+      range.selectNodeContents(textNode);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      const finish = () => {
+        textNode.removeEventListener('blur', finish);
+        textNode.contentEditable = 'false';
+        textNode.classList.remove('is-live-box-text-edit');
+        updateUniversalBoxText(box.dataset.editorBoxId, textNode.dataset.editorTextKey, textNode.textContent);
+      };
+      textNode.addEventListener('blur', finish, { once: true });
+    };
+
+    content.addEventListener('pointerdown', onPointerDown, true);
+    content.addEventListener('dblclick', onDoubleClick, true);
+    return () => {
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+      content.removeEventListener('pointerdown', onPointerDown, true);
+      content.removeEventListener('dblclick', onDoubleClick, true);
+      touchedBoxes.forEach((box) => {
+        box.classList.remove('is-universal-box-selected');
+        if (!editMode) box.classList.remove('universal-editable-text');
+      });
+      touchedParents.forEach((parent) => { if (!siteConfig.boxOrders?.[parent.dataset.editorParentKey]?.length) parent.classList.remove('universal-box-order-stack'); });
+    };
+  }, [screen, customPageId, feedFilter, luminaView, posts.length, suggestions.length, updates.length, users.length, siteConfig.boxOrders, siteConfig.boxStyles, siteConfig.boxTextOverrides, editMode, isOwner, selectedBoxId]);
+
   const siteText = (key, fallback) => siteConfig.textOverrides?.[key] || fallback;
   const editableTextProps = (key) => ({
     contentEditable: Boolean(editMode && isOwner),
@@ -1239,7 +1660,7 @@ export default function RUMS() {
     .filter((widget) => widget.placement === placement)
     .map((widget) => (
       <article data-position-id={widget.id} data-widget-placement={widget.placement} className={`custom-site-widget widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDown={(event) => { if (!editMode || !isOwner || event.target.closest('button,a,input,select,textarea,label,[contenteditable="true"],.widget-edit-controls')) return; startWidgetReorder(widget.id, event); }}>
-        {editMode && isOwner && <div className="widget-edit-controls"><span className="widget-drag-handle" onPointerDown={(event) => startWidgetReorder(widget.id, event)} title="Drag the widget to reorder"><GripVertical size={15} /></span><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
+        {editMode && isOwner && <div className="widget-edit-controls"><button type="button" className="widget-drag-handle" onPointerDown={(event) => startWidgetReorder(widget.id, event)} title="Hold and drag to move this box"><GripVertical size={15} /> Move box</button><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
         {widget.image && <img src={widget.image} alt="" />}
         <div><h3 contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { title: e.currentTarget.textContent.trim() })}>{widget.title}</h3>{widget.body && <p contentEditable={editMode && isOwner} suppressContentEditableWarning onBlur={(e) => updateCustomWidget(widget.id, { body: e.currentTarget.textContent.trim() })}>{widget.body}</p>}
           {widget.actionLabel && widget.actionUrl && <a href={widget.actionUrl} target="_blank" rel="noreferrer">{widget.actionLabel}</a>}
@@ -1264,6 +1685,11 @@ export default function RUMS() {
 
   const visibleUpdates = updates.slice().sort((a, b) => b.timestamp - a.timestamp);
   const luminaPosts = posts.filter((p) => p.tag === 'Lumina').sort((a, b) => b.timestamp - a.timestamp);
+  const feedBoxHandle = (id) => editMode && isOwner ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
+  function renderFeedBox(id) {
+    if (id === 'hero') return <section data-feed-box="hero" data-edit-box-id="feed:hero" className="editable-built-in-box" key="hero">{feedBoxHandle('hero')}<div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div></section>;
+    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className="editable-built-in-box" key="posts">{feedBoxHandle('posts')}<div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge"><Droplet size={18} color="white" /></div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post))}</section>;
+  }
 
   const q = searchQuery.trim().toLowerCase();
   const matchedUsers = q ? users.filter((u) => u.username.toLowerCase().includes(q)) : [];
@@ -1279,7 +1705,7 @@ export default function RUMS() {
     const liked = post.likes.includes(currentUser.username);
     const showComments = !!openComments[post.id];
     return (
-      <div className="post-card" key={post.id}>
+      <div className="post-card" data-edit-box-id={`post:${post.id}`} key={post.id}>
         <div className="post-top">
           <div className="post-user clickable-row" onClick={() => openProfile(post.username)}>
             {avatarNode(post.username, 32)}
@@ -1518,7 +1944,25 @@ export default function RUMS() {
 
             <div className="content">
               {siteConfig.customTabs.length > 0 && <div className="custom-mobile-tabs">{siteConfig.customTabs.map((tab) => <button key={tab.id} className={screen === 'custom' && customPageId === tab.id ? 'active' : ''} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{tab.label}</button>)}</div>}
-              {editMode && isOwner && screen !== 'admin' && <div className="visual-edit-toolbar"><span><Pencil size={14} /> Editing <b>{screen === 'custom' ? siteConfig.customTabs.find((tab) => tab.id === customPageId)?.label : BUILT_IN_PAGES.find(([id]) => id === screen)?.[1] || screen}</b></span><button onClick={() => addWidgetToPage(activePlacement)}><Plus size={14} /> Add box</button><label><Palette size={14} /><input type="color" value={siteConfig.accent} onChange={(e) => updateSiteConfig({ accent: e.target.value })} /></label><button onClick={() => updateSiteConfig({ animations: !siteConfig.animations })}>{siteConfig.animations ? <Sparkles size={14} /> : <EyeOff size={14} />} Motion</button></div>}
+              {editMode && isOwner && screen !== 'admin' && (
+                <div className="visual-edit-toolbar">
+                  <span><Pencil size={14} /> Editing <b>{screen === 'custom' ? siteConfig.customTabs.find((tab) => tab.id === customPageId)?.label : BUILT_IN_PAGES.find(([id]) => id === screen)?.[1] || screen}</b></span>
+                  <button type="button" onClick={undoSiteEdit} disabled={!canUndoSiteEdit} title="Undo · Command/Control Z"><Undo2 size={14} /> Undo</button>
+                  <button type="button" onClick={redoSiteEdit} disabled={!canRedoSiteEdit} title="Redo · Command/Control Y or Shift+Command/Control Z"><Redo2 size={14} /> Redo</button>
+                  <button type="button" onClick={() => addWidgetToPage(activePlacement)}><Plus size={14} /> Add box</button>
+                  <label title="Site accent colour"><Palette size={14} /><input type="color" value={siteConfig.accent} onChange={(e) => updateSiteConfig({ accent: e.target.value })} /></label>
+                  <button type="button" onClick={() => updateSiteConfig({ animations: !siteConfig.animations })}>{siteConfig.animations ? <Sparkles size={14} /> : <EyeOff size={14} />} Motion</button>
+                  {selectedBoxId && <>
+                    <i className="editor-toolbar-divider" aria-hidden="true" />
+                    <strong className="selected-box-chip" title={selectedBoxId}>Selected box</strong>
+                    <button type="button" onClick={() => moveUniversalBoxByDirection(selectedBoxId, -1)} title="Move selected box one slot up/left"><ChevronUp size={14} /></button>
+                    <button type="button" onClick={() => moveUniversalBoxByDirection(selectedBoxId, 1)} title="Move selected box one slot down/right"><ChevronDown size={14} /></button>
+                    <label className="box-color-control" style={{ '--selected-box-color': selectedBoxStyle.color || '#ffffff' }} title="Selected box colour"><Palette size={14} /><input type="color" value={selectedBoxStyle.color || '#ffffff'} onChange={(e) => updateUniversalBoxStyle(selectedBoxId, { color: e.target.value })} /></label>
+                    <label className="box-animation-control" title="Selected box animation"><Sparkles size={14} /><select value={selectedBoxStyle.animation || 'none'} onChange={(e) => updateUniversalBoxStyle(selectedBoxId, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label>
+                    <button type="button" onClick={() => resetUniversalBoxStyle(selectedBoxId)} title="Reset selected box style"><RotateCcw size={14} /> Reset</button>
+                  </>}
+                </div>
+              )}
               {error && (
                 <div style={{ padding: '10px 16px 0' }}>
                   <div className="error-pill">{error}</div>
@@ -1528,29 +1972,7 @@ export default function RUMS() {
               {activePlacement && screen !== 'admin' && renderCustomWidgets(activePlacement)}
 
               {screen === 'feed' && (
-                <>
-                  <div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div>
-                  <div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>
-                  {feedFilter === 'lumina' && (
-                    <div className="lumina-banner clickable-row" onClick={openLumina}>
-                      <div className="droplet-badge"><Droplet size={18} color="white" /></div>
-                      <div>
-                        <h4>Lumina</h4>
-                        <p>Screenshots from the city district, in one place.</p>
-                      </div>
-                      <span className="lumina-banner-arrow">About the city →</span>
-                    </div>
-                  )}
-                  {visiblePosts.length === 0 ? (
-                    <div className="feed-empty">
-                      <div className="r-badge">R</div>
-                      <h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3>
-                      <p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p>
-                    </div>
-                  ) : (
-                    visiblePosts.map((post) => renderPost(post))
-                  )}
-                </>
+                <div className="feed-box-layout">{(siteConfig.feedBoxOrder || ['hero', 'posts']).map(renderFeedBox)}</div>
               )}
 
               {screen === 'postDetail' && (
@@ -1681,7 +2103,7 @@ export default function RUMS() {
                   {visibleSuggestions.map((s) => {
                     const voted = (s.votes || []).includes(currentUser.username);
                     return (
-                      <div className="suggestion-card" key={s.id}>
+                      <div className="suggestion-card" data-edit-box-id={`suggestion:${s.id}`} key={s.id}>
                         <div className="suggestion-top">
                           <div className="user-row-left clickable-row" onClick={() => openProfile(s.username)}>
                             {avatarNode(s.username, 24, 10)}
@@ -1743,7 +2165,7 @@ export default function RUMS() {
                     <p style={{ fontSize: 13, color: '#7ba3ac' }}>No updates posted yet.</p>
                   )}
                   {visibleUpdates.map((u) => (
-                    <div className="update-card" key={u.id}>
+                    <div className="update-card" data-edit-box-id={`update:${u.id}`} key={u.id}>
                       <div className="post-top">
                         <div>
                           <div className="post-user-name">{u.title}</div>
@@ -1948,7 +2370,7 @@ export default function RUMS() {
                   </section>
                   <div className="admin-section-title"><Shield size={16} /> Members ({users.length})</div>
                   {users.map((u) => (
-                    <div className="user-row" key={u.username}>
+                    <div className="user-row" data-edit-box-id={`admin-user:${u.username}`} key={u.username}>
                       <div className="user-row-left clickable-row" onClick={() => openProfile(u.username)}>
                         {avatarNode(u.username, 26, 11)}
                         {u.username}
@@ -1979,7 +2401,7 @@ export default function RUMS() {
                   <div className="admin-section-title"><Trash2 size={16} /> Posts ({posts.length})</div>
                   {posts.length === 0 && <p style={{ fontSize: 13, color: '#7ba3ac' }}>Nothing posted yet.</p>}
                   {posts.slice().sort((a, b) => b.timestamp - a.timestamp).map((p) => (
-                    <div className="admin-post-row" key={p.id}>
+                    <div className="admin-post-row" data-edit-box-id={`admin-post:${p.id}`} key={p.id}>
                       <img
                         src={p.image}
                         alt=""
@@ -2020,7 +2442,7 @@ export default function RUMS() {
                       <div className="admin-section-title"><UserIcon size={15} /> Accounts</div>
                       {matchedUsers.length === 0 && <p style={{ fontSize: 13, color: '#7ba3ac' }}>No accounts found.</p>}
                       {matchedUsers.map((u) => (
-                        <div className="user-row clickable-row" key={u.username} onClick={() => openProfile(u.username)}>
+                        <div className="user-row clickable-row" data-edit-box-id={`search-user:${u.username}`} key={u.username} onClick={() => openProfile(u.username)}>
                           <div className="user-row-left">
                             {avatarNode(u.username, 26, 11)}
                             {u.username}
@@ -2032,7 +2454,7 @@ export default function RUMS() {
                       <div className="admin-section-title"><ImagePlus size={15} /> Posts</div>
                       {matchedPosts.length === 0 && <p style={{ fontSize: 13, color: '#7ba3ac' }}>No posts found.</p>}
                       {matchedPosts.map((p) => (
-                        <div className="admin-post-row clickable-row" key={p.id} onClick={() => openPost(p.id)}>
+                        <div className="admin-post-row clickable-row" data-edit-box-id={`search-post:${p.id}`} key={p.id} onClick={() => openPost(p.id)}>
                           <img src={p.image} alt="" />
                           <div className="admin-post-meta">
                             <b>
