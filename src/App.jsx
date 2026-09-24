@@ -176,11 +176,9 @@ export default function RUMS() {
   const tabsRef = useRef(null);
   const tabsDragRef = useRef(null);
   const [tabsDragging, setTabsDragging] = useState(false);
-  const [tabOffset, setTabOffset] = useState(0);
   const luminaTabsRef = useRef(null);
   const luminaTabsDragRef = useRef(null);
   const [luminaTabsDragging, setLuminaTabsDragging] = useState(false);
-  const [luminaTabOffset, setLuminaTabOffset] = useState(0);
   const locationTabsRef = useRef(null);
   const locationTabsDragRef = useRef(null);
   const [locationTabsDragging, setLocationTabsDragging] = useState(false);
@@ -210,25 +208,30 @@ export default function RUMS() {
     if (editMode) setSelectedBoxId(null);
   }, [screen, customPageId, feedFilter, luminaView]);
 
-  function tabForPointer(clientX) {
-    const rect = tabsRef.current?.getBoundingClientRect();
+  function tabForPointer(clientX, rect = tabsDragRef.current?.rect || tabsRef.current?.getBoundingClientRect()) {
     return rect && clientX >= rect.left + rect.width / 2 ? 'lumina' : 'all';
   }
 
-  function updateTabDrag(clientX) {
-    const rect = tabsRef.current?.getBoundingClientRect();
-    if (!rect) return;
+  function applyTabDrag(clientX, drag = tabsDragRef.current) {
+    const node = tabsRef.current;
+    const rect = drag?.rect;
+    if (!node || !rect) return;
     const offset = Math.max(0, Math.min(rect.width / 2, clientX - rect.left - rect.width / 4));
-    setTabOffset(offset);
-    tabsRef.current.style.setProperty('--tab-reflection-x', `${clientX - rect.left - offset}px`);
-    tabsRef.current.style.setProperty('--tab-pointer-x', `${clientX - rect.left}px`);
-    tabsRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
-    setFeedFilter(tabForPointer(clientX));
+    const direction = clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
+    drag.lastX = clientX;
+    drag.target = tabForPointer(clientX, rect);
+    node.dataset.dragTarget = drag.target;
+    node.style.setProperty('--seg-translate', `${offset}px`);
+    node.style.setProperty('--tab-reflection-x', `${clientX - rect.left - offset}px`);
+    node.style.setProperty('--tab-pointer-x', `${clientX - rect.left}px`);
+    node.style.setProperty('--tab-tail-offset', `${direction * -15}px`);
+    node.style.setProperty('--glass-control-width', `${rect.width}px`);
   }
 
   function handleTabsPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    tabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    const rect = e.currentTarget.getBoundingClientRect();
+    tabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false, rect, frame: 0, pendingX: e.clientX, target: feedFilter };
     e.currentTarget.setPointerCapture(e.pointerId);
     e.currentTarget.style.setProperty('--tab-drag-direction', feedFilter === 'lumina' ? '-1' : '1');
   }
@@ -240,41 +243,57 @@ export default function RUMS() {
     const dy = e.clientY - drag.y;
     if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) { drag.moved = true; setTabsDragging(true); }
     if (!drag.moved) return;
-    const direction = e.clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
-    tabsRef.current?.style.setProperty('--tab-tail-offset', `${direction * -15}px`);
-    drag.lastX = e.clientX;
-    updateTabDrag(e.clientX);
+    drag.pendingX = e.clientX;
+    if (drag.frame) return;
+    drag.frame = window.requestAnimationFrame(() => {
+      const current = tabsDragRef.current;
+      if (!current) return;
+      current.frame = 0;
+      applyTabDrag(current.pendingX, current);
+    });
   }
 
   function handleTabsPointerEnd(e) {
     const drag = tabsDragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
-    if (e.type !== 'pointercancel') setFeedFilter(tabForPointer(e.clientX));
+    if (drag.frame) window.cancelAnimationFrame(drag.frame);
+    if (drag.moved) applyTabDrag(e.clientX, drag);
+    if (e.type !== 'pointercancel') setFeedFilter(tabForPointer(e.clientX, drag.rect));
     setTabsDragging(false);
+    tabsRef.current?.removeAttribute('data-drag-target');
     if (tabsRef.current?.hasPointerCapture(e.pointerId)) tabsRef.current.releasePointerCapture(e.pointerId);
     // A browser may synthesize a click on the starting button after a drag.
     setTimeout(() => { if (tabsDragRef.current === drag) tabsDragRef.current = null; }, 0);
   }
 
-  function rumsVersionForPointer(clientX) {
-    const rect = rumsVersionSwitchRef.current?.getBoundingClientRect();
+  function rumsVersionForPointer(clientX, rect = rumsVersionDragRef.current?.rect || rumsVersionSwitchRef.current?.getBoundingClientRect()) {
     return rect && clientX >= rect.left + rect.width / 2 ? 'rums5' : 'rums4';
   }
 
-  function updateRumsVersionDrag(clientX) {
-    const rect = rumsVersionSwitchRef.current?.getBoundingClientRect();
-    if (!rect) return;
+  function applyRumsVersionDrag(clientX, drag = rumsVersionDragRef.current) {
+    const node = rumsVersionSwitchRef.current;
+    const rect = drag?.rect;
+    if (!node || !rect) return;
     const localX = Math.max(0, Math.min(rect.width, clientX - rect.left));
-    rumsVersionSwitchRef.current.style.setProperty('--version-pointer-x', `${localX}px`);
-    rumsVersionSwitchRef.current.style.setProperty('--version-reflection-x', `${localX}px`);
-    rumsVersionSwitchRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
-    setRumsVersionDragTarget(rumsVersionForPointer(clientX));
+    const direction = clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
+    drag.lastX = clientX;
+    node.style.setProperty('--version-pointer-x', `${localX}px`);
+    node.style.setProperty('--version-reflection-x', `${localX}px`);
+    node.style.setProperty('--version-tail-offset', `${direction * -12}px`);
+    node.style.setProperty('--version-drag-direction', `${direction}`);
+    node.style.setProperty('--glass-control-width', `${rect.width}px`);
+    const target = rumsVersionForPointer(clientX, rect);
+    if (drag.target !== target) {
+      drag.target = target;
+      setRumsVersionDragTarget(target);
+    }
   }
 
   function handleRumsVersionPointerDown(e) {
     if (spaceSwitchBusy) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    rumsVersionDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    const rect = e.currentTarget.getBoundingClientRect();
+    rumsVersionDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false, rect, frame: 0, pendingX: e.clientX, target: rumsSpace };
     e.currentTarget.setPointerCapture?.(e.pointerId);
     e.currentTarget.style.setProperty('--version-drag-direction', rumsSpace === 'rums5' ? '-1' : '1');
   }
@@ -290,18 +309,23 @@ export default function RUMS() {
       setRumsVersionDragTarget(rumsSpace);
     }
     if (!drag.moved) return;
-    const direction = e.clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
-    rumsVersionSwitchRef.current?.style.setProperty('--version-tail-offset', `${direction * -12}px`);
-    rumsVersionSwitchRef.current?.style.setProperty('--version-drag-direction', `${direction}`);
-    drag.lastX = e.clientX;
-    updateRumsVersionDrag(e.clientX);
+    drag.pendingX = e.clientX;
+    if (drag.frame) return;
+    drag.frame = window.requestAnimationFrame(() => {
+      const current = rumsVersionDragRef.current;
+      if (!current) return;
+      current.frame = 0;
+      applyRumsVersionDrag(current.pendingX, current);
+    });
   }
 
   function handleRumsVersionPointerEnd(e) {
     const drag = rumsVersionDragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
+    if (drag.frame) window.cancelAnimationFrame(drag.frame);
+    if (drag.moved) applyRumsVersionDrag(e.clientX, drag);
     const wasDrag = drag.moved;
-    const target = e.type === 'pointercancel' ? rumsSpace : rumsVersionForPointer(e.clientX);
+    const target = e.type === 'pointercancel' ? rumsSpace : rumsVersionForPointer(e.clientX, drag.rect);
     setRumsVersionDragging(false);
     setRumsVersionDragTarget(null);
     if (rumsVersionSwitchRef.current?.hasPointerCapture?.(e.pointerId)) rumsVersionSwitchRef.current.releasePointerCapture(e.pointerId);
@@ -311,28 +335,33 @@ export default function RUMS() {
     setTimeout(() => { if (rumsVersionDragRef.current === drag) rumsVersionDragRef.current = null; }, 0);
   }
 
-  function luminaViewForPointer(clientX) {
-    const rect = luminaTabsRef.current?.getBoundingClientRect();
+  function luminaViewForPointer(clientX, rect = luminaTabsDragRef.current?.rect || luminaTabsRef.current?.getBoundingClientRect()) {
     if (!rect) return luminaView;
     const index = Math.max(0, Math.min(2, Math.floor((clientX - rect.left) / (rect.width / 3))));
     return LUMINA_SECTIONS[index][0];
   }
 
-  function updateLuminaTabDrag(clientX) {
-    const rect = luminaTabsRef.current?.getBoundingClientRect();
-    if (!rect) return;
+  function applyLuminaTabDrag(clientX, drag = luminaTabsDragRef.current) {
+    const node = luminaTabsRef.current;
+    const rect = drag?.rect;
+    if (!node || !rect) return;
     const segment = (rect.width - 10) / 3;
     const offset = Math.max(0, Math.min(segment * 2, clientX - rect.left - 5 - segment / 2));
-    setLuminaTabOffset(offset);
-    luminaTabsRef.current.style.setProperty('--lumina-reflection-x', `${clientX - rect.left - 5 - offset}px`);
-    luminaTabsRef.current.style.setProperty('--lumina-pointer-x', `${clientX - rect.left}px`);
-    luminaTabsRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
-    setLuminaView(luminaViewForPointer(clientX));
+    const direction = clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
+    drag.lastX = clientX;
+    drag.target = luminaViewForPointer(clientX, rect);
+    node.dataset.dragTarget = drag.target;
+    node.style.setProperty('--lumina-drag-tilt', `${direction * 3.5}deg`);
+    node.style.setProperty('--lumina-tail-offset', `${direction * -15}px`);
+    node.style.setProperty('--lumina-reflection-x', `${clientX - rect.left - 5 - offset}px`);
+    node.style.setProperty('--lumina-pointer-x', `${clientX - rect.left}px`);
+    node.style.setProperty('--glass-control-width', `${rect.width}px`);
   }
 
   function handleLuminaTabsPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    luminaTabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    const rect = e.currentTarget.getBoundingClientRect();
+    luminaTabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false, rect, frame: 0, pendingX: e.clientX, target: luminaView };
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
@@ -343,38 +372,46 @@ export default function RUMS() {
     const dy = e.clientY - drag.y;
     if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) { drag.moved = true; setLuminaTabsDragging(true); }
     if (!drag.moved) return;
-    const direction = e.clientX >= (drag.lastX ?? drag.x) ? 1 : -1;
-    luminaTabsRef.current?.style.setProperty('--lumina-drag-tilt', `${direction * 3.5}deg`);
-    luminaTabsRef.current?.style.setProperty('--lumina-tail-offset', `${direction * -15}px`);
-    drag.lastX = e.clientX;
-    updateLuminaTabDrag(e.clientX);
+    drag.pendingX = e.clientX;
+    if (drag.frame) return;
+    drag.frame = window.requestAnimationFrame(() => {
+      const current = luminaTabsDragRef.current;
+      if (!current) return;
+      current.frame = 0;
+      applyLuminaTabDrag(current.pendingX, current);
+    });
   }
 
   function handleLuminaTabsPointerEnd(e) {
     const drag = luminaTabsDragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
-    if (e.type !== 'pointercancel') setLuminaView(luminaViewForPointer(e.clientX));
+    if (drag.frame) window.cancelAnimationFrame(drag.frame);
+    if (drag.moved) applyLuminaTabDrag(e.clientX, drag);
+    if (e.type !== 'pointercancel') setLuminaView(luminaViewForPointer(e.clientX, drag.rect));
     setLuminaTabsDragging(false);
+    luminaTabsRef.current?.removeAttribute('data-drag-target');
     if (luminaTabsRef.current?.hasPointerCapture(e.pointerId)) luminaTabsRef.current.releasePointerCapture(e.pointerId);
     setTimeout(() => { if (luminaTabsDragRef.current === drag) luminaTabsDragRef.current = null; }, 0);
   }
 
-  function locationTagForPointer(clientX) {
-    const rect = locationTabsRef.current?.getBoundingClientRect();
+  function locationTagForPointer(clientX, rect = locationTabsDragRef.current?.rect || locationTabsRef.current?.getBoundingClientRect()) {
     return rect && clientX >= rect.left + rect.width / 2 ? 'Lumina' : 'General';
   }
 
-  function updateLocationTabDrag(clientX) {
-    const rect = locationTabsRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    locationTabsRef.current.style.setProperty('--location-pointer-x', `${clientX - rect.left}px`);
-    locationTabsRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
-    setTag(locationTagForPointer(clientX));
+  function applyLocationTabDrag(clientX, drag = locationTabsDragRef.current) {
+    const node = locationTabsRef.current;
+    const rect = drag?.rect;
+    if (!node || !rect) return;
+    drag.target = locationTagForPointer(clientX, rect);
+    node.dataset.dragTarget = drag.target;
+    node.style.setProperty('--location-pointer-x', `${clientX - rect.left}px`);
+    node.style.setProperty('--glass-control-width', `${rect.width}px`);
   }
 
   function handleLocationTabsPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
-    locationTabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+    const rect = e.currentTarget.getBoundingClientRect();
+    locationTabsDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false, rect, frame: 0, pendingX: e.clientX, target: tag };
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
@@ -385,16 +422,46 @@ export default function RUMS() {
     const dy = e.clientY - drag.y;
     if (!drag.moved && Math.abs(dx) >= 3 && Math.abs(dx) >= Math.abs(dy)) { drag.moved = true; setLocationTabsDragging(true); }
     if (!drag.moved) return;
-    updateLocationTabDrag(e.clientX);
+    drag.pendingX = e.clientX;
+    if (drag.frame) return;
+    drag.frame = window.requestAnimationFrame(() => {
+      const current = locationTabsDragRef.current;
+      if (!current) return;
+      current.frame = 0;
+      applyLocationTabDrag(current.pendingX, current);
+    });
   }
 
   function handleLocationTabsPointerEnd(e) {
     const drag = locationTabsDragRef.current;
     if (!drag || drag.pointerId !== e.pointerId) return;
-    if (e.type !== 'pointercancel') setTag(locationTagForPointer(e.clientX));
+    if (drag.frame) window.cancelAnimationFrame(drag.frame);
+    if (drag.moved) applyLocationTabDrag(e.clientX, drag);
+    if (e.type !== 'pointercancel') setTag(locationTagForPointer(e.clientX, drag.rect));
     setLocationTabsDragging(false);
+    locationTabsRef.current?.removeAttribute('data-drag-target');
     if (locationTabsRef.current?.hasPointerCapture(e.pointerId)) locationTabsRef.current.releasePointerCapture(e.pointerId);
     setTimeout(() => { if (locationTabsDragRef.current === drag) locationTabsDragRef.current = null; }, 0);
+  }
+
+  function previewGlassStrength(rawValue, input) {
+    const value = Math.max(35, Math.min(95, Number(rawValue) || 72));
+    rootRef.current?.style.setProperty('--glass-alpha', `${value / 100}`);
+    const section = input?.closest('.appearance-section');
+    const shell = input?.closest('.glass-slider-shell');
+    shell?.style.setProperty('--slider-position', `${(value - 35) / 60 * 100}%`);
+    const valueLabel = section?.querySelector('[data-glass-value]');
+    const description = section?.querySelector('[data-glass-description]');
+    const preview = section?.querySelector('.glass-live-preview');
+    if (valueLabel) valueLabel.textContent = `${value}%`;
+    if (description) description.textContent = value < 55 ? 'Clear and light' : value < 78 ? 'Balanced glass' : 'Soft and frosted';
+    preview?.setAttribute('aria-label', `Glass appearance preview at ${value} percent`);
+    return value;
+  }
+
+  function commitGlassStrength(input) {
+    const value = previewGlassStrength(input?.value, input);
+    setGlassStrength(value);
   }
 
   useEffect(() => {
@@ -403,6 +470,7 @@ export default function RUMS() {
     const interactive = 'button, .clickable-row, .profile-grid-thumb, .drop-zone';
     const move = (event) => {
       if (event.pointerType === 'touch') return;
+      if (event.target.closest('.feed-tabs.is-dragging,.lumina-view-switch.is-dragging,.location-tabs.is-dragging,.universal-rums-switcher.is-dragging,.glass-slider-shell.is-dragging')) return;
       const target = event.target.closest(interactive);
       if (!target || !root.contains(target)) return;
       const rect = target.getBoundingClientRect();
@@ -1981,7 +2049,7 @@ export default function RUMS() {
     if (isRums5) return null;
     return (
       <div ref={tabsRef} className={`feed-tabs ${tabsDragging ? 'is-dragging' : ''}`}
-        style={{ '--seg-translate': tabsDragging ? `${tabOffset}px` : feedFilter === 'lumina' ? '100%' : '0%' }}
+        style={{ '--seg-translate': feedFilter === 'lumina' ? '100%' : '0%' }}
         onPointerDown={handleTabsPointerDown} onPointerMove={handleTabsPointerMove}
         onPointerUp={handleTabsPointerEnd} onPointerCancel={handleTabsPointerEnd}
         onClickCapture={(e) => { if (tabsDragRef.current?.moved) { e.preventDefault(); e.stopPropagation(); } }}>
@@ -2379,7 +2447,7 @@ export default function RUMS() {
                     <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>M1</strong><span>every minute</span></div></div>
                   </section>
 
-                  <nav ref={luminaTabsRef} className={`lumina-view-switch ${luminaTabsDragging ? 'is-dragging' : ''}`} style={{ '--lumina-tab-index': LUMINA_SECTIONS.findIndex(([value]) => value === luminaView), ...(luminaTabsDragging ? { '--lumina-drag-translate': `${luminaTabOffset}px` } : {}) }} aria-label="Project Lumina sections" onPointerDown={handleLuminaTabsPointerDown} onPointerMove={handleLuminaTabsPointerMove} onPointerUp={handleLuminaTabsPointerEnd} onPointerCancel={handleLuminaTabsPointerEnd}>{LUMINA_SECTIONS.map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => { if (!luminaTabsDragRef.current?.moved) setLuminaView(value); }}>{label}</button>)}<span className="drag-refraction lumina-drag-refraction" aria-hidden="true"><span className="drag-refraction-content">{LUMINA_SECTIONS.map(([value,label]) => <span key={value} className={luminaView === value ? 'active' : ''}>{label}</span>)}</span></span></nav>
+                  <nav ref={luminaTabsRef} className={`lumina-view-switch ${luminaTabsDragging ? 'is-dragging' : ''}`} style={{ '--lumina-tab-index': LUMINA_SECTIONS.findIndex(([value]) => value === luminaView) }} aria-label="Project Lumina sections" onPointerDown={handleLuminaTabsPointerDown} onPointerMove={handleLuminaTabsPointerMove} onPointerUp={handleLuminaTabsPointerEnd} onPointerCancel={handleLuminaTabsPointerEnd}>{LUMINA_SECTIONS.map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => { if (!luminaTabsDragRef.current?.moved) setLuminaView(value); }}>{label}</button>)}<span className="drag-refraction lumina-drag-refraction" aria-hidden="true"><span className="drag-refraction-content">{LUMINA_SECTIONS.map(([value,label]) => <span key={value} className={luminaView === value ? 'active' : ''}>{label}</span>)}</span></span></nav>
 
                   {luminaView === 'overview' && <div className="lumina-view-panel lumina-overview-view">
                     <section className="lumina-intro-card"><span className="eyebrow">THE IDEA</span><h2>Optimism built into a city.</h2><p>Lumina mixes the glossy blue skies and friendly technology of Frutiger Aero, the natural calm of Frutiger Eco and the green, people-first future of solarpunk. Each district has its own role, while the metro keeps everything close.</p><div className="lumina-fact-row"><span><b>Community built</b>Made together on RUMS</span><span><b>Transit first</b>Three connected districts</span><span><b>Always evolving</b>New views and builds</span></div></section>
@@ -2660,15 +2728,15 @@ export default function RUMS() {
                       </div>
 
                       <div className="profile-section appearance-section">
-                        <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Adjust the transparency of the glass controls on this device.</p></div><span>{glassStrength}%</span></div>
+                        <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Adjust the transparency of the glass controls on this device.</p></div><span data-glass-value>{glassStrength}%</span></div>
                         <div className="glass-live-preview" aria-label={`Glass appearance preview at ${glassStrength} percent`}>
                           <div className="preview-sun" /><div className="preview-hill" />
-                          <div className="preview-island"><span className="preview-icon"><Droplet size={16} /></span><span><b>Glass preview</b><small>{glassStrength < 55 ? 'Clear and light' : glassStrength < 78 ? 'Balanced glass' : 'Soft and frosted'}</small></span><span className="preview-action"><Plus size={14} /></span></div>
+                          <div className="preview-island"><span className="preview-icon"><Droplet size={16} /></span><span><b>Glass preview</b><small data-glass-description>{glassStrength < 55 ? 'Clear and light' : glassStrength < 78 ? 'Balanced glass' : 'Soft and frosted'}</small></span><span className="preview-action"><Plus size={14} /></span></div>
                         </div>
                         <div className={`glass-slider-shell ${glassDragging ? 'is-dragging' : ''}`} style={{ '--slider-position': `${(glassStrength - 35) / 60 * 100}%` }}>
-                          <input className="glass-range" type="range" min="35" max="95" step="1" value={glassStrength}
-                            aria-label="Glass transparency" onChange={(e) => setGlassStrength(Number(e.target.value))}
-                            onPointerDown={() => setGlassDragging(true)} onPointerUp={() => setGlassDragging(false)} onPointerCancel={() => setGlassDragging(false)} onBlur={() => setGlassDragging(false)} />
+                          <input className="glass-range" type="range" min="35" max="95" step="1" defaultValue={glassStrength}
+                            aria-label="Glass transparency" onInput={(e) => previewGlassStrength(e.currentTarget.value, e.currentTarget)}
+                            onPointerDown={() => setGlassDragging(true)} onPointerUp={(e) => { setGlassDragging(false); commitGlassStrength(e.currentTarget); }} onPointerCancel={(e) => { setGlassDragging(false); commitGlassStrength(e.currentTarget); }} onBlur={(e) => { setGlassDragging(false); commitGlassStrength(e.currentTarget); }} onKeyUp={(e) => commitGlassStrength(e.currentTarget)} />
                         </div>
                         <div className="glass-slider-labels"><span>Clear</span><span>Frosted</span></div>
                       </div>

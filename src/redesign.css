@@ -784,3 +784,58 @@ button,input,textarea { font:inherit; }
 @media(prefers-reduced-motion:reduce) {
   .universal-rums-switcher.is-dragging::before {transition:none;}
 }
+
+/* Slider performance pass: pointer movement stays on the compositor instead of chasing React renders. */
+.aero-root .feed-tabs.is-dragging::before,
+.aero-root .lumina-view-switch.is-dragging::before,
+.aero-root .upload-wrap .location-tabs.is-dragging::before,
+.aero-root .feed-tabs.is-dragging > .drag-refraction,
+.aero-root .lumina-view-switch.is-dragging > .drag-refraction,
+.aero-root .upload-wrap .location-tabs.is-dragging > .drag-refraction,
+.universal-rums-switcher.is-dragging::before {
+  will-change:transform;
+  contain:paint;
+}
+
+/* Do not interpolate behind the pointer: this was the visible 55–70ms "rubber band" lag. */
+.aero-root .feed-tabs.is-dragging::before,
+.aero-root .lumina-view-switch.is-dragging::before,
+.aero-root .upload-wrap .location-tabs.is-dragging::before {
+  transition:width .16s ease,border-radius .14s ease,box-shadow .14s ease,filter .14s ease!important;
+  backdrop-filter:blur(2px) saturate(1.35)!important;
+  -webkit-backdrop-filter:blur(2px) saturate(1.35)!important;
+}
+
+/* Keep the same original RUMS 4/5 blue segment, but move it with a transform (GPU/compositor) rather than animated left. */
+.universal-rums-switcher.is-dragging::before {
+  left:3px;
+  transform:translate3d(calc(var(--version-pointer-x,37px) - 37px),0,0);
+  transition:none!important;
+}
+
+/* The state itself only commits on release; these attributes keep the label preview live without a React render per pixel. */
+.aero-root .feed-tabs.is-dragging .tab-btn.active {color:#6d7b92;}
+.aero-root .feed-tabs.is-dragging[data-drag-target="all"] .tab-btn:nth-child(1),
+.aero-root .feed-tabs.is-dragging[data-drag-target="lumina"] .tab-btn:nth-child(2) {color:#2569d7;}
+
+.aero-root .lumina-view-switch.is-dragging button.active {color:#778499;}
+.aero-root .lumina-view-switch.is-dragging[data-drag-target="overview"] button:nth-child(1),
+.aero-root .lumina-view-switch.is-dragging[data-drag-target="metro"] button:nth-child(2),
+.aero-root .lumina-view-switch.is-dragging[data-drag-target="community"] button:nth-child(3) {color:#286bd5;}
+
+.aero-root .upload-wrap .location-tabs.is-dragging .tag-chip.active {color:#708096;}
+.aero-root .upload-wrap .location-tabs.is-dragging[data-drag-target="General"] .tag-chip:nth-child(1),
+.aero-root .upload-wrap .location-tabs.is-dragging[data-drag-target="Lumina"] .tag-chip:nth-child(2) {color:#286bd5;}
+
+@media(max-width:720px) {
+  .universal-rums-switcher.is-dragging::before {
+    left:2px;
+    transform:translate3d(calc(var(--version-pointer-x,27px) - 27px),0,0);
+  }
+}
+@media(max-width:430px) {
+  .universal-rums-switcher.is-dragging::before {
+    left:2px;
+    transform:translate3d(calc(var(--version-pointer-x,23px) - 23px),0,0);
+  }
+}
