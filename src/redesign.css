@@ -160,7 +160,7 @@ button,input,textarea { font:inherit; }
   top:5px;
   width:84px;
   height:calc(100% - 10px);
-  border-radius:12px;
+  border-radius:18px;
   transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,47px)) - 47px)) scaleY(1.03);
   box-shadow:inset 3px 3px 5px #fff,inset -4px -5px 8px #5f86ad3f,0 0 0 3px #ffffff68,0 8px 22px #3478f657;
   transition:transform .07s linear,width .18s ease,border-radius .15s,box-shadow .15s;
