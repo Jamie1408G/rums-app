@@ -164,7 +164,7 @@ button,input,textarea { font:inherit; }
   height:calc(100% - 10px);
   border:2px solid transparent;
   border-radius:18px;
-  background:radial-gradient(70px 24px at var(--tab-reflection-x,var(--lumina-reflection-x,32%)) -2px,#fff 0,#ffffff8f 28%,transparent 70%) padding-box,radial-gradient(28px 44px at 0 50%,#ffffff5c 0,#ffffff18 48%,transparent 74%) padding-box,radial-gradient(28px 44px at 100% 52%,#ffffff48 0,#ffffff12 50%,transparent 75%) padding-box,linear-gradient(145deg,#ffffff58,#ffffff0c 58%,#ffffff35) padding-box,conic-gradient(from var(--glass-prism-angle,-120deg),transparent 0 8%,color-mix(in srgb,var(--glass-edge-color,#286bd5) 36%,#57efff) 10%,#ffffffed 12%,color-mix(in srgb,var(--glass-edge-color,#286bd5) 34%,#f45bff) 14%,color-mix(in srgb,var(--glass-edge-color,#286bd5) 30%,#fff16b) 16%,transparent 19% 61%,color-mix(in srgb,var(--glass-edge-color,#286bd5) 36%,#57efb1) 64%,#ffffffdf 66%,color-mix(in srgb,var(--glass-edge-color,#286bd5) 34%,#6bb7ff) 68%,transparent 71%) border-box,linear-gradient(145deg,#ffffffe8,#ffffff4a 48%,#ffffffc9) border-box;
+  background:radial-gradient(70px 24px at var(--tab-reflection-x,var(--lumina-reflection-x,32%)) -2px,#fff 0,#ffffff8f 28%,transparent 70%) padding-box,radial-gradient(28px 44px at 0 50%,#ffffff5c 0,#ffffff18 48%,transparent 74%) padding-box,radial-gradient(28px 44px at 100% 52%,#ffffff48 0,#ffffff12 50%,transparent 75%) padding-box,linear-gradient(145deg,#ffffff58,#ffffff0c 58%,#ffffff35) padding-box,linear-gradient(145deg,#fffffff2,#ffffff55 48%,#ffffffd5) border-box;
   transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,47px)) - 47px)) scaleY(1.03);
   box-shadow:inset 3px 3px 5px #fff,inset 6px 0 9px #ffffff70,inset -6px 0 9px #ffffff55,inset 0 -4px 7px #ffffff42,0 0 0 2px #ffffffb8,0 0 0 4px #ffffff2f,0 8px 22px #345b8a4f;
   backdrop-filter:blur(3px) saturate(1.55) contrast(1.1) brightness(1.06);
@@ -174,10 +174,16 @@ button,input,textarea { font:inherit; }
   transition:transform .07s linear,width .18s ease,border-radius .15s,box-shadow .15s;
   filter:saturate(1.25);
 }
+.drag-refraction {display:none;}
+.is-dragging>.drag-refraction {position:absolute;z-index:3;display:block;left:5px;top:5px;width:84px;height:calc(100% - 10px);overflow:hidden;border-radius:18px;transform:translateX(calc(var(--tab-pointer-x,var(--lumina-pointer-x,47px)) - 47px)) scaleY(1.03);pointer-events:none;}
+.drag-refraction-content {position:absolute;left:calc(47px - var(--tab-pointer-x,var(--lumina-pointer-x,47px)));top:0;display:grid;width:calc(var(--glass-control-width,250px) - 10px);height:100%;align-items:center;color:#286bd5;font-size:13px;font-weight:750;filter:url('#liquid-glass-refraction') saturate(1.4) contrast(1.08);transform:scale(1.055);transform-origin:var(--tab-pointer-x,var(--lumina-pointer-x,47px)) 50%;}
+.feed-drag-refraction .drag-refraction-content {grid-template-columns:repeat(2,1fr);}
+.lumina-drag-refraction .drag-refraction-content {grid-template-columns:repeat(3,1fr);}
+.drag-refraction-content>span {display:flex;align-items:center;justify-content:center;gap:5px;height:100%;white-space:nowrap;}
 .aero-root .feed-tabs.is-dragging::after,.aero-root .lumina-view-switch.is-dragging::after {
   content:'';
   position:absolute;
-  z-index:3;
+  z-index:4;
   left:calc(var(--tab-pointer-x,var(--lumina-pointer-x,50%)) - 6px + var(--tab-tail-offset,var(--lumina-tail-offset,0px)));
   top:9px;
   width:12px;

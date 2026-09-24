@@ -131,8 +131,7 @@ export default function RUMS() {
     setTabOffset(offset);
     tabsRef.current.style.setProperty('--tab-reflection-x', `${clientX - rect.left - offset}px`);
     tabsRef.current.style.setProperty('--tab-pointer-x', `${clientX - rect.left}px`);
-    const prismProgress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    tabsRef.current.style.setProperty('--glass-prism-angle', `${prismProgress * 240 - 120}deg`);
+    tabsRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
     const index = clientX >= rect.left + rect.width / 2 ? 1 : 0;
     const sampledButton = tabsRef.current.querySelectorAll('button')[index];
     if (sampledButton) tabsRef.current.style.setProperty('--glass-edge-color', getComputedStyle(sampledButton).color);
@@ -186,8 +185,7 @@ export default function RUMS() {
     setLuminaTabOffset(offset);
     luminaTabsRef.current.style.setProperty('--lumina-reflection-x', `${clientX - rect.left - 5 - offset}px`);
     luminaTabsRef.current.style.setProperty('--lumina-pointer-x', `${clientX - rect.left}px`);
-    const prismProgress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    luminaTabsRef.current.style.setProperty('--glass-prism-angle', `${prismProgress * 240 - 120}deg`);
+    luminaTabsRef.current.style.setProperty('--glass-control-width', `${rect.width}px`);
     const index = Math.max(0, Math.min(2, Math.floor((clientX - rect.left) / (rect.width / 3))));
     const sampledButton = luminaTabsRef.current.querySelectorAll('button')[index];
     if (sampledButton) luminaTabsRef.current.style.setProperty('--glass-edge-color', getComputedStyle(sampledButton).color);
@@ -1249,6 +1247,7 @@ export default function RUMS() {
                   <Droplet size={12} /> Lumina
                   {unseenLumina > 0 && <span className="tab-badge">{unseenLumina}</span>}
                 </button>
+                <span className="drag-refraction feed-drag-refraction" aria-hidden="true"><span className="drag-refraction-content"><span>All RUMS</span><span><Droplet size={12} /> Lumina</span></span></span>
               </div>
             )}
 
@@ -1317,7 +1316,7 @@ export default function RUMS() {
                     <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>M1</strong><span>every minute</span></div></div>
                   </section>
 
-                  <nav ref={luminaTabsRef} className={`lumina-view-switch ${luminaTabsDragging ? 'is-dragging' : ''}`} style={{ '--lumina-tab-index': LUMINA_SECTIONS.findIndex(([value]) => value === luminaView), ...(luminaTabsDragging ? { '--lumina-drag-translate': `${luminaTabOffset}px` } : {}) }} aria-label="Project Lumina sections" onPointerDown={handleLuminaTabsPointerDown} onPointerMove={handleLuminaTabsPointerMove} onPointerUp={handleLuminaTabsPointerEnd} onPointerCancel={handleLuminaTabsPointerEnd}>{LUMINA_SECTIONS.map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => { if (!luminaTabsDragRef.current?.moved) setLuminaView(value); }}>{label}</button>)}</nav>
+                  <nav ref={luminaTabsRef} className={`lumina-view-switch ${luminaTabsDragging ? 'is-dragging' : ''}`} style={{ '--lumina-tab-index': LUMINA_SECTIONS.findIndex(([value]) => value === luminaView), ...(luminaTabsDragging ? { '--lumina-drag-translate': `${luminaTabOffset}px` } : {}) }} aria-label="Project Lumina sections" onPointerDown={handleLuminaTabsPointerDown} onPointerMove={handleLuminaTabsPointerMove} onPointerUp={handleLuminaTabsPointerEnd} onPointerCancel={handleLuminaTabsPointerEnd}>{LUMINA_SECTIONS.map(([value,label]) => <button key={value} className={luminaView === value ? 'active' : ''} onClick={() => { if (!luminaTabsDragRef.current?.moved) setLuminaView(value); }}>{label}</button>)}<span className="drag-refraction lumina-drag-refraction" aria-hidden="true"><span className="drag-refraction-content">{LUMINA_SECTIONS.map(([value,label]) => <span key={value}>{label}</span>)}</span></span></nav>
 
                   {luminaView === 'overview' && <div className="lumina-view-panel lumina-overview-view">
                     <section className="lumina-intro-card"><span className="eyebrow">THE IDEA</span><h2>Optimism built into a city.</h2><p>Lumina mixes the glossy blue skies and friendly technology of Frutiger Aero, the natural calm of Frutiger Eco and the green, people-first future of solarpunk. Each district has its own role, while the metro keeps everything close.</p><div className="lumina-fact-row"><span><b>Community built</b>Made together on RUMS</span><span><b>Transit first</b>Three connected districts</span><span><b>Always evolving</b>New views and builds</span></div></section>
