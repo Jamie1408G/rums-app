@@ -314,8 +314,10 @@ export default function RUMS() {
   const [chatReadState, setChatReadState] = useState({});
   const [activeChat, setActiveChat] = useState('plaza');
   const [chatDraft, setChatDraft] = useState('');
+  const [chatImageDraft, setChatImageDraft] = useState('');
   const [chatSearch, setChatSearch] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
+  const [chatImageBusy, setChatImageBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState('');
   const [authMode, setAuthMode] = useState('login');
@@ -372,6 +374,7 @@ export default function RUMS() {
   const fileInputRef = useRef(null);
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
+  const chatImageInputRef = useRef(null);
   const chatEndRef = useRef(null);
   const rootRef = useRef(null);
   const siteConfigRef = useRef(DEFAULT_SITE_CONFIG);
@@ -2290,10 +2293,31 @@ export default function RUMS() {
     }));
   }
 
+  async function handleChatImagePick(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file.');
+      return;
+    }
+    setChatImageBusy(true);
+    try {
+      const image = await resizeImage(file);
+      setChatImageDraft(image);
+    } catch (e) {
+      console.error(e);
+      setError('Could not load that image.');
+    } finally {
+      setChatImageBusy(false);
+    }
+  }
+
   async function sendChatMessage() {
-    if (!currentUser || chatBusy) return;
+    if (!currentUser || chatBusy || chatImageBusy) return;
     const text = chatDraft.trim().slice(0, 1200);
-    if (!text) return;
+    const image = chatImageDraft || '';
+    if (!text && !image) return;
     if (activeChat !== 'plaza' && !activeChat.startsWith('dm:')) return;
     const recipient = activeChat.startsWith('dm:') ? activeChat.slice(3) : null;
     if (recipient && !users.some((user) => user.username === recipient)) {
@@ -2308,6 +2332,7 @@ export default function RUMS() {
       participants: recipient ? [currentUser.username, recipient].sort((a, b) => a.localeCompare(b)) : [],
       sender: currentUser.username,
       text,
+      image,
       timestamp: Date.now(),
     };
     try {
@@ -2320,11 +2345,12 @@ export default function RUMS() {
         } catch { /* keep local copy */ }
       }
       const next = [...latest.filter((item) => item?.id !== message.id), message]
-        .filter((item) => item && item.id && item.sender && item.text)
+        .filter((item) => item && item.id && item.sender && (item.text || item.image))
         .slice(-2500);
       await window.storage.set(CHAT_MESSAGES_KEY, JSON.stringify(next), true);
       setChatMessages(next);
       setChatDraft('');
+      setChatImageDraft('');
       setChatReadState((current) => {
         const nextRead = { ...current, [activeChat]: message.timestamp };
         void window.storage.set(chatReadKey(currentUser.username), JSON.stringify(nextRead), false).catch((e) => console.error(e));
@@ -3450,7 +3476,10 @@ export default function RUMS() {
                           {!grouped && <button className="chat-message-avatar" onClick={() => openProfile(message.sender)} aria-label={`Open ${message.sender}'s profile`}>{avatarNode(message.sender, 32, 11)}</button>}
                           <div className="chat-message-main">
                             {!grouped && <div className="chat-message-meta"><button onClick={() => openProfile(message.sender)}>{message.sender}</button><span>{timeAgo(message.timestamp)}</span></div>}
-                            <div className="chat-message-bubble">{message.text}</div>
+                            <div className="chat-message-bubble">
+                              {message.image && <button className="chat-message-image-button" onClick={() => window.open(message.image, '_blank', 'noopener,noreferrer')} title="Open image"><img className="chat-message-image" src={message.image} alt={message.text ? `Image sent by ${message.sender}` : `Chat image from ${message.sender}`} loading="lazy" /></button>}
+                              {message.text && <div className="chat-message-text">{message.text}</div>}
+                            </div>
                           </div>
                           {(own || currentUser.isAdmin) && <button className="chat-message-delete" onClick={() => deleteChatMessage(message.id)} title="Delete message"><Trash2 size={13} /></button>}
                         </div>;
@@ -3459,6 +3488,7 @@ export default function RUMS() {
                     </div>
 
                     <div className="chat-composer">
+                      {chatImageDraft && <div className="chat-image-preview"><img src={chatImageDraft} alt="Selected chat upload" /><button type="button" className="chat-image-remove" onClick={() => setChatImageDraft('')} aria-label="Remove image"><X size={14} /></button></div>}
                       <textarea
                         value={chatDraft}
                         onChange={(event) => setChatDraft(event.target.value.slice(0, 1200))}
@@ -3471,7 +3501,17 @@ export default function RUMS() {
                         placeholder={activeChat === 'plaza' ? 'Message Plaza Chat…' : `Message ${activeChatLabel()}…`}
                         aria-label="Message"
                       />
-                      <div className="chat-composer-bottom"><small>{chatDraft.length}/1200 · Shift+Enter for a new line</small><button className="chat-send-button" onClick={sendChatMessage} disabled={chatBusy || !chatDraft.trim()}>{chatBusy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}<span>Send</span></button></div>
+                      <input ref={chatImageInputRef} type="file" accept="image/*" hidden onChange={(event) => { void handleChatImagePick(event); }} />
+                      <div className="chat-composer-bottom">
+                        <div className="chat-composer-tools">
+                          <button className="chat-attach-button" type="button" onClick={() => chatImageInputRef.current?.click()} disabled={chatBusy || chatImageBusy}>
+                            {chatImageBusy ? <Loader2 size={15} className="spin" /> : <ImagePlus size={15} />}
+                            <span>{chatImageDraft ? 'Change image' : 'Add image'}</span>
+                          </button>
+                          <small>{chatDraft.length}/1200 · Shift+Enter for a new line</small>
+                        </div>
+                        <button className="chat-send-button" onClick={sendChatMessage} disabled={chatBusy || chatImageBusy || (!chatDraft.trim() && !chatImageDraft)}>{chatBusy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}<span>Send</span></button>
+                      </div>
                     </div>
                   </section>
                 </div>
