@@ -1507,6 +1507,10 @@ export default function RUMS() {
 
                       <div className="profile-section appearance-section">
                         <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Adjust the transparency of the glass controls on this device.</p></div><span>{glassStrength}%</span></div>
+                        <div className="glass-live-preview" aria-label={`Glass appearance preview at ${glassStrength} percent`}>
+                          <div className="preview-sun" /><div className="preview-hill" />
+                          <div className="preview-island"><span className="preview-icon"><Droplet size={16} /></span><span><b>Glass preview</b><small>{glassStrength < 55 ? 'Clear and light' : glassStrength < 78 ? 'Balanced glass' : 'Soft and frosted'}</small></span><span className="preview-action"><Plus size={14} /></span></div>
+                        </div>
                         <div className={`glass-slider-shell ${glassDragging ? 'is-dragging' : ''}`} style={{ '--slider-position': `${(glassStrength - 35) / 60 * 100}%` }}>
                           <input className="glass-range" type="range" min="35" max="95" step="1" value={glassStrength}
                             aria-label="Glass transparency" onChange={(e) => setGlassStrength(Number(e.target.value))}
