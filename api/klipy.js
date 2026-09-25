@@ -1,7 +1,7 @@
 const KLIPY_BASE = 'https://api.klipy.com/v2';
 
 function getKey() {
-  return process.env.KLIPY_APP_KEY || '';
+  return process.env.APP_KEY || '';
 }
 
 function safeText(value, max = 120) {
@@ -26,7 +26,7 @@ function simplify(item) {
 export default async function handler(req, res) {
   const key = getKey();
   if (!key) {
-    return res.status(503).json({ error: 'KLIPY is not configured yet. Add KLIPY_APP_KEY in Vercel Environment Variables.' });
+    return res.status(503).json({ error: 'KLIPY is not configured yet. Add APP_KEY in Vercel Environment Variables.' });
   }
 
   if (req.method === 'POST') {
