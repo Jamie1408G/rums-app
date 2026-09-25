@@ -1,0 +1,9 @@
+{
+  "name": "RUMS Plaza",
+  "short_name": "RUMS Plaza",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fc",
+  "theme_color": "#3478f6",
+  "description": "RUMS Plaza community platform"
+}

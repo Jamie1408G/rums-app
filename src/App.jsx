@@ -113,7 +113,7 @@ function migratePlazaOverhaulAnnouncement(config) {
 
 const BUILT_IN_PAGES = [
   ['feed', 'Community feed'], ['lumina', 'Project Lumina'], ['upload', 'Add post'],
-  ['suggestions', 'Suggestions'], ['updates', 'Server updates'], ['chat', 'Chat'], ['search', 'Discover'],
+  ['suggestions', 'Suggestions'], ['updates', 'Server updates'], ['chat', 'Chat'], ['search', 'Discover'], ['plazaPlus', 'Plaza+'],
   ['profile', 'Profiles'], ['postDetail', 'Post detail'],
 ];
 const TAGS = ['General', 'Lumina'];
@@ -129,6 +129,21 @@ const CUSTOM_EMOJIS_KEY = 'rums-custom-emojis';
 const CHAT_MESSAGES_KEY = 'rums-chat-messages';
 const CHAT_ROOM_ID = 'plaza';
 const chatReadKey = (username) => `rums-chat-read-${username}`;
+const PLAZA_PLUS_KEY = 'rums-plaza-plus';
+const PLAZA_PLUS_VERSION = 1;
+const DEFAULT_PLAZA_PLUS = {
+  version: PLAZA_PLUS_VERSION,
+  follows: {}, bookmarks: {}, collections: {}, profiles: {}, presence: {},
+  activities: [], notificationReads: {}, events: [], groups: [], projects: [], wiki: [], builds: [],
+  reports: [], audit: [], invites: [], roles: {}, achievements: {}, xp: {}, drafts: {}, scheduled: [],
+  polls: {}, chatGroups: [], chatReactions: {}, typing: {}, changelog: [], themePresets: [], pageThemes: {},
+  accessibility: {}, commandHistory: {},
+};
+
+function normalizePlazaPlus(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return { ...DEFAULT_PLAZA_PLUS, ...source };
+}
 const EMOJI_SKIN_TONES = ['🏻', '🏼', '🏽', '🏾', '🏿'];
 const EMOJI_CATEGORY_META = [
   ['smileys', '😀'], ['people', '👋'], ['nature', '🌿'], ['food', '🍕'], ['activities', '⚽'],
@@ -255,7 +270,9 @@ const UNIVERSAL_EDIT_BOX_SELECTOR = [
   '.lumina-intro-card', '.lumina-principles > article', '.lumina-wide-action', '.lumina-metro-panel',
   '.lumina-station-detail', '.lumina-community-section', '.lumina-share-card', '.upload-wrap',
   '.drop-zone', '.preview-wrap', '.suggestion-card', '.update-card', '.profile-wrap', '.profile-section',
-  '.profile-danger-zone', '.search-wrap', '.user-row', '.admin-post-row', '.site-editor', '.modal-card'
+  '.profile-danger-zone', '.search-wrap', '.user-row', '.admin-post-row', '.site-editor', '.modal-card',
+  '.plaza-plus-hero', '.plaza-plus-panel', '.collection-card', '.event-card', '.group-card', '.project-card',
+  '.wiki-card', '.creator-grid > article', '.profile-custom-section', '.post-poll', '.chat-media-gallery'
 ].join(',');
 const UNIVERSAL_EDIT_TEXT_SELECTOR = 'h1,h2,h3,h4,p,small,span,b,strong,em';
 
@@ -339,7 +356,12 @@ function resizeEmojiImage(file, size = 96) {
 }
 
 export default function RUMS() {
-  useEffect(() => { document.title = PLATFORM_NAME; }, []);
+  useEffect(() => {
+    document.title = PLATFORM_NAME;
+    let manifest = document.querySelector('link[rel="manifest"]');
+    if (!manifest) { manifest = document.createElement('link'); manifest.rel = 'manifest'; manifest.href = '/manifest.webmanifest'; document.head.appendChild(manifest); }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }, []);
   const [screen, setScreen] = useState('spaceSelect');
   const [rumsSpace, setRumsSpace] = useState(null);
   const [spaceSwitchBusy, setSpaceSwitchBusy] = useState(null);
@@ -355,6 +377,30 @@ export default function RUMS() {
   const [chatSearch, setChatSearch] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
   const [chatImageBusy, setChatImageBusy] = useState(false);
+  const [plazaPlus, setPlazaPlus] = useState(DEFAULT_PLAZA_PLUS);
+  const [plusTab, setPlusTab] = useState('notifications');
+  const [followingOnly, setFollowingOnly] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
+  const [profileEdit, setProfileEdit] = useState({ bio: '', status: 'Online', accent: '#3478f6', banner: '' });
+  const [profileSectionDraft, setProfileSectionDraft] = useState({ title: '', body: '' });
+  const [collectionDraft, setCollectionDraft] = useState('');
+  const [eventDraft, setEventDraft] = useState({ title: '', when: '', location: '', description: '' });
+  const [groupDraft, setGroupDraft] = useState({ name: '', description: '' });
+  const [projectDraft, setProjectDraft] = useState({ name: '', description: '' });
+  const [wikiDraft, setWikiDraft] = useState({ title: '', body: '' });
+  const [buildDraft, setBuildDraft] = useState({ name: '', location: '', owner: '', description: '' });
+  const [reportDraft, setReportDraft] = useState({ target: '', reason: '' });
+  const [chatReplyTo, setChatReplyTo] = useState(null);
+  const [chatMediaOpen, setChatMediaOpen] = useState(false);
+  const [chatReactionOpen, setChatReactionOpen] = useState(null);
+  const [draftCaption, setDraftCaption] = useState('');
+  const [scheduleWhen, setScheduleWhen] = useState('');
+  const [searchFilters, setSearchFilters] = useState({ type: 'all', tag: 'all', author: '', from: '', to: '' });
+  const [accessibilityPrefs, setAccessibilityPrefs] = useState({ reducedMotion: false, highContrast: false, largeText: false, reducedTransparency: false });
+  const [themeBuilder, setThemeBuilder] = useState({ accent: '#3478f6', radius: 18, blur: 24 });
+  const [customThemeEnabled, setCustomThemeEnabled] = useState(false);
+  const [pageThemeTarget, setPageThemeTarget] = useState('feed');
   const [currentUser, setCurrentUser] = useState(null);
   const [error, setError] = useState('');
   const [authMode, setAuthMode] = useState('login');
@@ -366,6 +412,11 @@ export default function RUMS() {
   const [tutorialNavRect, setTutorialNavRect] = useState(null);
   const [tutorialReturningUser, setTutorialReturningUser] = useState(false);
   const [uploadPreview, setUploadPreview] = useState(null);
+  const [uploadGallery, setUploadGallery] = useState([]);
+  const [postAltText, setPostAltText] = useState('');
+  const [postLink, setPostLink] = useState('');
+  const [postVideoUrl, setPostVideoUrl] = useState('');
+  const [postPollDraft, setPostPollDraft] = useState({ question: '', options: ['', ''] });
   const [caption, setCaption] = useState('');
   const [tag, setTag] = useState('General');
   const [commentDrafts, setCommentDrafts] = useState({});
@@ -454,6 +505,8 @@ export default function RUMS() {
   const rumsVersionSwitchRef = useRef(null);
   const rumsVersionDragRef = useRef(null);
   const rumsVersionSuppressClickRef = useRef(false);
+  const lastNotificationCountRef = useRef(0);
+  const lastTypingWriteRef = useRef(0);
   const [rumsVersionDragging, setRumsVersionDragging] = useState(false);
   const activeStorageKeys = storageKeysForSpace(rumsSpace || 'rums4');
   const isRums5 = rumsSpace === 'rums5';
@@ -530,6 +583,10 @@ export default function RUMS() {
   function chatThreadForMessage(message, username = currentUser?.username) {
     if (!message || !username) return null;
     if (message.type === 'room' && message.room === CHAT_ROOM_ID) return 'plaza';
+    if (message.type === 'group' && message.room) {
+      const group = (plazaPlus.groups || []).find((g) => g.id === message.room);
+      return group?.members?.includes(username) ? `group:${message.room}` : null;
+    }
     if (message.type !== 'dm' || !Array.isArray(message.participants) || !message.participants.includes(username)) return null;
     const other = message.participants.find((name) => name !== username);
     return other ? `dm:${other}` : null;
@@ -562,7 +619,259 @@ export default function RUMS() {
 
   function activeChatLabel() {
     if (activeChat === 'plaza') return 'Plaza Chat';
+    if (activeChat.startsWith('group:')) return (plazaPlus.groups || []).find((g) => g.id === activeChat.slice(6))?.name || 'Group chat';
     return activeChat.startsWith('dm:') ? activeChat.slice(3) : 'Chat';
+  }
+
+  async function commitPlazaPlus(mutator) {
+    try {
+      const record = await safeGet(PLAZA_PLUS_KEY, true);
+      const latest = normalizePlazaPlus(record ? JSON.parse(record.value) : plazaPlus);
+      const next = normalizePlazaPlus(typeof mutator === 'function' ? mutator(latest) : mutator);
+      await window.storage.set(PLAZA_PLUS_KEY, JSON.stringify(next), true);
+      setPlazaPlus(next);
+      return next;
+    } catch (e) {
+      console.error(e);
+      setError('Could not save that Plaza feature right now.');
+      return null;
+    }
+  }
+
+  function plusProfile(username = currentUser?.username) {
+    return plazaPlus.profiles?.[username] || { bio: '', status: 'Online', accent: '#3478f6', banner: '', pinnedPostIds: [], profileSections: [] };
+  }
+
+  function presenceLabel(username) {
+    const heartbeat = plazaPlus.presence?.[username];
+    if (!heartbeat || Date.now() - Number(heartbeat.at || 0) > 90000) return 'Offline';
+    return heartbeat.status || plusProfile(username).status || 'Online';
+  }
+
+  function followedUsers(username = currentUser?.username) {
+    return plazaPlus.follows?.[username] || [];
+  }
+
+  function isFollowing(username) {
+    return followedUsers().includes(username);
+  }
+
+  async function toggleFollow(username) {
+    if (!currentUser || !username || username === currentUser.username) return;
+    const nowFollowing = !isFollowing(username);
+    await commitPlazaPlus((data) => {
+      const mine = new Set(data.follows?.[currentUser.username] || []);
+      if (nowFollowing) mine.add(username); else mine.delete(username);
+      const activity = nowFollowing ? [{ id: `act-${Date.now()}-${Math.random().toString(36).slice(2,6)}`, type: 'follow', actor: currentUser.username, targetUser: username, text: `${currentUser.username} followed you`, timestamp: Date.now() }, ...(data.activities || [])].slice(0,800) : (data.activities || []);
+      return { ...data, follows: { ...data.follows, [currentUser.username]: [...mine] }, activities: activity };
+    });
+  }
+
+  function bookmarkedPosts(username = currentUser?.username) {
+    return plazaPlus.bookmarks?.[username] || [];
+  }
+
+  async function toggleBookmark(postId) {
+    if (!currentUser) return;
+    await commitPlazaPlus((data) => {
+      const mine = new Set(data.bookmarks?.[currentUser.username] || []);
+      if (mine.has(postId)) mine.delete(postId); else mine.add(postId);
+      return { ...data, bookmarks: { ...data.bookmarks, [currentUser.username]: [...mine] } };
+    });
+  }
+
+  async function createCollection() {
+    const name = collectionDraft.trim().slice(0, 40);
+    if (!currentUser || !name) return;
+    await commitPlazaPlus((data) => ({ ...data, collections: { ...data.collections, [currentUser.username]: [...(data.collections?.[currentUser.username] || []), { id: `col-${Date.now()}`, name, postIds: [] }] } }));
+    setCollectionDraft('');
+  }
+
+  async function addPostToCollection(postId, collectionId) {
+    if (!currentUser || !collectionId) return;
+    await commitPlazaPlus((data) => ({ ...data, collections: { ...data.collections, [currentUser.username]: (data.collections?.[currentUser.username] || []).map((collection) => collection.id === collectionId ? { ...collection, postIds: [...new Set([...(collection.postIds || []), postId])] } : collection) } }));
+  }
+
+  async function togglePinnedPost(postId) {
+    if (!currentUser) return;
+    await commitPlazaPlus((data) => {
+      const profile = { ...plusProfile(currentUser.username), ...(data.profiles?.[currentUser.username] || {}) };
+      const pins = new Set(profile.pinnedPostIds || []);
+      if (pins.has(postId)) pins.delete(postId); else { if (pins.size >= 3) pins.delete([...pins][0]); pins.add(postId); }
+      return { ...data, profiles: { ...data.profiles, [currentUser.username]: { ...profile, pinnedPostIds: [...pins] } } };
+    });
+  }
+
+  async function saveProfileExtras() {
+    if (!currentUser) return;
+    await commitPlazaPlus((data) => ({ ...data, profiles: { ...data.profiles, [currentUser.username]: { ...plusProfile(currentUser.username), ...profileEdit } } }));
+  }
+
+  async function addProfileSection() {
+    if (!currentUser || !profileSectionDraft.title.trim() || !profileSectionDraft.body.trim()) return;
+    await commitPlazaPlus((data) => {
+      const profile = { ...plusProfile(currentUser.username), ...(data.profiles?.[currentUser.username] || {}) };
+      return { ...data, profiles: { ...data.profiles, [currentUser.username]: { ...profile, profileSections: [...(profile.profileSections || []), { id:`section-${Date.now()}`, title:profileSectionDraft.title.trim().slice(0,60), body:profileSectionDraft.body.trim().slice(0,600) }] } } };
+    });
+    setProfileSectionDraft({ title:'', body:'' });
+  }
+
+  function xpFor(username) {
+    const base = plazaPlus.xp?.[username] || 0;
+    const postXp = posts.filter((p) => p.username === username).length * 20;
+    const commentXp = posts.reduce((sum, p) => sum + (p.comments || []).filter((c) => c.username === username).length * 4, 0);
+    return base + postXp + commentXp;
+  }
+
+  function levelFor(username) { return Math.max(1, Math.floor(Math.sqrt(xpFor(username) / 50)) + 1); }
+
+  function badgesFor(username) {
+    const list = [];
+    if (users.find((u) => u.username === username)?.isAdmin) list.push('Admin');
+    if (posts.filter((p) => p.username === username).length >= 10) list.push('Creator');
+    if (followedUsers(username).length >= 5) list.push('Explorer');
+    if (username.toLowerCase() === 'jamie') list.push('Founder');
+    return list;
+  }
+
+  function notificationsForCurrentUser() {
+    if (!currentUser) return [];
+    const read = Number(plazaPlus.notificationReads?.[currentUser.username] || 0);
+    return (plazaPlus.activities || []).filter((a) => (!a.targetUser || a.targetUser === currentUser.username) && a.actor !== currentUser.username && a.timestamp > read);
+  }
+
+  async function markNotificationsRead() {
+    if (!currentUser) return;
+    await commitPlazaPlus((data) => ({ ...data, notificationReads: { ...data.notificationReads, [currentUser.username]: Date.now() } }));
+  }
+
+  async function updateAccessibilityPref(key, value) {
+    const next = { ...accessibilityPrefs, [key]: value };
+    setAccessibilityPrefs(next);
+    if (!currentUser) return;
+    await commitPlazaPlus((data) => ({ ...data, accessibility: { ...data.accessibility, [currentUser.username]: next } }));
+  }
+
+  async function createInvite() {
+    if (!currentUser) return;
+    const code = Math.random().toString(36).slice(2, 8).toUpperCase();
+    await commitPlazaPlus((data) => ({ ...data, invites: [{ id:`invite-${Date.now()}`, code, creator:currentUser.username, createdAt:Date.now(), uses:0 }, ...(data.invites||[])].slice(0,100), audit:[{id:`audit-${Date.now()}`,actor:currentUser.username,action:`Created invite ${code}`,target:code,timestamp:Date.now()},...(data.audit||[])].slice(0,800) }));
+  }
+
+  async function createEvent() {
+    if (!currentUser || !eventDraft.title.trim()) return;
+    const event = { id: `evt-${Date.now()}`, title: eventDraft.title.trim().slice(0,80), when: eventDraft.when, location: eventDraft.location.trim().slice(0,80), description: eventDraft.description.trim().slice(0,500), creator: currentUser.username, rsvps: { going: [currentUser.username], maybe: [], no: [] }, timestamp: Date.now() };
+    await commitPlazaPlus((data) => ({ ...data, events: [event, ...(data.events || [])], activities: [{ id:`act-${Date.now()}`, type:'event', actor:currentUser.username, text:`${currentUser.username} created an event: ${event.title}`, timestamp:Date.now() }, ...(data.activities || [])].slice(0,800) }));
+    setEventDraft({ title:'', when:'', location:'', description:'' });
+  }
+
+  async function rsvpEvent(eventId, choice) {
+    if (!currentUser) return;
+    await commitPlazaPlus((data) => ({ ...data, events: (data.events || []).map((event) => {
+      if (event.id !== eventId) return event;
+      const rsvps = { going:[...(event.rsvps?.going||[])], maybe:[...(event.rsvps?.maybe||[])], no:[...(event.rsvps?.no||[])] };
+      Object.keys(rsvps).forEach((key) => { rsvps[key] = rsvps[key].filter((u) => u !== currentUser.username); });
+      rsvps[choice].push(currentUser.username);
+      return { ...event, rsvps };
+    }) }));
+  }
+
+  async function createGroup() {
+    if (!currentUser || !groupDraft.name.trim()) return;
+    const group = { id:`grp-${Date.now()}`, name:groupDraft.name.trim().slice(0,50), description:groupDraft.description.trim().slice(0,300), owner:currentUser.username, members:[currentUser.username], timestamp:Date.now() };
+    await commitPlazaPlus((data) => ({ ...data, groups:[group,...(data.groups||[])], activities:[{id:`act-${Date.now()}-group`,type:'group',actor:currentUser.username,targetUser:null,text:`${currentUser.username} created community ${group.name}`,timestamp:Date.now()},...(data.activities||[])].slice(0,800) }));
+    setGroupDraft({ name:'', description:'' });
+  }
+
+  async function toggleGroupMembership(groupId) {
+    if (!currentUser) return;
+    await commitPlazaPlus((data) => ({ ...data, groups:(data.groups||[]).map((group) => group.id === groupId ? { ...group, members:(group.members||[]).includes(currentUser.username) ? group.members.filter((u)=>u!==currentUser.username) : [...(group.members||[]),currentUser.username] } : group) }));
+  }
+
+  async function toggleChatReaction(messageId, emoji) {
+    if (!currentUser) return;
+    await commitPlazaPlus((data) => {
+      const messageReactions = { ...(data.chatReactions?.[messageId] || {}) };
+      const usersForEmoji = new Set(messageReactions[emoji] || []);
+      if (usersForEmoji.has(currentUser.username)) usersForEmoji.delete(currentUser.username); else usersForEmoji.add(currentUser.username);
+      if (usersForEmoji.size) messageReactions[emoji] = [...usersForEmoji]; else delete messageReactions[emoji];
+      return { ...data, chatReactions: { ...data.chatReactions, [messageId]: messageReactions } };
+    });
+  }
+
+  async function noteTyping() {
+    if (!currentUser) return;
+    const now = Date.now();
+    if (now - lastTypingWriteRef.current < 1200) return;
+    lastTypingWriteRef.current = now;
+    await commitPlazaPlus((data) => ({ ...data, typing: { ...data.typing, [activeChat]: { ...(data.typing?.[activeChat] || {}), [currentUser.username]: now } } }));
+  }
+
+  function typingUsersForActiveChat() {
+    const record = plazaPlus.typing?.[activeChat] || {};
+    return Object.entries(record).filter(([username, at]) => username !== currentUser?.username && Date.now() - Number(at) < 4500).map(([username]) => username);
+  }
+
+  async function createProject() {
+    if (!currentUser || !projectDraft.name.trim()) return;
+    const project={id:`prj-${Date.now()}`,name:projectDraft.name.trim().slice(0,60),description:projectDraft.description.trim().slice(0,500),owner:currentUser.username,followers:[currentUser.username],milestones:[],timestamp:Date.now()};
+    await commitPlazaPlus((data)=>({...data,projects:[project,...(data.projects||[])],activities:[{id:`act-${Date.now()}-project`,type:'project',actor:currentUser.username,targetUser:null,text:`${currentUser.username} created project ${project.name}`,timestamp:Date.now()},...(data.activities||[])].slice(0,800)}));
+    setProjectDraft({name:'',description:''});
+  }
+
+  async function toggleProjectFollow(projectId) {
+    if (!currentUser) return;
+    await commitPlazaPlus((data)=>({...data,projects:(data.projects||[]).map((project)=>project.id===projectId?{...project,followers:(project.followers||[]).includes(currentUser.username)?project.followers.filter((u)=>u!==currentUser.username):[...(project.followers||[]),currentUser.username]}:project)}));
+  }
+
+  async function addWikiPage() {
+    if (!currentUser || !wikiDraft.title.trim() || !wikiDraft.body.trim()) return;
+    const page={id:`wiki-${Date.now()}`,title:wikiDraft.title.trim().slice(0,80),body:wikiDraft.body.trim().slice(0,4000),author:currentUser.username,updatedAt:Date.now()};
+    await commitPlazaPlus((data)=>({...data,wiki:[page,...(data.wiki||[])],activities:[{id:`act-${Date.now()}-wiki`,type:'wiki',actor:currentUser.username,targetUser:null,text:`${currentUser.username} added wiki page ${page.title}`,timestamp:Date.now()},...(data.activities||[])].slice(0,800)}));
+    setWikiDraft({title:'',body:''});
+  }
+
+  async function addBuildEntry() {
+    if (!currentUser || !buildDraft.name.trim()) return;
+    const build={id:`build-${Date.now()}`,name:buildDraft.name.trim().slice(0,80),location:buildDraft.location.trim().slice(0,120),owner:buildDraft.owner.trim().slice(0,60)||currentUser.username,description:buildDraft.description.trim().slice(0,500),author:currentUser.username,timestamp:Date.now()};
+    await commitPlazaPlus((data)=>({...data,builds:[build,...(data.builds||[])],activities:[{id:`act-${Date.now()}-build`,type:'build',actor:currentUser.username,targetUser:null,text:`${currentUser.username} added build ${build.name}`,timestamp:Date.now()},...(data.activities||[])].slice(0,800)}));
+    setBuildDraft({name:'',location:'',owner:'',description:''});
+  }
+
+  async function submitReport() {
+    if (!currentUser || !reportDraft.target.trim() || !reportDraft.reason.trim()) return;
+    const report={id:`report-${Date.now()}`,reporter:currentUser.username,target:reportDraft.target.trim().slice(0,120),reason:reportDraft.reason.trim().slice(0,700),status:'open',timestamp:Date.now()};
+    await commitPlazaPlus((data)=>({...data,reports:[report,...(data.reports||[])],audit:[{id:`audit-${Date.now()}`,actor:currentUser.username,action:'Submitted report',target:report.target,timestamp:Date.now()},...(data.audit||[])].slice(0,800)}));
+    setReportDraft({target:'',reason:''});
+  }
+
+  async function saveDraftPost() {
+    if (!currentUser || (!caption.trim() && !uploadPreview)) return;
+    await commitPlazaPlus((data)=>({...data,drafts:{...data.drafts,[currentUser.username]:[...(data.drafts?.[currentUser.username]||[]),{id:`draft-${Date.now()}`,caption,tag,image:uploadPreview,timestamp:Date.now()}]}}));
+    setDraftCaption('Saved');
+    setTimeout(()=>setDraftCaption(''),1200);
+  }
+
+  async function scheduleCurrentPost() {
+    if (!currentUser || !scheduleWhen || !uploadPreview) return;
+    await commitPlazaPlus((data)=>({...data,scheduled:[...(data.scheduled||[]),{id:`sched-${Date.now()}`,username:currentUser.username,caption,tag,image:uploadPreview,space:rumsSpace||'rums4',when:new Date(scheduleWhen).getTime(),createdAt:Date.now()}]}));
+    setScheduleWhen('');
+  }
+
+  async function applyDueScheduledPosts() {
+    if (!currentUser) return;
+    const due=(plazaPlus.scheduled||[]).filter((item)=>item.when<=Date.now() && (item.space||'rums4') === (rumsSpace||'rums4'));
+    if (!due.length) return;
+    const newPosts=due.map((item)=>({id:`${item.when}-${Math.random().toString(36).slice(2,8)}`,username:item.username,image:item.image,images:[item.image],caption:item.caption,tag:item.tag||'General',timestamp:item.when,likes:[],comments:[],reactions:{},editHistory:[]}));
+    await savePosts([...newPosts,...posts]);
+    const dueIds=new Set(due.map((item)=>item.id));
+    await commitPlazaPlus((data)=>({...data,scheduled:(data.scheduled||[]).filter((item)=>!dueIds.has(item.id))}));
+  }
+
+  function hashtagsIn(text='') { return [...new Set((text.match(/#[A-Za-z0-9_]+/g)||[]).map((tag)=>tag.toLowerCase()))]; }
+
+  function trendingPosts() {
+    return [...posts].sort((a,b)=>((b.likes?.length||0)+(b.comments?.length||0)*2+Object.values(b.reactions||{}).reduce((n,v)=>n+(v?.length||0),0))-((a.likes?.length||0)+(a.comments?.length||0)*2+Object.values(a.reactions||{}).reduce((n,v)=>n+(v?.length||0),0)));
   }
 
   function buildTutorialSteps() {
@@ -795,6 +1104,63 @@ export default function RUMS() {
   useEffect(() => {
     siteConfigRef.current = siteConfig;
   }, [siteConfig]);
+
+  useEffect(() => {
+    if (!currentUser) { setPlazaPlus(DEFAULT_PLAZA_PLUS); return undefined; }
+    let cancelled = false;
+    const loadPlus = async () => {
+      const record = await safeGet(PLAZA_PLUS_KEY, true);
+      if (cancelled) return;
+      if (!record) { setPlazaPlus(DEFAULT_PLAZA_PLUS); return; }
+      try { setPlazaPlus(normalizePlazaPlus(JSON.parse(record.value))); } catch { setPlazaPlus(DEFAULT_PLAZA_PLUS); }
+    };
+    loadPlus();
+    const poll = window.setInterval(loadPlus, 5000);
+    return () => { cancelled = true; window.clearInterval(poll); };
+  }, [currentUser?.username]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const profile = plusProfile(currentUser.username);
+    setProfileEdit({ bio: profile.bio || '', status: profile.status || 'Online', accent: profile.accent || '#3478f6', banner: profile.banner || '' });
+    setAccessibilityPrefs(plazaPlus.accessibility?.[currentUser.username] || { reducedMotion:false, highContrast:false, largeText:false, reducedTransparency:false });
+  }, [currentUser?.username, Boolean(currentUser && plazaPlus.profiles?.[currentUser.username]), Boolean(currentUser && plazaPlus.accessibility?.[currentUser.username])]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const count = notificationsForCurrentUser().length;
+    if (count > lastNotificationCountRef.current && lastNotificationCountRef.current >= 0 && document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+      try { new Notification('RUMS Plaza', { body: `You have ${count} new notification${count === 1 ? '' : 's'}.` }); } catch { /* ignore browser notification failures */ }
+    }
+    lastNotificationCountRef.current = count;
+  }, [plazaPlus.activities, plazaPlus.notificationReads, currentUser?.username]);
+
+  useEffect(() => {
+    if (!currentUser) return undefined;
+    let stopped = false;
+    const heartbeat = async () => {
+      if (stopped) return;
+      try {
+        const record = await safeGet(PLAZA_PLUS_KEY, true);
+        const latest = normalizePlazaPlus(record ? JSON.parse(record.value) : null);
+        const next = { ...latest, presence: { ...latest.presence, [currentUser.username]: { at: Date.now(), status: profileEdit.status || 'Online' } } };
+        await window.storage.set(PLAZA_PLUS_KEY, JSON.stringify(next), true);
+        if (!stopped) setPlazaPlus(next);
+      } catch { /* presence is best-effort */ }
+    };
+    heartbeat();
+    const timer = window.setInterval(heartbeat, 30000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [currentUser?.username, profileEdit.status]);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    root.classList.toggle('pref-reduced-motion', !!accessibilityPrefs.reducedMotion);
+    root.classList.toggle('pref-high-contrast', !!accessibilityPrefs.highContrast);
+    root.classList.toggle('pref-large-text', !!accessibilityPrefs.largeText);
+    root.classList.toggle('pref-reduced-transparency', !!accessibilityPrefs.reducedTransparency);
+  }, [accessibilityPrefs]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -1263,6 +1629,26 @@ export default function RUMS() {
   useEffect(() => {
     try { window.localStorage.setItem('rums-glass-strength', String(glassStrength)); } catch { /* browser preferences unavailable */ }
   }, [glassStrength]);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      const target = event.target;
+      const editing = target instanceof HTMLElement && (target.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(target.tagName));
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault(); setCommandOpen((open) => !open); return;
+      }
+      if (editing || event.metaKey || event.ctrlKey || event.altKey) return;
+      const key = event.key.toLowerCase();
+      if (key === 'g') setScreen('feed');
+      else if (key === 'c') setScreen('chat');
+      else if (key === 'n') setScreen('upload');
+      else if (key === '/') { event.preventDefault(); setScreen('search'); setTimeout(() => document.querySelector('.search-bar')?.focus(), 50); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  useEffect(() => { void applyDueScheduledPosts(); }, [plazaPlus.scheduled?.length, currentUser?.username]);
 
   useEffect(() => {
     try { window.localStorage.setItem(THEME_STORAGE_KEY, theme); } catch { /* browser preferences unavailable */ }
@@ -2204,6 +2590,12 @@ export default function RUMS() {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       username: currentUser.username,
       image: uploadPreview,
+      images: [uploadPreview, ...uploadGallery].filter(Boolean).slice(0, 6),
+      altText: postAltText.trim().slice(0, 240),
+      link: postLink.trim().slice(0, 500),
+      videoUrl: postVideoUrl.trim().slice(0, 500),
+      poll: postPollDraft.question.trim() ? { question: postPollDraft.question.trim().slice(0, 120), options: postPollDraft.options.map((option) => ({ id: `${Date.now()}-${Math.random().toString(36).slice(2,5)}`, text: option.trim().slice(0,80), votes: [] })).filter((option) => option.text).slice(0, 4) } : null,
+      editHistory: [],
       caption: caption.trim(),
       tag: isRums5 ? 'General' : tag,
       timestamp: Date.now(),
@@ -2212,11 +2604,36 @@ export default function RUMS() {
       reactions: {},
     };
     await savePosts([newPost, ...posts]);
+    const mentioned = [...new Set(((newPost.caption || '').match(/@[A-Za-z0-9_]+/g) || []).map((m)=>m.slice(1)).filter((name)=>users.some((u)=>u.username.toLowerCase()===name.toLowerCase()) && name.toLowerCase()!==currentUser.username.toLowerCase()))];
+    if (mentioned.length) void commitPlazaPlus((data)=>({...data,activities:[...mentioned.map((targetUser,i)=>({id:`act-${Date.now()}-post-${i}`,type:'mention',actor:currentUser.username,targetUser,postId:newPost.id,text:`${currentUser.username} mentioned you in a post`,timestamp:Date.now()})),...(data.activities||[])].slice(0,800)}));
     setUploadPreview(null);
+    setUploadGallery([]);
+    setPostAltText('');
+    setPostLink('');
+    setPostVideoUrl('');
+    setPostPollDraft({ question: '', options: ['', ''] });
     setCaption('');
     setTag('General');
     setBusy(false);
     setScreen('feed');
+  }
+
+  async function editPostCaption(postId) {
+    const post = posts.find((p) => p.id === postId);
+    if (!post || (post.username !== currentUser.username && !currentUser.isAdmin)) return;
+    const nextCaption = window.prompt('Edit caption', post.caption || '');
+    if (nextCaption === null || nextCaption.trim() === (post.caption || '').trim()) return;
+    const next = posts.map((p) => p.id === postId ? { ...p, caption: nextCaption.trim().slice(0,1200), editHistory: [...(p.editHistory || []), { caption: p.caption || '', editedAt: Date.now(), editor: currentUser.username }].slice(-25) } : p);
+    await savePosts(next);
+  }
+
+  async function votePostPoll(postId, optionId) {
+    if (!currentUser) return;
+    const next = posts.map((post) => {
+      if (post.id !== postId || !post.poll) return post;
+      return { ...post, poll: { ...post.poll, options: post.poll.options.map((option) => ({ ...option, votes: option.id === optionId ? [...new Set([...(option.votes || []).filter((u)=>u!==currentUser.username), currentUser.username])] : (option.votes || []).filter((u)=>u!==currentUser.username) })) } };
+    });
+    await savePosts(next);
   }
 
   async function toggleLike(postId) {
@@ -2229,6 +2646,11 @@ export default function RUMS() {
       };
     });
     await savePosts(next);
+    const post = posts.find((p) => p.id === postId);
+    const becameLiked = post && !post.likes.includes(currentUser.username);
+    if (becameLiked && post?.username !== currentUser.username) {
+      void commitPlazaPlus((data) => ({ ...data, activities: [{ id:`act-${Date.now()}-${Math.random().toString(36).slice(2,5)}`, type:'like', actor:currentUser.username, targetUser:post.username, postId, text:`${currentUser.username} liked your post`, timestamp:Date.now() }, ...(data.activities||[])].slice(0,800) }));
+    }
   }
 
 
@@ -2275,6 +2697,9 @@ export default function RUMS() {
       : p
     );
     await savePosts(next);
+    const target = posts.find((p)=>p.id===postId);
+    const added = target && !(target.reactions?.[emoji] || []).includes(currentUser.username);
+    if (added && target?.username !== currentUser.username) void commitPlazaPlus((data)=>({...data,activities:[{id:`act-${Date.now()}-reaction`,type:'reaction',actor:currentUser.username,targetUser:target.username,postId,text:`${currentUser.username} reacted to your post`,timestamp:Date.now()},...(data.activities||[])].slice(0,800)}));
   }
 
   async function toggleSuggestionReaction(suggestionId, emoji) {
@@ -2284,6 +2709,9 @@ export default function RUMS() {
       : s
     );
     await saveSuggestions(next);
+    const target = suggestions.find((s)=>s.id===suggestionId);
+    const added = target && !(target.reactions?.[emoji] || []).includes(currentUser.username);
+    if (added && target?.username !== currentUser.username) void commitPlazaPlus((data)=>({...data,activities:[{id:`act-${Date.now()}-sreaction`,type:'reaction',actor:currentUser.username,targetUser:target.username,text:`${currentUser.username} reacted to your suggestion`,timestamp:Date.now()},...(data.activities||[])].slice(0,800)}));
   }
 
   function toggleReactionMenu(menuKey) {
@@ -2452,6 +2880,10 @@ export default function RUMS() {
       p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p
     );
     await savePosts(next);
+    const post = posts.find((p) => p.id === postId);
+    const mentioned = [...new Set((text.match(/@[A-Za-z0-9_]+/g) || []).map((m) => m.slice(1)).filter((name) => users.some((u) => u.username.toLowerCase() === name.toLowerCase())))];
+    const targets = new Set([...(post?.username && post.username !== currentUser.username ? [post.username] : []), ...mentioned.filter((name) => name !== currentUser.username)]);
+    if (targets.size) void commitPlazaPlus((data) => ({ ...data, activities: [...[...targets].map((targetUser, i) => ({ id:`act-${Date.now()}-${i}-${Math.random().toString(36).slice(2,5)}`, type:mentioned.some((m)=>m.toLowerCase()===targetUser.toLowerCase())?'mention':'comment', actor:currentUser.username, targetUser, postId, text:mentioned.some((m)=>m.toLowerCase()===targetUser.toLowerCase()) ? `${currentUser.username} mentioned you in a comment` : `${currentUser.username} commented on your post`, timestamp:Date.now() })), ...(data.activities||[])].slice(0,800) }));
     setCommentDrafts((d) => ({ ...d, [postId]: '' }));
   }
 
@@ -2619,8 +3051,11 @@ export default function RUMS() {
     const text = chatDraft.trim().slice(0, 1200);
     const image = chatImageDraft || '';
     if (!text && !image) return;
-    if (activeChat !== 'plaza' && !activeChat.startsWith('dm:')) return;
+    if (activeChat !== 'plaza' && !activeChat.startsWith('dm:') && !activeChat.startsWith('group:')) return;
     const recipient = activeChat.startsWith('dm:') ? activeChat.slice(3) : null;
+    const groupId = activeChat.startsWith('group:') ? activeChat.slice(6) : null;
+    const group = groupId ? (plazaPlus.groups || []).find((g) => g.id === groupId) : null;
+    if (groupId && !group?.members?.includes(currentUser.username)) return;
     if (recipient && !users.some((user) => user.username === recipient)) {
       setError('That user is no longer available.');
       return;
@@ -2628,12 +3063,13 @@ export default function RUMS() {
     setChatBusy(true);
     const message = {
       id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
-      type: recipient ? 'dm' : 'room',
-      room: recipient ? null : CHAT_ROOM_ID,
-      participants: recipient ? [currentUser.username, recipient].sort((a, b) => a.localeCompare(b)) : [],
+      type: recipient ? 'dm' : groupId ? 'group' : 'room',
+      room: recipient ? null : groupId || CHAT_ROOM_ID,
+      participants: recipient ? [currentUser.username, recipient].sort((a, b) => a.localeCompare(b)) : groupId ? [...(group?.members || [])] : [],
       sender: currentUser.username,
       text,
       image,
+      replyTo: chatReplyTo ? { id: chatReplyTo.id, sender: chatReplyTo.sender, text: chatReplyTo.text || '', image: chatReplyTo.image || '' } : null,
       timestamp: Date.now(),
     };
     try {
@@ -2650,8 +3086,18 @@ export default function RUMS() {
         .slice(-2500);
       await window.storage.set(CHAT_MESSAGES_KEY, JSON.stringify(next), true);
       setChatMessages(next);
+      const chatTargets = new Set();
+      if (recipient) chatTargets.add(recipient);
+      for (const mention of ((text || '').match(/@[A-Za-z0-9_]+/g) || [])) {
+        const name = mention.slice(1);
+        const found = users.find((u)=>u.username.toLowerCase()===name.toLowerCase());
+        if (found && found.username !== currentUser.username) chatTargets.add(found.username);
+      }
+      if (groupId) (group?.members || []).filter((u)=>u!==currentUser.username).forEach((u)=>chatTargets.add(u));
+      if (chatTargets.size) void commitPlazaPlus((data)=>({...data,activities:[...[...chatTargets].map((targetUser,i)=>({id:`act-${Date.now()}-chat-${i}`,type:'message',actor:currentUser.username,targetUser,text:`${currentUser.username} sent you a chat message`,timestamp:Date.now()})),...(data.activities||[])].slice(0,800)}));
       setChatDraft('');
       setChatImageDraft('');
+      setChatReplyTo(null);
       setChatReadState((current) => {
         const nextRead = { ...current, [activeChat]: message.timestamp };
         void window.storage.set(chatReadKey(currentUser.username), JSON.stringify(nextRead), false).catch((e) => console.error(e));
@@ -2668,7 +3114,7 @@ export default function RUMS() {
   async function deleteChatMessage(messageId) {
     if (!currentUser) return;
     const target = chatMessages.find((message) => message.id === messageId);
-    if (!target || (target.sender !== currentUser.username && !currentUser.isAdmin)) return;
+    if (!target || (target.sender !== currentUser.username && !canModerate)) return;
     try {
       const record = await safeGet(CHAT_MESSAGES_KEY, true);
       let latest = chatMessages;
@@ -2717,6 +3163,32 @@ export default function RUMS() {
       setChatMessages(cleanedMessages);
       try { await window.storage.delete(chatReadKey(username), false); } catch { /* ignore */ }
     } catch { /* chat cleanup can retry later */ }
+    try {
+      await commitPlazaPlus((data) => {
+        const omitKey = (obj = {}) => Object.fromEntries(Object.entries(obj).filter(([key]) => key !== username));
+        const removeNameFromLists = (obj = {}) => Object.fromEntries(Object.entries(obj).filter(([key]) => key !== username).map(([key, value]) => [key, Array.isArray(value) ? value.filter((name) => name !== username) : value]));
+        const cleanedChatReactions = Object.fromEntries(Object.entries(data.chatReactions || {}).map(([messageId, reactions]) => [messageId, Object.fromEntries(Object.entries(reactions || {}).map(([emoji, names]) => [emoji, (names || []).filter((name) => name !== username)]).filter(([, names]) => names.length))]));
+        const cleanedTyping = Object.fromEntries(Object.entries(data.typing || {}).map(([thread, typing]) => [thread, Object.fromEntries(Object.entries(typing || {}).filter(([name]) => name !== username))]));
+        return {
+          ...data,
+          follows: removeNameFromLists(data.follows), bookmarks: omitKey(data.bookmarks), collections: omitKey(data.collections), profiles: omitKey(data.profiles), presence: omitKey(data.presence), notificationReads: omitKey(data.notificationReads), roles: omitKey(data.roles), xp: omitKey(data.xp), drafts: omitKey(data.drafts), pageThemes: omitKey(data.pageThemes), accessibility: omitKey(data.accessibility), commandHistory: omitKey(data.commandHistory),
+          activities: (data.activities || []).filter((item) => item.actor !== username && item.targetUser !== username),
+          events: (data.events || []).map((event) => ({ ...event, creator: event.creator === username ? 'Deleted user' : event.creator, rsvps: Object.fromEntries(Object.entries(event.rsvps || {}).map(([key, names]) => [key, (names || []).filter((name) => name !== username)])) })),
+          groups: (data.groups || []).map((group) => ({ ...group, owner: group.owner === username ? ((group.members || []).find((name) => name !== username) || 'Deleted user') : group.owner, members: (group.members || []).filter((name) => name !== username) })).filter((group) => group.members.length > 0),
+          projects: (data.projects || []).map((project) => ({ ...project, owner: project.owner === username ? 'Deleted user' : project.owner, followers: (project.followers || []).filter((name) => name !== username) })),
+          wiki: (data.wiki || []).map((page) => ({ ...page, author: page.author === username ? 'Deleted user' : page.author })),
+          builds: (data.builds || []).map((build) => ({ ...build, owner: build.owner === username ? 'Deleted user' : build.owner, author: build.author === username ? 'Deleted user' : build.author })),
+          reports: (data.reports || []).filter((report) => report.reporter !== username),
+          audit: (data.audit || []).map((entry) => ({ ...entry, actor: entry.actor === username ? 'Deleted user' : entry.actor })),
+          invites: (data.invites || []).filter((invite) => invite.creator !== username),
+          scheduled: (data.scheduled || []).filter((item) => item.username !== username),
+          chatReactions: cleanedChatReactions,
+          typing: cleanedTyping,
+          changelog: (data.changelog || []).map((entry) => ({ ...entry, author: entry.author === username ? 'Deleted user' : entry.author })),
+          themePresets: (data.themePresets || []).filter((preset) => preset.owner !== username),
+        };
+      });
+    } catch { /* Plaza+ cleanup can retry later */ }
   }
 
   async function deleteMyAccount() {
@@ -2850,6 +3322,33 @@ export default function RUMS() {
       } catch { /* chat rename can retry later */ }
 
       try {
+        await commitPlazaPlus((data) => {
+          const renameKey = (obj = {}) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key === oldUsername ? trimmed : key, value]));
+          const renameLists = (obj = {}) => Object.fromEntries(Object.entries(obj).map(([key, value]) => [key === oldUsername ? trimmed : key, Array.isArray(value) ? value.map((name) => name === oldUsername ? trimmed : name) : value]));
+          const chatReactions = Object.fromEntries(Object.entries(data.chatReactions || {}).map(([messageId, reactions]) => [messageId, Object.fromEntries(Object.entries(reactions || {}).map(([emoji, names]) => [emoji, (names || []).map((name) => name === oldUsername ? trimmed : name)]))]));
+          const typing = Object.fromEntries(Object.entries(data.typing || {}).map(([thread, typingMap]) => [thread === `dm:${oldUsername}` ? `dm:${trimmed}` : thread, Object.fromEntries(Object.entries(typingMap || {}).map(([name, at]) => [name === oldUsername ? trimmed : name, at]))]));
+          return {
+            ...data,
+            follows: renameLists(data.follows), bookmarks: renameKey(data.bookmarks), collections: renameKey(data.collections), profiles: renameKey(data.profiles), presence: renameKey(data.presence), notificationReads: renameKey(data.notificationReads), roles: renameKey(data.roles), xp: renameKey(data.xp), drafts: renameKey(data.drafts), pageThemes: renameKey(data.pageThemes), accessibility: renameKey(data.accessibility), commandHistory: renameKey(data.commandHistory),
+            activities: (data.activities || []).map((item) => ({ ...item, actor: item.actor === oldUsername ? trimmed : item.actor, targetUser: item.targetUser === oldUsername ? trimmed : item.targetUser })),
+            events: (data.events || []).map((event) => ({ ...event, creator: event.creator === oldUsername ? trimmed : event.creator, rsvps: Object.fromEntries(Object.entries(event.rsvps || {}).map(([key, names]) => [key, (names || []).map((name) => name === oldUsername ? trimmed : name)])) })),
+            groups: (data.groups || []).map((group) => ({ ...group, owner: group.owner === oldUsername ? trimmed : group.owner, members: (group.members || []).map((name) => name === oldUsername ? trimmed : name) })),
+            projects: (data.projects || []).map((project) => ({ ...project, owner: project.owner === oldUsername ? trimmed : project.owner, followers: (project.followers || []).map((name) => name === oldUsername ? trimmed : name) })),
+            wiki: (data.wiki || []).map((page) => ({ ...page, author: page.author === oldUsername ? trimmed : page.author })),
+            builds: (data.builds || []).map((build) => ({ ...build, owner: build.owner === oldUsername ? trimmed : build.owner, author: build.author === oldUsername ? trimmed : build.author })),
+            reports: (data.reports || []).map((report) => ({ ...report, reporter: report.reporter === oldUsername ? trimmed : report.reporter })),
+            audit: (data.audit || []).map((entry) => ({ ...entry, actor: entry.actor === oldUsername ? trimmed : entry.actor })),
+            invites: (data.invites || []).map((invite) => ({ ...invite, creator: invite.creator === oldUsername ? trimmed : invite.creator })),
+            scheduled: (data.scheduled || []).map((item) => ({ ...item, username: item.username === oldUsername ? trimmed : item.username })),
+            chatReactions,
+            typing,
+            changelog: (data.changelog || []).map((entry) => ({ ...entry, author: entry.author === oldUsername ? trimmed : entry.author })),
+            themePresets: (data.themePresets || []).map((preset) => ({ ...preset, owner: preset.owner === oldUsername ? trimmed : preset.owner })),
+          };
+        });
+      } catch { /* Plaza+ rename can retry later */ }
+
+      try {
         for (const space of ['rums4', 'rums5']) {
           const rec = await safeGet(lastSeenKey(oldUsername, space), false);
           if (rec) {
@@ -2889,6 +3388,8 @@ export default function RUMS() {
       reactions: {},
     };
     await saveSuggestions([newS, ...suggestions]);
+    const mentioned = [...new Set((text.match(/@[A-Za-z0-9_]+/g)||[]).map((m)=>m.slice(1)).filter((name)=>users.some((u)=>u.username.toLowerCase()===name.toLowerCase()) && name.toLowerCase()!==currentUser.username.toLowerCase()))];
+    if (mentioned.length) void commitPlazaPlus((data)=>({...data,activities:[...mentioned.map((targetUser,i)=>({id:`act-${Date.now()}-suggestion-${i}`,type:'mention',actor:currentUser.username,targetUser,text:`${currentUser.username} mentioned you in a suggestion`,timestamp:Date.now()})),...(data.activities||[])].slice(0,800)}));
     setSuggestionDraft('');
     setSuggestionBusy(false);
   }
@@ -2905,6 +3406,9 @@ export default function RUMS() {
       };
     });
     await saveSuggestions(next);
+    const target = suggestions.find((s)=>s.id===id);
+    const added = target && !(target.votes || []).includes(currentUser.username);
+    if (added && target?.username !== currentUser.username) void commitPlazaPlus((data)=>({...data,activities:[{id:`act-${Date.now()}-vote`,type:'vote',actor:currentUser.username,targetUser:target.username,text:`${currentUser.username} upvoted your suggestion`,timestamp:Date.now()},...(data.activities||[])].slice(0,800)}));
   }
 
   async function deleteSuggestion(id) {
@@ -2924,6 +3428,7 @@ export default function RUMS() {
       author: currentUser.username,
     };
     await saveUpdates([newU, ...updates]);
+    void commitPlazaPlus((data)=>({...data,activities:[{id:`act-${Date.now()}-update`,type:'update',actor:currentUser.username,targetUser:null,text:`Server update: ${newU.title}`,timestamp:Date.now()},...(data.activities||[])].slice(0,800),changelog:[{id:`change-${Date.now()}`,title:newU.title,body:newU.body||'Server update',timestamp:Date.now(),author:currentUser.username},...(data.changelog||[])].slice(0,150)}));
     setUpdateDraft({ title: '', body: '' });
     setUpdateBusy(false);
   }
@@ -3005,6 +3510,8 @@ export default function RUMS() {
   const canManageSuggestion = (s) => currentUser?.isAdmin || currentUser?.username === s.username;
   const isLastAdmin = (u) => u.isAdmin && users.filter((x) => x.isAdmin).length === 1;
   const isOwner = currentUser?.username?.toLowerCase() === 'jamie';
+  const currentRole = plazaPlus.roles?.[currentUser?.username] || (currentUser?.isAdmin ? 'Admin' : isOwner ? 'Owner' : 'Member');
+  const canModerate = Boolean(currentUser?.isAdmin || isOwner || ['Moderator','Admin','Owner'].includes(currentRole));
   const canEditSite = Boolean(currentUser?.isAdmin || isOwner);
   const activePlacement = screen === 'custom' ? customPageId : screen;
   const canUndoSiteEdit = historyRevision >= 0 && historyPastRef.current.length > 0;
@@ -3229,7 +3736,8 @@ export default function RUMS() {
   const visiblePosts = posts
     .slice()
     .sort((a, b) => b.timestamp - a.timestamp)
-    .filter((p) => isRums5 || feedFilter !== 'lumina' ? p.tag !== 'Lumina' : p.tag === 'Lumina');
+    .filter((p) => isRums5 || feedFilter !== 'lumina' ? p.tag !== 'Lumina' : p.tag === 'Lumina')
+    .filter((p) => !followingOnly || p.username === currentUser?.username || followedUsers().includes(p.username));
 
   const visibleSuggestions = suggestions
     .slice()
@@ -3240,7 +3748,7 @@ export default function RUMS() {
   const feedBoxHandle = (id) => editMode && isOwner && selectedBoxId === `feed:${id}` ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
   function renderFeedBox(id) {
     if (id === 'hero') return <section data-feed-box="hero" data-edit-box-id="feed:hero" className={`editable-built-in-box ${selectedBoxId === 'feed:hero' ? 'is-editor-selected' : ''}`} key="hero" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:hero'); }}>{feedBoxHandle('hero')}<div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div></section>;
-    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>Recent posts</h2><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge lumina-page-badge"><Droplet size={18} color="white" />{sessionNewCountOnPage('lumina') > 0 && <span className="page-new-indicator page-new-count" title={`${sessionNewCountOnPage('lumina')} new in Project Lumina`}>{sessionNewCountOnPage('lumina') > 99 ? '99+' : sessionNewCountOnPage('lumina')}</span>}</div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default', newPageKey: 'feed' }))}</section>;
+    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>{followingOnly ? 'Following feed' : 'Recent posts'}</h2><div className="feed-heading-actions"><button className={`pill pill-btn ${followingOnly?'active':''}`} onClick={()=>setFollowingOnly((v)=>!v)}>{followingOnly?'Show everyone':'Following'}</button><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge lumina-page-badge"><Droplet size={18} color="white" />{sessionNewCountOnPage('lumina') > 0 && <span className="page-new-indicator page-new-count" title={`${sessionNewCountOnPage('lumina')} new in Project Lumina`}>{sessionNewCountOnPage('lumina') > 99 ? '99+' : sessionNewCountOnPage('lumina')}</span>}</div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default', newPageKey: 'feed' }))}</section>;
   }
 
   function renderFeedTabs() {
@@ -3345,9 +3853,13 @@ export default function RUMS() {
 
   const q = searchQuery.trim().toLowerCase();
   const matchedUsers = q ? users.filter((u) => u.username.toLowerCase().includes(q)) : [];
-  const matchedPosts = q
+  const matchedPosts = (q || searchFilters.author || searchFilters.tag !== 'all' || searchFilters.from || searchFilters.to)
     ? posts
-        .filter((p) => p.username.toLowerCase().includes(q) || (p.caption || '').toLowerCase().includes(q))
+        .filter((p) => !q || p.username.toLowerCase().includes(q) || (p.caption || '').toLowerCase().includes(q) || hashtagsIn(p.caption || '').some((tag)=>tag.includes(q)))
+        .filter((p) => !searchFilters.author || p.username.toLowerCase().includes(searchFilters.author.toLowerCase()))
+        .filter((p) => searchFilters.tag === 'all' || p.tag === searchFilters.tag)
+        .filter((p) => !searchFilters.from || p.timestamp >= new Date(searchFilters.from).getTime())
+        .filter((p) => !searchFilters.to || p.timestamp <= new Date(searchFilters.to).getTime() + 86400000)
         .sort((a, b) => b.timestamp - a.timestamp)
     : [];
 
@@ -3382,8 +3894,8 @@ export default function RUMS() {
             </button>
           )}
         </div>
-        <div className="post-img-wrap">
-          <img src={post.image} alt={post.caption || 'RUMS screenshot'} />
+        <div className={`post-img-wrap ${post.images?.length > 1 ? 'post-multi-media' : ''}`}>
+          {(post.images?.length ? post.images : [post.image]).map((src, index) => <img key={`${post.id}-img-${index}`} src={src} alt={post.altText || post.caption || `RUMS screenshot ${index + 1}`} loading="lazy" />)}
           <div className="post-sheen" />
         </div>
         <div className="post-actions">
@@ -3402,6 +3914,8 @@ export default function RUMS() {
             {shareStatus[post.id] ? <Check size={17} color="#0fb8a6" /> : <Share2 size={17} />}
             {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
           </button>
+          <button className={`comment-btn bookmark-btn ${bookmarkedPosts().includes(post.id) ? 'active' : ''}`} onClick={() => toggleBookmark(post.id)} title="Save post">{bookmarkedPosts().includes(post.id) ? '★' : '☆'}</button>
+          {post.username === currentUser.username && <button className={`comment-btn pin-btn ${plusProfile().pinnedPostIds?.includes(post.id) ? 'active' : ''}`} onClick={() => togglePinnedPost(post.id)} title="Pin to profile">📌</button>}
           {renderReactionAddButton(post, 'post', '', reactionContext)}
         </div>
         {renderReactionBar(post, 'post', reactionContext)}
@@ -3409,8 +3923,14 @@ export default function RUMS() {
           <div className="post-caption">
             <b className="clickable-text" onClick={() => openProfile(post.username)}>{post.username}</b>
             {post.caption}
+            {(post.editHistory || []).length > 0 && <small className="post-edited-label" title={`${post.editHistory.length} edit${post.editHistory.length===1?'':'s'}`}> · edited</small>}
           </div>
         )}
+        {(post.username === currentUser.username || currentUser.isAdmin) && <div className="post-owner-tools"><button onClick={() => editPostCaption(post.id)}>Edit post</button>{(post.editHistory || []).length > 0 && <details><summary>History</summary>{post.editHistory.slice().reverse().map((entry,index)=><div key={`${entry.editedAt}-${index}`}><small>{new Date(entry.editedAt).toLocaleString()} · {entry.editor}</small><p>{entry.caption || 'No caption'}</p></div>)}</details>}</div>}
+        {post.link && <a className="post-rich-link" href={post.link} target="_blank" rel="noreferrer">🔗 {post.link.replace(/^https?:\/\//,'').slice(0,90)}</a>}
+        {post.videoUrl && <div className="post-video-link"><a href={post.videoUrl} target="_blank" rel="noreferrer">▶ Open attached clip</a></div>}
+        {post.poll && <div className="post-poll"><strong>{post.poll.question}</strong>{post.poll.options.map((option)=>{const total=post.poll.options.reduce((sum,o)=>sum+(o.votes?.length||0),0);const mine=(option.votes||[]).includes(currentUser.username);const pct=total?Math.round((option.votes.length/total)*100):0;return <button key={option.id} className={mine?'active':''} onClick={()=>votePostPoll(post.id,option.id)}><span>{option.text}</span><b>{pct}% · {option.votes?.length||0}</b></button>;})}</div>}
+        {hashtagsIn(post.caption || '').length > 0 && <div className="post-hashtags">{hashtagsIn(post.caption).map((hash)=><button key={hash} onClick={()=>{setSearchQuery(hash);setScreen('search');}}>{hash}</button>)}</div>}
         {showComments && (
           <div className="comments-box">
             {post.comments.map((c) => {
@@ -3483,7 +4003,7 @@ export default function RUMS() {
   const tutorialCardAtTop = Boolean(tutorialRect && tutorialRect.top > window.innerHeight * 0.55);
 
   return (
-    <div data-theme={theme} className={`aero-root ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? `space-${rumsSpace}` : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': siteConfig.accent }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? `space-${rumsSpace}` : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
         <defs>
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
@@ -3573,6 +4093,7 @@ export default function RUMS() {
               <div className="rail-label">EXPLORE</div>
               <button data-tutorial-nav="feed" className={`rail-link ${screen === 'feed' ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); }}>{navIconWithNew(<Home size={19} />, 'feed')} Community feed</button>
               {siteConfig.showDiscover && <button data-tutorial-nav="search" className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}>{navIconWithNew(<Search size={19} />, 'search')} Discover</button>}
+              <button className={`rail-link ${screen === 'plazaPlus' ? 'selected' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); void markNotificationsRead(); }}><Sparkles size={19} /> Plaza+ {notificationsForCurrentUser().length > 0 && <span className="rail-mini-count">{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</button>
               {!isRums5 && siteConfig.showLumina && <button data-tutorial-nav="lumina" className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
               <div className="rail-label">COMMUNITY</div>
               <button data-tutorial-nav="chat" className={`rail-link ${screen === 'chat' ? 'selected' : ''}`} onClick={() => setScreen('chat')}>{chatNavIcon(19)} Chat</button>
@@ -3592,6 +4113,7 @@ export default function RUMS() {
               <div className="aero-header-actions">
                 {editMode && isOwner ? <button className="finish-editing-button" onClick={() => setEditMode(false)}><Check size={17} /> Finish editing</button> : <>
                 {isOwner && <button className="icon-btn" onClick={() => setEditMode(true)} title="Edit website"><Pencil size={18} /></button>}
+                <button className="icon-btn header-plus-button" onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); void markNotificationsRead(); }} title="Notifications and Plaza+"><Sparkles size={18} />{notificationsForCurrentUser().length > 0 && <span className="header-unread-count">{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</button>
                 <button className="icon-btn header-chat-button" onClick={() => setScreen('chat')} title="Chat">{chatNavIcon(18)}</button>
                 {siteConfig.showDiscover && <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   {navIconWithNew(<Search size={18} />, 'search')}
@@ -3717,10 +4239,24 @@ export default function RUMS() {
                   <div className="field-label">Caption</div>
                   <textarea
                     className="caption-area"
-                    placeholder="Write a caption…"
+                    placeholder="Write a caption… hashtags like #metro work too"
                     value={caption}
                     onChange={(e) => setCaption(e.target.value)}
                   />
+                  <div className="rich-post-grid">
+                    <label className="rich-post-field"><span>Alt text</span><input className="aero-input" value={postAltText} onChange={(e)=>setPostAltText(e.target.value)} placeholder="Describe the image for accessibility" /></label>
+                    <label className="rich-post-field"><span>Link</span><input className="aero-input" value={postLink} onChange={(e)=>setPostLink(e.target.value)} placeholder="https://…" /></label>
+                    <label className="rich-post-field"><span>Short clip URL</span><input className="aero-input" value={postVideoUrl} onChange={(e)=>setPostVideoUrl(e.target.value)} placeholder="Video or clip URL" /></label>
+                    <label className="rich-post-field"><span>Add more images ({uploadGallery.length}/5)</span><input type="file" accept="image/*" multiple disabled={uploadGallery.length>=5} onChange={async(e)=>{const files=[...(e.target.files||[])].slice(0,5-uploadGallery.length);const next=[];for(const file of files){try{next.push(await resizeImage(file));}catch{}}setUploadGallery((items)=>[...items,...next].slice(0,5));e.target.value='';}} /></label>
+                  </div>
+                  {uploadGallery.length>0&&<div className="upload-gallery-preview">{uploadGallery.map((src,index)=><div key={index}><img src={src} alt="Additional upload preview"/><button onClick={()=>setUploadGallery((items)=>items.filter((_,i)=>i!==index))}><X size={12}/></button></div>)}</div>}
+                  <div className="poll-composer"><input className="aero-input" placeholder="Optional poll question" value={postPollDraft.question} onChange={(e)=>setPostPollDraft({...postPollDraft,question:e.target.value})}/>{postPollDraft.question&&<div className="poll-options-editor">{postPollDraft.options.map((option,index)=><input key={index} className="aero-input" placeholder={`Option ${index+1}`} value={option} onChange={(e)=>setPostPollDraft({...postPollDraft,options:postPollDraft.options.map((item,i)=>i===index?e.target.value:item)})}/>)}{postPollDraft.options.length<4&&<button className="pill pill-btn" onClick={()=>setPostPollDraft({...postPollDraft,options:[...postPollDraft.options,'']})}>+ Option</button>}</div>}</div>
+                  <div className="publish-tools">
+                    <button className="pill pill-btn" onClick={saveDraftPost}>Save draft</button>
+                    <input className="aero-input schedule-input" type="datetime-local" value={scheduleWhen} onChange={(e)=>setScheduleWhen(e.target.value)} />
+                    <button className="pill pill-btn" onClick={scheduleCurrentPost} disabled={!scheduleWhen || !uploadPreview}>Schedule</button>
+                    {draftCaption&&<small>{draftCaption}</small>}
+                  </div>
                   <button className="aero-btn" style={{ marginTop: 14 }} onClick={handlePublish} disabled={busy || !uploadPreview}>
                     {busy && <Loader2 size={15} className="spin" />}
                     Share to RUMS
@@ -3740,6 +4276,18 @@ export default function RUMS() {
                       <span className="chat-thread-copy"><strong>Plaza Chat</strong><small>Everyone on RUMS</small></span>
                       {chatUnreadCount('plaza') > 0 && <span className="chat-thread-unread">{chatUnreadCount('plaza') > 99 ? '99+' : chatUnreadCount('plaza')}</span>}
                     </button>
+                    {(plazaPlus.groups || []).filter((group) => group.members?.includes(currentUser.username)).length > 0 && <>
+                      <div className="chat-sidebar-label">GROUP CHATS</div>
+                      <div className="chat-user-list">{(plazaPlus.groups || []).filter((group) => group.members?.includes(currentUser.username)).map((group) => {
+                        const threadId = `group:${group.id}`;
+                        const unread = chatUnreadCount(threadId);
+                        return <button key={group.id} className={`chat-thread-button ${activeChat === threadId ? 'active' : ''}`} onClick={() => setActiveChat(threadId)}>
+                          <span className="chat-thread-avatar plaza-chat-avatar"><MessageCircle size={16} /></span>
+                          <span className="chat-thread-copy"><strong>{group.name}</strong><small>{group.members.length} members</small></span>
+                          {unread > 0 && <span className="chat-thread-unread">{unread > 99 ? '99+' : unread}</span>}
+                        </button>;
+                      })}</div>
+                    </>}
                     <div className="chat-sidebar-label">DIRECT MESSAGES</div>
                     <div className="chat-user-search"><Search size={14} /><input value={chatSearch} onChange={(event) => setChatSearch(event.target.value)} placeholder="Find a person…" /></div>
                     <div className="chat-user-list">
@@ -3769,8 +4317,12 @@ export default function RUMS() {
                         {activeChat === 'plaza' ? <span className="chat-header-avatar plaza-chat-avatar"><MessageCircle size={20} /></span> : <span className="chat-header-avatar">{avatarNode(activeChatLabel(), 38, 13)}</span>}
                         <div><strong>{activeChatLabel()}</strong><small>{activeChat === 'plaza' ? 'Shared across RUMS 4 and RUMS 5' : 'Direct message'}</small></div>
                       </div>
-                      {activeChat !== 'plaza' && <button className="pill pill-btn" onClick={() => openProfile(activeChatLabel())}>View profile</button>}
+                      <div className="chat-header-actions">
+                        <button className="pill pill-btn" onClick={() => setChatMediaOpen((open) => !open)}>Media</button>
+                        {activeChat.startsWith('dm:') && <button className="pill pill-btn" onClick={() => openProfile(activeChatLabel())}>View profile</button>}
+                      </div>
                     </header>
+                    {chatMediaOpen && <div className="chat-media-gallery">{chatMessagesForThread(activeChat).filter((m) => m.image).map((m) => <button key={m.id} onClick={() => window.open(m.image, '_blank', 'noopener,noreferrer')}><img src={m.image} alt={`Shared by ${m.sender}`} /></button>)}{chatMessagesForThread(activeChat).filter((m) => m.image).length === 0 && <small>No shared images in this conversation yet.</small>}</div>}
 
                     <div className="chat-message-list">
                       {chatMessagesForThread(activeChat).length === 0 ? (
@@ -3784,21 +4336,30 @@ export default function RUMS() {
                           <div className="chat-message-main">
                             {!grouped && <div className="chat-message-meta"><button onClick={() => openProfile(message.sender)}>{message.sender}</button><span>{timeAgo(message.timestamp)}</span></div>}
                             <div className="chat-message-bubble">
+                              {message.replyTo && <div className="chat-reply-quote"><b>{message.replyTo.sender}</b><span>{message.replyTo.text || 'Image'}</span></div>}
                               {message.image && <button className="chat-message-image-button" onClick={() => window.open(message.image, '_blank', 'noopener,noreferrer')} title="Open image"><img className="chat-message-image" src={message.image} alt={message.text ? `Image sent by ${message.sender}` : `Chat image from ${message.sender}`} loading="lazy" /></button>}
                               {message.text && <div className="chat-message-text">{message.text}</div>}
                             </div>
+                            <div className="chat-message-tools">
+                              <button type="button" onClick={() => setChatReplyTo(message)}>Reply</button>
+                              <button type="button" onClick={() => setChatReactionOpen(chatReactionOpen === message.id ? null : message.id)}>React</button>
+                              {Object.entries(plazaPlus.chatReactions?.[message.id] || {}).map(([emoji, names]) => names?.length ? <button key={emoji} className={names.includes(currentUser.username) ? 'active' : ''} onClick={() => toggleChatReaction(message.id, emoji)}>{emoji} {names.length}</button> : null)}
+                              {chatReactionOpen === message.id && <span className="chat-reaction-picker">{['👍','❤️','😂','🔥','😮','🎉'].map((emoji)=><button key={emoji} onClick={() => { toggleChatReaction(message.id, emoji); setChatReactionOpen(null); }}>{emoji}</button>)}</span>}
+                            </div>
                           </div>
-                          {(own || currentUser.isAdmin) && <button className="chat-message-delete" onClick={() => deleteChatMessage(message.id)} title="Delete message"><Trash2 size={13} /></button>}
+                          {(own || canModerate) && <button className="chat-message-delete" onClick={() => deleteChatMessage(message.id)} title="Delete message"><Trash2 size={13} /></button>}
                         </div>;
                       })}
+                      {typingUsersForActiveChat().length > 0 && <div className="chat-typing">{typingUsersForActiveChat().join(', ')} {typingUsersForActiveChat().length === 1 ? 'is' : 'are'} typing…</div>}
                       <div ref={chatEndRef} />
                     </div>
 
                     <div className="chat-composer">
+                      {chatReplyTo && <div className="chat-replying"><span>Replying to <b>{chatReplyTo.sender}</b>: {chatReplyTo.text || 'Image'}</span><button onClick={() => setChatReplyTo(null)}><X size={13} /></button></div>}
                       {chatImageDraft && <div className="chat-image-preview"><img src={chatImageDraft} alt="Selected chat upload" /><button type="button" className="chat-image-remove" onClick={() => setChatImageDraft('')} aria-label="Remove image"><X size={14} /></button></div>}
                       <textarea
                         value={chatDraft}
-                        onChange={(event) => setChatDraft(event.target.value.slice(0, 1200))}
+                        onChange={(event) => { setChatDraft(event.target.value.slice(0, 1200)); void noteTyping(); }}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter' && !event.shiftKey) {
                             event.preventDefault();
@@ -3946,6 +4507,38 @@ export default function RUMS() {
                 </div>
               )}
 
+              {screen === 'plazaPlus' && (
+                <div className="plaza-plus-page">
+                  <div className="plaza-plus-hero">
+                    <div><span className="eyebrow">RUMS PLAZA</span><h1>Plaza+</h1><p>Your social hub for notifications, saved posts, events, groups, projects, wiki, customization and community tools.</p></div>
+                    <button className="pill pill-btn" onClick={() => setCommandOpen(true)}>⌘K Command palette</button>
+                  </div>
+                  <div className="plaza-plus-tabs">{[
+                    ['notifications','Notifications'],['saved','Saved'],['activity','Activity'],['events','Events'],['groups','Groups'],['projects','Projects'],['knowledge','Wiki & Builds'],['creator','Creator'],['settings','Settings'],['safety','Safety']
+                  ].map(([id,label]) => <button key={id} className={plusTab===id?'active':''} onClick={() => { setPlusTab(id); if(id==='notifications') void markNotificationsRead(); }}>{label}{id==='notifications'&&notificationsForCurrentUser().length>0?<span>{notificationsForCurrentUser().length}</span>:null}</button>)}</div>
+
+                  {plusTab === 'notifications' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Notifications</h2><p>Mentions, follows, likes, comments and community activity.</p></div><button className="pill pill-btn" onClick={markNotificationsRead}>Mark all read</button></div><div className="plus-list">{(plazaPlus.activities||[]).filter((a)=>(!a.targetUser||a.targetUser===currentUser.username)&&a.actor!==currentUser.username).slice(0,60).map((a)=><button key={a.id} className="plus-row" onClick={()=>{if(a.postId){setViewingPostId(a.postId);setScreen('postDetail');}}}><span className="plus-row-icon">{a.type==='follow'?'👤':a.type==='mention'?'@':a.type==='like'?'♥':'●'}</span><span><b>{a.text}</b><small>{timeAgo(a.timestamp)}</small></span></button>)}{!(plazaPlus.activities||[]).some((a)=>(!a.targetUser||a.targetUser===currentUser.username)&&a.actor!==currentUser.username)&&<div className="plus-empty">Nothing new right now.</div>}</div></section>}
+
+                  {plusTab === 'saved' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Saved posts & collections</h2><p>Keep builds, ideas and inspiration for later.</p></div></div><div className="plus-inline-form"><input className="aero-input" value={collectionDraft} onChange={(e)=>setCollectionDraft(e.target.value)} placeholder="New collection name"/><button className="aero-btn" onClick={createCollection}>Create collection</button></div><div className="saved-post-grid">{posts.filter((p)=>bookmarkedPosts().includes(p.id)).map((p)=><div className="saved-post-wrap" key={`saved-${p.id}`}>{renderPost(p)}{(plazaPlus.collections?.[currentUser.username]||[]).length>0&&<select className="aero-input" defaultValue="" onChange={(e)=>{if(e.target.value){void addPostToCollection(p.id,e.target.value);e.currentTarget.value='';}}}><option value="">Add to collection…</option>{(plazaPlus.collections?.[currentUser.username]||[]).map((collection)=><option key={collection.id} value={collection.id}>{collection.name}</option>)}</select>}</div>)}{bookmarkedPosts().length===0&&<div className="plus-empty">Save a post with ☆ and it will appear here.</div>}</div><div className="collection-grid">{(plazaPlus.collections?.[currentUser.username]||[]).map((collection)=><article key={collection.id} className="collection-card"><h3>{collection.name}</h3><p>{collection.postIds?.length||0} posts</p></article>)}</div></section>}
+
+                  {plusTab === 'activity' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Activity & discovery</h2><p>Follow people, see what is trending and keep up with the community.</p></div><button className={`pill pill-btn ${followingOnly?'active':''}`} onClick={()=>setFollowingOnly((v)=>!v)}>{followingOnly?'Following feed':'Show following feed'}</button></div><div className="plus-stats-strip"><span><b>{followedUsers().length}</b> following</span><span><b>{levelFor(currentUser.username)}</b> level</span><span><b>{xpFor(currentUser.username)}</b> XP</span><span><b>{badgesFor(currentUser.username).length}</b> badges</span></div><div className="plus-subheading">Trending posts</div><div className="saved-post-grid">{trendingPosts().filter((p)=>!followingOnly||followedUsers().includes(p.username)).slice(0,6).map((p)=>renderPost(p))}</div><div className="plus-subheading">Recent activity</div><div className="plus-list">{(plazaPlus.activities||[]).slice(0,30).map((a)=><div key={a.id} className="plus-row static"><span className="plus-row-icon">◎</span><span><b>{a.text}</b><small>{timeAgo(a.timestamp)}</small></span></div>)}</div></section>}
+
+                  {plusTab === 'events' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Events & calendar</h2><p>Create server nights, launches, meetings or build events and RSVP.</p></div></div><div className="plus-form-grid"><input className="aero-input" placeholder="Event title" value={eventDraft.title} onChange={(e)=>setEventDraft({...eventDraft,title:e.target.value})}/><input className="aero-input" type="datetime-local" value={eventDraft.when} onChange={(e)=>setEventDraft({...eventDraft,when:e.target.value})}/><input className="aero-input" placeholder="Location / server area" value={eventDraft.location} onChange={(e)=>setEventDraft({...eventDraft,location:e.target.value})}/><textarea className="caption-area" placeholder="Description" value={eventDraft.description} onChange={(e)=>setEventDraft({...eventDraft,description:e.target.value})}/><button className="aero-btn" onClick={createEvent}>Create event</button></div><div className="event-grid">{(plazaPlus.events||[]).map((event)=><article key={event.id} className="event-card"><span className="eyebrow">{event.when?new Date(event.when).toLocaleString():'DATE TBA'}</span><h3>{event.title}</h3><p>{event.description}</p><small>{event.location||'RUMS'} · by {event.creator}</small><div className="rsvp-row"><button onClick={()=>rsvpEvent(event.id,'going')}>Going {event.rsvps?.going?.length||0}</button><button onClick={()=>rsvpEvent(event.id,'maybe')}>Maybe {event.rsvps?.maybe?.length||0}</button><button onClick={()=>rsvpEvent(event.id,'no')}>Can’t {event.rsvps?.no?.length||0}</button></div></article>)}</div></section>}
+
+                  {plusTab === 'groups' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Communities & group chats</h2><p>Create clubs for builders, transit, architecture, roleplay or anything else.</p></div></div><div className="plus-inline-form"><input className="aero-input" placeholder="Community name" value={groupDraft.name} onChange={(e)=>setGroupDraft({...groupDraft,name:e.target.value})}/><input className="aero-input" placeholder="What is it about?" value={groupDraft.description} onChange={(e)=>setGroupDraft({...groupDraft,description:e.target.value})}/><button className="aero-btn" onClick={createGroup}>Create</button></div><div className="group-grid">{(plazaPlus.groups||[]).map((group)=><article key={group.id} className="group-card"><h3>{group.name}</h3><p>{group.description}</p><small>{group.members?.length||0} members · owner {group.owner}</small><div className="plus-card-actions"><button onClick={()=>toggleGroupMembership(group.id)}>{group.members?.includes(currentUser.username)?'Leave':'Join'}</button>{group.members?.includes(currentUser.username)&&<button onClick={()=>{setActiveChat(`group:${group.id}`);setScreen('chat');}}>Open chat</button>}</div></article>)}</div></section>}
+
+                  {plusTab === 'projects' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Projects</h2><p>Project Lumina can now be one of many community projects with followers and timelines.</p></div></div><div className="plus-inline-form"><input className="aero-input" placeholder="Project name" value={projectDraft.name} onChange={(e)=>setProjectDraft({...projectDraft,name:e.target.value})}/><input className="aero-input" placeholder="Short description" value={projectDraft.description} onChange={(e)=>setProjectDraft({...projectDraft,description:e.target.value})}/><button className="aero-btn" onClick={createProject}>Create</button></div><div className="project-grid"><article className="project-card featured"><span className="eyebrow">OFFICIAL PROJECT</span><h3>Project Lumina</h3><p>The original RUMS Plaza project space.</p><button onClick={openLumina} disabled={isRums5}>Open project</button></article>{(plazaPlus.projects||[]).map((project)=><article key={project.id} className="project-card"><h3>{project.name}</h3><p>{project.description}</p><small>{project.followers?.length||0} followers · {project.owner}</small><div className="plus-card-actions"><button onClick={()=>toggleProjectFollow(project.id)}>{project.followers?.includes(currentUser.username)?'Following':'Follow'}</button>{project.owner===currentUser.username&&<button onClick={()=>{const title=window.prompt('Milestone');if(title)void commitPlazaPlus((data)=>({...data,projects:(data.projects||[]).map((p)=>p.id===project.id?{...p,milestones:[...(p.milestones||[]),{title,timestamp:Date.now()}]}:p)}));}}>Add milestone</button>}</div>{(project.milestones||[]).length>0&&<div className="timeline-list">{project.milestones.map((m,i)=><div key={`${m.timestamp}-${i}`}><b>{m.title}</b><small>{timeAgo(m.timestamp)}</small></div>)}</div>}</article>)}</div></section>}
+
+                  {plusTab === 'knowledge' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Wiki, server map & build directory</h2><p>Document lore, locations and important builds in one searchable community knowledge base.</p></div></div><div className="knowledge-columns"><div><h3>Wiki</h3><input className="aero-input" placeholder="Page title" value={wikiDraft.title} onChange={(e)=>setWikiDraft({...wikiDraft,title:e.target.value})}/><textarea className="caption-area" placeholder="Wiki content" value={wikiDraft.body} onChange={(e)=>setWikiDraft({...wikiDraft,body:e.target.value})}/><button className="aero-btn" onClick={addWikiPage}>Add page</button>{(plazaPlus.wiki||[]).map((page)=><article className="wiki-card" key={page.id}><h4>{page.title}</h4><p>{page.body}</p><small>Updated {timeAgo(page.updatedAt)} by {page.author}</small></article>)}</div><div><h3>Build directory / schematic map</h3><input className="aero-input" placeholder="Build name" value={buildDraft.name} onChange={(e)=>setBuildDraft({...buildDraft,name:e.target.value})}/><input className="aero-input" placeholder="Location / district" value={buildDraft.location} onChange={(e)=>setBuildDraft({...buildDraft,location:e.target.value})}/><input className="aero-input" placeholder="Owner" value={buildDraft.owner} onChange={(e)=>setBuildDraft({...buildDraft,owner:e.target.value})}/><textarea className="caption-area" placeholder="Description" value={buildDraft.description} onChange={(e)=>setBuildDraft({...buildDraft,description:e.target.value})}/><button className="aero-btn" onClick={addBuildEntry}>Add build</button><div className="server-map-schematic">{(plazaPlus.builds||[]).map((build,i)=><button key={build.id} style={{left:`${12+(i*23)%74}%`,top:`${18+(i*31)%65}%`}} title={`${build.name} · ${build.location}`}>◆</button>)}<span>RUMS schematic map</span></div>{(plazaPlus.builds||[]).map((build)=><article key={build.id} className="build-row"><b>{build.name}</b><span>{build.location}</span><small>{build.owner}</small></article>)}</div></div></section>}
+
+                  {plusTab === 'creator' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Creator tools</h2><p>Drafts, scheduled posts, richer publishing and the RUMS Plaza changelog.</p></div></div><div className="creator-grid"><article><h3>Drafts</h3>{(plazaPlus.drafts?.[currentUser.username]||[]).map((draft)=><button key={draft.id} className="plus-row" onClick={()=>{setCaption(draft.caption);setTag(draft.tag);setUploadPreview(draft.image);setScreen('upload');}}><span>Draft</span><small>{draft.caption||'Image post'} · {timeAgo(draft.timestamp)}</small></button>)}{!(plazaPlus.drafts?.[currentUser.username]||[]).length&&<p>No drafts yet. Save them from Share a build.</p>}</article><article><h3>Scheduled</h3>{(plazaPlus.scheduled||[]).filter((item)=>item.username===currentUser.username).map((item)=><div className="plus-row static" key={item.id}><span>{item.caption||'Scheduled post'}</span><small>{new Date(item.when).toLocaleString()}</small></div>)}</article><article><h3>What’s new</h3>{(plazaPlus.changelog||[]).length?(plazaPlus.changelog||[]).map((item)=><div key={item.id} className="plus-row static"><span>{item.title}</span><small>{item.body}</small></div>):<p>RUMS Plaza overhaul: themes, reactions, chat, tutorials and Plaza+.</p>}</article></div></section>}
+
+                  {plusTab === 'settings' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Accessibility & personalization</h2><p>Make RUMS Plaza easier and more comfortable to use.</p></div></div><div className="settings-grid">{[['reducedMotion','Reduced motion'],['highContrast','High contrast'],['largeText','Larger text'],['reducedTransparency','Reduced transparency']].map(([key,label])=><label className="setting-toggle" key={key}><span>{label}</span><input type="checkbox" checked={!!accessibilityPrefs[key]} onChange={(e)=>updateAccessibilityPref(key,e.target.checked)}/></label>)}</div><div className="plus-subheading">Custom theme preset</div><div className="theme-builder-row"><label>Accent <input type="color" value={themeBuilder.accent} onChange={(e)=>setThemeBuilder({...themeBuilder,accent:e.target.value})}/></label><label>Roundness <input type="range" min="0" max="30" value={themeBuilder.radius} onChange={(e)=>setThemeBuilder({...themeBuilder,radius:Number(e.target.value)})}/></label><label>Blur <input type="range" min="0" max="40" value={themeBuilder.blur} onChange={(e)=>setThemeBuilder({...themeBuilder,blur:Number(e.target.value)})}/></label><button className={`pill pill-btn ${customThemeEnabled?'active':''}`} onClick={()=>setCustomThemeEnabled((v)=>!v)}>{customThemeEnabled?'Custom theme on':'Apply custom'}</button><button className="aero-btn" onClick={()=>commitPlazaPlus((data)=>({...data,themePresets:[...(data.themePresets||[]),{id:`preset-${Date.now()}`,owner:currentUser.username,...themeBuilder}]}))}>Save preset</button></div><div className="plus-subheading">Theme preset library</div><div className="preset-grid">{(plazaPlus.themePresets||[]).map((preset)=><button key={preset.id} onClick={()=>{setThemeBuilder({accent:preset.accent,radius:preset.radius,blur:preset.blur});setCustomThemeEnabled(true);}}><span style={{background:preset.accent}}/><b>{preset.owner}'s preset</b><small>Radius {preset.radius} · Blur {preset.blur}</small></button>)}{!(plazaPlus.themePresets||[]).length&&<p>No shared presets yet.</p>}</div><div className="plus-subheading">Per-page theme</div><div className="per-page-theme-row"><select className="aero-input" value={pageThemeTarget} onChange={(e)=>setPageThemeTarget(e.target.value)}><option value="feed">Feed</option><option value="chat">Chat</option><option value="suggestions">Suggestions</option><option value="updates">Updates</option><option value="search">Discover</option><option value="profile">Profile</option>{!isRums5&&<option value="lumina">Project Lumina</option>}</select><select className="aero-input" value={plazaPlus.pageThemes?.[currentUser.username]?.[pageThemeTarget]||''} onChange={(e)=>commitPlazaPlus((data)=>({...data,pageThemes:{...data.pageThemes,[currentUser.username]:{...(data.pageThemes?.[currentUser.username]||{}),[pageThemeTarget]:e.target.value}}}))}><option value="">Use global theme</option>{RUMS_THEMES.map((t)=><option key={t.id} value={t.id}>{t.name}</option>)}</select></div><div className="plus-subheading">Keyboard shortcuts</div><div className="shortcut-grid"><span><kbd>⌘/Ctrl K</kbd> Command palette</span><span><kbd>G</kbd> Feed</span><span><kbd>C</kbd> Chat</span><span><kbd>N</kbd> New post</span><span><kbd>/</kbd> Search</span></div><button className="pill pill-btn" onClick={()=>{if('Notification'in window)Notification.requestPermission();}}>Enable browser notifications</button></section>}
+
+                  {plusTab === 'safety' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Safety, roles & invites</h2><p>Report problems, manage community roles and keep an audit trail.</p></div></div><div className="plus-form-grid"><input className="aero-input" placeholder="Post, message or username" value={reportDraft.target} onChange={(e)=>setReportDraft({...reportDraft,target:e.target.value})}/><textarea className="caption-area" placeholder="What happened?" value={reportDraft.reason} onChange={(e)=>setReportDraft({...reportDraft,reason:e.target.value})}/><button className="aero-btn" onClick={submitReport}>Submit report</button></div>{canModerate&&<><div className="plus-subheading">Invite links</div><div className="invite-tools"><button className="aero-btn" onClick={createInvite}>Create invite code</button>{(plazaPlus.invites||[]).slice(0,8).map((invite)=><code key={invite.id}>rums-plaza?invite={invite.code}</code>)}</div><div className="plus-subheading">Roles</div><div className="role-grid">{users.map((user)=><label key={user.username}><span>{user.username}</span><select value={plazaPlus.roles?.[user.username]|| (user.isAdmin?'Admin':'Member')} onChange={(e)=>commitPlazaPlus((data)=>({...data,roles:{...data.roles,[user.username]:e.target.value},audit:[{id:`audit-${Date.now()}`,actor:currentUser.username,action:`Changed ${user.username} role to ${e.target.value}`,target:user.username,timestamp:Date.now()},...(data.audit||[])].slice(0,800)}))}><option>Member</option><option>Builder</option><option>Moderator</option><option>Admin</option><option>Owner</option></select></label>)}</div><div className="plus-subheading">Reports</div>{(plazaPlus.reports||[]).map((report)=><div key={report.id} className="plus-row static"><span><b>{report.target}</b> — {report.reason}</span><small>{report.reporter} · {report.status}</small></div>)}<div className="plus-subheading">Audit log</div>{(plazaPlus.audit||[]).slice(0,40).map((entry)=><div key={entry.id} className="plus-row static"><span>{entry.action}</span><small>{entry.actor} · {timeAgo(entry.timestamp)}</small></div>)}</>}</section>}
+                </div>
+              )}
+
               {screen === 'profile' && (
                 <div className="profile-wrap" data-tutorial="profile-page">
                   <div className="profile-back-row">
@@ -3978,7 +4571,15 @@ export default function RUMS() {
                               <span className="tag-pill" style={{ marginLeft: 8 }}><ShieldCheck size={10} /> Admin</span>
                             )}
                           </h3>
-                          <p className="switch-line">{theirPosts.length} post{theirPosts.length === 1 ? '' : 's'}</p>
+                          <div className="profile-social-meta">
+                            <span className={`profile-status-dot ${presenceLabel(u.username)==='Offline'?'offline':''}`} /> <b>{presenceLabel(u.username)}</b>
+                            <span>Level {levelFor(u.username)}</span><span>{xpFor(u.username)} XP</span>
+                          </div>
+                          {plusProfile(u.username).bio && <p className="profile-bio">{plusProfile(u.username).bio}</p>}
+                          <div className="profile-badges">{badgesFor(u.username).map((badge)=><span key={badge}>{badge}</span>)}</div>
+                          {(plusProfile(u.username).profileSections || []).map((section)=><section className="profile-custom-section" key={section.id}><h4>{section.title}</h4><p>{section.body}</p></section>)}
+                          <div className="profile-follow-row"><button className={`aero-btn ${isFollowing(u.username)?'active':''}`} onClick={()=>toggleFollow(u.username)}>{isFollowing(u.username)?'Following':'Follow'}</button><span>{theirPosts.length} post{theirPosts.length === 1 ? '' : 's'}</span></div>
+                          {plusProfile(u.username).pinnedPostIds?.length>0&&<div className="profile-pinned"><span className="field-label">Pinned</span><div className="profile-post-grid">{theirPosts.filter((p)=>plusProfile(u.username).pinnedPostIds.includes(p.id)).map((p)=><div className="profile-grid-thumb" key={`pin-${p.id}`} onClick={()=>openPost(p.id)}><img src={p.image} alt=""/><span className="pin-marker">📌</span></div>)}</div></div>}
                           {theirPosts.length === 0 ? (
                             <p className="switch-line" style={{ marginTop: 20 }}>No posts yet.</p>
                           ) : (
@@ -4015,11 +4616,23 @@ export default function RUMS() {
                           <span className="tag-pill" style={{ marginLeft: 8 }}><ShieldCheck size={10} /> Admin</span>
                         )}
                       </h3>
+                      <div className="profile-social-meta"><span className={`profile-status-dot ${presenceLabel(currentUser.username)==='Offline'?'offline':''}`}/><b>{presenceLabel(currentUser.username)}</b><span>Level {levelFor(currentUser.username)}</span><span>{xpFor(currentUser.username)} XP</span></div>
+                      <div className="profile-badges">{badgesFor(currentUser.username).map((badge)=><span key={badge}>{badge}</span>)}</div>
                       <p className="switch-line">Tap your photo to change it.</p>
                       {avatarBusy && (
                         <p className="switch-line"><Loader2 size={13} className="spin" style={{ verticalAlign: 'middle', marginRight: 4 }} /> Updating photo…</p>
                       )}
                       {profileError && <div className="error-pill" style={{ marginTop: 10 }}>{profileError}</div>}
+
+                      <div className="profile-section profile-customize-section">
+                        <div className="field-label">Profile customization</div>
+                        <textarea className="caption-area" placeholder="Short bio" value={profileEdit.bio} onChange={(e)=>setProfileEdit({...profileEdit,bio:e.target.value.slice(0,220)})}/>
+                        <div className="profile-customize-row"><select className="aero-input" value={profileEdit.status} onChange={(e)=>setProfileEdit({...profileEdit,status:e.target.value})}><option>Online</option><option>Away</option><option>Do Not Disturb</option><option>Offline</option></select><label className="profile-accent-input">Accent <input type="color" value={profileEdit.accent} onChange={(e)=>setProfileEdit({...profileEdit,accent:e.target.value})}/></label></div>
+                        <input className="aero-input" placeholder="Banner image URL / data image (optional)" value={profileEdit.banner} onChange={(e)=>setProfileEdit({...profileEdit,banner:e.target.value})}/>
+                        <button className="aero-btn" onClick={saveProfileExtras}>Save profile</button>
+                        <div className="profile-section-builder"><input className="aero-input" placeholder="Custom section title" value={profileSectionDraft.title} onChange={(e)=>setProfileSectionDraft({...profileSectionDraft,title:e.target.value})}/><textarea className="caption-area" placeholder="Custom profile section" value={profileSectionDraft.body} onChange={(e)=>setProfileSectionDraft({...profileSectionDraft,body:e.target.value})}/><button className="pill pill-btn" onClick={addProfileSection}>Add profile section</button></div>
+                        {(plusProfile().profileSections || []).map((section)=><section className="profile-custom-section" key={section.id}><h4>{section.title}</h4><p>{section.body}</p></section>)}
+                      </div>
 
                       <div className="profile-section">
                         <div className="field-label">Change username</div>
@@ -4359,7 +4972,7 @@ export default function RUMS() {
                     <Search size={16} color="#7ba3ac" />
                     <input
                       autoFocus
-                      placeholder="Search accounts or posts…"
+                      placeholder="Search users, captions or #hashtags…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -4367,10 +4980,17 @@ export default function RUMS() {
                       <button className="icon-btn" onClick={() => setSearchQuery('')}><X size={15} /></button>
                     )}
                   </div>
+                  <div className="search-filter-row">
+                    <select className="aero-input" value={searchFilters.tag} onChange={(e)=>setSearchFilters({...searchFilters,tag:e.target.value})}><option value="all">All locations</option><option value="General">General</option>{!isRums5&&<option value="Lumina">Lumina</option>}</select>
+                    <input className="aero-input" placeholder="Author" value={searchFilters.author} onChange={(e)=>setSearchFilters({...searchFilters,author:e.target.value})}/>
+                    <input className="aero-input" type="date" value={searchFilters.from} onChange={(e)=>setSearchFilters({...searchFilters,from:e.target.value})}/>
+                    <input className="aero-input" type="date" value={searchFilters.to} onChange={(e)=>setSearchFilters({...searchFilters,to:e.target.value})}/>
+                    <button className="pill pill-btn" onClick={()=>setSearchFilters({type:'all',tag:'all',author:'',from:'',to:''})}>Reset</button>
+                  </div>
 
-                  {!q && <p className="switch-line" style={{ padding: '0 4px' }}>{isRums5 ? 'Search covers all RUMS 5 posts. Tap a result to jump to it.' : 'Search covers all RUMS 4 posts, including Lumina. Tap a result to jump to it.'}</p>}
+                  {!q && !searchFilters.author && searchFilters.tag==='all' && !searchFilters.from && !searchFilters.to && <p className="switch-line" style={{ padding: '0 4px' }}>{isRums5 ? 'Search covers all RUMS 5 posts. Tap a result to jump to it.' : 'Search covers all RUMS 4 posts, including Lumina. Tap a result to jump to it.'}</p>}
 
-                  {q && (
+                  {(q || searchFilters.author || searchFilters.tag !== 'all' || searchFilters.from || searchFilters.to) && (
                     <>
                       <div className="admin-section-title"><UserIcon size={15} /> Accounts</div>
                       {matchedUsers.length === 0 && <p style={{ fontSize: 13, color: '#7ba3ac' }}>No accounts found.</p>}
@@ -4437,6 +5057,10 @@ export default function RUMS() {
             </div>
           </>
         )}
+
+        {commandOpen && <div className="command-palette-layer" onMouseDown={(e)=>{if(e.target===e.currentTarget)setCommandOpen(false);}}><section className="command-palette" role="dialog" aria-modal="true" aria-label="Command palette"><div className="command-search"><Search size={17}/><input autoFocus value={commandQuery} onChange={(e)=>setCommandQuery(e.target.value)} placeholder="Jump anywhere or run a command…"/><button onClick={()=>setCommandOpen(false)}><X size={15}/></button></div><div className="command-list">{[
+          ['Community feed',()=>setScreen('feed')],['Chat',()=>setScreen('chat')],['Share a build',()=>setScreen('upload')],['Discover',()=>setScreen('search')],['Suggestions',()=>setScreen('suggestions')],['Server updates',()=>setScreen('updates')],['Profile',()=>{setViewedProfile(null);setScreen('profile');}],['Notifications & Plaza+',()=>{setScreen('plazaPlus');setPlusTab('notifications');}],['Saved posts',()=>{setScreen('plazaPlus');setPlusTab('saved');}],['Events',()=>{setScreen('plazaPlus');setPlusTab('events');}],['Groups',()=>{setScreen('plazaPlus');setPlusTab('groups');}],['Projects',()=>{setScreen('plazaPlus');setPlusTab('projects');}],['Wiki & builds',()=>{setScreen('plazaPlus');setPlusTab('knowledge');}],['Accessibility',()=>{setScreen('plazaPlus');setPlusTab('settings');}],...(!isRums5?[['Project Lumina',openLumina]]:[])
+        ].filter(([label])=>label.toLowerCase().includes(commandQuery.trim().toLowerCase())).map(([label,action])=><button key={label} onClick={()=>{action();setCommandOpen(false);setCommandQuery('');}}><span>{label}</span><small>Open</small></button>)}</div></section></div>}
 
         {tutorialActive && tutorialCurrent && (
           <div className="tutorial-layer" aria-live="polite">
