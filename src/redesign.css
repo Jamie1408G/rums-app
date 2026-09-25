@@ -3861,3 +3861,86 @@ button,input,textarea { font:inherit; }
   .project-directory-create,
   .project-directory-group { padding: 17px; }
 }
+
+/* Simplified Projects launcher */
+.projects-directory-page {
+  min-height: 100vh;
+  padding: clamp(22px, 4vw, 52px);
+  display: grid;
+  gap: 28px;
+  align-content: start;
+}
+.projects-directory-topbar {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+.projects-directory-heading h1 { margin: 2px 0 4px; font-size: clamp(34px, 5vw, 56px); letter-spacing: -.04em; }
+.projects-directory-heading p { margin: 0; color: var(--theme-muted, #667085); }
+.projects-back-btn,
+.projects-create-btn {
+  border: 1px solid var(--theme-border, rgba(120,140,170,.24));
+  border-radius: 999px;
+  min-height: 42px;
+  padding: 0 16px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.projects-back-btn { background: var(--theme-surface, rgba(255,255,255,.72)); color: var(--theme-text, #172033); }
+.projects-create-btn { background: var(--theme-accent, #3478f6); color: var(--theme-accent-text, #fff); border-color: transparent; box-shadow: 0 8px 22px color-mix(in srgb, var(--theme-accent, #3478f6) 24%, transparent); }
+.project-directory-groups.simple { width: min(1120px, 100%); margin: 0 auto; display: grid; gap: 34px; }
+.project-directory-section { display: grid; gap: 14px; }
+.project-directory-section-head { display: flex; justify-content: space-between; gap: 18px; align-items: end; padding: 0 2px; }
+.project-directory-section-head > div { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.project-directory-section-head h2 { margin: 0; font-size: clamp(22px, 3vw, 30px); letter-spacing: -.025em; }
+.project-directory-section-head > span { color: var(--theme-muted, #667085); font-size: 13px; font-weight: 700; }
+.project-directory-card.simple-card {
+  min-height: 174px;
+  padding: 19px;
+  grid-template-rows: auto auto 1fr auto;
+  border-radius: var(--theme-radius, 24px);
+  background: var(--theme-surface, rgba(255,255,255,.76));
+}
+.project-directory-card.simple-card .space-choice-arrow { position: static; font-size: 22px; }
+.project-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.project-directory-login-note { width: min(1120px, 100%); margin: 0 auto; }
+.project-create-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(12,18,30,.34);
+  backdrop-filter: blur(10px);
+}
+.project-create-modal {
+  width: min(560px, 100%);
+  position: relative;
+  padding: 26px;
+  border: 1px solid var(--theme-border, rgba(120,140,170,.24));
+  border-radius: var(--theme-radius, 26px);
+  background: var(--theme-surface, rgba(255,255,255,.92));
+  color: var(--theme-text, #172033);
+  box-shadow: 0 28px 90px rgba(14,31,59,.26);
+}
+.project-create-modal h2 { margin: 4px 0 6px; font-size: 30px; }
+.project-create-modal > p { margin: 0 0 20px; color: var(--theme-muted, #667085); line-height: 1.5; }
+.project-create-close { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--theme-surface-2, rgba(235,240,248,.9)); color: var(--theme-text, #172033); font-size: 24px; cursor: pointer; }
+.project-directory-create-form.modal-form { display: grid; grid-template-columns: 1fr; gap: 14px; }
+.project-directory-create-form.modal-form label { display: grid; gap: 7px; font-size: 13px; font-weight: 800; }
+.project-directory-create-form.modal-form textarea { resize: vertical; min-height: 100px; }
+.project-create-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+@media (max-width: 680px) {
+  .projects-directory-page { padding: 18px 14px 86px; gap: 22px; }
+  .projects-directory-topbar { grid-template-columns: 1fr auto; align-items: start; }
+  .projects-directory-heading { grid-column: 1 / -1; grid-row: 2; }
+  .projects-create-btn { justify-self: end; }
+  .project-directory-section-head { align-items: center; }
+  .project-directory-section-head > span { display: none; }
+  .project-create-modal { padding: 22px 18px; }
+}

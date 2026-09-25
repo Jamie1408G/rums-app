@@ -406,6 +406,7 @@ export default function RUMS() {
   const [eventDraft, setEventDraft] = useState({ title: '', when: '', location: '', description: '' });
   const [groupDraft, setGroupDraft] = useState({ name: '', description: '' });
   const [projectDraft, setProjectDraft] = useState({ name: '', description: '', category: 'rums4' });
+  const [projectCreateOpen, setProjectCreateOpen] = useState(false);
   const [projectCategory, setProjectCategory] = useState('rums4');
   const [projectDirectoryProjects, setProjectDirectoryProjects] = useState([]);
   const [wikiDraft, setWikiDraft] = useState({ title: '', body: '' });
@@ -4108,45 +4109,54 @@ export default function RUMS() {
         {screen === 'projectsDirectory' && (
           <section className="projects-directory-page">
             <div className="projects-directory-topbar">
-              <button type="button" className="pill pill-btn" onClick={openRumsChooser}>← RUMS Plaza</button>
-              <div><span className="space-chooser-kicker">RUMS PLAZA</span><h1>Projects</h1><p>Choose a project. Every project opens as its own complete Plaza space, with its own feed, posts, suggestions, updates and site layout.</p></div>
+              <button type="button" className="projects-back-btn" onClick={openRumsChooser}>← Back</button>
+              <div className="projects-directory-heading">
+                <span className="space-chooser-kicker">RUMS PLAZA</span>
+                <h1>Projects</h1>
+                <p>Choose a project to enter, or create your own.</p>
+              </div>
+              {currentUser && <button type="button" className="projects-create-btn" onClick={()=>setProjectCreateOpen(true)}>+ Create Project</button>}
             </div>
-            {currentUser && (
-              <section className="project-directory-create">
-                <div><h2>Create your own project</h2><p>Choose where the project belongs. Once created, it gets its own independent RUMS-style space.</p></div>
-                <div className="project-directory-create-form">
-                  <select className="aero-input" value={projectDraft.category} onChange={(e)=>setProjectDraft({...projectDraft,category:e.target.value})}>
-                    <option value="rums4">Inside RUMS · RUMS 4</option>
-                    <option value="rums5">Inside RUMS · RUMS 5</option>
-                    <option value="outside">Outside RUMS</option>
-                  </select>
-                  <input className="aero-input" placeholder="Project name" value={projectDraft.name} onChange={(e)=>setProjectDraft({...projectDraft,name:e.target.value})}/>
-                  <input className="aero-input" placeholder="What is this project?" value={projectDraft.description} onChange={(e)=>setProjectDraft({...projectDraft,description:e.target.value})}/>
-                  <button className="aero-btn" type="button" onClick={createProject}>Create project</button>
+            {!currentUser && <div className="project-directory-login-note">Browse any project now. Log in to create your own.</div>}
+
+            <div className="project-directory-groups simple">
+              <section className="project-directory-section">
+                <div className="project-directory-section-head"><div><span className="project-space-badge rums4">RUMS 4</span><h2>RUMS 4 Projects</h2></div><span>{(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category !== 'rums5' && project.category !== 'outside').length} projects</span></div>
+                <div className="project-directory-grid">
+                  {(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category !== 'rums5' && project.category !== 'outside').map((project)=><button type="button" className="project-directory-card simple-card" key={project.id} onClick={()=>void chooseProject(project)}><div className="project-card-top"><span className="project-space-badge rums4">RUMS 4</span><span className="space-choice-arrow">→</span></div><strong>{project.name}</strong><p>{project.description || 'Community project'}</p><small>by {project.owner} · {project.followers?.length || 0} followers</small></button>)}
+                  {!(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).some((project)=>project.category !== 'rums5' && project.category !== 'outside') && <div className="project-directory-empty">No RUMS 4 projects yet.</div>}
                 </div>
               </section>
-            )}
-            {!currentUser && <div className="project-directory-login-note">You can browse projects now. Log in after opening one to enter it; once logged in, you can also create your own projects.</div>}
-            <div className="project-directory-groups">
-              <section className="project-directory-group inside-rums">
-                <div className="project-directory-group-head"><div><span className="eyebrow">INSIDE RUMS</span><h2>RUMS projects</h2></div><p>Projects connected to the RUMS server, separated by the version they belong to.</p></div>
-                <div className="project-directory-subgroup"><h3><span className="project-space-badge rums4">RUMS 4</span> Projects</h3><div className="project-directory-grid">
-                  {(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>(project.category === 'rums5' || project.category === 'outside') ? false : true).map((project)=><button type="button" className="project-directory-card" key={project.id} onClick={()=>void chooseProject(project)}><span className="project-space-badge rums4">RUMS 4</span><strong>{project.name}</strong><p>{project.description || 'Community project'}</p><small>{project.owner} · {project.followers?.length || 0} followers</small><span className="space-choice-arrow">→</span></button>)}
-                  {!(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).some((project)=>project.category !== 'rums5' && project.category !== 'outside') && <div className="project-directory-empty">No RUMS 4 projects yet.</div>}
-                </div></div>
-                <div className="project-directory-subgroup"><h3><span className="project-space-badge rums5">RUMS 5</span> Projects</h3><div className="project-directory-grid">
-                  {(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'rums5').map((project)=><button type="button" className="project-directory-card" key={project.id} onClick={()=>void chooseProject(project)}><span className="project-space-badge rums5">RUMS 5</span><strong>{project.name}</strong><p>{project.description || 'Community project'}</p><small>{project.owner} · {project.followers?.length || 0} followers</small><span className="space-choice-arrow">→</span></button>)}
-                  {!(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).some((project)=>project.category === 'rums5') && <div className="project-directory-empty">No RUMS 5 projects yet.</div>}
-                </div></div>
-              </section>
-              <section className="project-directory-group outside-rums">
-                <div className="project-directory-group-head"><div><span className="eyebrow">OUTSIDE RUMS</span><h2>Outside projects</h2></div><p>Personal and community projects that are not part of the RUMS server.</p></div>
+
+              <section className="project-directory-section">
+                <div className="project-directory-section-head"><div><span className="project-space-badge rums5">RUMS 5</span><h2>RUMS 5 Projects</h2></div><span>{(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'rums5').length} projects</span></div>
                 <div className="project-directory-grid">
-                  {(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'outside').map((project)=><button type="button" className="project-directory-card" key={project.id} onClick={()=>void chooseProject(project)}><span className="project-space-badge outside">OUTSIDE RUMS</span><strong>{project.name}</strong><p>{project.description || 'Independent project'}</p><small>{project.owner} · {project.followers?.length || 0} followers</small><span className="space-choice-arrow">→</span></button>)}
+                  {(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'rums5').map((project)=><button type="button" className="project-directory-card simple-card" key={project.id} onClick={()=>void chooseProject(project)}><div className="project-card-top"><span className="project-space-badge rums5">RUMS 5</span><span className="space-choice-arrow">→</span></div><strong>{project.name}</strong><p>{project.description || 'Community project'}</p><small>by {project.owner} · {project.followers?.length || 0} followers</small></button>)}
+                  {!(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).some((project)=>project.category === 'rums5') && <div className="project-directory-empty">No RUMS 5 projects yet.</div>}
+                </div>
+              </section>
+
+              <section className="project-directory-section">
+                <div className="project-directory-section-head"><div><span className="project-space-badge outside">OUTSIDE RUMS</span><h2>Outside RUMS</h2></div><span>{(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'outside').length} projects</span></div>
+                <div className="project-directory-grid">
+                  {(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'outside').map((project)=><button type="button" className="project-directory-card simple-card" key={project.id} onClick={()=>void chooseProject(project)}><div className="project-card-top"><span className="project-space-badge outside">OUTSIDE RUMS</span><span className="space-choice-arrow">→</span></div><strong>{project.name}</strong><p>{project.description || 'Independent project'}</p><small>by {project.owner} · {project.followers?.length || 0} followers</small></button>)}
                   {!(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).some((project)=>project.category === 'outside') && <div className="project-directory-empty">No outside projects yet.</div>}
                 </div>
               </section>
             </div>
+
+            {projectCreateOpen && currentUser && <div className="project-create-overlay" onMouseDown={(e)=>{if(e.target===e.currentTarget)setProjectCreateOpen(false);}}>
+              <section className="project-create-modal">
+                <button type="button" className="project-create-close" onClick={()=>setProjectCreateOpen(false)}>×</button>
+                <span className="space-chooser-kicker">NEW PROJECT</span><h2>Create Project</h2><p>Pick where it belongs. Your project will open as its own complete RUMS Plaza-style space.</p>
+                <div className="project-directory-create-form modal-form">
+                  <label>Project group<select className="aero-input" value={projectDraft.category} onChange={(e)=>setProjectDraft({...projectDraft,category:e.target.value})}><option value="rums4">RUMS 4</option><option value="rums5">RUMS 5</option><option value="outside">Outside RUMS</option></select></label>
+                  <label>Project name<input className="aero-input" placeholder="My project" value={projectDraft.name} onChange={(e)=>setProjectDraft({...projectDraft,name:e.target.value})}/></label>
+                  <label>Description<textarea className="aero-input" rows="4" placeholder="What is this project?" value={projectDraft.description} onChange={(e)=>setProjectDraft({...projectDraft,description:e.target.value})}/></label>
+                  <div className="project-create-actions"><button type="button" className="pill pill-btn" onClick={()=>setProjectCreateOpen(false)}>Cancel</button><button className="aero-btn" type="button" onClick={async()=>{await createProject();setProjectCreateOpen(false);}}>Create Project</button></div>
+                </div>
+              </section>
+            </div>}
           </section>
         )}
 
