@@ -7,7 +7,7 @@ self.addEventListener('fetch',event=>{
 });
 self.addEventListener('push',event=>{
   let data={};try{data=event.data?event.data.json():{};}catch{data={body:event.data?.text()||'New activity on RUMS Plaza'};}
-  event.waitUntil(self.registration.showNotification(data.title||'RUMS Plaza',{body:data.body||'You have new activity.',data:{url:data.url||'/'}}));
+  event.waitUntil(self.registration.showNotification(data.title||'RUMS Plaza',{body:data.body||'You have new activity.',tag:data.tag||undefined,data:{url:data.url||'/'}}));
 });
 self.addEventListener('notificationclick',event=>{
   event.notification.close();

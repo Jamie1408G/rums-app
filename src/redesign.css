@@ -4506,3 +4506,8 @@ button,input,textarea { font:inherit; }
 .aero-root .comment-input-row {display:flex;align-items:center;gap:8px;}
 .aero-root .comment-input-row input {min-width:0;flex:1;}
 @media (max-width:760px) {.aero-root .comments-box {margin:0 9px 12px;padding:13px!important;}.aero-root .comment-row.comment-reply {margin-left:24px;}}
+
+.aero-root .push-settings {display:grid;justify-items:start;gap:9px;margin-top:18px;padding:16px;border:1px solid var(--theme-border,#dce8f5);border-radius:17px;background:var(--theme-surface,rgba(255,255,255,.68));color:var(--theme-text,#314763);}
+.aero-root .push-settings strong {font-size:14px;}
+.aero-root .push-settings p {margin:0;color:var(--theme-muted,#6e829b);font-size:13px;line-height:1.45;}
+.aero-root .push-settings small {font-size:12px;line-height:1.5;color:var(--theme-muted,#6e829b);}

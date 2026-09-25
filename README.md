@@ -76,3 +76,35 @@ Uploaded screenshots are resized and stored as base64 data URLs directly inside 
 post record (same as the original). This keeps things simple with no file storage
 service, but base64 images are large — with the Firestore backend in particular, watch
 document size limits (1 MiB per document) if people upload big screenshots.
+
+## Device notifications (Web Push)
+
+RUMS Plaza can send push notifications to signed-in devices for direct/group chat,
+mentions, replies, reactions, follows and other personal Plaza+ activity. These
+notifications arrive even when the website is closed. They require the shared
+Firestore backend and the Vercel API function in `api/push.js`; local Vite previews
+do not run that function. Existing notifications inside Plaza+ continue to work
+without push setup.
+
+1. Generate a VAPID pair once with `npx web-push generate-vapid-keys`. Keep the
+   private key on the server; **never** prefix it with `VITE_`.
+2. In Vercel, add `VITE_PUSH_VAPID_PUBLIC_KEY` and `PUSH_VAPID_PUBLIC_KEY` with
+   the *same* public key, plus `PUSH_VAPID_PRIVATE_KEY` with the private key.
+   Set `PUSH_CONTACT_EMAIL` to your contact email (optional).
+3. Create a Firebase service account for the same Firestore project and set
+   `FIREBASE_SERVICE_ACCOUNT_JSON` on Vercel to its complete JSON. Keep it
+   server-only. Redeploy so the Vite public key and Vercel function are updated.
+4. On each device, open **Plaza+ → Accessibility & personalization → Device
+   notifications** and tap **Enable on this device**. Browser permission is
+   requested only on that tap. Logging out removes that device's subscription.
+
+On iPhone and iPad, open the site in Safari, use **Share → Add to Home Screen**,
+launch it from the new Home Screen icon, and then enable notifications inside
+Plaza+. An ordinary Safari tab cannot opt into iOS web push. If a VAPID pair is
+rotated, devices must re-enable notifications. Browser push permissions can also
+be disabled in the device's settings.
+
+Push subscriptions are tied to the site's current username/password records.
+The existing client-side authentication and permissive Firestore setup described
+above are not a substitute for Firebase Authentication and enforced security
+rules; deploy those before treating this as a secure public messaging system.
