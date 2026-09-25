@@ -40,6 +40,23 @@ export default async function handler(request, response) {
       await db.collection('push_devices').doc(deviceId(endpoint)).delete();
       return response.status(200).json({ ok: true });
     }
+    if (action === 'test') {
+      if (typeof username !== 'string' || typeof password !== 'string' || typeof endpoint !== 'string') return response.status(400).json({ error: 'Missing device details' });
+      const users = JSON.parse((await db.doc('shared/rums-users').get()).data()?.value || '[]');
+      const user = users.find((item) => item.username === username && item.password === password);
+      if (!user) return response.status(401).json({ error: 'Account verification failed' });
+      const device = await db.collection('push_devices').doc(deviceId(endpoint)).get();
+      if (!device.exists || device.data().username !== username || device.data().accountFingerprint !== accountFingerprint(user)) return response.status(404).json({ error: 'This device is not registered. Turn notifications off and on again.' });
+      try {
+        await webpush.sendNotification(device.data().subscription, JSON.stringify({ title: 'RUMS Plaza test', body: 'Device notifications are working.', url: '/?notification=plazaPlus', tag: `rums-test-${Date.now()}` }), { TTL: 60 });
+      } catch (error) {
+        if (error.statusCode === 403 || error.statusCode === 401) return response.status(502).json({ error: 'Push service rejected the keys. Check that both VAPID keys came from the same generated pair.' });
+        if (error.statusCode === 404 || error.statusCode === 410) { await device.ref.delete(); return response.status(410).json({ error: 'This subscription expired. Turn notifications off and on again.' }); }
+        console.error('Test push failed', error.statusCode || error);
+        return response.status(502).json({ error: `The push service rejected this device (${error.statusCode || 'delivery error'}).` });
+      }
+      return response.status(200).json({ ok: true });
+    }
     if (action === 'notify') {
       if (!Array.isArray(activityIds) || activityIds.length > 20) return response.status(400).json({ error: 'Invalid activities' });
       const activities = JSON.parse((await db.doc('shared/rums-plaza-plus').get()).data()?.value || '{}').activities || [];
