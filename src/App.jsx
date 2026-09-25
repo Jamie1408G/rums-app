@@ -4510,9 +4510,17 @@ export default function RUMS() {
     };
     const renderComment = (c, reply = false) => {
       const cLiked = (c.likes || []).includes(currentUser.username);
-      return <div className={`comment-row ${reply ? 'comment-reply' : ''}`} key={c.id}>
+      const commentSpotify = spotifyEmbedFromText(c.text || '');
+      const commentVisibleText = stripSpotifyLinks(c.text || '');
+      const spotifyOnlyComment = !!commentSpotify && !commentVisibleText;
+      return <div className={`comment-row ${reply ? 'comment-reply' : ''} ${commentSpotify ? 'has-spotify-comment' : ''}`} key={c.id}>
         <div className="comment-avatar clickable-row" onClick={() => openProfile(c.username)}>{avatarNode(c.username, reply ? 25 : 30, 10)}</div>
-        <div className="comment-content"><div className="comment-bubble"><b className="clickable-text" onClick={() => openProfile(c.username)}>{c.username}</b><div className="comment-text">{renderCommentText(c.text)}</div></div>
+        <div className="comment-content">
+          <div className={`comment-bubble ${spotifyOnlyComment ? 'spotify-only-comment' : ''}`}>
+            <b className="clickable-text" onClick={() => openProfile(c.username)}>{c.username}</b>
+            {commentVisibleText && <div className="comment-text">{renderCommentText(commentVisibleText)}</div>}
+            {commentSpotify && <SpotifyMessageEmbed text={c.text} />}
+          </div>
           <div className="comment-actions"><span>{timeAgo(c.timestamp)}</span><button className={cLiked ? 'liked' : ''} onClick={() => toggleCommentLike(post.id, c.id)} aria-label={`Like ${c.username}'s comment`}><Heart size={13} fill={cLiked ? 'currentColor' : 'none'} /> {(c.likes || []).length || 'Like'}</button><button onClick={() => startReply(reply ? postComments.find((parent) => parent.id === c.parentId) || c : c)}>Reply</button>{canManageComment(c) && <button className="comment-del-btn" onClick={() => deleteComment(post.id, c.id)} aria-label="Delete comment"><Trash2 size={13} /></button>}</div>
         </div>
       </div>;
