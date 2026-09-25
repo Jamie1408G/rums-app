@@ -4014,7 +4014,7 @@ button,input,textarea { font:inherit; }
 }
 .aero-frame > .rums-space-chooser .space-choice-card {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   align-items: start;
   min-height: 190px;
@@ -4025,12 +4025,11 @@ button,input,textarea { font:inherit; }
 .aero-frame > .rums-space-chooser .space-choice-copy {grid-column: 1 / -1;grid-row: 2;align-self: end;gap: 8px;}
 .aero-frame > .rums-space-chooser .space-choice-copy strong {font-size: 29px;line-height: 1.1;}
 .aero-frame > .rums-space-chooser .space-choice-copy em {font-size: 12px;}
-.aero-frame > .rums-space-chooser .space-choice-arrow {grid-column: 2;grid-row: 1;}
 @media (max-width: 820px) {
   .aero-frame > .rums-space-chooser {justify-content: flex-start;padding: 40px 20px;}
   .aero-frame > .rums-space-chooser .space-choice-grid {max-width: 560px;grid-template-columns: 1fr;gap: 14px;}
   .aero-frame > .rums-space-chooser .space-choice-card {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
     grid-template-rows: auto;
     align-items: center;
     min-height: 132px;
@@ -4040,14 +4039,12 @@ button,input,textarea { font:inherit; }
   .aero-frame > .rums-space-chooser .space-choice-number {grid-column: 1;grid-row: 1;}
   .aero-frame > .rums-space-chooser .space-choice-copy {grid-column: 2;grid-row: 1;align-self: center;}
   .aero-frame > .rums-space-chooser .space-choice-copy strong {font-size: 24px;}
-  .aero-frame > .rums-space-chooser .space-choice-arrow {grid-column: 3;grid-row: 1;}
 }
 @media (max-width: 480px) {
   .aero-frame > .rums-space-chooser {padding: 32px 16px;}
   .aero-frame > .rums-space-chooser .space-chooser-intro {margin-bottom: 24px;}
   .aero-frame > .rums-space-chooser .space-choice-card {gap: 12px;padding: 16px;}
   .aero-frame > .rums-space-chooser .space-choice-number {width: 44px;height: 44px;font-size: 16px;}
-  .aero-frame > .rums-space-chooser .space-choice-arrow {width: 28px;height: 28px;}
 }
 
 /* Show the Creative name in the persistent space switch at every size. */
