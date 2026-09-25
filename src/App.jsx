@@ -1788,10 +1788,25 @@ export default function RUMS() {
     setTag('General');
     setNavStack([]);
     try {
-      const record = await safeGet(PLAZA_PLUS_KEY, true);
+      const [record, userRecord, sessionRecord] = await Promise.all([
+        safeGet(PLAZA_PLUS_KEY, true),
+        safeGet(USERS_KEY, true),
+        safeGet(SESSION_KEY, false),
+      ]);
       const latest = normalizePlazaPlus(record ? JSON.parse(record.value) : plazaPlus);
       setProjectDirectoryProjects((latest.projects || []).map((project) => ({ ...project, category: project.category === 'outside' ? 'outside' : project.category === 'rums5' ? 'rums5' : 'rums4' })));
       setPlazaPlus(latest);
+      if (userRecord) {
+        const latestUsers = JSON.parse(userRecord.value);
+        if (Array.isArray(latestUsers)) {
+          setUsers(latestUsers);
+          if (sessionRecord) {
+            const session = JSON.parse(sessionRecord.value);
+            const found = latestUsers.find((user) => user.username === session?.username);
+            if (found) setCurrentUser(found);
+          }
+        }
+      }
     } catch (e) { console.error(e); }
     setScreen('projectsDirectory');
   }
@@ -4115,7 +4130,7 @@ export default function RUMS() {
                 <h1>Projects</h1>
                 <p>Choose a project to enter, or create your own.</p>
               </div>
-              {currentUser && <button type="button" className="projects-create-btn" onClick={()=>setProjectCreateOpen(true)}>+ Create Project</button>}
+              <button type="button" className="projects-create-btn" onClick={()=>{ if (currentUser) setProjectCreateOpen(true); else window.alert('Log in to RUMS Plaza first, then return to Projects to add a project.'); }}>+ Add Project</button>
             </div>
             {!currentUser && <div className="project-directory-login-note">Browse any project now. Log in to create your own.</div>}
 

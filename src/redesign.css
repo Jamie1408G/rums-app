@@ -3944,3 +3944,38 @@ button,input,textarea { font:inherit; }
   .project-directory-section-head > span { display: none; }
   .project-create-modal { padding: 22px 18px; }
 }
+
+
+/* Projects directory full-frame layout fix */
+.aero-frame > .projects-directory-page {
+  grid-column: 1 / -1 !important;
+  grid-row: 1 / -1 !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+.aero-frame > .projects-directory-page .projects-directory-topbar,
+.aero-frame > .projects-directory-page .project-directory-groups.simple,
+.aero-frame > .projects-directory-page .project-directory-login-note {
+  width: min(1120px, calc(100% - 48px)) !important;
+  max-width: 1120px !important;
+  min-width: 0 !important;
+}
+.aero-frame > .projects-directory-page .projects-directory-heading {
+  min-width: 0;
+}
+.aero-frame > .projects-directory-page .projects-directory-heading p {
+  max-width: 620px;
+  white-space: normal;
+}
+@media (max-width: 680px) {
+  .aero-frame > .projects-directory-page .projects-directory-topbar,
+  .aero-frame > .projects-directory-page .project-directory-groups.simple,
+  .aero-frame > .projects-directory-page .project-directory-login-note {
+    width: 100% !important;
+  }
+}
