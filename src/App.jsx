@@ -141,6 +141,7 @@ const CUSTOM_EMOJIS_KEY = 'rums-custom-emojis';
 const CHAT_MESSAGES_KEY = 'rums-chat-messages';
 const CHAT_ROOM_ID = 'plaza';
 const chatReadKey = (username) => `rums-chat-read-${username}`;
+const chatSeenKey = (reader, sender) => `rums-chat-seen-${reader}-${sender}`;
 const PLAZA_PLUS_KEY = 'rums-plaza-plus';
 const notificationReadKey = (username) => `rums-notification-read-${encodeURIComponent(username)}`;
 const PROJECT_INDEX_KEY = 'rums-project-directory-v2';
@@ -453,6 +454,7 @@ export default function RUMS() {
   const [updates, setUpdates] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const [chatReadState, setChatReadState] = useState({});
+  const [chatSeenReceipt, setChatSeenReceipt] = useState({ threadId: '', id: '' });
   const [activeChat, setActiveChat] = useState('plaza');
   const [chatDraft, setChatDraft] = useState('');
   const [chatImageDraft, setChatImageDraft] = useState('');
@@ -1462,6 +1464,46 @@ export default function RUMS() {
     const id = window.requestAnimationFrame(() => chatEndRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }));
     return () => window.cancelAnimationFrame(id);
   }, [screen, activeChat, chatMessages.length]);
+
+  // A receipt is shared per DM direction, so the sender can see it on another device.
+  useEffect(() => {
+    if (!currentUser || screen !== 'chat' || !activeChat.startsWith('dm:')) return;
+    const other = activeChat.slice(3);
+    const lastMessage = chatMessagesForThread(activeChat).at(-1);
+    if (!lastMessage) return;
+    let cancelled = false;
+    const markSeen = async () => {
+      try {
+        const key = chatSeenKey(currentUser.username, other);
+        const record = await safeGet(key, true);
+        if (cancelled || JSON.parse(record?.value || 'null')?.id === lastMessage.id) return;
+        await window.storage.set(key, JSON.stringify({ id: lastMessage.id }), true);
+      } catch (error) { console.error('Could not save chat receipt', error); }
+    };
+    void markSeen();
+    return () => { cancelled = true; };
+  }, [screen, activeChat, chatMessages, currentUser?.username]);
+
+  useEffect(() => {
+    if (!currentUser || screen !== 'chat' || !activeChat.startsWith('dm:')) {
+      setChatSeenReceipt({ threadId: '', id: '' });
+      return undefined;
+    }
+    let cancelled = false;
+    const threadId = activeChat;
+    const loadReceipt = async () => {
+      try {
+        const record = await safeGet(chatSeenKey(threadId.slice(3), currentUser.username), true);
+        if (cancelled) return;
+        const id = JSON.parse(record?.value || 'null')?.id || '';
+        setChatSeenReceipt((previous) => previous.threadId === threadId && previous.id === id ? previous : { threadId, id });
+      } catch (error) { console.error('Could not load chat receipt', error); }
+    };
+    setChatSeenReceipt({ threadId, id: '' });
+    void loadReceipt();
+    const timer = window.setInterval(loadReceipt, 3000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [screen, activeChat, currentUser?.username]);
 
   useEffect(() => {
     let cancelled = false;
@@ -3809,13 +3851,13 @@ export default function RUMS() {
   function avatarNode(username, size = 32, fontSize) {
     const url = users.find((u) => u.username === username)?.avatar;
     const style = { width: size, height: size };
-    if (url) {
-      return <img className="avatar avatar-img" src={url} alt={username} style={style} />;
-    }
+    const online = presenceLabel(username) === 'Online';
     return (
-      <div className="avatar" style={{ ...style, fontSize: fontSize ?? Math.round(size * 0.42) }}>
-        {username.slice(0, 2).toUpperCase()}
-      </div>
+      <span className="avatar-presence" style={style} title={online ? 'Online' : undefined}>
+        {url ? <img className="avatar avatar-img" src={url} alt={username} style={style} /> :
+          <span className="avatar" style={{ ...style, fontSize: fontSize ?? Math.round(size * 0.42) }}>{username.slice(0, 2).toUpperCase()}</span>}
+        {online && <span className="avatar-online-dot" aria-label="Online" />}
+      </span>
     );
   }
 
@@ -4742,6 +4784,8 @@ export default function RUMS() {
                         const own = message.sender === currentUser.username;
                         const previous = list[index - 1];
                         const grouped = previous && previous.sender === message.sender && message.timestamp - previous.timestamp < 5 * 60 * 1000;
+                        const seenIndex = chatSeenReceipt.threadId === activeChat ? list.findIndex((item) => item.id === chatSeenReceipt.id) : -1;
+                        const showSeen = own && activeChat.startsWith('dm:') && seenIndex >= index && !list.slice(index + 1).some((item) => item.sender === currentUser.username);
                         return <div key={message.id} className={`chat-message ${own ? 'own' : ''} ${grouped ? 'grouped' : ''}`}>
                           {!grouped && <button className="chat-message-avatar" onClick={() => openProfile(message.sender)} aria-label={`Open ${message.sender}'s profile`}>{avatarNode(message.sender, 32, 11)}</button>}
                           <div className="chat-message-main">
@@ -4757,6 +4801,7 @@ export default function RUMS() {
                               {Object.entries(plazaPlus.chatReactions?.[message.id] || {}).map(([emoji, names]) => names?.length ? <button key={emoji} className={names.includes(currentUser.username) ? 'active' : ''} onClick={() => toggleChatReaction(message.id, emoji)}>{emoji} {names.length}</button> : null)}
                               {chatReactionOpen === message.id && <span className="chat-reaction-picker">{['👍','❤️','😂','🔥','😮','🎉'].map((emoji)=><button key={emoji} onClick={() => { toggleChatReaction(message.id, emoji); setChatReactionOpen(null); }}>{emoji}</button>)}</span>}
                             </div>
+                            {showSeen && <span className="chat-seen-label">Seen</span>}
                           </div>
                           {(own || canModerate) && <button className="chat-message-delete" onClick={() => deleteChatMessage(message.id)} title="Delete message"><Trash2 size={13} /></button>}
                         </div>;
