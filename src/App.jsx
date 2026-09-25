@@ -409,6 +409,12 @@ export default function RUMS() {
   const [projectCreateOpen, setProjectCreateOpen] = useState(false);
   const [projectCategory, setProjectCategory] = useState('rums4');
   const [projectDirectoryProjects, setProjectDirectoryProjects] = useState([]);
+  const [projectTab, setProjectTab] = useState('overview');
+  const [projectTopicDraft, setProjectTopicDraft] = useState({ title: '', body: '' });
+  const [projectReplyDraft, setProjectReplyDraft] = useState({});
+  const [projectUpdateDraft, setProjectUpdateDraft] = useState({ title: '', body: '' });
+  const [projectCardDraft, setProjectCardDraft] = useState('');
+  const [projectOpenTopic, setProjectOpenTopic] = useState(null);
   const [wikiDraft, setWikiDraft] = useState({ title: '', body: '' });
   const [buildDraft, setBuildDraft] = useState({ name: '', location: '', owner: '', description: '' });
   const [reportDraft, setReportDraft] = useState({ target: '', reason: '' });
@@ -848,6 +854,72 @@ export default function RUMS() {
   async function toggleProjectFollow(projectId) {
     if (!currentUser) return;
     await commitPlazaPlus((data)=>({...data,projects:(data.projects||[]).map((project)=>project.id===projectId?{...project,followers:(project.followers||[]).includes(currentUser.username)?project.followers.filter((u)=>u!==currentUser.username):[...(project.followers||[]),currentUser.username]}:project)}));
+  }
+
+  async function editActiveProject(change) {
+    if (!activeProject || !currentUser) return;
+    await commitPlazaPlus((data) => ({ ...data, projects: (data.projects || []).map((project) => project.id === activeProject.id ? change(project) : project) }));
+  }
+
+  async function addProjectTopic() {
+    const title = projectTopicDraft.title.trim().slice(0, 100);
+    const body = projectTopicDraft.body.trim().slice(0, 3000);
+    if (!title || !body) return;
+    await editActiveProject((project) => ({ ...project, topics: [{ id: `topic-${Date.now()}`, title, body, author: currentUser.username, replies: [], timestamp: Date.now() }, ...(project.topics || [])] }));
+    setProjectTopicDraft({ title: '', body: '' });
+  }
+
+  async function replyToProjectTopic(topicId) {
+    const body = (projectReplyDraft[topicId] || '').trim().slice(0, 2000);
+    if (!body) return;
+    await editActiveProject((project) => ({ ...project, topics: (project.topics || []).map((topic) => topic.id === topicId ? { ...topic, replies: [...(topic.replies || []), { id: `reply-${Date.now()}`, body, author: currentUser.username, timestamp: Date.now() }] } : topic) }));
+    setProjectReplyDraft((draft) => ({ ...draft, [topicId]: '' }));
+  }
+
+  async function addProjectUpdate() {
+    if (activeProject?.owner !== currentUser?.username) return;
+    const title = projectUpdateDraft.title.trim().slice(0, 100);
+    const body = projectUpdateDraft.body.trim().slice(0, 3000);
+    if (!title || !body) return;
+    await editActiveProject((project) => ({ ...project, projectUpdates: [{ id: `update-${Date.now()}`, title, body, author: currentUser.username, timestamp: Date.now() }, ...(project.projectUpdates || [])] }));
+    setProjectUpdateDraft({ title: '', body: '' });
+  }
+
+  async function addProjectCard() {
+    if (activeProject?.owner !== currentUser?.username) return;
+    const title = projectCardDraft.trim().slice(0, 100);
+    if (!title) return;
+    await editActiveProject((project) => ({ ...project, board: [...(project.board || []), { id: `card-${Date.now()}`, title, column: 'planned', timestamp: Date.now() }] }));
+    setProjectCardDraft('');
+  }
+
+  function renderProjectWorkspace() {
+    if (!activeProject) return <div className="project-workspace"><p>This project is no longer available.</p><button onClick={() => void openProjectsDirectory()}>Browse projects</button></div>;
+    const owner = activeProject.owner === currentUser?.username;
+    const topics = activeProject.topics || [];
+    const projectUpdates = activeProject.projectUpdates || [];
+    const board = activeProject.board || [];
+    const categoryLabel = activeProject.category === 'rums5' ? 'Creative' : activeProject.category === 'outside' ? 'Outside RUMS' : 'RUMS 4';
+    return <div className="project-workspace">
+      <header className="project-workspace-header">
+        <button className="project-workspace-back" onClick={() => void openProjectsDirectory()}>← All projects</button>
+        <div className="project-workspace-title"><span className={`project-space-badge ${activeProject.category}`}>{categoryLabel}</span><h1>{activeProject.name}</h1><p>{activeProject.description || 'No description yet.'}</p><small>Created by {activeProject.owner} · {activeProject.followers?.length || 0} followers</small></div>
+        <div className="project-workspace-actions">
+          <button className="pill pill-btn" onClick={() => void toggleProjectFollow(activeProject.id)}>{activeProject.followers?.includes(currentUser.username) ? 'Following ✓' : 'Follow project'}</button>
+          {owner && <label>Project version<select className="aero-input" value={activeProject.category || 'rums4'} onChange={(event) => { const category = event.target.value; void editActiveProject((project) => ({ ...project, category })); }}><option value="rums4">RUMS 4</option><option value="rums5">Creative</option><option value="outside">Outside RUMS</option></select></label>}
+        </div>
+      </header>
+      <nav className="project-workspace-tabs" aria-label="Project sections">{[['overview','Overview'],['forum','Forum'],['updates','Updates'],['board','Board']].map(([id,label]) => <button key={id} className={projectTab === id ? 'active' : ''} onClick={() => setProjectTab(id)} aria-current={projectTab === id ? 'page' : undefined}>{label}</button>)}</nav>
+      {projectTab === 'overview' && <div className="project-overview-grid">
+        <section className="project-panel"><h2>About the project</h2><p>{activeProject.description || 'The creator has not added a description yet.'}</p><p className="project-muted">Part of {categoryLabel} · Created by {activeProject.owner}</p></section>
+        <section className="project-panel"><div className="project-panel-heading"><h2>Latest updates</h2><button onClick={() => setProjectTab('updates')}>View all →</button></div>{projectUpdates.length ? projectUpdates.slice(0, 3).map((item) => <article className="project-list-item" key={item.id}><strong>{item.title}</strong><p>{item.body}</p><small>{timeAgo(item.timestamp)}</small></article>) : <p className="project-muted">No updates yet.</p>}</section>
+        <section className="project-panel"><div className="project-panel-heading"><h2>Forum</h2><button onClick={() => setProjectTab('forum')}>Open forum →</button></div>{topics.length ? topics.slice(0, 3).map((item) => <button className="project-topic-preview" key={item.id} onClick={() => { setProjectOpenTopic(item.id); setProjectTab('forum'); }}><strong>{item.title}</strong><small>{item.replies?.length || 0} replies · {item.author}</small></button>) : <p className="project-muted">Start the first discussion.</p>}</section>
+        <section className="project-panel"><div className="project-panel-heading"><h2>Board</h2><button onClick={() => setProjectTab('board')}>Open board →</button></div><p>{board.filter((item) => item.column === 'done').length} done · {board.filter((item) => item.column === 'doing').length} in progress · {board.filter((item) => item.column === 'planned').length} planned</p></section>
+      </div>}
+      {projectTab === 'forum' && <div className="project-section"><div className="project-section-heading"><h2>Forum</h2><p>Ask questions, share ideas, and discuss this project.</p></div><form className="project-panel project-form" onSubmit={(event) => { event.preventDefault(); void addProjectTopic(); }}><h3>New discussion</h3><input className="aero-input" placeholder="Discussion title" maxLength={100} value={projectTopicDraft.title} onChange={(event) => setProjectTopicDraft({ ...projectTopicDraft, title: event.target.value })}/><textarea className="aero-input" placeholder="What would you like to talk about?" rows={3} value={projectTopicDraft.body} onChange={(event) => setProjectTopicDraft({ ...projectTopicDraft, body: event.target.value })}/><button className="aero-btn" disabled={!projectTopicDraft.title.trim() || !projectTopicDraft.body.trim()}>Post discussion</button></form>{topics.length ? topics.map((topic) => <article className="project-panel project-discussion" key={topic.id}><button className="project-discussion-title" onClick={() => setProjectOpenTopic(projectOpenTopic === topic.id ? null : topic.id)} aria-expanded={projectOpenTopic === topic.id}><strong>{topic.title}</strong><small>{topic.author} · {timeAgo(topic.timestamp)} · {topic.replies?.length || 0} replies</small></button>{projectOpenTopic === topic.id && <><p>{topic.body}</p>{(topic.replies || []).map((reply) => <div className="project-reply" key={reply.id}><small>{reply.author} · {timeAgo(reply.timestamp)}</small><p>{reply.body}</p></div>)}<form className="project-reply-form" onSubmit={(event) => { event.preventDefault(); void replyToProjectTopic(topic.id); }}><input className="aero-input" placeholder="Write a reply" value={projectReplyDraft[topic.id] || ''} onChange={(event) => setProjectReplyDraft({ ...projectReplyDraft, [topic.id]: event.target.value })}/><button className="aero-btn" disabled={!projectReplyDraft[topic.id]?.trim()}>Reply</button></form></>}</article>) : <div className="project-panel project-muted">No discussions yet.</div>}</div>}
+      {projectTab === 'updates' && <div className="project-section"><div className="project-section-heading"><h2>Project updates</h2><p>Progress and announcements from the project creator.</p></div>{owner && <form className="project-panel project-form" onSubmit={(event) => { event.preventDefault(); void addProjectUpdate(); }}><h3>Publish an update</h3><input className="aero-input" placeholder="Update title" maxLength={100} value={projectUpdateDraft.title} onChange={(event) => setProjectUpdateDraft({ ...projectUpdateDraft, title: event.target.value })}/><textarea className="aero-input" placeholder="What changed?" rows={4} value={projectUpdateDraft.body} onChange={(event) => setProjectUpdateDraft({ ...projectUpdateDraft, body: event.target.value })}/><button className="aero-btn" disabled={!projectUpdateDraft.title.trim() || !projectUpdateDraft.body.trim()}>Publish update</button></form>}{projectUpdates.length ? projectUpdates.map((item) => <article className="project-panel project-list-item" key={item.id}><small>{timeAgo(item.timestamp)} · {item.author}</small><h3>{item.title}</h3><p>{item.body}</p></article>) : <div className="project-panel project-muted">No project updates yet.</div>}</div>}
+      {projectTab === 'board' && <div className="project-section"><div className="project-section-heading"><h2>Project board</h2><p>Track what is planned, in progress, and complete.</p></div>{owner && <form className="project-panel project-card-form" onSubmit={(event) => { event.preventDefault(); void addProjectCard(); }}><input className="aero-input" placeholder="Add a task or idea" maxLength={100} value={projectCardDraft} onChange={(event) => setProjectCardDraft(event.target.value)}/><button className="aero-btn" disabled={!projectCardDraft.trim()}>Add card</button></form>}<div className="project-board">{[['planned','Planned'],['doing','In progress'],['done','Done']].map(([column,label]) => <section className="project-board-column" key={column}><h3>{label} <span>{board.filter((item) => item.column === column).length}</span></h3>{board.filter((item) => item.column === column).map((item) => <article className="project-board-card" key={item.id}><strong>{item.title}</strong>{owner && <div className="project-board-card-actions">{column !== 'planned' && <button onClick={() => void editActiveProject((project) => ({ ...project, board: (project.board || []).map((card) => card.id === item.id ? { ...card, column: column === 'done' ? 'doing' : 'planned' } : card) }))} aria-label={`Move ${item.title} back`}>←</button>}{column !== 'done' && <button onClick={() => void editActiveProject((project) => ({ ...project, board: (project.board || []).map((card) => card.id === item.id ? { ...card, column: column === 'planned' ? 'doing' : 'done' } : card) }))} aria-label={`Move ${item.title} forward`}>→</button>}<button onClick={() => void editActiveProject((project) => ({ ...project, board: (project.board || []).filter((card) => card.id !== item.id) }))} aria-label={`Delete ${item.title}`}>×</button></div>}</article>)}{!board.some((item) => item.column === column) && <p className="project-muted">No cards yet.</p>}</section>)}</div></div>}
+    </div>;
   }
 
   async function addWikiPage() {
@@ -4238,26 +4310,29 @@ export default function RUMS() {
             <aside className="desktop-rail">
               <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span></div>
               <div className="rail-label">EXPLORE</div>
-              <button data-tutorial-nav="feed" className={`rail-link ${screen === 'feed' ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); }}>{navIconWithNew(<Home size={19} />, 'feed')} Community feed</button>
+              <button data-tutorial-nav="feed" className={`rail-link ${screen === 'feed' && (!isProjectSpace || projectTab === 'overview') ? 'selected' : ''}`} onClick={() => { setScreen('feed'); setFeedFilter('all'); setProjectTab('overview'); }}>{navIconWithNew(<Home size={19} />, 'feed')} {isProjectSpace ? 'Project home' : 'Community feed'}</button>
+              {isProjectSpace && <><button className={`rail-link ${screen === 'feed' && projectTab === 'forum' ? 'selected' : ''}`} onClick={() => { setProjectTab('forum'); setScreen('feed'); }}><MessageCircle size={19}/> Forum</button><button className={`rail-link ${screen === 'feed' && projectTab === 'updates' ? 'selected' : ''}`} onClick={() => { setProjectTab('updates'); setScreen('feed'); }}><Megaphone size={19}/> Project updates</button><button className={`rail-link ${screen === 'feed' && projectTab === 'board' ? 'selected' : ''}`} onClick={() => { setProjectTab('board'); setScreen('feed'); }}><GripVertical size={19}/> Board</button></>}
+              {!isProjectSpace && <>
               {siteConfig.showDiscover && <button data-tutorial-nav="search" className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}>{navIconWithNew(<Search size={19} />, 'search')} Discover</button>}
               <button className={`rail-link ${screen === 'plazaPlus' ? 'selected' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); void markNotificationsRead(); }}><Sparkles size={19} /> Plaza+ {notificationsForCurrentUser().length > 0 && <span className="rail-mini-count">{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</button>
               
               {hasLumina && siteConfig.showLumina && <button data-tutorial-nav="lumina" className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
+              </>}
               <div className="rail-label">COMMUNITY</div>
               <button data-tutorial-nav="chat" className={`rail-link ${screen === 'chat' ? 'selected' : ''}`} onClick={() => setScreen('chat')}>{chatNavIcon(19)} Chat</button>
-              {siteConfig.showUpdates && <button data-tutorial-nav="updates" className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
-              {siteConfig.showSuggestions && <button data-tutorial-nav="suggestions" className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
+              {!isProjectSpace && siteConfig.showUpdates && <button data-tutorial-nav="updates" className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
+              {!isProjectSpace && siteConfig.showSuggestions && <button data-tutorial-nav="suggestions" className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
               {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{navIconWithNew(<Pencil size={19} />, `custom:${tab.id}`)} {tab.label}</button>)}
               {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
               {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onClick={() => setEditMode(true)}>{editMode ? <Check size={19} /> : <Eye size={19} />} {editMode ? 'Editing website' : 'Edit website'}</button>}
-              <button data-tutorial-nav="upload" className="rail-create" onClick={() => setScreen('upload')}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>
+              {!isProjectSpace && <button data-tutorial-nav="upload" className="rail-create" onClick={() => setScreen('upload')}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>}
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS Plaza · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
               <div className="aero-brand aero-brand-version-switch">
                 {renderRumsVersionSwitcher()}
               </div>
-              {screen === 'feed' && <div className="aero-header-center">{renderFeedTabs()}</div>}
+              {screen === 'feed' && !isProjectSpace && <div className="aero-header-center">{renderFeedTabs()}</div>}
               <div className="aero-header-actions">
                 {editMode && isOwner ? <button className="finish-editing-button" onClick={() => setEditMode(false)}><Check size={17} /> Finish editing</button> : <>
                 {isOwner && <button className="icon-btn" onClick={() => setEditMode(true)} title="Edit website"><Pencil size={18} /></button>}
@@ -4289,7 +4364,7 @@ export default function RUMS() {
 
               {activePlacement && screen !== 'admin' && renderCustomWidgets(activePlacement)}
 
-              {screen === 'feed' && (
+              {screen === 'feed' && (isProjectSpace ? renderProjectWorkspace() :
                 <div className="feed-box-layout" data-tutorial="feed-layout">{(siteConfig.feedBoxOrder || ['hero', 'posts']).map(renderFeedBox)}</div>
               )}
 
