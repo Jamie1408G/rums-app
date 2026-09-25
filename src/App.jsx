@@ -582,7 +582,7 @@ export default function RUMS() {
   const commentInputRefs = useRef({});
   const avatarInputRef = useRef(null);
   const chatImageInputRef = useRef(null);
-  const chatEndRef = useRef(null);
+  const chatMessageListRef = useRef(null);
   const rootRef = useRef(null);
   const siteConfigRef = useRef(DEFAULT_SITE_CONFIG);
   const spaceLoadTokenRef = useRef(0);
@@ -1461,7 +1461,10 @@ export default function RUMS() {
 
   useEffect(() => {
     if (screen !== 'chat') return;
-    const id = window.requestAnimationFrame(() => chatEndRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }));
+    const id = window.requestAnimationFrame(() => {
+      const list = chatMessageListRef.current;
+      if (list) list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+    });
     return () => window.cancelAnimationFrame(id);
   }, [screen, activeChat, chatMessages.length]);
 
@@ -4583,7 +4586,7 @@ export default function RUMS() {
               </div>
             </div>
 
-            <div className={`content ${screen === 'plazaPlus' ? 'content-plaza-plus' : ''}`}>
+            <div className={`content ${screen === 'plazaPlus' ? 'content-plaza-plus' : ''} ${screen === 'chat' ? 'content-chat' : ''}`}>
               {siteConfig.customTabs.length > 0 && <div className="custom-mobile-tabs">{siteConfig.customTabs.map((tab) => <button key={tab.id} className={screen === 'custom' && customPageId === tab.id ? 'active' : ''} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{tab.label}{sessionNewCountOnPage(`custom:${tab.id}`) > 0 && <span className="custom-tab-new">{sessionNewCountOnPage(`custom:${tab.id}`) > 99 ? '99+' : sessionNewCountOnPage(`custom:${tab.id}`)}</span>}</button>)}</div>}
               {editMode && isOwner && screen !== 'admin' && renderVisualEditToolbar()}
               {error && (
@@ -4777,7 +4780,7 @@ export default function RUMS() {
                     </header>
                     {chatMediaOpen && <div className="chat-media-gallery">{chatMessagesForThread(activeChat).filter((m) => m.image).map((m) => <button key={m.id} onClick={() => window.open(m.image, '_blank', 'noopener,noreferrer')}><img src={m.image} alt={`Shared by ${m.sender}`} /></button>)}{chatMessagesForThread(activeChat).filter((m) => m.image).length === 0 && <small>No shared images in this conversation yet.</small>}</div>}
 
-                    <div className="chat-message-list">
+                    <div className="chat-message-list" ref={chatMessageListRef}>
                       {chatMessagesForThread(activeChat).length === 0 ? (
                         <div className="chat-empty"><span className="plaza-chat-avatar"><MessageCircle size={22} /></span><h3>{activeChat === 'plaza' ? 'Start the Plaza Chat' : `Say hi to ${activeChatLabel()}`}</h3><p>{activeChat === 'plaza' ? 'Messages here are visible to everyone using RUMS Plaza.' : 'There are no messages in this conversation yet.'}</p></div>
                       ) : chatMessagesForThread(activeChat).map((message, index, list) => {
@@ -4807,7 +4810,6 @@ export default function RUMS() {
                         </div>;
                       })}
                       {typingUsersForActiveChat().length > 0 && <div className="chat-typing">{typingUsersForActiveChat().join(', ')} {typingUsersForActiveChat().length === 1 ? 'is' : 'are'} typing…</div>}
-                      <div ref={chatEndRef} />
                     </div>
 
                     <div className="chat-composer">

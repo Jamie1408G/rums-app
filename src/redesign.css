@@ -4314,3 +4314,16 @@ button,input,textarea { font:inherit; }
 .aero-root .chat-live-pill span {background:#3478f6;box-shadow:0 0 0 4px #3478f617;}
 .aero-root .chat-thread-avatar,.aero-root .chat-header-avatar,.aero-root .chat-message-avatar {overflow:visible;}
 .aero-root .chat-seen-label {padding:0 4px;color:var(--theme-accent,#3478f6);font-size:10px;font-weight:750;}
+
+/* Keep the chat header and composer fixed while only messages scroll. */
+.aero-root .content.content-chat {display:flex;min-height:0;flex-direction:column;overflow:hidden;padding-bottom:24px;}
+.aero-root .content-chat .chat-page {flex:1;min-height:0;height:100%;max-height:none;grid-template-rows:minmax(0,1fr);}
+.aero-root .content-chat .chat-sidebar,.aero-root .content-chat .chat-conversation {min-height:0;}
+.aero-root .content-chat .chat-conversation {grid-template-rows:auto minmax(0,1fr) auto;}
+.aero-root .content-chat .chat-message-list {min-height:0;max-height:none;overscroll-behavior:contain;}
+@media(max-width:900px) {.aero-root .content.content-chat {padding-top:68px;padding-bottom:94px;}}
+@media(max-width:690px) {
+  .aero-root .content-chat .chat-page {display:flex;flex-direction:column;}
+  .aero-root .content-chat .chat-sidebar {flex:0 0 auto;height:min(220px,28vh);max-height:none;}
+  .aero-root .content-chat .chat-conversation {flex:1;min-height:0;height:auto;}
+}
