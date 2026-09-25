@@ -3652,7 +3652,10 @@ export default function RUMS() {
         if (found && found.username !== currentUser.username) chatTargets.add(found.username);
       }
       if (groupId) (group?.members || []).filter((u)=>u!==currentUser.username).forEach((u)=>chatTargets.add(u));
-      if (chatTargets.size) void commitPlazaPlus((data)=>({...data,activities:[...[...chatTargets].map((targetUser,i)=>({id:`act-${Date.now()}-chat-${i}`,type:'message',actor:currentUser.username,targetUser,text:`${currentUser.username} sent you a chat message`,timestamp:Date.now()})),...(data.activities||[])].slice(0,800)}));
+      if (chatTargets.size) {
+        const preview = text ? `${text.replace(/\s+/g, ' ').trim().slice(0, 140)}${image ? ' · Photo' : ''}` : 'Sent a photo';
+        void commitPlazaPlus((data)=>({...data,activities:[...[...chatTargets].map((targetUser,i)=>({id:`act-${Date.now()}-chat-${i}`,type:'message',actor:currentUser.username,targetUser,text:`${currentUser.username} sent you a chat message`,preview,timestamp:Date.now()})),...(data.activities||[])].slice(0,800)}));
+      }
       setChatDraft('');
       setChatImageDraft('');
       setChatReplyTo(null);

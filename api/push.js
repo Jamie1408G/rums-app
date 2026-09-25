@@ -75,7 +75,7 @@ export default async function handler(request, response) {
         if (!fresh) continue;
         const devices = await db.collection('push_devices').where('username', '==', activity.targetUser).get();
         const isChat = activity.type === 'message';
-        const payload = JSON.stringify({ title: isChat ? 'New chat message' : 'New on RUMS Plaza', body: isChat ? `${activity.actor} sent you a message` : activity.text || 'You have new activity.', url: isChat ? '/?notification=chat' : '/?notification=plazaPlus', tag: `rums-${id}` });
+        const payload = JSON.stringify({ title: isChat ? `Message from ${activity.actor}` : 'New on RUMS Plaza', body: isChat ? activity.preview || 'New chat message' : activity.text || 'You have new activity.', url: isChat ? '/?notification=chat' : '/?notification=plazaPlus', tag: `rums-${id}` });
         await Promise.all(devices.docs.map(async (device) => {
           const owner = users.find((user) => user.username === device.data().username);
           if (!owner || device.data().accountFingerprint !== accountFingerprint(owner)) { await device.ref.delete(); return; }
