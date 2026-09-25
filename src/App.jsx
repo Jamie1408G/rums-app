@@ -4104,17 +4104,17 @@ export default function RUMS() {
             <div className="space-choice-grid">
               <button type="button" className="space-choice-card rums4-choice" onClick={() => chooseRumsSpace('rums4')}>
                 <span className="space-choice-number">04</span>
-                <span className="space-choice-copy"><strong>RUMS 4</strong><small>The current archive</small><em>Project Lumina · older posts · existing community content</em></span>
+                <span className="space-choice-copy"><strong>RUMS 4</strong></span>
                 <span className="space-choice-arrow">→</span>
               </button>
               <button type="button" className="space-choice-card rums5-choice" onClick={() => chooseRumsSpace('rums5')}>
-                <span className="space-choice-number">05</span>
-                <span className="space-choice-copy"><strong>Creative</strong><small>The new era</small><em>Fresh posts · same features · no Project Lumina</em></span>
+                <span className="space-choice-number">✦</span>
+                <span className="space-choice-copy"><strong>Creative</strong></span>
                 <span className="space-choice-arrow">→</span>
               </button>
               <button type="button" className="space-choice-card projects-choice" onClick={() => void openProjectsDirectory()}>
                 <span className="space-choice-number">PR</span>
-                <span className="space-choice-copy"><strong>Projects</strong><small>Project directory</small><em>RUMS 4 projects · Creative projects · Outside RUMS</em></span>
+                <span className="space-choice-copy"><strong>Projects</strong></span>
                 <span className="space-choice-arrow">→</span>
               </button>
             </div>
