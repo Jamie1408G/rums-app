@@ -4341,3 +4341,76 @@ button,input,textarea { font:inherit; }
 .aero-root .announcement-editor-current {margin:14px 0 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere;}
 @media(max-width:900px) {.aero-root .site-announcement {top:72px;}}
 @media(max-width:600px) {.aero-root .site-announcement {top:70px;padding:12px;gap:9px;}.aero-root .site-announcement-icon {flex-basis:32px;width:32px;height:32px;}}
+
+/* Phone layout: clearer hierarchy, larger controls, and room for the actual content. */
+@media (max-width:760px) {
+  .aero-frame {height:100dvh;min-height:100dvh!important;grid-template-rows:auto minmax(0,1fr)!important;}
+  .aero-root .aero-header {display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;align-self:stretch;height:auto;min-height:0;gap:8px;margin:7px 10px 0;padding:10px 12px;border-radius:20px;}
+  .aero-root .aero-brand-version-switch {grid-column:1;grid-row:1;min-width:0!important;width:100%;}
+  .aero-root .universal-rums-switcher {max-width:100%;gap:4px;margin:0;padding:4px;}
+  .aero-root .universal-rums-switcher button {min-height:38px;height:38px;min-width:0;padding:0 9px;}
+  .aero-root .universal-rums-switcher button span {font-size:10px;letter-spacing:.02em;}
+  .aero-root .universal-rums-switcher button span::after {content:none;}
+  .aero-root .universal-rums-switcher button[data-space="rums5"] {min-width:0;}
+  .aero-root .universal-rums-switcher button[data-space="rums5"] span,.aero-root .universal-rums-switcher button[data-space="projects"] span {font-size:10px;}
+  .aero-root .aero-header-actions {grid-column:1;grid-row:2;display:flex;justify-content:space-between;gap:4px;width:100%;min-width:0;overflow-x:auto;scrollbar-width:none;}
+  .aero-root .aero-header-actions::-webkit-scrollbar {display:none;}
+  .aero-root .aero-header-actions .icon-btn {flex:0 0 44px;width:44px;height:44px;}
+  .aero-root .aero-header-actions .header-chat-button {display:none;}
+  .aero-root .aero-header-actions .profile-pill-with-new {display:flex;flex:0 1 auto;min-width:44px;max-width:118px;min-height:44px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .aero-root .aero-header-center {position:relative;inset:auto;transform:none;grid-column:1;grid-row:3;justify-self:stretch;width:100%;min-width:0;}
+  .aero-root .aero-header-center .feed-tabs {width:min(320px,100%);min-height:44px;margin:auto;}
+  .aero-root .content {min-height:0;overflow-x:hidden;padding:18px 14px calc(104px + env(safe-area-inset-bottom));}
+  .aero-root .content.content-plaza-plus {padding:16px 12px calc(104px + env(safe-area-inset-bottom));}
+  .aero-root .content.content-chat {padding:12px 10px calc(90px + env(safe-area-inset-bottom));}
+  .aero-root .bottom-nav {bottom:max(8px,env(safe-area-inset-bottom));width:min(450px,calc(100% - 16px));height:72px;padding:7px 5px;grid-template-columns:repeat(6,minmax(0,1fr));border-radius:23px;}
+  .aero-root .bottom-nav .nav-btn {width:100%;max-width:52px;min-height:48px;height:50px;padding:3px 1px;gap:3px;}
+  .aero-root .bottom-nav .nav-label {font-size:10px;font-weight:700;line-height:1.1;}
+  .aero-root .bottom-nav .nav-upload {width:48px;height:48px;}
+  .aero-root :is(.post-card,.update-card,.suggestion-card) {margin-bottom:14px;border-radius:20px;}
+  .aero-root .post-top {padding:15px 16px;}
+  .aero-root .post-caption {padding:10px 16px 16px;line-height:1.55;}
+  .aero-root .post-actions {display:flex;flex-wrap:wrap;gap:5px;padding:10px 12px;}
+  .aero-root .post-actions button {min-height:40px;}
+  .aero-root .comments-box {padding:0 14px 16px;}
+  .aero-root .section-heading {margin:4px 3px 13px;}
+  .aero-root .section-heading h2 {font-size:20px;}
+  .aero-root .community-hero {min-height:0;margin-bottom:18px;padding:22px 20px;gap:12px;}
+  .aero-root .hero-copy h1 {font-size:clamp(25px,7vw,32px);}
+  .aero-root .hero-copy p {font-size:14px;line-height:1.5;}
+  .aero-root :is(.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty) {min-width:0;padding:19px 16px;border-radius:21px;}
+  .aero-root :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input,.editor-grid input,.editor-grid textarea,.search-filter-row input,.search-filter-row select) {min-width:0;font-size:16px;}
+  .aero-root :is(.aero-input,.search-bar,.editor-grid input,.editor-grid select,.search-filter-row input,.search-filter-row select) {min-height:44px;}
+  .aero-root :is(.aero-btn,.modal-btn,.auth-form button,.project-create-actions button,.project-workspace-actions button,.announcement-editor-actions button) {min-height:44px;}
+  .aero-root .search-filter-row {grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+  .aero-root .search-filter-row > :first-child {grid-column:1/-1;}
+  .aero-root .plaza-plus-tabs {top:0;gap:6px;}
+  .aero-root .plaza-plus-tabs button {min-height:44px;padding:10px 14px;font-size:13px;}
+  .aero-root .plaza-plus-main > .plaza-plus-panel {padding:18px 16px;}
+  .aero-root .plaza-plus-main .plus-row {min-height:48px;}
+  .aero-root .chat-sidebar {height:min(170px,22vh);}
+  .aero-root .chat-user-list {max-height:90px;}
+  .aero-root .chat-message-list {overscroll-behavior:contain;}
+  .aero-root .chat-message-bubble {max-width:90%;font-size:14px;}
+  .aero-root .chat-composer textarea {min-height:48px;}
+  .aero-root .project-workspace {padding:12px 0 calc(100px + env(safe-area-inset-bottom));}
+  .aero-root .project-workspace-header,.aero-root .project-panel {padding:17px 15px;}
+  .aero-root .project-board-card-actions button {min-width:40px;min-height:40px;}
+  .aero-root .project-workspace-tabs button {min-height:44px;}
+  .aero-root .project-directory-card {min-height:112px;padding:17px;}
+  .aero-root .project-directory-card p,.aero-root .project-directory-card small {font-size:13px;line-height:1.45;}
+  .aero-frame > .projects-directory-page {height:100dvh;padding:20px 14px calc(32px + env(safe-area-inset-bottom));}
+  .aero-frame > .rums-space-chooser {min-height:100dvh;padding:72px 16px 28px;overflow-y:auto;}
+  .aero-frame > .rums-space-chooser .space-choice-card {min-height:96px;padding:16px;}
+  .aero-root .site-announcement {top:10px;width:calc(100vw - 20px);}
+  .aero-root[data-theme="standard"] :is(.aero-header,.bottom-nav) {background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(232,242,255,.94));border-color:#fff;}
+  .aero-root[data-theme="standard"] :is(.post-card,.update-card,.suggestion-card,.site-editor,.plaza-plus-panel) {background:linear-gradient(160deg,#fff,#f7fbff);border-color:#e0ebf8;}
+  .aero-root[data-theme="standard"] :is(.post-time,.switch-line,.field-label,.chat-thread-copy small) {color:#586c85;}
+}
+@media (max-width:390px) {
+  .aero-root .aero-header {margin-inline:6px;padding-inline:9px;}
+  .aero-root .content {padding-inline:11px;}
+  .aero-root .bottom-nav {width:calc(100% - 10px);}
+  .aero-root .bottom-nav .nav-label {font-size:9px;}
+  .aero-root .aero-header-actions .profile-pill-with-new {max-width:88px;}
+}
