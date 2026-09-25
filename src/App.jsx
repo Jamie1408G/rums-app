@@ -1889,6 +1889,7 @@ export default function RUMS() {
     if (!root || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let frame = 0;
     let phase = Math.max(scroller?.scrollTop || 0, window.scrollY || 0);
+    const chatScrollPositions = new WeakMap();
     const updateGlossMotion = () => {
       frame = 0;
       root.style.setProperty('--orb-a-x', `${Math.sin(phase / 90) * 24}px`);
@@ -1907,17 +1908,29 @@ export default function RUMS() {
       if (!frame) frame = window.requestAnimationFrame(updateGlossMotion);
     };
     const onWheel = (event) => {
+      // Chat has its own scrollers; their actual scroll distance is handled below.
+      if (event.target instanceof Element && event.target.closest('.chat-page')) return;
       phase += event.deltaY;
+      if (!frame) frame = window.requestAnimationFrame(updateGlossMotion);
+    };
+    const onChatScroll = (event) => {
+      const list = event.target;
+      if (!(list instanceof Element) || !list.matches('.chat-message-list,.chat-user-list')) return;
+      const previous = chatScrollPositions.get(list) ?? 0;
+      chatScrollPositions.set(list, list.scrollTop);
+      phase += (list.scrollTop - previous) * 0.06;
       if (!frame) frame = window.requestAnimationFrame(updateGlossMotion);
     };
     updateGlossMotion();
     scroller?.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('scroll', onScroll, { passive: true });
     root.addEventListener('wheel', onWheel, { passive: true });
+    root.addEventListener('scroll', onChatScroll, true);
     return () => {
       scroller?.removeEventListener('scroll', onScroll);
       window.removeEventListener('scroll', onScroll);
       root.removeEventListener('wheel', onWheel);
+      root.removeEventListener('scroll', onChatScroll, true);
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, [currentUser]);
