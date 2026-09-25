@@ -379,7 +379,8 @@ export default function RUMS() {
       const lastSeen = localStorage.getItem(UPDATE_SEEN_KEY);
       localStorage.setItem(UPDATE_SEEN_KEY, __RUMS_BUILD_ID__);
       if (pending?.version === __RUMS_BUILD_ID__ && pending.until > Date.now()) return pending.until;
-      if (lastSeen && lastSeen !== __RUMS_BUILD_ID__) {
+      // Include the first production visit: older builds never recorded a build ID.
+      if (lastSeen !== __RUMS_BUILD_ID__) {
         const until = Date.now() + UPDATE_SCREEN_MS;
         sessionStorage.setItem(UPDATE_SCREEN_KEY, JSON.stringify({ version: __RUMS_BUILD_ID__, until }));
         return until;
