@@ -374,6 +374,8 @@ export default function RUMS() {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   }, []);
   const [screen, setScreen] = useState('spaceSelect');
+  const [entryAuth, setEntryAuth] = useState(false);
+  const [entrySessionReady, setEntrySessionReady] = useState(false);
   const [rumsSpace, setRumsSpace] = useState(null);
   const [sharedPostRequest] = useState(() => {
     try {
@@ -1969,6 +1971,24 @@ export default function RUMS() {
   }
 
   useEffect(() => {
+    let cancelled = false;
+    Promise.all([safeGet(USERS_KEY, true), safeGet(SESSION_KEY, false)])
+      .then(([usersRecord, sessionRecord]) => {
+        if (cancelled) return;
+        const savedUsers = usersRecord ? JSON.parse(usersRecord.value) : [];
+        setUsers(Array.isArray(savedUsers) ? savedUsers : []);
+        if (sessionRecord) {
+          const savedSession = JSON.parse(sessionRecord.value);
+          const found = savedUsers.find((user) => user.username === savedSession?.username);
+          if (found) setCurrentUser(found);
+        }
+      })
+      .catch((error) => console.error('Could not restore Plaza session', error))
+      .finally(() => { if (!cancelled) setEntrySessionReady(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
     if (!sharedPostRequest || rumsSpace) return;
     void chooseRumsSpace(sharedPostRequest.space);
     // This runs only for a post permalink opened from outside the app.
@@ -2058,6 +2078,21 @@ export default function RUMS() {
     setFeedFilter('all');
     setTag('General');
     setNavStack([]);
+    setEntryAuth(false);
+    setScreen('spaceSelect');
+  }
+
+  function openEntryLogin() {
+    setEntryAuth(true);
+    setAuthMode('login');
+    setAuthForm({ username: '', password: '' });
+    setError('');
+    setScreen('login');
+  }
+
+  async function logoutFromEntrance() {
+    await handleLogout();
+    setEntryAuth(false);
     setScreen('spaceSelect');
   }
 
@@ -2725,10 +2760,10 @@ export default function RUMS() {
         setCurrentUser(newUser);
         await loadLastSeen(newUser.username, rumsSpace || 'rums4');
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: uname }), false);
-        setScreen('feed');
+        setScreen(entryAuth ? 'spaceSelect' : 'feed');
         setTutorialStep(0);
         setTutorialReturningUser(false);
-        setTutorialActive(true);
+        setTutorialActive(!entryAuth);
       } else {
         const found = users.find(
           (u) => u.username.toLowerCase() === uname.toLowerCase() && u.password === pass
@@ -2741,13 +2776,14 @@ export default function RUMS() {
         setCurrentUser(found);
         await loadLastSeen(found.username, rumsSpace || 'rums4');
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: found.username }), false);
-        setScreen('feed');
+        setScreen(entryAuth ? 'spaceSelect' : 'feed');
         if (Number(found.tutorialVersion || 0) < requiredTutorialVersionForUser(found)) {
           setTutorialStep(0);
           setTutorialReturningUser(true);
-          setTutorialActive(true);
+          setTutorialActive(!entryAuth);
         }
       }
+      setEntryAuth(false);
       setAuthForm({ username: '', password: '' });
     } catch (e) {
       console.error(e);
@@ -4240,6 +4276,9 @@ export default function RUMS() {
       <div className="aero-frame">
         {screen === 'spaceSelect' && (
           <section className="rums-space-chooser" aria-labelledby="rums-space-title">
+            <div className="entrance-account" aria-label="Account">
+              {!entrySessionReady ? <span className="entrance-account-loading">Checking account…</span> : currentUser ? <><span className="entrance-account-user">{avatarNode(currentUser.username, 26, 10)}<span>{currentUser.username}</span></span><button type="button" className="entrance-account-button" onClick={() => void logoutFromEntrance()}>Log out</button></> : <button type="button" className="entrance-account-button primary" onClick={openEntryLogin}>Log in</button>}
+            </div>
             <div className="space-chooser-mark">R</div>
             <span className="space-chooser-kicker">RUMS PLAZA</span>
             <h1 id="rums-space-title">Welcome to RUMS Plaza</h1>
@@ -4328,7 +4367,7 @@ export default function RUMS() {
           <div className="auth-wrap">
             <div className="auth-logo">R</div>
             <h1 className="auth-title">{activeSpace?.label || 'RUMS'}</h1>
-            <p className="auth-sub">{isProjectSpace ? `${activeProject?.name || 'This project'} is its own RUMS-style community space.` : isRums5 ? 'The new RUMS era — a fresh community feed with the same social features.' : "The server's photo feed — including the full Project Lumina archive and older posts."}</p>
+            <p className="auth-sub">{entryAuth ? 'Your account works across RUMS 4, Creative, and Projects.' : isProjectSpace ? `${activeProject?.name || 'This project'} is its own RUMS-style community space.` : isRums5 ? 'The new RUMS era — a fresh community feed with the same social features.' : "The server's photo feed — including the full Project Lumina archive and older posts."}</p>
             <button type="button" className="auth-space-switch" onClick={openRumsChooser}>← Choose a Plaza space</button>
             <form className="auth-form" onSubmit={handleAuth}>
               {error && <div className="error-pill">{error}</div>}

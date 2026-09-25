@@ -4213,3 +4213,14 @@ button,input,textarea { font:inherit; }
   .aero-root .project-overview-grid,.aero-root .project-board {grid-template-columns: 1fr;}
   .aero-root .project-panel {padding: 18px;}
 }
+
+/* Account controls on the first screen. */
+.aero-frame > .rums-space-chooser {position: relative;}
+.entrance-account {position:absolute;top:26px;right:clamp(20px,4vw,48px);display:flex;align-items:center;gap:10px;z-index:2;min-height:42px;color:var(--theme-text,#172033);}
+.entrance-account-user {display:flex;align-items:center;gap:9px;padding:5px 11px 5px 5px;border:1px solid var(--theme-border,#d9e6f2);border-radius:999px;background:var(--theme-surface,rgba(255,255,255,.72));box-shadow:var(--theme-soft-shadow,0 4px 14px #355c8416);font-size:14px;font-weight:750;max-width:min(42vw,240px);}
+.entrance-account-user > span:last-child {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.entrance-account-button {min-height:38px;padding:7px 15px;border:1px solid var(--theme-border,#d9e6f2);border-radius:999px;background:var(--theme-surface,rgba(255,255,255,.72));color:var(--theme-text,#172033);box-shadow:var(--theme-soft-shadow,0 4px 14px #355c8416);font:inherit;font-size:14px;font-weight:750;cursor:pointer;}
+.entrance-account-button.primary {background:var(--theme-accent,#3478f6);border-color:var(--theme-accent,#3478f6);color:var(--theme-accent-text,#fff);}
+.entrance-account-loading {font-size:13px;color:var(--theme-muted,#667085);}
+.aero-root[data-theme="liquidglass"] .entrance-account :is(.entrance-account-user,.entrance-account-button) {backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);border-color:rgba(255,255,255,.7);}
+@media(max-width:680px) {.entrance-account {top:14px;right:16px;gap:7px;}.entrance-account-user {max-width:40vw;}.entrance-account-button {padding:7px 11px;}.aero-frame > .rums-space-chooser .space-chooser-mark {margin-top:58px;}}
