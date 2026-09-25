@@ -4327,3 +4327,17 @@ button,input,textarea { font:inherit; }
   .aero-root .content-chat .chat-sidebar {flex:0 0 auto;height:min(220px,28vh);max-height:none;}
   .aero-root .content-chat .chat-conversation {flex:1;min-height:0;height:auto;}
 }
+
+/* Shared admin announcements above the current page. */
+.aero-root .site-announcement {position:fixed;top:82px;left:50%;z-index:5000;display:flex;align-items:flex-start;gap:13px;width:min(620px,calc(100vw - 28px));max-height:min(260px,45vh);padding:15px 17px;transform:translateX(-50%);border:1px solid var(--theme-border,rgba(255,255,255,.88));border-radius:20px;background:var(--theme-surface,rgba(247,251,255,.95));box-shadow:0 18px 48px rgba(36,72,120,.24),inset 0 1px rgba(255,255,255,.9);backdrop-filter:blur(26px) saturate(1.25);-webkit-backdrop-filter:blur(26px) saturate(1.25);color:var(--theme-text,#20334a);}
+.aero-root .site-announcement-icon {display:grid;flex:0 0 38px;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--theme-accent-soft,#e6f1ff);color:var(--theme-accent,#3478f6);}
+.aero-root .site-announcement-copy {min-width:0;flex:1;overflow-y:auto;max-height:210px;}
+.aero-root .site-announcement-copy strong {font-size:13px;}
+.aero-root .site-announcement-copy p {margin:5px 0 0;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+.aero-root .site-announcement-close {display:grid;flex:0 0 30px;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:9px;background:transparent;color:var(--theme-muted,#6e829b);cursor:pointer;}
+.aero-root .site-announcement-close:hover {background:var(--theme-accent-soft,#e6f1ff);}
+.aero-root .announcement-editor .caption-area {display:block;width:100%;min-height:95px;resize:vertical;}
+.aero-root .announcement-editor-actions {display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:12px;}
+.aero-root .announcement-editor-current {margin:14px 0 0;font-size:13px;line-height:1.5;overflow-wrap:anywhere;}
+@media(max-width:900px) {.aero-root .site-announcement {top:72px;}}
+@media(max-width:600px) {.aero-root .site-announcement {top:70px;padding:12px;gap:9px;}.aero-root .site-announcement-icon {flex-basis:32px;width:32px;height:32px;}}

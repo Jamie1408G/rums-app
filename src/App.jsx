@@ -139,6 +139,7 @@ const lastSeenKey = (username, space = 'rums4') => space === 'rums5' ? `rums5-la
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
 const CUSTOM_EMOJIS_KEY = 'rums-custom-emojis';
 const CHAT_MESSAGES_KEY = 'rums-chat-messages';
+const SITE_ANNOUNCEMENT_KEY = 'rums-site-announcement';
 const CHAT_ROOM_ID = 'plaza';
 const chatReadKey = (username) => `rums-chat-read-${username}`;
 const chatSeenKey = (reader, sender) => `rums-chat-seen-${reader}-${sender}`;
@@ -452,6 +453,10 @@ export default function RUMS() {
   const [posts, setPosts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [updates, setUpdates] = useState([]);
+  const [siteAnnouncement, setSiteAnnouncement] = useState(null);
+  const [announcementDraft, setAnnouncementDraft] = useState('');
+  const [announcementBusy, setAnnouncementBusy] = useState(false);
+  const [dismissedAnnouncement, setDismissedAnnouncement] = useState({ username: '', id: '' });
   const [chatMessages, setChatMessages] = useState([]);
   const [chatReadState, setChatReadState] = useState({});
   const [chatSeenReceipt, setChatSeenReceipt] = useState({ threadId: '', id: '' });
@@ -608,6 +613,28 @@ export default function RUMS() {
   const lastTypingWriteRef = useRef({});
   const [rumsVersionDragging, setRumsVersionDragging] = useState(false);
   const activeStorageKeys = storageKeysForSpace(rumsSpace || 'rums4');
+
+  useEffect(() => {
+    let stopped = false;
+    const loadAnnouncement = async () => {
+      try {
+        const record = await safeGet(SITE_ANNOUNCEMENT_KEY, true);
+        if (stopped) return;
+        const parsed = record ? JSON.parse(record.value) : null;
+        setSiteAnnouncement(parsed?.id && parsed?.text ? parsed : null);
+      } catch (error) { console.error('Could not load site announcement', error); }
+    };
+    void loadAnnouncement();
+    const timer = window.setInterval(loadAnnouncement, 5000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, []);
+
+  useEffect(() => {
+    const username = currentUser?.username || 'guest';
+    try {
+      setDismissedAnnouncement({ username, id: localStorage.getItem(`rums-announcement-dismissed-${username}`) || '' });
+    } catch { setDismissedAnnouncement({ username, id: '' }); }
+  }, [currentUser?.username]);
   const isRums5 = rumsSpace === 'rums5';
   const isProjectSpace = isProjectSpaceId(rumsSpace);
   const activeProject = isProjectSpace ? (projectRecord?.id === projectIdFromSpace(rumsSpace) ? projectRecord : projectDirectoryProjects.find((project) => project.id === projectIdFromSpace(rumsSpace)) || (plazaPlus.projects || []).find((project) => project.id === projectIdFromSpace(rumsSpace))) : null;
@@ -3859,6 +3886,37 @@ export default function RUMS() {
     setUpdateBusy(false);
   }
 
+  async function publishAnnouncement() {
+    if (!currentUser?.isAdmin || announcementBusy) return;
+    const text = announcementDraft.trim().slice(0, 500);
+    if (!text) return;
+    setAnnouncementBusy(true);
+    try {
+      const announcement = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, text, author: currentUser.username, timestamp: Date.now() };
+      await window.storage.set(SITE_ANNOUNCEMENT_KEY, JSON.stringify(announcement), true);
+      setSiteAnnouncement(announcement);
+      setAnnouncementDraft('');
+    } catch (error) { console.error(error); setError('Could not publish the announcement. Try again.'); }
+    finally { setAnnouncementBusy(false); }
+  }
+
+  async function clearAnnouncement() {
+    if (!currentUser?.isAdmin || announcementBusy) return;
+    setAnnouncementBusy(true);
+    try {
+      await window.storage.delete(SITE_ANNOUNCEMENT_KEY, true);
+      setSiteAnnouncement(null);
+    } catch (error) { console.error(error); setError('Could not clear the announcement. Try again.'); }
+    finally { setAnnouncementBusy(false); }
+  }
+
+  function dismissAnnouncement() {
+    if (!siteAnnouncement) return;
+    const username = currentUser?.username || 'guest';
+    setDismissedAnnouncement({ username, id: siteAnnouncement.id });
+    try { localStorage.setItem(`rums-announcement-dismissed-${username}`, siteAnnouncement.id); } catch { /* session dismissal still works */ }
+  }
+
   async function deleteUpdate(id) {
     if (!currentUser?.isAdmin) return;
     await saveUpdates(updates.filter((u) => u.id !== id));
@@ -4410,6 +4468,13 @@ export default function RUMS() {
   return (
     <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite"><div className="site-update-card"><div className="site-update-mark" aria-hidden="true">R</div><span className="site-update-kicker">RUMS PLAZA</span><h1>Updating the website</h1><p>Loading the latest version. You’ll be back in a moment.</p><div className="site-update-loader" aria-hidden="true"><span /></div></div></div>}
+      {siteAnnouncement && !(dismissedAnnouncement.username === (currentUser?.username || 'guest') && dismissedAnnouncement.id === siteAnnouncement.id) && (
+        <aside className="site-announcement" role="status" aria-live="polite">
+          <span className="site-announcement-icon"><Megaphone size={19} /></span>
+          <div className="site-announcement-copy"><strong>Announcement from {siteAnnouncement.author || 'RUMS Plaza'}</strong><p>{siteAnnouncement.text}</p></div>
+          <button type="button" className="site-announcement-close" onClick={dismissAnnouncement} aria-label="Dismiss announcement"><X size={18} /></button>
+        </aside>
+      )}
       <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
         <defs>
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
@@ -5344,6 +5409,16 @@ export default function RUMS() {
 
               {screen === 'admin' && canEditSite && (
                 <div className="admin-wrap">
+                  {currentUser.isAdmin && <section className="site-editor announcement-editor">
+                    <div className="admin-section-title"><Megaphone size={16} /> Site-wide announcement</div>
+                    <p className="editor-intro">Publish a banner across RUMS Plaza. Everyone with the site open will see it within a few seconds.</p>
+                    <textarea className="caption-area" value={announcementDraft} maxLength={500} onChange={(event) => setAnnouncementDraft(event.target.value)} placeholder="Write an announcement for everyone…" />
+                    <div className="announcement-editor-actions">
+                      <button className="aero-btn" type="button" onClick={() => void publishAnnouncement()} disabled={announcementBusy || !announcementDraft.trim()}>{announcementBusy ? 'Saving…' : 'Publish announcement'}</button>
+                      {siteAnnouncement && <button className="pill pill-btn" type="button" onClick={() => void clearAnnouncement()} disabled={announcementBusy}>Clear current announcement</button>}
+                    </div>
+                    {siteAnnouncement && <p className="announcement-editor-current"><b>Current:</b> {siteAnnouncement.text}</p>}
+                  </section>}
                   <section className="site-editor">
                     <div className="admin-section-title"><Pencil size={16} /> Site settings <span>{siteConfigStatus}</span></div>
                     <p className="editor-intro">Changes publish to everyone. Jamie is always treated as the owner.</p>
