@@ -4653,11 +4653,13 @@ export default function RUMS() {
               {screen === 'feed' && !isProjectSpace && <div className="aero-header-center">{renderFeedTabs()}</div>}
               <button className="mobile-header-menu-button" type="button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Open site menu" aria-expanded={mobileMenuOpen}><Menu size={21} />{notificationsForCurrentUser().length > 0 && <span className="mobile-header-menu-dot" />}</button>
               {mobileMenuOpen && <nav className="mobile-header-menu" aria-label="Site menu">
-                <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('plazaPlus'); setPlusTab('notifications'); }}><Sparkles size={17} /> Plaza+ and notifications {notificationsForCurrentUser().length > 0 && <b>{notificationsForCurrentUser().length}</b>}</button>
-                {siteConfig.showDiscover && <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('search'); }}><Search size={17} /> Discover</button>}
-                <button type="button" onClick={() => { setMobileMenuOpen(false); openOwnProfile(); }}><UserIcon size={17} /> My profile</button>
-                {isOwner && <button type="button" onClick={() => { setMobileMenuOpen(false); setEditMode((editing) => !editing); }}><Pencil size={17} /> {editMode ? 'Finish editing' : 'Edit website'}</button>}
-                <button type="button" onClick={() => { setMobileMenuOpen(false); void handleLogout(); }}><LogOut size={17} /> Log out</button>
+                <div className="mobile-menu-heading"><span className="mobile-menu-mark">✦</span><span>RUMS PLAZA<small>Quick access</small></span></div>
+                {hasLumina && !isProjectSpace && <div className="mobile-menu-feed"><span className="mobile-menu-caption">COMMUNITY FEED</span><div className="mobile-menu-feed-options"><button type="button" className={feedFilter === 'all' && screen === 'feed' ? 'active' : ''} onClick={() => { setFeedFilter('all'); setScreen('feed'); setMobileMenuOpen(false); }}>All RUMS</button><button type="button" className={feedFilter === 'lumina' && screen === 'feed' ? 'active' : ''} onClick={() => { setFeedFilter('lumina'); setScreen('feed'); setMobileMenuOpen(false); }}><Droplet size={13} /> Lumina</button></div></div>}
+                <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('plazaPlus'); setPlusTab('notifications'); }}><span className="mobile-menu-icon"><Sparkles size={17} /></span> Plaza+ and notifications {notificationsForCurrentUser().length > 0 && <b>{notificationsForCurrentUser().length}</b>}</button>
+                {siteConfig.showDiscover && <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('search'); }}><span className="mobile-menu-icon"><Search size={17} /></span> Discover</button>}
+                <button type="button" onClick={() => { setMobileMenuOpen(false); openOwnProfile(); }}><span className="mobile-menu-icon"><UserIcon size={17} /></span> My profile</button>
+                {isOwner && <button type="button" onClick={() => { setMobileMenuOpen(false); setEditMode((editing) => !editing); }}><span className="mobile-menu-icon"><Pencil size={17} /></span> {editMode ? 'Finish editing' : 'Edit website'}</button>}
+                <button type="button" onClick={() => { setMobileMenuOpen(false); void handleLogout(); }}><span className="mobile-menu-icon"><LogOut size={17} /></span> Log out</button>
               </nav>}
               <div className="aero-header-actions">
                 {editMode && isOwner ? <button className="finish-editing-button" onClick={() => setEditMode(false)}><Check size={17} /> Finish editing</button> : <>
