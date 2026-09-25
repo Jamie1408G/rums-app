@@ -464,6 +464,7 @@ export default function RUMS() {
   const [chatDraft, setChatDraft] = useState('');
   const [chatImageDraft, setChatImageDraft] = useState('');
   const [chatSearch, setChatSearch] = useState('');
+  const [chatListOpen, setChatListOpen] = useState(false);
   const [chatBusy, setChatBusy] = useState(false);
   const [chatImageBusy, setChatImageBusy] = useState(false);
   const [plazaPlus, setPlazaPlus] = useState(DEFAULT_PLAZA_PLUS);
@@ -588,6 +589,7 @@ export default function RUMS() {
   const avatarInputRef = useRef(null);
   const chatImageInputRef = useRef(null);
   const chatMessageListRef = useRef(null);
+  const chatPinnedRef = useRef(true);
   const rootRef = useRef(null);
   const siteConfigRef = useRef(DEFAULT_SITE_CONFIG);
   const spaceLoadTokenRef = useRef(0);
@@ -1490,10 +1492,12 @@ export default function RUMS() {
     if (screen !== 'chat') return;
     const id = window.requestAnimationFrame(() => {
       const list = chatMessageListRef.current;
-      if (list) list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
+      if (list && chatPinnedRef.current) list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
     });
     return () => window.cancelAnimationFrame(id);
   }, [screen, activeChat, chatMessages.length]);
+
+  useEffect(() => { chatPinnedRef.current = true; }, [activeChat]);
 
   // A receipt is shared per DM direction, so the sender can see it on another device.
   useEffect(() => {
@@ -4466,7 +4470,7 @@ export default function RUMS() {
   const tutorialCardAtTop = Boolean(tutorialRect && tutorialRect.top > window.innerHeight * 0.55);
 
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite"><div className="site-update-card"><div className="site-update-mark" aria-hidden="true">R</div><span className="site-update-kicker">RUMS PLAZA</span><h1>Updating the website</h1><p>Loading the latest version. You’ll be back in a moment.</p><div className="site-update-loader" aria-hidden="true"><span /></div></div></div>}
       {siteAnnouncement && !(dismissedAnnouncement.username === (currentUser?.username || 'guest') && dismissedAnnouncement.id === siteAnnouncement.id) && (
         <aside className="site-announcement" role="status" aria-live="polite">
@@ -4800,10 +4804,11 @@ export default function RUMS() {
 
               {screen === 'chat' && (
                 <div className="chat-page" data-tutorial="chat-page">
-                  <aside className="chat-sidebar" aria-label="Conversations">
+                  <aside className={`chat-sidebar ${chatListOpen ? 'mobile-open' : ''}`} aria-label="Conversations" onClickCapture={(event) => { if (event.target instanceof Element && event.target.closest('.chat-thread-button')) setChatListOpen(false); }}>
                     <div className="chat-sidebar-heading">
                       <div><span className="eyebrow">RUMS PLAZA</span><h2>Chat</h2></div>
                       <span className="chat-live-pill"><span /> live</span>
+                      <button className="chat-mobile-close" type="button" onClick={() => setChatListOpen(false)} aria-label="Close conversations"><X size={18} /></button>
                     </div>
                     <button className={`chat-thread-button chat-room-button ${activeChat === 'plaza' ? 'active' : ''}`} onClick={() => setActiveChat('plaza')}>
                       <span className="chat-thread-avatar plaza-chat-avatar"><MessageCircle size={18} /></span>
@@ -4847,6 +4852,7 @@ export default function RUMS() {
 
                   <section className="chat-conversation" aria-label={activeChatLabel()}>
                     <header className="chat-conversation-header">
+                      <button className="chat-mobile-conversations" type="button" onClick={() => setChatListOpen((open) => !open)} aria-label="Choose conversation"><MessageCircle size={18} /><span>Chats</span></button>
                       <div className="chat-conversation-identity">
                         {activeChat === 'plaza' ? <span className="chat-header-avatar plaza-chat-avatar"><MessageCircle size={20} /></span> : <span className="chat-header-avatar">{avatarNode(activeChatLabel(), 38, 13)}</span>}
                         <div><strong>{activeChatLabel()}</strong><small>{activeChat === 'plaza' ? 'Shared across RUMS 4, Creative and Projects' : 'Direct message'}</small></div>
@@ -4858,7 +4864,7 @@ export default function RUMS() {
                     </header>
                     {chatMediaOpen && <div className="chat-media-gallery">{chatMessagesForThread(activeChat).filter((m) => m.image).map((m) => <button key={m.id} onClick={() => window.open(m.image, '_blank', 'noopener,noreferrer')}><img src={m.image} alt={`Shared by ${m.sender}`} /></button>)}{chatMessagesForThread(activeChat).filter((m) => m.image).length === 0 && <small>No shared images in this conversation yet.</small>}</div>}
 
-                    <div className="chat-message-list" ref={chatMessageListRef}>
+                    <div className="chat-message-list" ref={chatMessageListRef} onScroll={(event) => { const list = event.currentTarget; chatPinnedRef.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80; }}>
                       {chatMessagesForThread(activeChat).length === 0 ? (
                         <div className="chat-empty"><span className="plaza-chat-avatar"><MessageCircle size={22} /></span><h3>{activeChat === 'plaza' ? 'Start the Plaza Chat' : `Say hi to ${activeChatLabel()}`}</h3><p>{activeChat === 'plaza' ? 'Messages here are visible to everyone using RUMS Plaza.' : 'There are no messages in this conversation yet.'}</p></div>
                       ) : chatMessagesForThread(activeChat).map((message, index, list) => {
