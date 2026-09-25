@@ -4484,3 +4484,26 @@ button,input,textarea { font:inherit; }
   .aero-root.screen-chat .universal-rums-switcher button span::after {content:none;}
   .aero-root.screen-chat .universal-rums-switcher button[data-space="rums5"] span,.aero-root.screen-chat .universal-rums-switcher button[data-space="projects"] span {font-size:10px;}
 }
+
+/* Post conversations use the same soft glass surfaces and accent as Plaza. */
+.aero-root .post-actions .post-react-btn.active {color:var(--theme-accent,var(--site-accent,#3478f6));background:var(--theme-accent-soft,#eaf4ff);}
+.aero-root .post-actions .post-react-btn > span {font-size:22px;line-height:14px;}
+.aero-root .comments-box {margin:0 14px 15px;padding:16px!important;border:1px solid var(--theme-border,#dce8f5);border-radius:18px;background:var(--theme-surface,rgba(255,255,255,.68));color:var(--theme-text,#314763);}
+.aero-root .comments-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;font-size:14px;}
+.aero-root .comments-heading span,.aero-root .comments-empty {color:var(--theme-muted,#788aa1);font-size:12px;}
+.aero-root .comment-thread {margin-bottom:14px;}
+.aero-root .comment-row {display:flex;justify-content:flex-start;align-items:flex-start;gap:9px;margin:0 0 9px;}
+.aero-root .comment-row.comment-reply {margin-left:37px;}
+.aero-root .comment-avatar {flex:0 0 auto;}
+.aero-root .comment-content {min-width:0;flex:1;}
+.aero-root .comment-bubble {width:fit-content;max-width:100%;padding:9px 12px;border:1px solid var(--theme-border,#dce8f5);border-radius:14px;background:var(--theme-accent-soft,#f3f7ff);overflow-wrap:anywhere;}
+.aero-root .comment-bubble b {display:block;margin-bottom:3px;font-size:12px;}
+.aero-root .comment-bubble .comment-text {font-size:13px;line-height:1.45;}
+.aero-root .comment-actions {display:flex;align-items:center;gap:9px;margin:4px 0 0 8px;color:var(--theme-muted,#788aa1);font-size:11px;}
+.aero-root .comment-actions button {display:inline-flex;align-items:center;gap:3px;padding:2px 3px;border:0;border-radius:7px;background:transparent;color:inherit;font-size:11px;font-weight:700;cursor:pointer;}
+.aero-root .comment-actions button:hover,.aero-root .comment-actions button.liked {color:var(--theme-accent,var(--site-accent,#3478f6));}
+.aero-root .comment-reply-context {display:flex;align-items:center;gap:5px;margin:0 0 8px;padding:7px 10px;border-radius:10px;background:var(--theme-accent-soft,#eaf4ff);font-size:12px;}
+.aero-root .comment-reply-context button {display:grid;place-items:center;margin-left:auto;border:0;background:transparent;color:inherit;cursor:pointer;}
+.aero-root .comment-input-row {display:flex;align-items:center;gap:8px;}
+.aero-root .comment-input-row input {min-width:0;flex:1;}
+@media (max-width:760px) {.aero-root .comments-box {margin:0 9px 12px;padding:13px!important;}.aero-root .comment-row.comment-reply {margin-left:24px;}}

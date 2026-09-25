@@ -526,6 +526,7 @@ export default function RUMS() {
   const [caption, setCaption] = useState('');
   const [tag, setTag] = useState('General');
   const [commentDrafts, setCommentDrafts] = useState({});
+  const [commentReplyTo, setCommentReplyTo] = useState({});
   const [openComments, setOpenComments] = useState({});
   const [feedFilter, setFeedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -3141,7 +3142,7 @@ export default function RUMS() {
   }
 
   function canReactToPost(post, reactionContext = 'default') {
-    return Boolean(post) && (post.tag !== 'Lumina' || reactionContext === 'luminaFeed');
+    return Boolean(post);
   }
 
   async function togglePostReaction(postId, emoji, reactionContext = 'default') {
@@ -3331,6 +3332,7 @@ export default function RUMS() {
       text,
       timestamp: Date.now(),
       likes: [],
+      ...(commentReplyTo[postId] ? { parentId: commentReplyTo[postId] } : {}),
     };
     const next = posts.map((p) =>
       p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p
@@ -3338,14 +3340,16 @@ export default function RUMS() {
     await savePosts(next);
     const post = posts.find((p) => p.id === postId);
     const mentioned = [...new Set((text.match(/@[A-Za-z0-9_]+/g) || []).map((m) => m.slice(1)).filter((name) => users.some((u) => u.username.toLowerCase() === name.toLowerCase())))];
-    const targets = new Set([...(post?.username && post.username !== currentUser.username ? [post.username] : []), ...mentioned.filter((name) => name !== currentUser.username)]);
+    const repliedTo = post?.comments?.find((comment) => comment.id === commentReplyTo[postId]);
+    const targets = new Set([...(post?.username && post.username !== currentUser.username ? [post.username] : []), ...(repliedTo?.username && repliedTo.username !== currentUser.username ? [repliedTo.username] : []), ...mentioned.filter((name) => name !== currentUser.username)]);
     if (targets.size) void commitPlazaPlus((data) => ({ ...data, activities: [...[...targets].map((targetUser, i) => ({ id:`act-${Date.now()}-${i}-${Math.random().toString(36).slice(2,5)}`, type:mentioned.some((m)=>m.toLowerCase()===targetUser.toLowerCase())?'mention':'comment', actor:currentUser.username, targetUser, postId, text:mentioned.some((m)=>m.toLowerCase()===targetUser.toLowerCase()) ? `${currentUser.username} mentioned you in a comment` : `${currentUser.username} commented on your post`, timestamp:Date.now() })), ...(data.activities||[])].slice(0,800) }));
     setCommentDrafts((d) => ({ ...d, [postId]: '' }));
+    setCommentReplyTo((d) => ({ ...d, [postId]: null }));
   }
 
   async function deleteComment(postId, commentId) {
     const next = posts.map((p) =>
-      p.id === postId ? { ...p, comments: p.comments.filter((c) => c.id !== commentId) } : p
+      p.id === postId ? { ...p, comments: p.comments.filter((c) => c.id !== commentId && c.parentId !== commentId) } : p
     );
     await savePosts(next);
   }
@@ -4338,6 +4342,21 @@ export default function RUMS() {
   function renderPost(post, { reactionContext = 'default', newPageKey = null } = {}) {
     const liked = post.likes.includes(currentUser.username);
     const showComments = !!openComments[post.id];
+    const postComments = post.comments || [];
+    const startReply = (comment) => {
+      setOpenComments((open) => ({ ...open, [post.id]: true }));
+      setCommentReplyTo((replies) => ({ ...replies, [post.id]: comment.id }));
+      commentInputRefs.current[post.id]?.focus();
+    };
+    const renderComment = (c, reply = false) => {
+      const cLiked = (c.likes || []).includes(currentUser.username);
+      return <div className={`comment-row ${reply ? 'comment-reply' : ''}`} key={c.id}>
+        <div className="comment-avatar clickable-row" onClick={() => openProfile(c.username)}>{avatarNode(c.username, reply ? 25 : 30, 10)}</div>
+        <div className="comment-content"><div className="comment-bubble"><b className="clickable-text" onClick={() => openProfile(c.username)}>{c.username}</b><div className="comment-text">{renderCommentText(c.text)}</div></div>
+          <div className="comment-actions"><span>{timeAgo(c.timestamp)}</span><button className={cLiked ? 'liked' : ''} onClick={() => toggleCommentLike(post.id, c.id)} aria-label={`Like ${c.username}'s comment`}><Heart size={13} fill={cLiked ? 'currentColor' : 'none'} /> {(c.likes || []).length || 'Like'}</button><button onClick={() => startReply(reply ? postComments.find((parent) => parent.id === c.parentId) || c : c)}>Reply</button>{canManageComment(c) && <button className="comment-del-btn" onClick={() => deleteComment(post.id, c.id)} aria-label="Delete comment"><Trash2 size={13} /></button>}</div>
+        </div>
+      </div>;
+    };
     return (
       <div className="post-card" data-tutorial="post-card" data-edit-box-id={`post:${post.id}`} data-session-new-key={newPageKey ? sessionNewKey(newPageKey, 'post', post.id) : undefined} key={post.id}>
         <div className="post-top">
@@ -4369,24 +4388,24 @@ export default function RUMS() {
           <div className="post-sheen" />
         </div>
         <div className="post-actions">
-          <button className={`like-btn ${liked ? 'liked' : ''}`} onClick={() => toggleLike(post.id)}>
+          <button className={`like-btn ${liked ? 'liked' : ''}`} onClick={() => toggleLike(post.id)} aria-label={liked ? 'Unlike post' : 'Like post'}>
             <Heart size={19} fill={liked ? '#e0546b' : 'none'} />
-            {post.likes.length > 0 ? post.likes.length : ''}
+            {post.likes.length > 0 ? post.likes.length : 'Like'}
           </button>
           <button
             className="comment-btn"
             onClick={() => setOpenComments((o) => ({ ...o, [post.id]: !o[post.id] }))}
           >
             <MessageCircle size={18} />
-            {post.comments.length > 0 ? post.comments.length : ''}
+            {postComments.length > 0 ? postComments.length : 'Comments'}
           </button>
+          <button className={`comment-btn post-react-btn ${reactionMenus[`post:${post.id}`] ? 'active' : ''}`} onClick={() => toggleReactionMenu(`post:${post.id}`)} aria-label="React to post"><span aria-hidden="true">☺</span> React</button>
           <button className="comment-btn" onClick={() => sharePost(post)}>
             {shareStatus[post.id] ? <Check size={17} color="#0fb8a6" /> : <Share2 size={17} />}
             {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
           </button>
           <button className={`comment-btn bookmark-btn ${bookmarkedPosts().includes(post.id) ? 'active' : ''}`} onClick={() => toggleBookmark(post.id)} title="Save post">{bookmarkedPosts().includes(post.id) ? '★' : '☆'}</button>
           {post.username === currentUser.username && <button className={`comment-btn pin-btn ${plusProfile().pinnedPostIds?.includes(post.id) ? 'active' : ''}`} onClick={() => togglePinnedPost(post.id)} title="Pin to profile">📌</button>}
-          {renderReactionAddButton(post, 'post', '', reactionContext)}
         </div>
         {renderReactionBar(post, 'post', reactionContext)}
         {post.caption && (
@@ -4403,29 +4422,11 @@ export default function RUMS() {
         {hashtagsIn(post.caption || '').length > 0 && <div className="post-hashtags">{hashtagsIn(post.caption).map((hash)=><button key={hash} onClick={()=>{setSearchQuery(hash);setScreen('search');}}>{hash}</button>)}</div>}
         {showComments && (
           <div className="comments-box">
-            {post.comments.map((c) => {
-              const cLiked = (c.likes || []).includes(currentUser.username);
-              return (
-                <div className="comment-row" key={c.id}>
-                  <div className="comment-text">
-                    <b className="clickable-text" onClick={() => openProfile(c.username)}>{c.username}</b>
-                    {renderCommentText(c.text)}
-                  </div>
-                  <div className="comment-actions">
-                    <button className={`comment-like-btn ${cLiked ? 'liked' : ''}`} onClick={() => toggleCommentLike(post.id, c.id)}>
-                      <Heart size={12} fill={cLiked ? '#e0546b' : 'none'} />
-                      {(c.likes || []).length > 0 ? c.likes.length : ''}
-                    </button>
-                    {canManageComment(c) && (
-                      <button className="comment-del-btn" onClick={() => deleteComment(post.id, c.id)}>
-                        <Trash2 size={12} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            <div className="comments-heading"><strong>Conversation</strong><span>{postComments.length} {postComments.length === 1 ? 'comment' : 'comments'}</span></div>
+            {postComments.length === 0 && <p className="comments-empty">Start the conversation.</p>}
+            {postComments.filter((c) => !c.parentId || !postComments.some((parent) => parent.id === c.parentId)).map((c) => <div className="comment-thread" key={c.id}>{renderComment(c)}{postComments.filter((reply) => reply.parentId === c.id).map((reply) => renderComment(reply, true))}</div>)}
             <div className="comment-input-wrap">
+              {commentReplyTo[post.id] && <div className="comment-reply-context">Replying to <b>{postComments.find((c) => c.id === commentReplyTo[post.id])?.username}</b><button onClick={() => setCommentReplyTo((replies) => ({ ...replies, [post.id]: null }))} aria-label="Cancel reply"><X size={14} /></button></div>}
               {mention && mention.postId === post.id && mentionMatches.length > 0 && (
                 <div className="mention-dropdown">
                   {mentionMatches.map((u) => (
@@ -4443,6 +4444,7 @@ export default function RUMS() {
                 </div>
               )}
               <div className="comment-input-row">
+                {avatarNode(currentUser.username, 30, 10)}
                 <input
                   ref={(el) => { commentInputRefs.current[post.id] = el; }}
                   placeholder="Add a comment… @ to mention"
