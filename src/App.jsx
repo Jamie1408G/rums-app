@@ -170,6 +170,15 @@ function spotifyEmbedFromText(text = '') {
   return null;
 }
 
+
+function stripSpotifyLinks(text = '') {
+  return String(text)
+    .replace(/https?:\/\/open\.spotify\.com\/(?:intl-[A-Za-z-]+\/)?(?:track|album|playlist|artist|episode|show|audiobook)\/[A-Za-z0-9]+(?:\?[^\s<>"']*)?/gi, '')
+    .replace(/\[[^\]]*\]\(\s*\)/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function SpotifyMessageEmbed({ text }) {
   const spotify = spotifyEmbedFromText(text);
   if (!spotify) return null;
@@ -5049,7 +5058,7 @@ export default function RUMS() {
                               {message.replyTo && <div className="chat-reply-quote"><b>{message.replyTo.sender}</b><span>{message.replyTo.text || 'Image'}</span></div>}
                               {message.image && <button className="chat-message-image-button" onClick={() => window.open(message.image, '_blank', 'noopener,noreferrer')} title="Open image"><img className="chat-message-image" src={message.image} alt={message.text ? `Image sent by ${message.sender}` : `Chat image from ${message.sender}`} loading="lazy" /></button>}
                               {message.text && <>
-                                <div className="chat-message-text">{message.text}</div>
+                                {stripSpotifyLinks(message.text) && <div className="chat-message-text">{stripSpotifyLinks(message.text)}</div>}
                                 <SpotifyMessageEmbed text={message.text} />
                               </>}
                             </div>

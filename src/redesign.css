@@ -4538,3 +4538,30 @@ button,input,textarea { font:inherit; }
     min-width:250px;
   }
 }
+
+
+/* Spotify messages: never show the original Spotify URL */
+.chat-message-text a[href*="open.spotify.com"],
+.chat-message a[href*="open.spotify.com"],
+.chat-bubble a[href*="open.spotify.com"] {
+  display:none !important;
+}
+
+/* Spotify embeds must fit completely inside the message */
+.chat-spotify-embed {
+  box-sizing:border-box !important;
+  display:block !important;
+  width:min(100%, 510px) !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  flex:0 0 auto !important;
+}
+.chat-spotify-embed iframe {
+  box-sizing:border-box !important;
+  display:block !important;
+  width:100% !important;
+  max-width:100% !important;
+  min-width:0 !important;
+  border:0 !important;
+}
