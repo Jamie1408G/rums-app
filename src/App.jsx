@@ -5050,7 +5050,10 @@ export default function RUMS() {
                         const grouped = previous && previous.sender === message.sender && message.timestamp - previous.timestamp < 5 * 60 * 1000;
                         const seenIndex = chatSeenReceipt.threadId === activeChat ? list.findIndex((item) => item.id === chatSeenReceipt.id) : -1;
                         const showSeen = own && activeChat.startsWith('dm:') && seenIndex >= index && !list.slice(index + 1).some((item) => item.sender === currentUser.username);
-                        return <div key={message.id} className={`chat-message ${own ? 'own' : ''} ${grouped ? 'grouped' : ''}`}>
+                        const spotifyEmbed = spotifyEmbedFromText(message.text || '');
+                        const spotifyVisibleText = stripSpotifyLinks(message.text || '');
+                        const spotifyOnly = !!spotifyEmbed && !spotifyVisibleText && !message.image && !message.replyTo;
+                        return <div key={message.id} className={`chat-message ${own ? 'own' : ''} ${grouped ? 'grouped' : ''} ${spotifyEmbed ? 'has-spotify' : ''} ${spotifyOnly ? 'spotify-only' : ''}`}>
                           {!grouped && <button className="chat-message-avatar" onClick={() => openProfile(message.sender)} aria-label={`Open ${message.sender}'s profile`}>{avatarNode(message.sender, 32, 11)}</button>}
                           <div className="chat-message-main">
                             {!grouped && <div className="chat-message-meta"><button onClick={() => openProfile(message.sender)}>{message.sender}</button><span>{timeAgo(message.timestamp)}</span></div>}
@@ -5058,8 +5061,8 @@ export default function RUMS() {
                               {message.replyTo && <div className="chat-reply-quote"><b>{message.replyTo.sender}</b><span>{message.replyTo.text || 'Image'}</span></div>}
                               {message.image && <button className="chat-message-image-button" onClick={() => window.open(message.image, '_blank', 'noopener,noreferrer')} title="Open image"><img className="chat-message-image" src={message.image} alt={message.text ? `Image sent by ${message.sender}` : `Chat image from ${message.sender}`} loading="lazy" /></button>}
                               {message.text && <>
-                                {stripSpotifyLinks(message.text) && <div className="chat-message-text">{stripSpotifyLinks(message.text)}</div>}
-                                <SpotifyMessageEmbed text={message.text} />
+                                {spotifyVisibleText && <div className="chat-message-text">{spotifyVisibleText}</div>}
+                                {spotifyEmbed && <SpotifyMessageEmbed text={message.text} />}
                               </>}
                             </div>
                             <div className="chat-message-tools">
