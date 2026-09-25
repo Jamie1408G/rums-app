@@ -4472,7 +4472,7 @@ button,input,textarea { font:inherit; }
   .aero-root .mobile-header-menu button:hover {border-color:var(--theme-border,#dce8f5);background:var(--theme-surface,rgba(255,255,255,.8));}
   .aero-root .mobile-menu-icon {display:grid;place-items:center;width:29px;height:29px;border-radius:10px;background:var(--theme-accent-soft,#eaf4ff);color:var(--theme-accent,#3478f6);}
   .aero-root .mobile-header-menu button b {margin-left:auto;color:var(--theme-accent,#3478f6);}
-  .aero-root .bottom-nav {height:61px;padding:4px 5px;border-radius:20px;}
+  .aero-root .bottom-nav {grid-template-columns:repeat(5,minmax(0,1fr));height:61px;padding:4px 5px;border-radius:20px;}
   .aero-root .bottom-nav .nav-btn {height:44px;min-height:44px;gap:1px;}
   .aero-root .bottom-nav .nav-btn svg {width:19px;height:19px;}
   .aero-root .bottom-nav .nav-upload {width:45px;height:45px;border-radius:15px;}

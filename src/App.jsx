@@ -4657,7 +4657,9 @@ export default function RUMS() {
                 {hasLumina && !isProjectSpace && <div className="mobile-menu-feed"><span className="mobile-menu-caption">COMMUNITY FEED</span><div className="mobile-menu-feed-options"><button type="button" className={feedFilter === 'all' && screen === 'feed' ? 'active' : ''} onClick={() => { setFeedFilter('all'); setScreen('feed'); setMobileMenuOpen(false); }}>All RUMS</button><button type="button" className={feedFilter === 'lumina' && screen === 'feed' ? 'active' : ''} onClick={() => { setFeedFilter('lumina'); setScreen('feed'); setMobileMenuOpen(false); }}><Droplet size={13} /> Lumina</button></div></div>}
                 <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('plazaPlus'); setPlusTab('notifications'); }}><span className="mobile-menu-icon"><Sparkles size={17} /></span> Plaza+ and notifications {notificationsForCurrentUser().length > 0 && <b>{notificationsForCurrentUser().length}</b>}</button>
                 {siteConfig.showDiscover && <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('search'); }}><span className="mobile-menu-icon"><Search size={17} /></span> Discover</button>}
+                {siteConfig.showUpdates && <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('updates'); }}><span className="mobile-menu-icon"><Megaphone size={17} /></span> Server updates</button>}
                 <button type="button" onClick={() => { setMobileMenuOpen(false); openOwnProfile(); }}><span className="mobile-menu-icon"><UserIcon size={17} /></span> My profile</button>
+                {canEditSite && <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('admin'); }}><span className="mobile-menu-icon"><ShieldCheck size={17} /></span> Admin space</button>}
                 {isOwner && <button type="button" onClick={() => { setMobileMenuOpen(false); setEditMode((editing) => !editing); }}><span className="mobile-menu-icon"><Pencil size={17} /></span> {editMode ? 'Finish editing' : 'Edit website'}</button>}
                 <button type="button" onClick={() => { setMobileMenuOpen(false); void handleLogout(); }}><span className="mobile-menu-icon"><LogOut size={17} /></span> Log out</button>
               </nav>}
@@ -5608,25 +5610,15 @@ export default function RUMS() {
               <button data-tutorial-nav="chat" className={`nav-btn ${screen === 'chat' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('chat'); }}>
                 <span className="nav-icon-wrap">{chatNavIcon(19)}</span><span className="nav-label">Chat</span>
               </button>
-              {siteConfig.showSuggestions && <button data-tutorial-nav="suggestions" className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
-                <span className="nav-icon-wrap">{navIconWithNew(<Lightbulb size={19} />, 'suggestions')}</span><span className="nav-label">Ideas</span>
-              </button>}
-              
               <button data-tutorial-nav="upload" className="nav-upload" onClick={() => { setError(''); setScreen('upload'); }}>
                 {navIconWithNew(<Plus size={24} />, 'upload')}
               </button>
-              {siteConfig.showUpdates && <button data-tutorial-nav="updates" className={`nav-btn ${screen === 'updates' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('updates'); }}>
-                <span className="nav-icon-wrap">{navIconWithNew(<Megaphone size={19} />, 'updates')}</span><span className="nav-label">Updates</span>
-              </button>}
-              {canEditSite ? (
-                <button className={`nav-btn ${screen === 'admin' ? 'active' : ''}`} onClick={() => setScreen('admin')}>
-                  <span className="nav-icon-wrap"><ShieldCheck size={19} /></span><span className="nav-label">Admin</span>
-                </button>
-              ) : (
-                <button className={`nav-btn ${screen === 'plazaPlus' ? 'active' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }} aria-label="Plaza+ and notifications">
-                  <span className="nav-icon-wrap"><span className="page-nav-icon"><Sparkles size={19} />{notificationsForCurrentUser().length > 0 && <span className="page-new-indicator page-new-count" aria-label={`${notificationsForCurrentUser().length} notifications`}>{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</span></span><span className="nav-label">Plaza+</span>
-                </button>
-              )}
+              <button className={`nav-btn ${screen === 'plazaPlus' ? 'active' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }} aria-label="Plaza+ and notifications">
+                <span className="nav-icon-wrap"><span className="page-nav-icon"><Sparkles size={19} />{notificationsForCurrentUser().length > 0 && <span className="page-new-indicator page-new-count" aria-label={`${notificationsForCurrentUser().length} notifications`}>{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</span></span><span className="nav-label">Plaza+</span>
+              </button>
+              <button data-tutorial-nav="suggestions" className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
+                <span className="nav-icon-wrap">{navIconWithNew(<Lightbulb size={19} />, 'suggestions')}</span><span className="nav-label">Ideas</span>
+              </button>
             </div>
           </>
         )}
