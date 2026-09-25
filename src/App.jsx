@@ -20,6 +20,10 @@ const RUMS5_UPDATES_KEY = 'rums5-updates';
 const RUMS5_SITE_CONFIG_KEY = 'rums5-site-config';
 const PLATFORM_NAME = 'RUMS Plaza';
 const THEME_STORAGE_KEY = 'rums-plaza-theme';
+const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
+const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
+const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
+const UPDATE_SCREEN_MS = 20000;
 const TUTORIAL_VERSION = 2;
 const JAMIE_TUTORIAL_VERSION = 3;
 const ROBLOX_THEMES = [
@@ -368,6 +372,59 @@ function resizeEmojiImage(file, size = 96) {
 }
 
 export default function RUMS() {
+  const [updateUntil, setUpdateUntil] = useState(() => {
+    if (!import.meta.env.PROD) return 0;
+    try {
+      const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
+      const lastSeen = localStorage.getItem(UPDATE_SEEN_KEY);
+      localStorage.setItem(UPDATE_SEEN_KEY, __RUMS_BUILD_ID__);
+      if (pending?.version === __RUMS_BUILD_ID__ && pending.until > Date.now()) return pending.until;
+      if (lastSeen && lastSeen !== __RUMS_BUILD_ID__) {
+        const until = Date.now() + UPDATE_SCREEN_MS;
+        sessionStorage.setItem(UPDATE_SCREEN_KEY, JSON.stringify({ version: __RUMS_BUILD_ID__, until }));
+        return until;
+      }
+    } catch { /* storage may be unavailable; the app can still start */ }
+    return 0;
+  });
+
+  useEffect(() => {
+    if (!import.meta.env.PROD) return undefined;
+    let stopped = false;
+    const checkForUpdate = async () => {
+      if (stopped || !navigator.onLine) return;
+      try {
+        const response = await fetch(`/version.json?check=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) return;
+        const { version } = await response.json();
+        if (stopped || !version || version === __RUMS_BUILD_ID__) return;
+        const previous = JSON.parse(sessionStorage.getItem(UPDATE_RELOAD_KEY) || 'null');
+        const attempts = previous?.version === version && Date.now() - previous.at < 60000 ? previous.count : 0;
+        if (attempts >= 2) return;
+        const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
+        const until = pending?.version === version && pending.until > Date.now() ? pending.until : Date.now() + UPDATE_SCREEN_MS;
+        sessionStorage.setItem(UPDATE_SCREEN_KEY, JSON.stringify({ version, until }));
+        sessionStorage.setItem(UPDATE_RELOAD_KEY, JSON.stringify({ version, count: attempts + 1, at: Date.now() }));
+        setUpdateUntil(until);
+        window.location.reload();
+      } catch { /* stay on the current site when offline or the check fails */ }
+    };
+    void checkForUpdate();
+    const timer = window.setInterval(checkForUpdate, 15000);
+    const onVisible = () => { if (!document.hidden) void checkForUpdate(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { stopped = true; window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
+  }, []);
+
+  useEffect(() => {
+    if (!updateUntil) return undefined;
+    const timer = window.setTimeout(() => {
+      setUpdateUntil(0);
+      try { sessionStorage.removeItem(UPDATE_SCREEN_KEY); } catch { /* ignore */ }
+    }, Math.max(0, updateUntil - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [updateUntil]);
+
   useEffect(() => {
     document.title = PLATFORM_NAME;
     let manifest = document.querySelector('link[rel="manifest"]');
@@ -4293,6 +4350,7 @@ export default function RUMS() {
 
   return (
     <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+      {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite"><div className="site-update-card"><div className="site-update-mark" aria-hidden="true">R</div><span className="site-update-kicker">RUMS PLAZA</span><h1>Updating the website</h1><p>Loading the latest version. You’ll be back in a moment.</p><div className="site-update-loader" aria-hidden="true"><span /></div></div></div>}
       <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
         <defs>
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
