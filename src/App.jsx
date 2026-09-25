@@ -138,6 +138,9 @@ const CHAT_MESSAGES_KEY = 'rums-chat-messages';
 const CHAT_ROOM_ID = 'plaza';
 const chatReadKey = (username) => `rums-chat-read-${username}`;
 const PLAZA_PLUS_KEY = 'rums-plaza-plus';
+const PROJECT_INDEX_KEY = 'rums-project-directory-v2';
+const projectRecordKey = (id) => `rums-project-record-${String(id).replace(/[^A-Za-z0-9_-]/g, '')}`;
+const projectSummary = ({ id, name, description, category, owner, followers, timestamp }) => ({ id, name, description, category, owner, followers, timestamp });
 const PLAZA_PLUS_VERSION = 1;
 const DEFAULT_PLAZA_PLUS = {
   version: PLAZA_PLUS_VERSION,
@@ -409,11 +412,14 @@ export default function RUMS() {
   const [projectCreateOpen, setProjectCreateOpen] = useState(false);
   const [projectCategory, setProjectCategory] = useState('rums4');
   const [projectDirectoryProjects, setProjectDirectoryProjects] = useState([]);
+  const [projectRecord, setProjectRecord] = useState(null);
+  const [projectImageBusy, setProjectImageBusy] = useState(false);
   const [projectTab, setProjectTab] = useState('overview');
   const [projectTopicDraft, setProjectTopicDraft] = useState({ title: '', body: '' });
   const [projectReplyDraft, setProjectReplyDraft] = useState({});
   const [projectUpdateDraft, setProjectUpdateDraft] = useState({ title: '', body: '' });
   const [projectCardDraft, setProjectCardDraft] = useState('');
+  const [projectCardImage, setProjectCardImage] = useState('');
   const [projectOpenTopic, setProjectOpenTopic] = useState(null);
   const [wikiDraft, setWikiDraft] = useState({ title: '', body: '' });
   const [buildDraft, setBuildDraft] = useState({ name: '', location: '', owner: '', description: '' });
@@ -538,7 +544,7 @@ export default function RUMS() {
   const activeStorageKeys = storageKeysForSpace(rumsSpace || 'rums4');
   const isRums5 = rumsSpace === 'rums5';
   const isProjectSpace = isProjectSpaceId(rumsSpace);
-  const activeProject = isProjectSpace ? (plazaPlus.projects || []).find((project) => project.id === projectIdFromSpace(rumsSpace)) : null;
+  const activeProject = isProjectSpace ? (projectRecord?.id === projectIdFromSpace(rumsSpace) ? projectRecord : projectDirectoryProjects.find((project) => project.id === projectIdFromSpace(rumsSpace)) || (plazaPlus.projects || []).find((project) => project.id === projectIdFromSpace(rumsSpace))) : null;
   const hasLumina = rumsSpace === 'rums4';
   const activeSpace = isProjectSpace ? { id: rumsSpace, label: activeProject?.name || 'Project', subtitle: activeProject?.category === 'outside' ? 'Outside RUMS' : activeProject?.category === 'rums5' ? 'Creative project' : 'RUMS 4 project', description: activeProject?.description || 'Community project' } : (rumsSpace ? RUMS_SPACES[rumsSpace] : null);
 
@@ -842,38 +848,85 @@ export default function RUMS() {
     return Object.entries(record).filter(([username, at]) => username !== currentUser?.username && Date.now() - Number(at) < 4500).map(([username]) => username);
   }
 
+  async function readProjectDirectory(legacy = plazaPlus.projects || []) {
+    const record = await window.storage.get(PROJECT_INDEX_KEY, true);
+    const indexed = record ? JSON.parse(record.value) : [];
+    return [...indexed, ...legacy.filter((old) => !indexed.some((item) => item.id === old.id))];
+  }
+
+  async function writeProjectIndex(project) {
+    const indexed = await readProjectDirectory();
+    const next = [projectSummary(project), ...indexed.filter((item) => item.id !== project.id).map(projectSummary)];
+    await window.storage.set(PROJECT_INDEX_KEY, JSON.stringify(next), true);
+    setProjectDirectoryProjects(next);
+  }
+
+  async function saveProjectRecord(project) {
+    if (JSON.stringify(project).length > 850000) throw new Error('This project has reached its image limit. Remove an image before adding another.');
+    await window.storage.set(projectRecordKey(project.id), JSON.stringify(project), true);
+    setProjectRecord(project);
+    await writeProjectIndex(project);
+  }
+
+  async function pickProjectImage(event, apply) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setError('Choose an image file.'); return; }
+    setProjectImageBusy(true);
+    try {
+      const image = await resizeImage(file, 600);
+      if (image.length > 125000) throw new Error('That image is too large after resizing. Try a smaller image.');
+      await apply(image);
+    } catch (e) { setError(e.message || 'Could not add the image.'); }
+    finally { setProjectImageBusy(false); }
+  }
+
   async function createProject() {
     if (!currentUser || !projectDraft.name.trim()) return;
     const category = ['rums4','rums5','outside'].includes(projectDraft.category) ? projectDraft.category : 'rums4';
     const project={id:`prj-${Date.now()}`,name:projectDraft.name.trim().slice(0,60),description:projectDraft.description.trim().slice(0,500),category,owner:currentUser.username,followers:[currentUser.username],milestones:[],timestamp:Date.now()};
-    await commitPlazaPlus((data)=>({...data,projects:[project,...(data.projects||[])],activities:[{id:`act-${Date.now()}-project`,type:'project',actor:currentUser.username,targetUser:null,text:`${currentUser.username} created project ${project.name}`,timestamp:Date.now()},...(data.activities||[])].slice(0,800)}));
-    setProjectDirectoryProjects((items)=>[project,...items.filter((item)=>item.id!==project.id)]);
-    setProjectDraft({name:'',description:'',category});
+    try {
+      await window.storage.set(projectRecordKey(project.id), JSON.stringify(project), true);
+      await writeProjectIndex(project);
+      setProjectDraft({name:'',description:'',category});
+      return true;
+    } catch (e) { console.error(e); setError('Could not save this project for everyone. Try again.'); return false; }
   }
 
   async function toggleProjectFollow(projectId) {
     if (!currentUser) return;
-    await commitPlazaPlus((data)=>({...data,projects:(data.projects||[]).map((project)=>project.id===projectId?{...project,followers:(project.followers||[]).includes(currentUser.username)?project.followers.filter((u)=>u!==currentUser.username):[...(project.followers||[]),currentUser.username]}:project)}));
+    try {
+      const record = await window.storage.get(projectRecordKey(projectId), true);
+      const project = record ? JSON.parse(record.value) : (await readProjectDirectory()).find((item) => item.id === projectId);
+      if (!project) return;
+      const followers = project.followers || [];
+      await saveProjectRecord({ ...project, followers: followers.includes(currentUser.username) ? followers.filter((u) => u !== currentUser.username) : [...followers, currentUser.username] });
+    } catch (e) { setError('Could not update your follow right now.'); }
   }
 
   async function editActiveProject(change) {
-    if (!activeProject || !currentUser) return;
-    await commitPlazaPlus((data) => ({ ...data, projects: (data.projects || []).map((project) => project.id === activeProject.id ? change(project) : project) }));
+    if (!activeProject || activeProject.owner !== currentUser?.username) return false;
+    try {
+      const record = await window.storage.get(projectRecordKey(activeProject.id), true);
+      const latest = record ? JSON.parse(record.value) : activeProject;
+      if (latest.owner !== currentUser.username) return false;
+      await saveProjectRecord(change(latest));
+      return true;
+    } catch (e) { console.error(e); setError(e.message || 'Could not save this project.'); return false; }
   }
 
   async function addProjectTopic() {
     const title = projectTopicDraft.title.trim().slice(0, 100);
     const body = projectTopicDraft.body.trim().slice(0, 3000);
     if (!title || !body) return;
-    await editActiveProject((project) => ({ ...project, topics: [{ id: `topic-${Date.now()}`, title, body, author: currentUser.username, replies: [], timestamp: Date.now() }, ...(project.topics || [])] }));
-    setProjectTopicDraft({ title: '', body: '' });
+    if (await editActiveProject((project) => ({ ...project, topics: [{ id: `topic-${Date.now()}`, title, body, image: projectTopicDraft.image || '', author: currentUser.username, replies: [], timestamp: Date.now() }, ...(project.topics || [])] }))) setProjectTopicDraft({ title: '', body: '', image: '' });
   }
 
   async function replyToProjectTopic(topicId) {
     const body = (projectReplyDraft[topicId] || '').trim().slice(0, 2000);
     if (!body) return;
-    await editActiveProject((project) => ({ ...project, topics: (project.topics || []).map((topic) => topic.id === topicId ? { ...topic, replies: [...(topic.replies || []), { id: `reply-${Date.now()}`, body, author: currentUser.username, timestamp: Date.now() }] } : topic) }));
-    setProjectReplyDraft((draft) => ({ ...draft, [topicId]: '' }));
+    if (await editActiveProject((project) => ({ ...project, topics: (project.topics || []).map((topic) => topic.id === topicId ? { ...topic, replies: [...(topic.replies || []), { id: `reply-${Date.now()}`, body, image: projectReplyDraft[`${topicId}-image`] || '', author: currentUser.username, timestamp: Date.now() }] } : topic) }))) setProjectReplyDraft((draft) => ({ ...draft, [topicId]: '', [`${topicId}-image`]: '' }));
   }
 
   async function addProjectUpdate() {
@@ -881,16 +934,16 @@ export default function RUMS() {
     const title = projectUpdateDraft.title.trim().slice(0, 100);
     const body = projectUpdateDraft.body.trim().slice(0, 3000);
     if (!title || !body) return;
-    await editActiveProject((project) => ({ ...project, projectUpdates: [{ id: `update-${Date.now()}`, title, body, author: currentUser.username, timestamp: Date.now() }, ...(project.projectUpdates || [])] }));
-    setProjectUpdateDraft({ title: '', body: '' });
+    if (await editActiveProject((project) => ({ ...project, projectUpdates: [{ id: `update-${Date.now()}`, title, body, image: projectUpdateDraft.image || '', author: currentUser.username, timestamp: Date.now() }, ...(project.projectUpdates || [])] }))) setProjectUpdateDraft({ title: '', body: '', image: '' });
   }
 
   async function addProjectCard() {
     if (activeProject?.owner !== currentUser?.username) return;
     const title = projectCardDraft.trim().slice(0, 100);
     if (!title) return;
-    await editActiveProject((project) => ({ ...project, board: [...(project.board || []), { id: `card-${Date.now()}`, title, column: 'planned', timestamp: Date.now() }] }));
+    await editActiveProject((project) => ({ ...project, board: [...(project.board || []), { id: `card-${Date.now()}`, title, image: projectCardImage, column: 'planned', timestamp: Date.now() }] }));
     setProjectCardDraft('');
+    setProjectCardImage('');
   }
 
   function renderProjectWorkspace() {
@@ -903,22 +956,22 @@ export default function RUMS() {
     return <div className="project-workspace">
       <header className="project-workspace-header">
         <button className="project-workspace-back" onClick={() => void openProjectsDirectory()}>← All projects</button>
-        <div className="project-workspace-title"><span className={`project-space-badge ${activeProject.category}`}>{categoryLabel}</span><h1>{activeProject.name}</h1><p>{activeProject.description || 'No description yet.'}</p><small>Created by {activeProject.owner} · {activeProject.followers?.length || 0} followers</small></div>
+        <div className="project-workspace-title">{activeProject.cover && <img className="project-cover" src={activeProject.cover} alt={`${activeProject.name} cover`}/>}<span className={`project-space-badge ${activeProject.category}`}>{categoryLabel}</span><h1>{activeProject.name}</h1>{owner && <button className="project-edit-description" onClick={() => { const name = window.prompt('Project name', activeProject.name); if (name?.trim()) void editActiveProject((project) => ({ ...project, name: name.trim().slice(0, 60) })); }}>Edit name</button>}<p>{activeProject.description || 'No description yet.'}</p><small>Created by {activeProject.owner} · {activeProject.followers?.length || 0} followers</small></div>
         <div className="project-workspace-actions">
           <button className="pill pill-btn" onClick={() => void toggleProjectFollow(activeProject.id)}>{activeProject.followers?.includes(currentUser.username) ? 'Following ✓' : 'Follow project'}</button>
-          {owner && <label>Project version<select className="aero-input" value={activeProject.category || 'rums4'} onChange={(event) => { const category = event.target.value; void editActiveProject((project) => ({ ...project, category })); }}><option value="rums4">RUMS 4</option><option value="rums5">Creative</option><option value="outside">Outside RUMS</option></select></label>}
+          {owner && <label className="project-image-pick">Cover image<input type="file" accept="image/*" disabled={projectImageBusy} onChange={(event) => void pickProjectImage(event, (image) => editActiveProject((project) => ({ ...project, cover: image })))} /></label>}{owner && <label>Project version<select className="aero-input" value={activeProject.category || 'rums4'} onChange={(event) => { const category = event.target.value; void editActiveProject((project) => ({ ...project, category })); }}><option value="rums4">RUMS 4</option><option value="rums5">Creative</option><option value="outside">Outside RUMS</option></select></label>}
         </div>
       </header>
       <nav className="project-workspace-tabs" aria-label="Project sections">{[['overview','Overview'],['forum','Forum'],['updates','Updates'],['board','Board']].map(([id,label]) => <button key={id} className={projectTab === id ? 'active' : ''} onClick={() => setProjectTab(id)} aria-current={projectTab === id ? 'page' : undefined}>{label}</button>)}</nav>
       {projectTab === 'overview' && <div className="project-overview-grid">
-        <section className="project-panel"><h2>About the project</h2><p>{activeProject.description || 'The creator has not added a description yet.'}</p><p className="project-muted">Part of {categoryLabel} · Created by {activeProject.owner}</p></section>
+        <section className="project-panel"><h2>About the project</h2>{owner && <button className="project-edit-description" onClick={() => { const description = window.prompt('Project description', activeProject.description || ''); if (description !== null) void editActiveProject((project) => ({ ...project, description: description.trim().slice(0, 500) })); }}>Edit description</button>}<p>{activeProject.description || 'The creator has not added a description yet.'}</p><p className="project-muted">Part of {categoryLabel} · Created by {activeProject.owner}</p></section>
         <section className="project-panel"><div className="project-panel-heading"><h2>Latest updates</h2><button onClick={() => setProjectTab('updates')}>View all →</button></div>{projectUpdates.length ? projectUpdates.slice(0, 3).map((item) => <article className="project-list-item" key={item.id}><strong>{item.title}</strong><p>{item.body}</p><small>{timeAgo(item.timestamp)}</small></article>) : <p className="project-muted">No updates yet.</p>}</section>
         <section className="project-panel"><div className="project-panel-heading"><h2>Forum</h2><button onClick={() => setProjectTab('forum')}>Open forum →</button></div>{topics.length ? topics.slice(0, 3).map((item) => <button className="project-topic-preview" key={item.id} onClick={() => { setProjectOpenTopic(item.id); setProjectTab('forum'); }}><strong>{item.title}</strong><small>{item.replies?.length || 0} replies · {item.author}</small></button>) : <p className="project-muted">Start the first discussion.</p>}</section>
         <section className="project-panel"><div className="project-panel-heading"><h2>Board</h2><button onClick={() => setProjectTab('board')}>Open board →</button></div><p>{board.filter((item) => item.column === 'done').length} done · {board.filter((item) => item.column === 'doing').length} in progress · {board.filter((item) => item.column === 'planned').length} planned</p></section>
       </div>}
-      {projectTab === 'forum' && <div className="project-section"><div className="project-section-heading"><h2>Forum</h2><p>Ask questions, share ideas, and discuss this project.</p></div><form className="project-panel project-form" onSubmit={(event) => { event.preventDefault(); void addProjectTopic(); }}><h3>New discussion</h3><input className="aero-input" placeholder="Discussion title" maxLength={100} value={projectTopicDraft.title} onChange={(event) => setProjectTopicDraft({ ...projectTopicDraft, title: event.target.value })}/><textarea className="aero-input" placeholder="What would you like to talk about?" rows={3} value={projectTopicDraft.body} onChange={(event) => setProjectTopicDraft({ ...projectTopicDraft, body: event.target.value })}/><button className="aero-btn" disabled={!projectTopicDraft.title.trim() || !projectTopicDraft.body.trim()}>Post discussion</button></form>{topics.length ? topics.map((topic) => <article className="project-panel project-discussion" key={topic.id}><button className="project-discussion-title" onClick={() => setProjectOpenTopic(projectOpenTopic === topic.id ? null : topic.id)} aria-expanded={projectOpenTopic === topic.id}><strong>{topic.title}</strong><small>{topic.author} · {timeAgo(topic.timestamp)} · {topic.replies?.length || 0} replies</small></button>{projectOpenTopic === topic.id && <><p>{topic.body}</p>{(topic.replies || []).map((reply) => <div className="project-reply" key={reply.id}><small>{reply.author} · {timeAgo(reply.timestamp)}</small><p>{reply.body}</p></div>)}<form className="project-reply-form" onSubmit={(event) => { event.preventDefault(); void replyToProjectTopic(topic.id); }}><input className="aero-input" placeholder="Write a reply" value={projectReplyDraft[topic.id] || ''} onChange={(event) => setProjectReplyDraft({ ...projectReplyDraft, [topic.id]: event.target.value })}/><button className="aero-btn" disabled={!projectReplyDraft[topic.id]?.trim()}>Reply</button></form></>}</article>) : <div className="project-panel project-muted">No discussions yet.</div>}</div>}
-      {projectTab === 'updates' && <div className="project-section"><div className="project-section-heading"><h2>Project updates</h2><p>Progress and announcements from the project creator.</p></div>{owner && <form className="project-panel project-form" onSubmit={(event) => { event.preventDefault(); void addProjectUpdate(); }}><h3>Publish an update</h3><input className="aero-input" placeholder="Update title" maxLength={100} value={projectUpdateDraft.title} onChange={(event) => setProjectUpdateDraft({ ...projectUpdateDraft, title: event.target.value })}/><textarea className="aero-input" placeholder="What changed?" rows={4} value={projectUpdateDraft.body} onChange={(event) => setProjectUpdateDraft({ ...projectUpdateDraft, body: event.target.value })}/><button className="aero-btn" disabled={!projectUpdateDraft.title.trim() || !projectUpdateDraft.body.trim()}>Publish update</button></form>}{projectUpdates.length ? projectUpdates.map((item) => <article className="project-panel project-list-item" key={item.id}><small>{timeAgo(item.timestamp)} · {item.author}</small><h3>{item.title}</h3><p>{item.body}</p></article>) : <div className="project-panel project-muted">No project updates yet.</div>}</div>}
-      {projectTab === 'board' && <div className="project-section"><div className="project-section-heading"><h2>Project board</h2><p>Track what is planned, in progress, and complete.</p></div>{owner && <form className="project-panel project-card-form" onSubmit={(event) => { event.preventDefault(); void addProjectCard(); }}><input className="aero-input" placeholder="Add a task or idea" maxLength={100} value={projectCardDraft} onChange={(event) => setProjectCardDraft(event.target.value)}/><button className="aero-btn" disabled={!projectCardDraft.trim()}>Add card</button></form>}<div className="project-board">{[['planned','Planned'],['doing','In progress'],['done','Done']].map(([column,label]) => <section className="project-board-column" key={column}><h3>{label} <span>{board.filter((item) => item.column === column).length}</span></h3>{board.filter((item) => item.column === column).map((item) => <article className="project-board-card" key={item.id}><strong>{item.title}</strong>{owner && <div className="project-board-card-actions">{column !== 'planned' && <button onClick={() => void editActiveProject((project) => ({ ...project, board: (project.board || []).map((card) => card.id === item.id ? { ...card, column: column === 'done' ? 'doing' : 'planned' } : card) }))} aria-label={`Move ${item.title} back`}>←</button>}{column !== 'done' && <button onClick={() => void editActiveProject((project) => ({ ...project, board: (project.board || []).map((card) => card.id === item.id ? { ...card, column: column === 'planned' ? 'doing' : 'done' } : card) }))} aria-label={`Move ${item.title} forward`}>→</button>}<button onClick={() => void editActiveProject((project) => ({ ...project, board: (project.board || []).filter((card) => card.id !== item.id) }))} aria-label={`Delete ${item.title}`}>×</button></div>}</article>)}{!board.some((item) => item.column === column) && <p className="project-muted">No cards yet.</p>}</section>)}</div></div>}
+      {projectTab === 'forum' && <div className="project-section"><div className="project-section-heading"><h2>Forum</h2><p>Read the creator’s discussions and progress.</p></div>{owner && <form className="project-panel project-form" onSubmit={(event) => { event.preventDefault(); void addProjectTopic(); }}><h3>New discussion</h3><input className="aero-input" placeholder="Discussion title" maxLength={100} value={projectTopicDraft.title} onChange={(event) => setProjectTopicDraft({ ...projectTopicDraft, title: event.target.value })}/><textarea className="aero-input" placeholder="What would you like to talk about?" rows={3} value={projectTopicDraft.body} onChange={(event) => setProjectTopicDraft({ ...projectTopicDraft, body: event.target.value })}/><label className="project-image-pick">Add image<input type="file" accept="image/*" disabled={projectImageBusy} onChange={(event) => void pickProjectImage(event, (image) => setProjectTopicDraft((draft) => ({ ...draft, image })))} /></label>{projectTopicDraft.image && <img className="project-attached-image" src={projectTopicDraft.image} alt="Discussion image preview"/>}<button className="aero-btn" disabled={projectImageBusy || !projectTopicDraft.title.trim() || !projectTopicDraft.body.trim()}>Post discussion</button></form>}{topics.length ? topics.map((topic) => <article className="project-panel project-discussion" key={topic.id}><button className="project-discussion-title" onClick={() => setProjectOpenTopic(projectOpenTopic === topic.id ? null : topic.id)} aria-expanded={projectOpenTopic === topic.id}><strong>{topic.title}</strong><small>{topic.author} · {timeAgo(topic.timestamp)} · {topic.replies?.length || 0} replies</small></button>{projectOpenTopic === topic.id && <>{owner && <button className="project-edit-description" onClick={() => { const body = window.prompt('Edit discussion', topic.body); if (body !== null) void editActiveProject((project) => ({ ...project, topics: (project.topics || []).map((item) => item.id === topic.id ? { ...item, body: body.trim().slice(0, 3000) } : item) })); }}>Edit discussion</button>}<p>{topic.body}</p>{topic.image && <img className="project-attached-image" src={topic.image} alt={`Image for ${topic.title}`}/>}{(topic.replies || []).map((reply) => <div className="project-reply" key={reply.id}><small>{reply.author} · {timeAgo(reply.timestamp)}</small><p>{reply.body}</p>{reply.image && <img className="project-attached-image" src={reply.image} alt="Reply attachment"/>}</div>)}{owner && <form className="project-reply-form" onSubmit={(event) => { event.preventDefault(); void replyToProjectTopic(topic.id); }}><input className="aero-input" placeholder="Write a reply" value={projectReplyDraft[topic.id] || ''} onChange={(event) => setProjectReplyDraft({ ...projectReplyDraft, [topic.id]: event.target.value })}/><label className="project-image-pick">Image<input type="file" accept="image/*" disabled={projectImageBusy} onChange={(event) => void pickProjectImage(event, (image) => setProjectReplyDraft((draft) => ({ ...draft, [`${topic.id}-image`]: image })))} /></label>{projectReplyDraft[`${topic.id}-image`] && <img className="project-attached-image" src={projectReplyDraft[`${topic.id}-image`]} alt="Reply preview"/>}<button className="aero-btn" disabled={projectImageBusy || !projectReplyDraft[topic.id]?.trim()}>Reply</button></form>}</>}</article>) : <div className="project-panel project-muted">No discussions yet.</div>}</div>}
+      {projectTab === 'updates' && <div className="project-section"><div className="project-section-heading"><h2>Project updates</h2><p>Progress and announcements from the project creator.</p></div>{owner && <form className="project-panel project-form" onSubmit={(event) => { event.preventDefault(); void addProjectUpdate(); }}><h3>Publish an update</h3><input className="aero-input" placeholder="Update title" maxLength={100} value={projectUpdateDraft.title} onChange={(event) => setProjectUpdateDraft({ ...projectUpdateDraft, title: event.target.value })}/><textarea className="aero-input" placeholder="What changed?" rows={4} value={projectUpdateDraft.body} onChange={(event) => setProjectUpdateDraft({ ...projectUpdateDraft, body: event.target.value })}/><label className="project-image-pick">Add image<input type="file" accept="image/*" disabled={projectImageBusy} onChange={(event) => void pickProjectImage(event, (image) => setProjectUpdateDraft((draft) => ({ ...draft, image })))} /></label>{projectUpdateDraft.image && <img className="project-attached-image" src={projectUpdateDraft.image} alt="Update preview"/>}<button className="aero-btn" disabled={projectImageBusy || !projectUpdateDraft.title.trim() || !projectUpdateDraft.body.trim()}>Publish update</button></form>}{projectUpdates.length ? projectUpdates.map((item) => <article className="project-panel project-list-item" key={item.id}><small>{timeAgo(item.timestamp)} · {item.author}</small><h3>{item.title}</h3>{owner && <button className="project-edit-description" onClick={() => { const body = window.prompt('Edit update', item.body); if (body !== null) void editActiveProject((project) => ({ ...project, projectUpdates: (project.projectUpdates || []).map((entry) => entry.id === item.id ? { ...entry, body: body.trim().slice(0, 3000) } : entry) })); }}>Edit update</button>}<p>{item.body}</p>{item.image && <img className="project-attached-image" src={item.image} alt={`Image for ${item.title}`}/>}</article>) : <div className="project-panel project-muted">No project updates yet.</div>}</div>}
+      {projectTab === 'board' && <div className="project-section"><div className="project-section-heading"><h2>Project board</h2><p>Track what is planned, in progress, and complete.</p></div>{owner && <form className="project-panel project-card-form" onSubmit={(event) => { event.preventDefault(); void addProjectCard(); }}><input className="aero-input" placeholder="Add a task or idea" maxLength={100} value={projectCardDraft} onChange={(event) => setProjectCardDraft(event.target.value)}/><label className="project-image-pick">Image<input type="file" accept="image/*" disabled={projectImageBusy} onChange={(event) => void pickProjectImage(event, (image) => setProjectCardImage(image))}/></label>{projectCardImage && <img className="project-attached-image" src={projectCardImage} alt="Board card preview"/>}<button className="aero-btn" disabled={projectImageBusy || !projectCardDraft.trim()}>Add card</button></form>}<div className="project-board">{[['planned','Planned'],['doing','In progress'],['done','Done']].map(([column,label]) => <section className="project-board-column" key={column}><h3>{label} <span>{board.filter((item) => item.column === column).length}</span></h3>{board.filter((item) => item.column === column).map((item) => <article className="project-board-card" key={item.id}><strong>{item.title}</strong>{item.image && <img className="project-attached-image" src={item.image} alt={`Image for ${item.title}`}/>} {owner && <div className="project-board-card-actions"><button onClick={() => { const title = window.prompt('Edit card', item.title); if (title?.trim()) void editActiveProject((project) => ({ ...project, board: (project.board || []).map((card) => card.id === item.id ? { ...card, title: title.trim().slice(0, 100) } : card) })); }} aria-label={`Edit ${item.title}`}>✎</button>{column !== 'planned' && <button onClick={() => void editActiveProject((project) => ({ ...project, board: (project.board || []).map((card) => card.id === item.id ? { ...card, column: column === 'done' ? 'doing' : 'planned' } : card) }))} aria-label={`Move ${item.title} back`}>←</button>}{column !== 'done' && <button onClick={() => void editActiveProject((project) => ({ ...project, board: (project.board || []).map((card) => card.id === item.id ? { ...card, column: column === 'planned' ? 'doing' : 'done' } : card) }))} aria-label={`Move ${item.title} forward`}>→</button>}<button onClick={() => void editActiveProject((project) => ({ ...project, board: (project.board || []).filter((card) => card.id !== item.id) }))} aria-label={`Delete ${item.title}`}>×</button></div>}</article>)}{!board.some((item) => item.column === column) && <p className="project-muted">No cards yet.</p>}</section>)}</div></div>}
     </div>;
   }
 
@@ -1873,7 +1926,7 @@ export default function RUMS() {
         safeGet(SESSION_KEY, false),
       ]);
       const latest = normalizePlazaPlus(record ? JSON.parse(record.value) : plazaPlus);
-      setProjectDirectoryProjects((latest.projects || []).map((project) => ({ ...project, category: project.category === 'outside' ? 'outside' : project.category === 'rums5' ? 'rums5' : 'rums4' })));
+      setProjectDirectoryProjects((await readProjectDirectory(latest.projects || [])).map((project) => ({ ...project, category: project.category === 'outside' ? 'outside' : project.category === 'rums5' ? 'rums5' : 'rums4' })));
       setPlazaPlus(latest);
       if (userRecord) {
         const latestUsers = JSON.parse(userRecord.value);
@@ -1892,6 +1945,11 @@ export default function RUMS() {
 
   async function chooseProject(project) {
     if (!project?.id) return;
+    try {
+      const record = await safeGet(projectRecordKey(project.id), true);
+      setProjectRecord(record ? JSON.parse(record.value) : project);
+      setProjectTab('overview');
+    } catch { setProjectRecord(project); }
     await chooseRumsSpace(projectSpaceId(project.id));
   }
 
@@ -1949,7 +2007,7 @@ export default function RUMS() {
         if (loadedConfig.brandName === 'RUMS') loadedConfig.brandName = PLATFORM_NAME;
       } else if (space === 'rums5' || isProjectSpaceId(space)) {
         if (isProjectSpaceId(space)) {
-          const project = (plazaPlus.projects || []).find((item) => item.id === projectIdFromSpace(space));
+          const project = projectRecord?.id === projectIdFromSpace(space) ? projectRecord : (await readProjectDirectory()).find((item) => item.id === projectIdFromSpace(space));
           const parentConfigKey = project?.category === 'rums5' ? RUMS5_SITE_CONFIG_KEY : SITE_CONFIG_KEY;
           const parentRecord = await safeGet(parentConfigKey, true);
           const parentConfig = parentRecord ? { ...DEFAULT_SITE_CONFIG, ...JSON.parse(parentRecord.value) } : DEFAULT_SITE_CONFIG;
@@ -2025,7 +2083,11 @@ export default function RUMS() {
             const projectRecord = await safeGet(PLAZA_PLUS_KEY, true);
             const latestPlus = normalizePlazaPlus(projectRecord ? JSON.parse(projectRecord.value) : plazaPlus);
             setPlazaPlus(latestPlus);
-            project = (latestPlus.projects || []).find((item) => item.id === projectIdFromSpace(space)) || null;
+            const directory = await readProjectDirectory(latestPlus.projects || []);
+            setProjectDirectoryProjects(directory);
+            const detail = await safeGet(projectRecordKey(projectIdFromSpace(space)), true);
+            project = detail ? JSON.parse(detail.value) : directory.find((item) => item.id === projectIdFromSpace(space)) || null;
+            setProjectRecord(project);
           } catch { /* project can still open with the generic layout */ }
         }
         const parentConfigKey = project?.category === 'rums5' ? RUMS5_SITE_CONFIG_KEY : SITE_CONFIG_KEY;
@@ -4247,7 +4309,7 @@ export default function RUMS() {
                   <label>Project group<select className="aero-input" value={projectDraft.category} onChange={(e)=>setProjectDraft({...projectDraft,category:e.target.value})}><option value="rums4">RUMS 4</option><option value="rums5">Creative</option><option value="outside">Outside RUMS</option></select></label>
                   <label>Project name<input className="aero-input" placeholder="My project" value={projectDraft.name} onChange={(e)=>setProjectDraft({...projectDraft,name:e.target.value})}/></label>
                   <label>Description<textarea className="aero-input" rows="4" placeholder="What is this project?" value={projectDraft.description} onChange={(e)=>setProjectDraft({...projectDraft,description:e.target.value})}/></label>
-                  <div className="project-create-actions"><button type="button" className="pill pill-btn" onClick={()=>setProjectCreateOpen(false)}>Cancel</button><button className="aero-btn" type="button" onClick={async()=>{await createProject();setProjectCreateOpen(false);}}>Create Project</button></div>
+                  <div className="project-create-actions"><button type="button" className="pill pill-btn" onClick={()=>setProjectCreateOpen(false)}>Cancel</button><button className="aero-btn" type="button" onClick={async()=>{if(await createProject())setProjectCreateOpen(false);}}>Create Project</button></div>
                 </div>
               </section>
             </div>}
@@ -4751,7 +4813,7 @@ export default function RUMS() {
 
                   {plusTab === 'groups' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Communities & group chats</h2><p>Create clubs for builders, transit, architecture, roleplay or anything else.</p></div></div><div className="plus-inline-form"><input className="aero-input" placeholder="Community name" value={groupDraft.name} onChange={(e)=>setGroupDraft({...groupDraft,name:e.target.value})}/><input className="aero-input" placeholder="What is it about?" value={groupDraft.description} onChange={(e)=>setGroupDraft({...groupDraft,description:e.target.value})}/><button className="aero-btn" onClick={createGroup}>Create</button></div><div className="group-grid">{(plazaPlus.groups||[]).map((group)=><article key={group.id} className="group-card"><h3>{group.name}</h3><p>{group.description}</p><small>{group.members?.length||0} members · owner {group.owner}</small><div className="plus-card-actions"><button onClick={()=>toggleGroupMembership(group.id)}>{group.members?.includes(currentUser.username)?'Leave':'Join'}</button>{group.members?.includes(currentUser.username)&&<button onClick={()=>{setActiveChat(`group:${group.id}`);setScreen('chat');}}>Open chat</button>}</div></article>)}</div></section>}
 
-                  {plusTab === 'projects' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Projects</h2><p>Project Lumina can now be one of many community projects with followers and timelines.</p></div></div><div className="plus-inline-form"><select className="aero-input" value={projectDraft.category||'rums4'} onChange={(e)=>setProjectDraft({...projectDraft,category:e.target.value})}><option value="rums4">Inside RUMS · RUMS 4</option><option value="rums5">Inside RUMS · Creative</option><option value="outside">Outside RUMS</option></select><input className="aero-input" placeholder="Project name" value={projectDraft.name} onChange={(e)=>setProjectDraft({...projectDraft,name:e.target.value})}/><input className="aero-input" placeholder="Short description" value={projectDraft.description} onChange={(e)=>setProjectDraft({...projectDraft,description:e.target.value})}/><button className="aero-btn" onClick={createProject}>Create</button></div><div className="project-grid"><article className="project-card featured"><span className="eyebrow">OFFICIAL PROJECT</span><h3>Project Lumina</h3><p>The original RUMS Plaza project space.</p><button onClick={openLumina} disabled={isRums5}>Open project</button></article>{(plazaPlus.projects||[]).map((project)=><article key={project.id} className="project-card"><span className="project-category-label">{project.category === 'outside' ? 'OUTSIDE RUMS' : project.category === 'rums5' ? 'CREATIVE PROJECT' : 'RUMS 4 PROJECT'}</span><h3>{project.name}</h3><p>{project.description}</p><small>{project.followers?.length||0} followers · {project.owner}</small><div className="plus-card-actions"><button onClick={()=>void chooseProject(project)}>Open project</button><button onClick={()=>toggleProjectFollow(project.id)}>{project.followers?.includes(currentUser.username)?'Following':'Follow'}</button>{project.owner===currentUser.username&&<button onClick={()=>{const title=window.prompt('Milestone');if(title)void commitPlazaPlus((data)=>({...data,projects:(data.projects||[]).map((p)=>p.id===project.id?{...p,milestones:[...(p.milestones||[]),{title,timestamp:Date.now()}]}:p)}));}}>Add milestone</button>}</div>{(project.milestones||[]).length>0&&<div className="timeline-list">{project.milestones.map((m,i)=><div key={`${m.timestamp}-${i}`}><b>{m.title}</b><small>{timeAgo(m.timestamp)}</small></div>)}</div>}</article>)}</div></section>}
+                  {plusTab === 'projects' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Projects</h2><p>Explore community projects and their boards, forums and updates.</p></div></div><button className="aero-btn" onClick={() => void openProjectsDirectory()}>Open project directory</button></section>}
 
                   {plusTab === 'knowledge' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Wiki, server map & build directory</h2><p>Document lore, locations and important builds in one searchable community knowledge base.</p></div></div><div className="knowledge-columns"><div><h3>Wiki</h3><input className="aero-input" placeholder="Page title" value={wikiDraft.title} onChange={(e)=>setWikiDraft({...wikiDraft,title:e.target.value})}/><textarea className="caption-area" placeholder="Wiki content" value={wikiDraft.body} onChange={(e)=>setWikiDraft({...wikiDraft,body:e.target.value})}/><button className="aero-btn" onClick={addWikiPage}>Add page</button>{(plazaPlus.wiki||[]).map((page)=><article className="wiki-card" key={page.id}><h4>{page.title}</h4><p>{page.body}</p><small>Updated {timeAgo(page.updatedAt)} by {page.author}</small></article>)}</div><div><h3>Build directory / schematic map</h3><input className="aero-input" placeholder="Build name" value={buildDraft.name} onChange={(e)=>setBuildDraft({...buildDraft,name:e.target.value})}/><input className="aero-input" placeholder="Location / district" value={buildDraft.location} onChange={(e)=>setBuildDraft({...buildDraft,location:e.target.value})}/><input className="aero-input" placeholder="Owner" value={buildDraft.owner} onChange={(e)=>setBuildDraft({...buildDraft,owner:e.target.value})}/><textarea className="caption-area" placeholder="Description" value={buildDraft.description} onChange={(e)=>setBuildDraft({...buildDraft,description:e.target.value})}/><button className="aero-btn" onClick={addBuildEntry}>Add build</button><div className="server-map-schematic">{(plazaPlus.builds||[]).map((build,i)=><button key={build.id} style={{left:`${12+(i*23)%74}%`,top:`${18+(i*31)%65}%`}} title={`${build.name} · ${build.location}`}>◆</button>)}<span>RUMS schematic map</span></div>{(plazaPlus.builds||[]).map((build)=><article key={build.id} className="build-row"><b>{build.name}</b><span>{build.location}</span><small>{build.owner}</small></article>)}</div></div></section>}
 
