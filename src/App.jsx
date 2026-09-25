@@ -138,6 +138,7 @@ const CHAT_MESSAGES_KEY = 'rums-chat-messages';
 const CHAT_ROOM_ID = 'plaza';
 const chatReadKey = (username) => `rums-chat-read-${username}`;
 const PLAZA_PLUS_KEY = 'rums-plaza-plus';
+const notificationReadKey = (username) => `rums-notification-read-${encodeURIComponent(username)}`;
 const PROJECT_INDEX_KEY = 'rums-project-directory-v2';
 const projectRecordKey = (id) => `rums-project-record-${String(id).replace(/[^A-Za-z0-9_-]/g, '')}`;
 const projectSummary = ({ id, name, description, category, owner, followers, timestamp }) => ({ id, name, description, category, owner, followers, timestamp });
@@ -401,6 +402,7 @@ export default function RUMS() {
   const [chatBusy, setChatBusy] = useState(false);
   const [chatImageBusy, setChatImageBusy] = useState(false);
   const [plazaPlus, setPlazaPlus] = useState(DEFAULT_PLAZA_PLUS);
+  const [notificationRead, setNotificationRead] = useState({ username: null, at: 0 });
   const [plusTab, setPlusTab] = useState('notifications');
   const [followingOnly, setFollowingOnly] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -543,7 +545,7 @@ export default function RUMS() {
   const rumsVersionDragRef = useRef(null);
   const rumsVersionSuppressClickRef = useRef(false);
   const lastNotificationCountRef = useRef(0);
-  const lastTypingWriteRef = useRef(0);
+  const lastTypingWriteRef = useRef({});
   const [rumsVersionDragging, setRumsVersionDragging] = useState(false);
   const activeStorageKeys = storageKeysForSpace(rumsSpace || 'rums4');
   const isRums5 = rumsSpace === 'rums5';
@@ -776,13 +778,17 @@ export default function RUMS() {
 
   function notificationsForCurrentUser() {
     if (!currentUser) return [];
-    const read = Number(plazaPlus.notificationReads?.[currentUser.username] || 0);
-    return (plazaPlus.activities || []).filter((a) => (!a.targetUser || a.targetUser === currentUser.username) && a.actor !== currentUser.username && a.timestamp > read);
+    const read = Math.max(Number(plazaPlus.notificationReads?.[currentUser.username] || 0), notificationRead.username === currentUser.username ? notificationRead.at : 0);
+    return (plazaPlus.activities || []).filter((a) => a.targetUser === currentUser.username && a.actor !== currentUser.username && Number(a.timestamp) > read);
   }
 
-  async function markNotificationsRead() {
+  async function markNotificationsRead(through = Date.now()) {
     if (!currentUser) return;
-    await commitPlazaPlus((data) => ({ ...data, notificationReads: { ...data.notificationReads, [currentUser.username]: Date.now() } }));
+    const username = currentUser.username;
+    const at = Math.max(through, notificationRead.username === username ? notificationRead.at : 0);
+    setNotificationRead({ username, at });
+    try { await window.storage.set(notificationReadKey(username), String(at), true); }
+    catch (error) { console.error(error); setError('Could not save your notification read status.'); }
   }
 
   async function updateAccessibilityPref(key, value) {
@@ -839,16 +845,23 @@ export default function RUMS() {
     });
   }
 
+  function typingThreadKey(thread = activeChat) {
+    if (!currentUser || !thread.startsWith('dm:')) return thread;
+    const other = thread.slice(3);
+    return `dm:${[currentUser.username, other].sort().map(encodeURIComponent).join('|')}`;
+  }
+
   async function noteTyping() {
     if (!currentUser) return;
+    const thread = typingThreadKey();
     const now = Date.now();
-    if (now - lastTypingWriteRef.current < 1200) return;
-    lastTypingWriteRef.current = now;
-    await commitPlazaPlus((data) => ({ ...data, typing: { ...data.typing, [activeChat]: { ...(data.typing?.[activeChat] || {}), [currentUser.username]: now } } }));
+    if (now - (lastTypingWriteRef.current[thread] || 0) < 1200) return;
+    lastTypingWriteRef.current[thread] = now;
+    await commitPlazaPlus((data) => ({ ...data, typing: { ...data.typing, [thread]: { ...(data.typing?.[thread] || {}), [currentUser.username]: now } } }));
   }
 
   function typingUsersForActiveChat() {
-    const record = plazaPlus.typing?.[activeChat] || {};
+    const record = plazaPlus.typing?.[typingThreadKey()] || {};
     return Object.entries(record).filter(([username, at]) => username !== currentUser?.username && Date.now() - Number(at) < 4500).map(([username]) => username);
   }
 
@@ -1275,6 +1288,22 @@ export default function RUMS() {
   }, [currentUser?.username]);
 
   useEffect(() => {
+    const username = currentUser?.username;
+    if (!username) { setNotificationRead({ username: null, at: 0 }); return undefined; }
+    let cancelled = false;
+    setNotificationRead((previous) => previous.username === username ? previous : { username, at: 0 });
+    const loadRead = async () => {
+      try {
+        const record = await window.storage.get(notificationReadKey(username), true);
+        if (!cancelled && record) setNotificationRead((previous) => ({ username, at: Math.max(previous.username === username ? previous.at : 0, Number(record.value) || 0) }));
+      } catch (error) { console.error('Could not load notification reads', error); }
+    };
+    void loadRead();
+    const timer = window.setInterval(loadRead, 5000);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [currentUser?.username]);
+
+  useEffect(() => {
     if (!currentUser) return;
     const profile = plusProfile(currentUser.username);
     setProfileEdit({ bio: profile.bio || '', status: profile.status || 'Online', accent: profile.accent || '#3478f6', banner: profile.banner || '' });
@@ -1288,7 +1317,7 @@ export default function RUMS() {
       try { new Notification('RUMS Plaza', { body: `You have ${count} new notification${count === 1 ? '' : 's'}.` }); } catch { /* ignore browser notification failures */ }
     }
     lastNotificationCountRef.current = count;
-  }, [plazaPlus.activities, plazaPlus.notificationReads, currentUser?.username]);
+  }, [plazaPlus.activities, plazaPlus.notificationReads, notificationRead.at, notificationRead.username, currentUser?.username]);
 
   useEffect(() => {
     if (!currentUser) return undefined;
@@ -4414,7 +4443,7 @@ export default function RUMS() {
               {isProjectSpace && <><button className={`rail-link ${screen === 'feed' && projectTab === 'forum' ? 'selected' : ''}`} onClick={() => { setProjectTab('forum'); setScreen('feed'); }}><MessageCircle size={19}/> Forum</button><button className={`rail-link ${screen === 'feed' && projectTab === 'updates' ? 'selected' : ''}`} onClick={() => { setProjectTab('updates'); setScreen('feed'); }}><Megaphone size={19}/> Project updates</button><button className={`rail-link ${screen === 'feed' && projectTab === 'board' ? 'selected' : ''}`} onClick={() => { setProjectTab('board'); setScreen('feed'); }}><GripVertical size={19}/> Board</button></>}
               {!isProjectSpace && <>
               {siteConfig.showDiscover && <button data-tutorial-nav="search" className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}>{navIconWithNew(<Search size={19} />, 'search')} Discover</button>}
-              <button className={`rail-link ${screen === 'plazaPlus' ? 'selected' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); void markNotificationsRead(); }}><Sparkles size={19} /> Plaza+ {notificationsForCurrentUser().length > 0 && <span className="rail-mini-count">{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</button>
+              <button className={`rail-link ${screen === 'plazaPlus' ? 'selected' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }}><Sparkles size={19} /> Plaza+ {notificationsForCurrentUser().length > 0 && <span className="rail-mini-count">{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</button>
               
               {hasLumina && siteConfig.showLumina && <button data-tutorial-nav="lumina" className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
               </>}
@@ -4436,7 +4465,7 @@ export default function RUMS() {
               <div className="aero-header-actions">
                 {editMode && isOwner ? <button className="finish-editing-button" onClick={() => setEditMode(false)}><Check size={17} /> Finish editing</button> : <>
                 {isOwner && <button className="icon-btn" onClick={() => setEditMode(true)} title="Edit website"><Pencil size={18} /></button>}
-                <button className="icon-btn header-plus-button" onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); void markNotificationsRead(); }} title="Notifications and Plaza+"><Sparkles size={18} />{notificationsForCurrentUser().length > 0 && <span className="header-unread-count">{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</button>
+                <button className="icon-btn header-plus-button" onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }} title="Notifications and Plaza+"><Sparkles size={18} />{notificationsForCurrentUser().length > 0 && <span className="header-unread-count">{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</button>
                 <button className="icon-btn header-chat-button" onClick={() => setScreen('chat')} title="Chat">{chatNavIcon(18)}</button>
                 {siteConfig.showDiscover && <button className="icon-btn" onClick={() => setScreen('search')} title="Search">
                   {navIconWithNew(<Search size={18} />, 'search')}
@@ -4839,9 +4868,9 @@ export default function RUMS() {
                   </div>
                   <div className="plaza-plus-tabs">{[
                     ['notifications','Notifications'],['saved','Saved'],['activity','Activity'],['events','Events'],['groups','Groups'],['projects','Projects'],['knowledge','Wiki & Builds'],['creator','Creator'],['settings','Settings'],['safety','Safety']
-                  ].map(([id,label]) => <button key={id} className={plusTab===id?'active':''} onClick={() => { setPlusTab(id); if(id==='notifications') void markNotificationsRead(); }}>{label}{id==='notifications'&&notificationsForCurrentUser().length>0?<span>{notificationsForCurrentUser().length}</span>:null}</button>)}</div>
+                  ].map(([id,label]) => <button key={id} className={plusTab===id?'active':''} onClick={() => setPlusTab(id)}>{label}{id==='notifications'&&notificationsForCurrentUser().length>0?<span>{notificationsForCurrentUser().length}</span>:null}</button>)}</div>
 
-                  {plusTab === 'notifications' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Notifications</h2><p>Mentions, follows, likes, comments and community activity.</p></div><button className="pill pill-btn" onClick={markNotificationsRead}>Mark all read</button></div><div className="plus-list">{(plazaPlus.activities||[]).filter((a)=>(!a.targetUser||a.targetUser===currentUser.username)&&a.actor!==currentUser.username).slice(0,60).map((a)=><button key={a.id} className="plus-row" onClick={()=>{if(a.postId){setViewingPostId(a.postId);setScreen('postDetail');}}}><span className="plus-row-icon">{a.type==='follow'?'👤':a.type==='mention'?'@':a.type==='like'?'♥':'●'}</span><span><b>{a.text}</b><small>{timeAgo(a.timestamp)}</small></span></button>)}{!(plazaPlus.activities||[]).some((a)=>(!a.targetUser||a.targetUser===currentUser.username)&&a.actor!==currentUser.username)&&<div className="plus-empty">Nothing new right now.</div>}</div></section>}
+                  {plusTab === 'notifications' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Notifications</h2><p>Mentions, follows, likes, comments and community activity.</p></div><button className="pill pill-btn" onClick={() => void markNotificationsRead()} disabled={notificationsForCurrentUser().length === 0}>Mark all read</button></div><div className="plus-list">{notificationsForCurrentUser().slice(0,60).map((a)=><button key={a.id} className="plus-row" onClick={()=>{void markNotificationsRead(Number(a.timestamp) || Date.now());if(a.postId){setViewingPostId(a.postId);setScreen('postDetail');}}}><span className="plus-row-icon">{a.type==='follow'?'👤':a.type==='mention'?'@':a.type==='like'?'♥':'●'}</span><span><b>{a.text}</b><small>{timeAgo(a.timestamp)}</small></span></button>)}{notificationsForCurrentUser().length === 0 && <div className="plus-empty">You're all caught up.</div>}</div></section>}
 
                   {plusTab === 'saved' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Saved posts & collections</h2><p>Keep builds, ideas and inspiration for later.</p></div></div><div className="plus-inline-form"><input className="aero-input" value={collectionDraft} onChange={(e)=>setCollectionDraft(e.target.value)} placeholder="New collection name"/><button className="aero-btn" onClick={createCollection}>Create collection</button></div><div className="saved-post-grid">{posts.filter((p)=>bookmarkedPosts().includes(p.id)).map((p)=><div className="saved-post-wrap" key={`saved-${p.id}`}>{renderPost(p)}{(plazaPlus.collections?.[currentUser.username]||[]).length>0&&<select className="aero-input" defaultValue="" onChange={(e)=>{if(e.target.value){void addPostToCollection(p.id,e.target.value);e.currentTarget.value='';}}}><option value="">Add to collection…</option>{(plazaPlus.collections?.[currentUser.username]||[]).map((collection)=><option key={collection.id} value={collection.id}>{collection.name}</option>)}</select>}</div>)}{bookmarkedPosts().length===0&&<div className="plus-empty">Save a post with ☆ and it will appear here.</div>}</div><div className="collection-grid">{(plazaPlus.collections?.[currentUser.username]||[]).map((collection)=><article key={collection.id} className="collection-card"><h3>{collection.name}</h3><p>{collection.postIds?.length||0} posts</p></article>)}</div></section>}
 
