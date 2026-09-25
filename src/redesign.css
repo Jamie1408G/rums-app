@@ -4487,7 +4487,6 @@ button,input,textarea { font:inherit; }
 
 /* Post conversations use the same soft glass surfaces and accent as Plaza. */
 .aero-root .post-actions .post-react-btn.active {color:var(--theme-accent,var(--site-accent,#3478f6));background:var(--theme-accent-soft,#eaf4ff);}
-.aero-root .post-actions .post-react-btn > span {font-size:22px;line-height:14px;}
 .aero-root .comments-box {margin:0 14px 15px;padding:16px!important;border:1px solid var(--theme-border,#dce8f5);border-radius:18px;background:var(--theme-surface,rgba(255,255,255,.68));color:var(--theme-text,#314763);}
 .aero-root .comments-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;font-size:14px;}
 .aero-root .comments-heading span,.aero-root .comments-empty {color:var(--theme-muted,#788aa1);font-size:12px;}

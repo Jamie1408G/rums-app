@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import './legacy.css';
 import './redesign.css';
 import {
-  Heart, MessageCircle, LogOut, ShieldCheck, Shield, User as UserIcon, Menu,
+  Heart, MessageCircle, SmilePlus, LogOut, ShieldCheck, Shield, User as UserIcon, Menu,
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
   Lightbulb, Megaphone, Pencil,
   GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff, Undo2, Redo2, RotateCcw,
@@ -4399,7 +4399,7 @@ export default function RUMS() {
             <MessageCircle size={18} />
             {postComments.length > 0 ? postComments.length : 'Comments'}
           </button>
-          <button className={`comment-btn post-react-btn ${reactionMenus[`post:${post.id}`] ? 'active' : ''}`} onClick={() => toggleReactionMenu(`post:${post.id}`)} aria-label="React to post"><span aria-hidden="true">☺</span> React</button>
+          <button className={`comment-btn post-react-btn ${reactionMenus[`post:${post.id}`] ? 'active' : ''}`} onClick={() => toggleReactionMenu(`post:${post.id}`)} aria-label="React to post" title="React to post"><SmilePlus size={19} /></button>
           <button className="comment-btn" onClick={() => sharePost(post)}>
             {shareStatus[post.id] ? <Check size={17} color="#0fb8a6" /> : <Share2 size={17} />}
             {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
