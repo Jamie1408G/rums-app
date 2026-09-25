@@ -5623,8 +5623,8 @@ export default function RUMS() {
                   <span className="nav-icon-wrap"><ShieldCheck size={19} /></span><span className="nav-label">Admin</span>
                 </button>
               ) : (
-                <button className="nav-btn nav-placeholder" tabIndex={-1} aria-hidden="true">
-                  <ArrowLeft size={19} /> —
+                <button className={`nav-btn ${screen === 'plazaPlus' ? 'active' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }} aria-label="Plaza+ and notifications">
+                  <span className="nav-icon-wrap"><span className="page-nav-icon"><Sparkles size={19} />{notificationsForCurrentUser().length > 0 && <span className="page-new-indicator page-new-count" aria-label={`${notificationsForCurrentUser().length} notifications`}>{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</span></span><span className="nav-label">Plaza+</span>
                 </button>
               )}
             </div>
