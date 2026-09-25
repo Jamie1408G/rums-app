@@ -137,6 +137,60 @@ const LUMINA_STATIONS = [
 ];
 const lastSeenKey = (username, space = 'rums4') => space === 'rums5' ? `rums5-lastseen-${username}` : isProjectSpaceId(space) ? `rums-project-${projectIdFromSpace(space)}-lastseen-${username}` : `rums-lastseen-${username}`;
 const MENTION_RE = /(@[A-Za-z0-9_]+)/g;
+
+const SPOTIFY_URL_RE = /https?:\/\/open\.spotify\.com\/[^\s<>"']+/gi;
+const SPOTIFY_EMBED_TYPES = new Set(['track', 'album', 'playlist', 'artist', 'episode', 'show', 'audiobook']);
+
+function spotifyEmbedFromText(text = '') {
+  const matches = String(text).match(SPOTIFY_URL_RE) || [];
+  for (const rawMatch of matches) {
+    const raw = rawMatch.replace(/[),.!?;:]+$/, '');
+    try {
+      const url = new URL(raw);
+      if (url.hostname !== 'open.spotify.com') continue;
+
+      const parts = url.pathname.split('/').filter(Boolean);
+      const intlIndex = parts[0]?.startsWith('intl-') ? 1 : 0;
+      const type = parts[intlIndex];
+      const id = parts[intlIndex + 1];
+
+      if (!SPOTIFY_EMBED_TYPES.has(type) || !id) continue;
+      if (!/^[A-Za-z0-9]+$/.test(id)) continue;
+
+      return {
+        type,
+        id,
+        originalUrl: raw,
+        embedUrl: `https://open.spotify.com/embed/${type}/${id}?utm_source=generator&theme=0`,
+      };
+    } catch {
+      // Ignore malformed URLs and keep rendering the message normally.
+    }
+  }
+  return null;
+}
+
+function SpotifyMessageEmbed({ text }) {
+  const spotify = spotifyEmbedFromText(text);
+  if (!spotify) return null;
+
+  const compact = spotify.type === 'track' || spotify.type === 'episode';
+
+  return (
+    <div className="chat-spotify-embed">
+      <iframe
+        src={spotify.embedUrl}
+        title={`Spotify ${spotify.type}`}
+        width="100%"
+        height={compact ? 152 : 352}
+        frameBorder="0"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        loading="lazy"
+      />
+    </div>
+  );
+}
+
 const CUSTOM_EMOJIS_KEY = 'rums-custom-emojis';
 const CHAT_MESSAGES_KEY = 'rums-chat-messages';
 const SITE_ANNOUNCEMENT_KEY = 'rums-site-announcement';
@@ -4994,7 +5048,10 @@ export default function RUMS() {
                             <div className="chat-message-bubble">
                               {message.replyTo && <div className="chat-reply-quote"><b>{message.replyTo.sender}</b><span>{message.replyTo.text || 'Image'}</span></div>}
                               {message.image && <button className="chat-message-image-button" onClick={() => window.open(message.image, '_blank', 'noopener,noreferrer')} title="Open image"><img className="chat-message-image" src={message.image} alt={message.text ? `Image sent by ${message.sender}` : `Chat image from ${message.sender}`} loading="lazy" /></button>}
-                              {message.text && <div className="chat-message-text">{message.text}</div>}
+                              {message.text && <>
+                                <div className="chat-message-text">{message.text}</div>
+                                <SpotifyMessageEmbed text={message.text} />
+                              </>}
                             </div>
                             <div className="chat-message-tools">
                               <button type="button" onClick={() => setChatReplyTo(message)}>Reply</button>
