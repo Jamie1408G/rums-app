@@ -526,6 +526,12 @@ export default function RUMS() {
   const [activeChat, setActiveChat] = useState('plaza');
   const [chatDraft, setChatDraft] = useState('');
   const [chatImageDraft, setChatImageDraft] = useState('');
+  const [gifPickerOpen, setGifPickerOpen] = useState(false);
+  const [gifQuery, setGifQuery] = useState('');
+  const [gifResults, setGifResults] = useState([]);
+  const [gifNext, setGifNext] = useState('');
+  const [gifLoading, setGifLoading] = useState(false);
+  const [gifError, setGifError] = useState('');
   const [chatSearch, setChatSearch] = useState('');
   const [chatListOpen, setChatListOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -3647,6 +3653,51 @@ export default function RUMS() {
     }));
   }
 
+  async function loadKlipyGifs({ query = gifQuery, next = '', append = false } = {}) {
+    if (gifLoading) return;
+    setGifLoading(true);
+    setGifError('');
+    try {
+      const params = new URLSearchParams();
+      if (query.trim()) params.set('q', query.trim());
+      if (next) params.set('pos', next);
+      params.set('limit', '32');
+      const response = await fetch(`/api/klipy?${params.toString()}`);
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error || 'Could not load KLIPY GIFs.');
+      const incoming = Array.isArray(payload.results) ? payload.results : [];
+      setGifResults((current) => append ? [...current, ...incoming] : incoming);
+      setGifNext(payload.next || '');
+    } catch (error) {
+      console.error(error);
+      setGifError(error?.message || 'Could not load KLIPY GIFs.');
+      if (!append) setGifResults([]);
+    } finally {
+      setGifLoading(false);
+    }
+  }
+
+  function openGifPicker() {
+    setGifPickerOpen((open) => {
+      const nextOpen = !open;
+      if (nextOpen && gifResults.length === 0 && !gifLoading) void loadKlipyGifs({ query: '', next: '', append: false });
+      return nextOpen;
+    });
+  }
+
+  async function selectKlipyGif(gif) {
+    if (!gif?.url) return;
+    setChatImageDraft(gif.url);
+    setGifPickerOpen(false);
+    try {
+      await fetch('/api/klipy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'share', id: gif.id }),
+      });
+    } catch { /* selection still works if share tracking fails */ }
+  }
+
   async function handleChatImagePick(event) {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -5090,6 +5141,27 @@ export default function RUMS() {
                     <div className="chat-composer">
                       {chatReplyTo && <div className="chat-replying"><span>Replying to <b>{chatReplyTo.sender}</b>: {chatReplyTo.text || 'Image'}</span><button onClick={() => setChatReplyTo(null)}><X size={13} /></button></div>}
                       {chatImageDraft && <div className="chat-image-preview"><img src={chatImageDraft} alt="Selected chat upload" /><button type="button" className="chat-image-remove" onClick={() => setChatImageDraft('')} aria-label="Remove image"><X size={14} /></button></div>}
+                      {gifPickerOpen && <div className="klipy-picker" role="dialog" aria-label="KLIPY GIF picker">
+                        <div className="klipy-picker-head">
+                          <form className="klipy-search" onSubmit={(event) => { event.preventDefault(); void loadKlipyGifs({ query: gifQuery, next: '', append: false }); }}>
+                            <Search size={16} />
+                            <input value={gifQuery} onChange={(event) => setGifQuery(event.target.value)} placeholder="Search KLIPY" aria-label="Search KLIPY" autoFocus />
+                            {gifQuery && <button type="button" onClick={() => { setGifQuery(''); void loadKlipyGifs({ query: '', next: '', append: false }); }} aria-label="Clear GIF search"><X size={14} /></button>}
+                          </form>
+                          <button type="button" className="klipy-close" onClick={() => setGifPickerOpen(false)} aria-label="Close GIF picker"><X size={16} /></button>
+                        </div>
+                        <div className="klipy-picker-label"><strong>{gifQuery.trim() ? 'Search results' : 'Featured GIFs'}</strong><span>Powered by KLIPY</span></div>
+                        {gifError ? <div className="klipy-state">{gifError}</div> : <>
+                          <div className="klipy-grid">
+                            {gifResults.map((gif) => <button key={gif.id} type="button" className="klipy-gif" onClick={() => { void selectKlipyGif(gif); }} title={gif.title || 'Send GIF'}>
+                              <img src={gif.preview || gif.url} alt={gif.title || 'GIF from KLIPY'} loading="lazy" />
+                            </button>)}
+                          </div>
+                          {gifLoading && <div className="klipy-state"><Loader2 size={18} className="spin" /> Loading GIFs…</div>}
+                          {!gifLoading && gifResults.length === 0 && <div className="klipy-state">No GIFs found.</div>}
+                          {!gifLoading && gifNext && <button type="button" className="klipy-more" onClick={() => { void loadKlipyGifs({ query: gifQuery, next: gifNext, append: true }); }}>Load more</button>}
+                        </>}
+                      </div>}
                       <textarea
                         value={chatDraft}
                         onChange={(event) => { setChatDraft(event.target.value.slice(0, 1200)); void noteTyping(); }}
@@ -5108,6 +5180,10 @@ export default function RUMS() {
                           <button className="chat-attach-button" type="button" onClick={() => chatImageInputRef.current?.click()} disabled={chatBusy || chatImageBusy}>
                             {chatImageBusy ? <Loader2 size={15} className="spin" /> : <ImagePlus size={15} />}
                             <span>{chatImageDraft ? 'Change image' : 'Add image'}</span>
+                          </button>
+                          <button className={`chat-attach-button klipy-button ${gifPickerOpen ? 'active' : ''}`} type="button" onClick={openGifPicker} disabled={chatBusy || chatImageBusy}>
+                            <span className="klipy-button-gif">GIF</span>
+                            <span>KLIPY</span>
                           </button>
                           <small>{chatDraft.length}/1200 · Shift+Enter for a new line</small>
                         </div>
