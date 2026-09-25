@@ -4511,3 +4511,30 @@ button,input,textarea { font:inherit; }
 .aero-root .push-settings strong {font-size:14px;}
 .aero-root .push-settings p {margin:0;color:var(--theme-muted,#6e829b);font-size:13px;line-height:1.45;}
 .aero-root .push-settings small {font-size:12px;line-height:1.5;color:var(--theme-muted,#6e829b);}
+
+
+/* Spotify embeds inside Plaza chat messages */
+.chat-spotify-embed {
+  width:min(430px,100%);
+  overflow:hidden;
+  border-radius:14px;
+  background:#121212;
+  box-shadow:0 5px 18px #0c172626;
+}
+.chat-spotify-embed iframe {
+  display:block;
+  width:100%;
+  max-width:100%;
+  border:0;
+  border-radius:inherit;
+  background:#121212;
+}
+.chat-message.own .chat-spotify-embed {
+  box-shadow:0 5px 18px #1644a542;
+}
+@media (max-width:700px) {
+  .chat-spotify-embed {
+    width:100%;
+    min-width:250px;
+  }
+}
