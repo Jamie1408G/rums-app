@@ -53,7 +53,7 @@ const PUNK_THEMES = RUMS_THEMES.filter((item) => PUNK_THEME_IDS.includes(item.id
 const MAIN_THEME_OPTIONS = RUMS_THEMES.filter((item) => !item.id.startsWith('roblox') && !FRUTIGER_THEME_IDS.includes(item.id) && !PUNK_THEME_IDS.includes(item.id));
 const RUMS_SPACES = {
   rums4: { id: 'rums4', label: 'RUMS 4', subtitle: 'The current archive', description: 'Everything from the current site, including Project Lumina and all older posts.' },
-  rums5: { id: 'rums5', label: 'RUMS 5', subtitle: 'The new era', description: 'The same RUMS experience with a fresh feed and no Project Lumina.' },
+  rums5: { id: 'rums5', label: 'Creative', subtitle: 'The new era', description: 'The same RUMS experience with a fresh feed and no Project Lumina.' },
 };
 const projectSpaceId = (projectId) => `project:${projectId}`;
 const isProjectSpaceId = (space) => typeof space === 'string' && space.startsWith('project:') && space.length > 8;
@@ -81,7 +81,7 @@ const PLAZA_OVERHAUL_WIDGET = {
   id: PLAZA_OVERHAUL_WIDGET_ID,
   placement: 'feed',
   title: '✨ RUMS Plaza has been completely overhauled!',
-  body: 'A fresh new look, smoother interactions and loads of new features — while keeping the glossy, modern RUMS aesthetic. Explore RUMS 4, RUMS 5 and Projects, emoji reactions, custom emojis, the visual editor and more.',
+  body: 'A fresh new look, smoother interactions and loads of new features — while keeping the glossy, modern RUMS aesthetic. Explore RUMS 4, Creative and Projects, emoji reactions, custom emojis, the visual editor and more.',
   image: '',
   actionLabel: '',
   actionUrl: '',
@@ -534,7 +534,7 @@ export default function RUMS() {
   const isProjectSpace = isProjectSpaceId(rumsSpace);
   const activeProject = isProjectSpace ? (plazaPlus.projects || []).find((project) => project.id === projectIdFromSpace(rumsSpace)) : null;
   const hasLumina = rumsSpace === 'rums4';
-  const activeSpace = isProjectSpace ? { id: rumsSpace, label: activeProject?.name || 'Project', subtitle: activeProject?.category === 'outside' ? 'Outside RUMS' : activeProject?.category === 'rums5' ? 'RUMS 5 project' : 'RUMS 4 project', description: activeProject?.description || 'Community project' } : (rumsSpace ? RUMS_SPACES[rumsSpace] : null);
+  const activeSpace = isProjectSpace ? { id: rumsSpace, label: activeProject?.name || 'Project', subtitle: activeProject?.category === 'outside' ? 'Outside RUMS' : activeProject?.category === 'rums5' ? 'Creative project' : 'RUMS 4 project', description: activeProject?.description || 'Community project' } : (rumsSpace ? RUMS_SPACES[rumsSpace] : null);
 
   function pageKeyForPlacement(placement) {
     if (!placement) return null;
@@ -910,8 +910,8 @@ export default function RUMS() {
       },
       {
         id: 'versions',
-        title: 'RUMS 4, RUMS 5 and Projects',
-        body: 'Use this switch to move between RUMS 4 and RUMS 5, or open Projects. Projects is a directory: choose a project there and it opens as its own complete Plaza space.',
+        title: 'RUMS 4, Creative and Projects',
+        body: 'Use this switch to move between RUMS 4 and Creative, or open Projects. Projects is a directory: choose a project there and it opens as its own complete Plaza space.',
         screen: 'feed',
         target: '[data-tutorial="version-switch"]',
       },
@@ -3883,7 +3883,7 @@ export default function RUMS() {
         data-tutorial="version-switch"
         className={`universal-rums-switcher ${rumsVersionDragging ? 'is-dragging' : ''}`}
         role="group"
-        aria-label="Switch between RUMS 4, RUMS 5 and Projects"
+        aria-label="Switch between RUMS 4, Creative and Projects"
         onPointerDown={handleRumsVersionPointerDown}
         onPointerMove={handleRumsVersionPointerMove}
         onPointerUp={handleRumsVersionPointerEnd}
@@ -4100,7 +4100,7 @@ export default function RUMS() {
             <div className="space-chooser-mark">R</div>
             <span className="space-chooser-kicker">RUMS PLAZA</span>
             <h1 id="rums-space-title">Welcome to RUMS Plaza</h1>
-            <p className="space-chooser-intro">Choose where you want to enter. Projects opens a directory of community-made spaces inside RUMS 4, RUMS 5 and outside RUMS.</p>
+            <p className="space-chooser-intro">Choose where you want to enter. Projects opens a directory of community-made spaces inside RUMS 4, Creative and outside RUMS.</p>
             <div className="space-choice-grid">
               <button type="button" className="space-choice-card rums4-choice" onClick={() => chooseRumsSpace('rums4')}>
                 <span className="space-choice-number">04</span>
@@ -4109,12 +4109,12 @@ export default function RUMS() {
               </button>
               <button type="button" className="space-choice-card rums5-choice" onClick={() => chooseRumsSpace('rums5')}>
                 <span className="space-choice-number">05</span>
-                <span className="space-choice-copy"><strong>RUMS 5</strong><small>The new era</small><em>Fresh posts · same features · no Project Lumina</em></span>
+                <span className="space-choice-copy"><strong>Creative</strong><small>The new era</small><em>Fresh posts · same features · no Project Lumina</em></span>
                 <span className="space-choice-arrow">→</span>
               </button>
               <button type="button" className="space-choice-card projects-choice" onClick={() => void openProjectsDirectory()}>
                 <span className="space-choice-number">PR</span>
-                <span className="space-choice-copy"><strong>Projects</strong><small>Project directory</small><em>RUMS 4 projects · RUMS 5 projects · Outside RUMS</em></span>
+                <span className="space-choice-copy"><strong>Projects</strong><small>Project directory</small><em>RUMS 4 projects · Creative projects · Outside RUMS</em></span>
                 <span className="space-choice-arrow">→</span>
               </button>
             </div>
@@ -4144,10 +4144,10 @@ export default function RUMS() {
               </section>
 
               <section className="project-directory-section">
-                <div className="project-directory-section-head"><div><span className="project-space-badge rums5">RUMS 5</span><h2>RUMS 5 Projects</h2></div><span>{(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'rums5').length} projects</span></div>
+                <div className="project-directory-section-head"><div><span className="project-space-badge rums5">Creative</span><h2>Creative Projects</h2></div><span>{(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'rums5').length} projects</span></div>
                 <div className="project-directory-grid">
-                  {(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'rums5').map((project)=><button type="button" className="project-directory-card simple-card" key={project.id} onClick={()=>void chooseProject(project)}><div className="project-card-top"><span className="project-space-badge rums5">RUMS 5</span><span className="space-choice-arrow">→</span></div><strong>{project.name}</strong><p>{project.description || 'Community project'}</p><small>by {project.owner} · {project.followers?.length || 0} followers</small></button>)}
-                  {!(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).some((project)=>project.category === 'rums5') && <div className="project-directory-empty">No RUMS 5 projects yet.</div>}
+                  {(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).filter((project)=>project.category === 'rums5').map((project)=><button type="button" className="project-directory-card simple-card" key={project.id} onClick={()=>void chooseProject(project)}><div className="project-card-top"><span className="project-space-badge rums5">Creative</span><span className="space-choice-arrow">→</span></div><strong>{project.name}</strong><p>{project.description || 'Community project'}</p><small>by {project.owner} · {project.followers?.length || 0} followers</small></button>)}
+                  {!(projectDirectoryProjects.length ? projectDirectoryProjects : plazaPlus.projects || []).some((project)=>project.category === 'rums5') && <div className="project-directory-empty">No Creative projects yet.</div>}
                 </div>
               </section>
 
@@ -4165,7 +4165,7 @@ export default function RUMS() {
                 <button type="button" className="project-create-close" onClick={()=>setProjectCreateOpen(false)}>×</button>
                 <span className="space-chooser-kicker">NEW PROJECT</span><h2>Create Project</h2><p>Pick where it belongs. Your project will open as its own complete RUMS Plaza-style space.</p>
                 <div className="project-directory-create-form modal-form">
-                  <label>Project group<select className="aero-input" value={projectDraft.category} onChange={(e)=>setProjectDraft({...projectDraft,category:e.target.value})}><option value="rums4">RUMS 4</option><option value="rums5">RUMS 5</option><option value="outside">Outside RUMS</option></select></label>
+                  <label>Project group<select className="aero-input" value={projectDraft.category} onChange={(e)=>setProjectDraft({...projectDraft,category:e.target.value})}><option value="rums4">RUMS 4</option><option value="rums5">Creative</option><option value="outside">Outside RUMS</option></select></label>
                   <label>Project name<input className="aero-input" placeholder="My project" value={projectDraft.name} onChange={(e)=>setProjectDraft({...projectDraft,name:e.target.value})}/></label>
                   <label>Description<textarea className="aero-input" rows="4" placeholder="What is this project?" value={projectDraft.description} onChange={(e)=>setProjectDraft({...projectDraft,description:e.target.value})}/></label>
                   <div className="project-create-actions"><button type="button" className="pill pill-btn" onClick={()=>setProjectCreateOpen(false)}>Cancel</button><button className="aero-btn" type="button" onClick={async()=>{await createProject();setProjectCreateOpen(false);}}>Create Project</button></div>
@@ -4360,7 +4360,7 @@ export default function RUMS() {
 
                   <div className="field-label">Where was it taken?</div>
                   {isRums5 ? (
-                    <div className="rums5-location-chip"><Check size={13} /> RUMS 5</div>
+                    <div className="rums5-location-chip"><Check size={13} /> Creative</div>
                   ) : (
                     <div ref={locationTabsRef} className={`tag-select location-tabs ${locationTabsDragging ? 'is-dragging' : ''}`} style={{ '--location-tab-index': tag === 'Lumina' ? 1 : 0 }} onPointerDown={handleLocationTabsPointerDown} onPointerMove={handleLocationTabsPointerMove} onPointerUp={handleLocationTabsPointerEnd} onPointerCancel={handleLocationTabsPointerEnd} onClickCapture={(e) => { if (locationTabsDragRef.current?.moved) { e.preventDefault(); e.stopPropagation(); } }}>
                       {TAGS.map((t) => (
@@ -4456,7 +4456,7 @@ export default function RUMS() {
                     <header className="chat-conversation-header">
                       <div className="chat-conversation-identity">
                         {activeChat === 'plaza' ? <span className="chat-header-avatar plaza-chat-avatar"><MessageCircle size={20} /></span> : <span className="chat-header-avatar">{avatarNode(activeChatLabel(), 38, 13)}</span>}
-                        <div><strong>{activeChatLabel()}</strong><small>{activeChat === 'plaza' ? 'Shared across RUMS 4, RUMS 5 and Projects' : 'Direct message'}</small></div>
+                        <div><strong>{activeChatLabel()}</strong><small>{activeChat === 'plaza' ? 'Shared across RUMS 4, Creative and Projects' : 'Direct message'}</small></div>
                       </div>
                       <div className="chat-header-actions">
                         <button className="pill pill-btn" onClick={() => setChatMediaOpen((open) => !open)}>Media</button>
@@ -4669,7 +4669,7 @@ export default function RUMS() {
 
                   {plusTab === 'groups' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Communities & group chats</h2><p>Create clubs for builders, transit, architecture, roleplay or anything else.</p></div></div><div className="plus-inline-form"><input className="aero-input" placeholder="Community name" value={groupDraft.name} onChange={(e)=>setGroupDraft({...groupDraft,name:e.target.value})}/><input className="aero-input" placeholder="What is it about?" value={groupDraft.description} onChange={(e)=>setGroupDraft({...groupDraft,description:e.target.value})}/><button className="aero-btn" onClick={createGroup}>Create</button></div><div className="group-grid">{(plazaPlus.groups||[]).map((group)=><article key={group.id} className="group-card"><h3>{group.name}</h3><p>{group.description}</p><small>{group.members?.length||0} members · owner {group.owner}</small><div className="plus-card-actions"><button onClick={()=>toggleGroupMembership(group.id)}>{group.members?.includes(currentUser.username)?'Leave':'Join'}</button>{group.members?.includes(currentUser.username)&&<button onClick={()=>{setActiveChat(`group:${group.id}`);setScreen('chat');}}>Open chat</button>}</div></article>)}</div></section>}
 
-                  {plusTab === 'projects' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Projects</h2><p>Project Lumina can now be one of many community projects with followers and timelines.</p></div></div><div className="plus-inline-form"><select className="aero-input" value={projectDraft.category||'rums4'} onChange={(e)=>setProjectDraft({...projectDraft,category:e.target.value})}><option value="rums4">Inside RUMS · RUMS 4</option><option value="rums5">Inside RUMS · RUMS 5</option><option value="outside">Outside RUMS</option></select><input className="aero-input" placeholder="Project name" value={projectDraft.name} onChange={(e)=>setProjectDraft({...projectDraft,name:e.target.value})}/><input className="aero-input" placeholder="Short description" value={projectDraft.description} onChange={(e)=>setProjectDraft({...projectDraft,description:e.target.value})}/><button className="aero-btn" onClick={createProject}>Create</button></div><div className="project-grid"><article className="project-card featured"><span className="eyebrow">OFFICIAL PROJECT</span><h3>Project Lumina</h3><p>The original RUMS Plaza project space.</p><button onClick={openLumina} disabled={isRums5}>Open project</button></article>{(plazaPlus.projects||[]).map((project)=><article key={project.id} className="project-card"><span className="project-category-label">{project.category === 'outside' ? 'OUTSIDE RUMS' : project.category === 'rums5' ? 'RUMS 5 PROJECT' : 'RUMS 4 PROJECT'}</span><h3>{project.name}</h3><p>{project.description}</p><small>{project.followers?.length||0} followers · {project.owner}</small><div className="plus-card-actions"><button onClick={()=>void chooseProject(project)}>Open project</button><button onClick={()=>toggleProjectFollow(project.id)}>{project.followers?.includes(currentUser.username)?'Following':'Follow'}</button>{project.owner===currentUser.username&&<button onClick={()=>{const title=window.prompt('Milestone');if(title)void commitPlazaPlus((data)=>({...data,projects:(data.projects||[]).map((p)=>p.id===project.id?{...p,milestones:[...(p.milestones||[]),{title,timestamp:Date.now()}]}:p)}));}}>Add milestone</button>}</div>{(project.milestones||[]).length>0&&<div className="timeline-list">{project.milestones.map((m,i)=><div key={`${m.timestamp}-${i}`}><b>{m.title}</b><small>{timeAgo(m.timestamp)}</small></div>)}</div>}</article>)}</div></section>}
+                  {plusTab === 'projects' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Projects</h2><p>Project Lumina can now be one of many community projects with followers and timelines.</p></div></div><div className="plus-inline-form"><select className="aero-input" value={projectDraft.category||'rums4'} onChange={(e)=>setProjectDraft({...projectDraft,category:e.target.value})}><option value="rums4">Inside RUMS · RUMS 4</option><option value="rums5">Inside RUMS · Creative</option><option value="outside">Outside RUMS</option></select><input className="aero-input" placeholder="Project name" value={projectDraft.name} onChange={(e)=>setProjectDraft({...projectDraft,name:e.target.value})}/><input className="aero-input" placeholder="Short description" value={projectDraft.description} onChange={(e)=>setProjectDraft({...projectDraft,description:e.target.value})}/><button className="aero-btn" onClick={createProject}>Create</button></div><div className="project-grid"><article className="project-card featured"><span className="eyebrow">OFFICIAL PROJECT</span><h3>Project Lumina</h3><p>The original RUMS Plaza project space.</p><button onClick={openLumina} disabled={isRums5}>Open project</button></article>{(plazaPlus.projects||[]).map((project)=><article key={project.id} className="project-card"><span className="project-category-label">{project.category === 'outside' ? 'OUTSIDE RUMS' : project.category === 'rums5' ? 'CREATIVE PROJECT' : 'RUMS 4 PROJECT'}</span><h3>{project.name}</h3><p>{project.description}</p><small>{project.followers?.length||0} followers · {project.owner}</small><div className="plus-card-actions"><button onClick={()=>void chooseProject(project)}>Open project</button><button onClick={()=>toggleProjectFollow(project.id)}>{project.followers?.includes(currentUser.username)?'Following':'Follow'}</button>{project.owner===currentUser.username&&<button onClick={()=>{const title=window.prompt('Milestone');if(title)void commitPlazaPlus((data)=>({...data,projects:(data.projects||[]).map((p)=>p.id===project.id?{...p,milestones:[...(p.milestones||[]),{title,timestamp:Date.now()}]}:p)}));}}>Add milestone</button>}</div>{(project.milestones||[]).length>0&&<div className="timeline-list">{project.milestones.map((m,i)=><div key={`${m.timestamp}-${i}`}><b>{m.title}</b><small>{timeAgo(m.timestamp)}</small></div>)}</div>}</article>)}</div></section>}
 
                   {plusTab === 'knowledge' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Wiki, server map & build directory</h2><p>Document lore, locations and important builds in one searchable community knowledge base.</p></div></div><div className="knowledge-columns"><div><h3>Wiki</h3><input className="aero-input" placeholder="Page title" value={wikiDraft.title} onChange={(e)=>setWikiDraft({...wikiDraft,title:e.target.value})}/><textarea className="caption-area" placeholder="Wiki content" value={wikiDraft.body} onChange={(e)=>setWikiDraft({...wikiDraft,body:e.target.value})}/><button className="aero-btn" onClick={addWikiPage}>Add page</button>{(plazaPlus.wiki||[]).map((page)=><article className="wiki-card" key={page.id}><h4>{page.title}</h4><p>{page.body}</p><small>Updated {timeAgo(page.updatedAt)} by {page.author}</small></article>)}</div><div><h3>Build directory / schematic map</h3><input className="aero-input" placeholder="Build name" value={buildDraft.name} onChange={(e)=>setBuildDraft({...buildDraft,name:e.target.value})}/><input className="aero-input" placeholder="Location / district" value={buildDraft.location} onChange={(e)=>setBuildDraft({...buildDraft,location:e.target.value})}/><input className="aero-input" placeholder="Owner" value={buildDraft.owner} onChange={(e)=>setBuildDraft({...buildDraft,owner:e.target.value})}/><textarea className="caption-area" placeholder="Description" value={buildDraft.description} onChange={(e)=>setBuildDraft({...buildDraft,description:e.target.value})}/><button className="aero-btn" onClick={addBuildEntry}>Add build</button><div className="server-map-schematic">{(plazaPlus.builds||[]).map((build,i)=><button key={build.id} style={{left:`${12+(i*23)%74}%`,top:`${18+(i*31)%65}%`}} title={`${build.name} · ${build.location}`}>◆</button>)}<span>RUMS schematic map</span></div>{(plazaPlus.builds||[]).map((build)=><article key={build.id} className="build-row"><b>{build.name}</b><span>{build.location}</span><small>{build.owner}</small></article>)}</div></div></section>}
 
@@ -5026,7 +5026,7 @@ export default function RUMS() {
 
                   <section className="site-editor custom-emoji-admin">
                     <div className="admin-section-title"><ImagePlus size={16} /> Custom emojis <span>{customEmojiStatus}</span></div>
-                    <p className="editor-intro">Custom emojis are shared across RUMS 4, RUMS 5 and Projects and appear in the same reaction picker as the native emoji library.</p>
+                    <p className="editor-intro">Custom emojis are shared across RUMS 4, Creative and Projects and appear in the same reaction picker as the native emoji library.</p>
                     <div className="custom-emoji-create">
                       <div className={`custom-emoji-preview ${customEmojiDraft.image ? 'has-image' : ''}`}>
                         {customEmojiDraft.image ? <img src={customEmojiDraft.image} alt="Custom emoji preview" /> : <span>+</span>}
@@ -5130,7 +5130,7 @@ export default function RUMS() {
                     <button className="pill pill-btn" onClick={()=>setSearchFilters({type:'all',tag:'all',author:'',from:'',to:''})}>Reset</button>
                   </div>
 
-                  {!q && !searchFilters.author && searchFilters.tag==='all' && !searchFilters.from && !searchFilters.to && <p className="switch-line" style={{ padding: '0 4px' }}>{isProjectSpace ? `Search covers posts in ${activeProject?.name || 'this project'}. Tap a result to jump to it.` : isRums5 ? 'Search covers all RUMS 5 posts. Tap a result to jump to it.' : 'Search covers all RUMS 4 posts, including Lumina. Tap a result to jump to it.'}</p>}
+                  {!q && !searchFilters.author && searchFilters.tag==='all' && !searchFilters.from && !searchFilters.to && <p className="switch-line" style={{ padding: '0 4px' }}>{isProjectSpace ? `Search covers posts in ${activeProject?.name || 'this project'}. Tap a result to jump to it.` : isRums5 ? 'Search covers all Creative posts. Tap a result to jump to it.' : 'Search covers all RUMS 4 posts, including Lumina. Tap a result to jump to it.'}</p>}
 
                   {(q || searchFilters.author || searchFilters.tag !== 'all' || searchFilters.from || searchFilters.to) && (
                     <>
