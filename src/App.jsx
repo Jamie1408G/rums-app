@@ -1383,8 +1383,14 @@ export default function RUMS() {
 
   function rumsVersionForPointer(clientX, rect = rumsVersionDragRef.current?.rect || rumsVersionSwitchRef.current?.getBoundingClientRect()) {
     if (!rect) return rumsSpace || 'rums4';
-    const index = Math.max(0, Math.min(2, Math.floor((clientX - rect.left) / (rect.width / 3))));
-    return ['rums4', 'rums5'][index];
+    const buttons = rumsVersionSwitchRef.current?.querySelectorAll('button[data-space]');
+    if (!buttons?.length) return rumsSpace || 'rums4';
+    const closest = [...buttons].reduce((best, button) => {
+      const bounds = button.getBoundingClientRect();
+      const distance = Math.max(bounds.left - clientX, 0, clientX - bounds.right);
+      return distance < best.distance ? { space: button.dataset.space, distance } : best;
+    }, { space: 'rums4', distance: Infinity });
+    return closest.space;
   }
 
   function applyRumsVersionDrag(clientX, drag = rumsVersionDragRef.current) {
@@ -1409,6 +1415,7 @@ export default function RUMS() {
   function handleRumsVersionPointerDown(e) {
     if (spaceSwitchBusy) return;
     if (e.button !== 0 && e.pointerType === 'mouse') return;
+    rumsVersionSuppressClickRef.current = false;
     const rect = e.currentTarget.getBoundingClientRect();
     rumsVersionDragRef.current = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, moved: false, rect, frame: 0, pendingX: e.clientX, target: rumsSpace };
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -3876,7 +3883,7 @@ export default function RUMS() {
 
   function renderRumsVersionSwitcher() {
     const visualVersion = spaceSwitchBusy || (isProjectSpace ? 'projects' : rumsSpace);
-    const options = [['rums4', 'RUMS', '4'], ['rums5', 'RUMS', '5'], ['projects', 'PROJECTS', '']];
+    const options = [['rums4', 'RUMS', '4'], ['rums5', 'CREATIVE', ''], ['projects', 'PROJECTS', '']];
     return (
       <div
         ref={rumsVersionSwitchRef}
@@ -3893,8 +3900,8 @@ export default function RUMS() {
         }}
       >
         {options.map(([id, label, number]) => (
-          <button key={id} type="button" className={visualVersion === id ? 'active' : ''} aria-pressed={id === 'projects' ? isProjectSpace : rumsSpace === id}
-            onClick={() => { if (!spaceSwitchBusy && (id === 'projects' || rumsSpace !== id)) void switchRumsSpace(id); }} disabled={Boolean(spaceSwitchBusy)} title={`Open ${id === 'projects' ? 'Projects' : `${label} ${number}`}`}>
+          <button key={id} type="button" data-space={id} className={visualVersion === id ? 'active' : ''} aria-pressed={id === 'projects' ? isProjectSpace : rumsSpace === id}
+            onClick={() => { if (!spaceSwitchBusy && (id === 'projects' || rumsSpace !== id)) void switchRumsSpace(id); }} disabled={Boolean(spaceSwitchBusy)} title={`Open ${id === 'rums4' ? 'RUMS 4' : id === 'rums5' ? 'Creative' : 'Projects'}`}>
             <span>{label}</span>{number && <strong>{spaceSwitchBusy === id ? <Loader2 size={12} className="spin" /> : number}</strong>}{id === 'projects' && spaceSwitchBusy === id && <Loader2 size={12} className="spin" />}
           </button>
         ))}

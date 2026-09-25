@@ -4049,3 +4049,12 @@ button,input,textarea { font:inherit; }
   .aero-frame > .rums-space-chooser .space-choice-number {width: 44px;height: 44px;font-size: 16px;}
   .aero-frame > .rums-space-chooser .space-choice-arrow {width: 28px;height: 28px;}
 }
+
+/* Show the Creative name in the persistent space switch at every size. */
+.universal-rums-switcher button[data-space="rums5"] {min-width: 86px;}
+.universal-rums-switcher.is-dragging[data-drag-target="projects"] button[data-space="projects"] {color: #fff!important;}
+@media (max-width: 720px) {
+  .universal-rums-switcher button[data-space="rums5"] {min-width: 75px;}
+  .universal-rums-switcher button[data-space="rums5"] span {font-size: 8px;}
+  .universal-rums-switcher button[data-space="rums5"] span::after {content: none;}
+}
