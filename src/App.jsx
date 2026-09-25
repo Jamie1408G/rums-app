@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import './legacy.css';
 import './redesign.css';
 import {
-  Heart, MessageCircle, SmilePlus, LogOut, ShieldCheck, Shield, User as UserIcon, Menu,
+  Heart, MessageCircle, SmilePlus, Star, LogOut, ShieldCheck, Shield, User as UserIcon, Menu,
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
   Lightbulb, Megaphone, Pencil,
   GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff, Undo2, Redo2, RotateCcw,
@@ -4404,7 +4404,7 @@ export default function RUMS() {
             {shareStatus[post.id] ? <Check size={17} color="#0fb8a6" /> : <Share2 size={17} />}
             {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
           </button>
-          <button className={`comment-btn bookmark-btn ${bookmarkedPosts().includes(post.id) ? 'active' : ''}`} onClick={() => toggleBookmark(post.id)} title="Save post">{bookmarkedPosts().includes(post.id) ? '★' : '☆'}</button>
+          <button className={`comment-btn bookmark-btn ${bookmarkedPosts().includes(post.id) ? 'active' : ''}`} onClick={() => toggleBookmark(post.id)} title={bookmarkedPosts().includes(post.id) ? 'Remove from favorites' : 'Add to favorites'} aria-label={bookmarkedPosts().includes(post.id) ? 'Remove from favorites' : 'Add to favorites'} aria-pressed={bookmarkedPosts().includes(post.id)}><Star size={19} fill={bookmarkedPosts().includes(post.id) ? 'currentColor' : 'none'} /></button>
           {post.username === currentUser.username && <button className={`comment-btn pin-btn ${plusProfile().pinnedPostIds?.includes(post.id) ? 'active' : ''}`} onClick={() => togglePinnedPost(post.id)} title="Pin to profile">📌</button>}
         </div>
         {renderReactionBar(post, 'post', reactionContext)}
