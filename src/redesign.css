@@ -4449,3 +4449,29 @@ button,input,textarea { font:inherit; }
   .aero-root.screen-chat .chat-composer {padding:9px 10px;}
   .aero-root.screen-chat .chat-composer textarea {min-height:42px;max-height:90px;padding:10px 11px;}
 }
+
+/* The mobile header uses a single actions menu instead of a full toolbar. */
+.aero-root .mobile-header-menu-button,.aero-root .mobile-header-menu {display:none;}
+@media (max-width:760px) {
+  .aero-root .aero-header {grid-template-columns:minmax(0,1fr) 44px;grid-template-rows:auto auto;align-items:center;gap:5px 7px;min-height:0;padding:7px 10px;}
+  .aero-root .aero-brand-version-switch {grid-column:1;grid-row:1;}
+  .aero-root .aero-header-actions,.aero-root.screen-chat .aero-header-actions {display:none;}
+  .aero-root .aero-header-center {grid-column:1/-1;grid-row:2;}
+  .aero-root .mobile-header-menu-button {position:relative;grid-column:2;grid-row:1;display:grid;place-items:center;width:44px;height:42px;padding:0;border:1px solid var(--theme-border,#dce8f5);border-radius:13px;background:var(--theme-surface,rgba(255,255,255,.8));color:var(--theme-text,#314763);cursor:pointer;}
+  .aero-root .mobile-header-menu-dot {position:absolute;top:5px;right:6px;width:8px;height:8px;border:2px solid var(--theme-surface,#fff);border-radius:50%;background:#ef5e78;}
+  .aero-root .mobile-header-menu {position:absolute;top:calc(100% + 7px);right:0;z-index:80;display:flex;flex-direction:column;gap:3px;width:min(280px,calc(100vw - 22px));padding:8px;border:1px solid var(--theme-border,#dce8f5);border-radius:17px;background:var(--theme-surface,#fff);box-shadow:0 16px 38px #223d6352;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);}
+  .aero-root .mobile-header-menu button {display:flex;align-items:center;gap:10px;min-height:43px;padding:9px 11px;border:0;border-radius:11px;background:transparent;color:var(--theme-text,#314763);text-align:left;font-size:13px;font-weight:700;cursor:pointer;}
+  .aero-root .mobile-header-menu button:hover {background:var(--theme-accent-soft,#eaf4ff);}
+  .aero-root .mobile-header-menu button b {margin-left:auto;color:var(--theme-accent,#3478f6);}
+  .aero-root .bottom-nav {height:61px;padding:4px 5px;border-radius:20px;}
+  .aero-root .bottom-nav .nav-btn {height:44px;min-height:44px;gap:1px;}
+  .aero-root .bottom-nav .nav-btn svg {width:19px;height:19px;}
+  .aero-root .bottom-nav .nav-upload {width:45px;height:45px;border-radius:15px;}
+  .aero-root .content {padding-bottom:calc(79px + env(safe-area-inset-bottom));}
+  .aero-root .content.content-plaza-plus {padding-bottom:calc(79px + env(safe-area-inset-bottom));}
+  .aero-root .content.content-chat,.aero-root.screen-chat .content.content-chat {padding-bottom:calc(75px + env(safe-area-inset-bottom));}
+  .aero-root.screen-chat .aero-header {grid-template-columns:minmax(0,1fr) 44px;grid-template-rows:auto;min-height:0;padding:7px 10px;}
+  .aero-root.screen-chat .universal-rums-switcher button span {font-size:10px;}
+  .aero-root.screen-chat .universal-rums-switcher button span::after {content:none;}
+  .aero-root.screen-chat .universal-rums-switcher button[data-space="rums5"] span,.aero-root.screen-chat .universal-rums-switcher button[data-space="projects"] span {font-size:10px;}
+}

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import './legacy.css';
 import './redesign.css';
 import {
-  Heart, MessageCircle, LogOut, ShieldCheck, Shield, User as UserIcon,
+  Heart, MessageCircle, LogOut, ShieldCheck, Shield, User as UserIcon, Menu,
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
   Lightbulb, Megaphone, Pencil,
   GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff, Undo2, Redo2, RotateCcw,
@@ -465,6 +465,7 @@ export default function RUMS() {
   const [chatImageDraft, setChatImageDraft] = useState('');
   const [chatSearch, setChatSearch] = useState('');
   const [chatListOpen, setChatListOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [chatBusy, setChatBusy] = useState(false);
   const [chatImageBusy, setChatImageBusy] = useState(false);
   const [plazaPlus, setPlazaPlus] = useState(DEFAULT_PLAZA_PLUS);
@@ -615,6 +616,8 @@ export default function RUMS() {
   const lastTypingWriteRef = useRef({});
   const [rumsVersionDragging, setRumsVersionDragging] = useState(false);
   const activeStorageKeys = storageKeysForSpace(rumsSpace || 'rums4');
+
+  useEffect(() => { setMobileMenuOpen(false); }, [screen]);
 
   useEffect(() => {
     let stopped = false;
@@ -4648,6 +4651,14 @@ export default function RUMS() {
                 {renderRumsVersionSwitcher()}
               </div>
               {screen === 'feed' && !isProjectSpace && <div className="aero-header-center">{renderFeedTabs()}</div>}
+              <button className="mobile-header-menu-button" type="button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Open site menu" aria-expanded={mobileMenuOpen}><Menu size={21} />{notificationsForCurrentUser().length > 0 && <span className="mobile-header-menu-dot" />}</button>
+              {mobileMenuOpen && <nav className="mobile-header-menu" aria-label="Site menu">
+                <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('plazaPlus'); setPlusTab('notifications'); }}><Sparkles size={17} /> Plaza+ and notifications {notificationsForCurrentUser().length > 0 && <b>{notificationsForCurrentUser().length}</b>}</button>
+                {siteConfig.showDiscover && <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('search'); }}><Search size={17} /> Discover</button>}
+                <button type="button" onClick={() => { setMobileMenuOpen(false); openOwnProfile(); }}><UserIcon size={17} /> My profile</button>
+                {isOwner && <button type="button" onClick={() => { setMobileMenuOpen(false); setEditMode((editing) => !editing); }}><Pencil size={17} /> {editMode ? 'Finish editing' : 'Edit website'}</button>}
+                <button type="button" onClick={() => { setMobileMenuOpen(false); void handleLogout(); }}><LogOut size={17} /> Log out</button>
+              </nav>}
               <div className="aero-header-actions">
                 {editMode && isOwner ? <button className="finish-editing-button" onClick={() => setEditMode(false)}><Check size={17} /> Finish editing</button> : <>
                 {isOwner && <button className="icon-btn" onClick={() => setEditMode(true)} title="Edit website"><Pencil size={18} /></button>}
