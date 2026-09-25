@@ -200,6 +200,17 @@ function SpotifyMessageEmbed({ text }) {
   );
 }
 
+function KlipyMedia({ gif, className = '', controls = false }) {
+  if (!gif) return null;
+  const mp4 = gif.mp4 || gif.tinymp4 || '';
+  const image = gif.preview || gif.url || '';
+  if (mp4) {
+    return <video className={className} src={mp4} poster={image || undefined} autoPlay loop muted playsInline controls={controls} preload="metadata" />;
+  }
+  if (image) return <img className={className} src={image} alt={gif.title || 'GIF'} loading="lazy" referrerPolicy="no-referrer" />;
+  return null;
+}
+
 const CUSTOM_EMOJIS_KEY = 'rums-custom-emojis';
 const CHAT_MESSAGES_KEY = 'rums-chat-messages';
 const SITE_ANNOUNCEMENT_KEY = 'rums-site-announcement';
@@ -526,6 +537,7 @@ export default function RUMS() {
   const [activeChat, setActiveChat] = useState('plaza');
   const [chatDraft, setChatDraft] = useState('');
   const [chatImageDraft, setChatImageDraft] = useState('');
+  const [chatGifDraft, setChatGifDraft] = useState(null);
   const [gifPickerOpen, setGifPickerOpen] = useState(false);
   const [gifQuery, setGifQuery] = useState('');
   const [gifResults, setGifResults] = useState([]);
@@ -3661,16 +3673,16 @@ export default function RUMS() {
       const params = new URLSearchParams();
       if (query.trim()) params.set('q', query.trim());
       if (next) params.set('pos', next);
-      params.set('limit', '32');
+      params.set('limit', '18');
       const response = await fetch(`/api/klipy?${params.toString()}`);
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload?.error || 'Could not load KLIPY GIFs.');
+      if (!response.ok) throw new Error(payload?.error || 'Could not load GIFs.');
       const incoming = Array.isArray(payload.results) ? payload.results : [];
       setGifResults((current) => append ? [...current, ...incoming] : incoming);
       setGifNext(payload.next || '');
     } catch (error) {
       console.error(error);
-      setGifError(error?.message || 'Could not load KLIPY GIFs.');
+      setGifError(error?.message || 'Could not load GIFs.');
       if (!append) setGifResults([]);
     } finally {
       setGifLoading(false);
@@ -3687,7 +3699,8 @@ export default function RUMS() {
 
   async function selectKlipyGif(gif) {
     if (!gif?.url) return;
-    setChatImageDraft(gif.url);
+    setChatGifDraft(gif);
+    setChatImageDraft('');
     setGifPickerOpen(false);
     try {
       await fetch('/api/klipy', {
@@ -3710,6 +3723,7 @@ export default function RUMS() {
     try {
       const image = await resizeImage(file);
       setChatImageDraft(image);
+      setChatGifDraft(null);
     } catch (e) {
       console.error(e);
       setError('Could not load that image.');
@@ -3722,7 +3736,8 @@ export default function RUMS() {
     if (!currentUser || chatBusy || chatImageBusy) return;
     const text = chatDraft.trim().slice(0, 1200);
     const image = chatImageDraft || '';
-    if (!text && !image) return;
+    const gif = chatGifDraft ? { id: chatGifDraft.id || '', title: chatGifDraft.title || 'GIF', url: chatGifDraft.url || '', preview: chatGifDraft.preview || '', mp4: chatGifDraft.mp4 || '', tinymp4: chatGifDraft.tinymp4 || '' } : null;
+    if (!text && !image && !gif) return;
     if (activeChat !== 'plaza' && !activeChat.startsWith('dm:') && !activeChat.startsWith('group:')) return;
     const recipient = activeChat.startsWith('dm:') ? activeChat.slice(3) : null;
     const groupId = activeChat.startsWith('group:') ? activeChat.slice(6) : null;
@@ -3741,6 +3756,7 @@ export default function RUMS() {
       sender: currentUser.username,
       text,
       image,
+      gif,
       replyTo: chatReplyTo ? { id: chatReplyTo.id, sender: chatReplyTo.sender, text: chatReplyTo.text || '', image: chatReplyTo.image || '' } : null,
       timestamp: Date.now(),
     };
@@ -3754,7 +3770,7 @@ export default function RUMS() {
         } catch { /* keep local copy */ }
       }
       const next = [...latest.filter((item) => item?.id !== message.id), message]
-        .filter((item) => item && item.id && item.sender && (item.text || item.image))
+        .filter((item) => item && item.id && item.sender && (item.text || item.image || item.gif))
         .slice(-2500);
       await window.storage.set(CHAT_MESSAGES_KEY, JSON.stringify(next), true);
       setChatMessages(next);
@@ -3767,11 +3783,12 @@ export default function RUMS() {
       }
       if (groupId) (group?.members || []).filter((u)=>u!==currentUser.username).forEach((u)=>chatTargets.add(u));
       if (chatTargets.size) {
-        const preview = text ? `${text.replace(/\s+/g, ' ').trim().slice(0, 140)}${image ? ' · Photo' : ''}` : 'Sent a photo';
+        const preview = text ? `${text.replace(/\s+/g, ' ').trim().slice(0, 140)}${image ? ' · Photo' : gif ? ' · GIF' : ''}` : gif ? 'Sent a GIF' : 'Sent a photo';
         void commitPlazaPlus((data)=>({...data,activities:[...[...chatTargets].map((targetUser,i)=>({id:`act-${Date.now()}-chat-${i}`,type:'message',actor:currentUser.username,targetUser,text:`${currentUser.username} sent you a chat message`,preview,timestamp:Date.now()})),...(data.activities||[])].slice(0,800)}));
       }
       setChatDraft('');
       setChatImageDraft('');
+      setChatGifDraft(null);
       setChatReplyTo(null);
       setChatReadState((current) => {
         const nextRead = { ...current, [activeChat]: message.timestamp };
@@ -5098,7 +5115,7 @@ export default function RUMS() {
                         {activeChat.startsWith('dm:') && <button className="pill pill-btn" onClick={() => openProfile(activeChatLabel())}>View profile</button>}
                       </div>
                     </header>
-                    {chatMediaOpen && <div className="chat-media-gallery">{chatMessagesForThread(activeChat).filter((m) => m.image).map((m) => <button key={m.id} onClick={() => window.open(m.image, '_blank', 'noopener,noreferrer')}><img src={m.image} alt={`Shared by ${m.sender}`} /></button>)}{chatMessagesForThread(activeChat).filter((m) => m.image).length === 0 && <small>No shared images in this conversation yet.</small>}</div>}
+                    {chatMediaOpen && <div className="chat-media-gallery">{chatMessagesForThread(activeChat).filter((m) => m.image || m.gif).map((m) => m.gif ? <button key={m.id} type="button" title={`GIF shared by ${m.sender}`}><KlipyMedia gif={m.gif} /></button> : <button key={m.id} onClick={() => window.open(m.image, '_blank', 'noopener,noreferrer')}><img src={m.image} alt={`Shared by ${m.sender}`} /></button>)}{chatMessagesForThread(activeChat).filter((m) => m.image || m.gif).length === 0 && <small>No shared media in this conversation yet.</small>}</div>}
 
                     <div className="chat-message-list" ref={chatMessageListRef} onScroll={(event) => { const list = event.currentTarget; chatPinnedRef.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80; }}>
                       {chatMessagesForThread(activeChat).length === 0 ? (
@@ -5111,13 +5128,14 @@ export default function RUMS() {
                         const showSeen = own && activeChat.startsWith('dm:') && seenIndex >= index && !list.slice(index + 1).some((item) => item.sender === currentUser.username);
                         const spotifyEmbed = spotifyEmbedFromText(message.text || '');
                         const spotifyVisibleText = stripSpotifyLinks(message.text || '');
-                        const spotifyOnly = !!spotifyEmbed && !spotifyVisibleText && !message.image && !message.replyTo;
+                        const spotifyOnly = !!spotifyEmbed && !spotifyVisibleText && !message.image && !message.gif && !message.replyTo;
                         return <div key={message.id} className={`chat-message ${own ? 'own' : ''} ${grouped ? 'grouped' : ''} ${spotifyEmbed ? 'has-spotify' : ''} ${spotifyOnly ? 'spotify-only' : ''}`}>
                           {!grouped && <button className="chat-message-avatar" onClick={() => openProfile(message.sender)} aria-label={`Open ${message.sender}'s profile`}>{avatarNode(message.sender, 32, 11)}</button>}
                           <div className="chat-message-main">
                             {!grouped && <div className="chat-message-meta"><button onClick={() => openProfile(message.sender)}>{message.sender}</button><span>{timeAgo(message.timestamp)}</span></div>}
                             <div className="chat-message-bubble">
                               {message.replyTo && <div className="chat-reply-quote"><b>{message.replyTo.sender}</b><span>{message.replyTo.text || 'Image'}</span></div>}
+                              {message.gif && <div className="chat-klipy-message" title={message.gif.title || 'GIF'}><KlipyMedia gif={message.gif} className="chat-klipy-media" /></div>}
                               {message.image && <button className="chat-message-image-button" onClick={() => window.open(message.image, '_blank', 'noopener,noreferrer')} title="Open image"><img className="chat-message-image" src={message.image} alt={message.text ? `Image sent by ${message.sender}` : `Chat image from ${message.sender}`} loading="lazy" /></button>}
                               {message.text && <>
                                 {spotifyVisibleText && <div className="chat-message-text">{spotifyVisibleText}</div>}
@@ -5141,20 +5159,21 @@ export default function RUMS() {
                     <div className="chat-composer">
                       {chatReplyTo && <div className="chat-replying"><span>Replying to <b>{chatReplyTo.sender}</b>: {chatReplyTo.text || 'Image'}</span><button onClick={() => setChatReplyTo(null)}><X size={13} /></button></div>}
                       {chatImageDraft && <div className="chat-image-preview"><img src={chatImageDraft} alt="Selected chat upload" /><button type="button" className="chat-image-remove" onClick={() => setChatImageDraft('')} aria-label="Remove image"><X size={14} /></button></div>}
-                      {gifPickerOpen && <div className="klipy-picker" role="dialog" aria-label="KLIPY GIF picker">
+                      {chatGifDraft && <div className="chat-image-preview chat-gif-preview"><KlipyMedia gif={chatGifDraft} /><button type="button" className="chat-image-remove" onClick={() => setChatGifDraft(null)} aria-label="Remove GIF"><X size={14} /></button></div>}
+                      {gifPickerOpen && <div className="klipy-picker" role="dialog" aria-label="GIF picker">
                         <div className="klipy-picker-head">
                           <form className="klipy-search" onSubmit={(event) => { event.preventDefault(); void loadKlipyGifs({ query: gifQuery, next: '', append: false }); }}>
                             <Search size={16} />
-                            <input value={gifQuery} onChange={(event) => setGifQuery(event.target.value)} placeholder="Search KLIPY" aria-label="Search KLIPY" autoFocus />
+                            <input value={gifQuery} onChange={(event) => setGifQuery(event.target.value)} placeholder="Search GIFs" aria-label="Search GIFs" autoFocus />
                             {gifQuery && <button type="button" onClick={() => { setGifQuery(''); void loadKlipyGifs({ query: '', next: '', append: false }); }} aria-label="Clear GIF search"><X size={14} /></button>}
                           </form>
                           <button type="button" className="klipy-close" onClick={() => setGifPickerOpen(false)} aria-label="Close GIF picker"><X size={16} /></button>
                         </div>
-                        <div className="klipy-picker-label"><strong>{gifQuery.trim() ? 'Search results' : 'Featured GIFs'}</strong><span>Powered by KLIPY</span></div>
+                        <div className="klipy-picker-label"><strong>{gifQuery.trim() ? 'Search results' : 'Trending GIFs'}</strong></div>
                         {gifError ? <div className="klipy-state">{gifError}</div> : <>
                           <div className="klipy-grid">
                             {gifResults.map((gif) => <button key={gif.id} type="button" className="klipy-gif" onClick={() => { void selectKlipyGif(gif); }} title={gif.title || 'Send GIF'}>
-                              <img src={gif.preview || gif.url} alt={gif.title || 'GIF from KLIPY'} loading="lazy" />
+                              <img src={gif.preview || gif.url} alt={gif.title || 'GIF'} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                             </button>)}
                           </div>
                           {gifLoading && <div className="klipy-state"><Loader2 size={18} className="spin" /> Loading GIFs…</div>}
@@ -5183,11 +5202,11 @@ export default function RUMS() {
                           </button>
                           <button className={`chat-attach-button klipy-button ${gifPickerOpen ? 'active' : ''}`} type="button" onClick={openGifPicker} disabled={chatBusy || chatImageBusy}>
                             <span className="klipy-button-gif">GIF</span>
-                            <span>KLIPY</span>
+                            <span>GIF</span>
                           </button>
                           <small>{chatDraft.length}/1200 · Shift+Enter for a new line</small>
                         </div>
-                        <button className="chat-send-button" onClick={sendChatMessage} disabled={chatBusy || chatImageBusy || (!chatDraft.trim() && !chatImageDraft)}>{chatBusy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}<span>Send</span></button>
+                        <button className="chat-send-button" onClick={sendChatMessage} disabled={chatBusy || chatImageBusy || (!chatDraft.trim() && !chatImageDraft && !chatGifDraft)}>{chatBusy ? <Loader2 size={17} className="spin" /> : <Send size={17} />}<span>Send</span></button>
                       </div>
                     </div>
                   </section>
