@@ -40,10 +40,11 @@ const UI_SFX = {
   click: { src: '/audio/ui-click.wav', volume: 0.30 },
   change: { src: '/audio/ui-change.wav', volume: 0.60 },
   select: { src: '/audio/ui-select.wav', volume: 0.72 },
+  select2: { src: '/audio/ui-select2.wav', volume: 0.78 },
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'version-select-sound-78';
+const FORCE_UPDATE_REVISION = 'account-gate-open-sound-79';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -54,8 +55,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 78;
-const JAMIE_TUTORIAL_VERSION = 78;
+const TUTORIAL_VERSION = 79;
+const JAMIE_TUTORIAL_VERSION = 79;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -599,6 +600,7 @@ export default function RUMS() {
   const uiSfxBufferLoadsRef = useRef({});
   const versionMenuEntryKeyRef = useRef(1);
   const versionMenuStartHandledKeyRef = useRef(0);
+  const accountGateOpenSoundEntryRef = useRef(0);
   const startupEntryRevealTimerRef = useRef(0);
   const versionOpenSoundTimerRef = useRef(0);
 
@@ -2107,6 +2109,7 @@ export default function RUMS() {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   }, []);
   const [screen, setScreen] = useState('boot');
+  const [accountGateEntryKey, setAccountGateEntryKey] = useState(1);
   const [versionMenuEntryKey, setVersionMenuEntryKey] = useState(1);
   const [entryAuth, setEntryAuth] = useState(false);
   const [entrySessionReady, setEntrySessionReady] = useState(false);
@@ -4178,6 +4181,7 @@ export default function RUMS() {
           session state is known. Its bubbly CSS animation therefore begins
           from frame zero instead of running behind an updater or loading state.
         */
+        setAccountGateEntryKey((value) => value + 1);
         setScreen('accountGate');
 
         try {
@@ -4195,6 +4199,30 @@ export default function RUMS() {
   }, [
     entrySessionReady,
     screen,
+    updateUntil,
+    updateOverlayLeaving,
+    updateHandoffPhase,
+  ]);
+
+  useEffect(() => {
+    if (
+      !entrySessionReady ||
+      screen !== 'accountGate' ||
+      updateUntil > Date.now() ||
+      updateOverlayLeaving ||
+      updateHandoffPhase !== 'idle' ||
+      updateCycleRef.current.phase !== 'idle'
+    ) return;
+
+    if (accountGateOpenSoundEntryRef.current === accountGateEntryKey) return;
+    accountGateOpenSoundEntryRef.current = accountGateEntryKey;
+
+    // Dedicated account-page opening sound.
+    void playUiSfx('select2');
+  }, [
+    entrySessionReady,
+    screen,
+    accountGateEntryKey,
     updateUntil,
     updateOverlayLeaving,
     updateHandoffPhase,
@@ -4378,6 +4406,7 @@ export default function RUMS() {
     setEntryAuth(false);
     setError('');
     setAuthForm({ username: '', password: '' });
+    setAccountGateEntryKey((value) => value + 1);
     setScreen('accountGate');
   }
 
