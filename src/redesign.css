@@ -5270,33 +5270,23 @@ button,input,textarea { font:inherit; }
   }
 }
 
-/* Plaza News: hero media flows directly into article content */
+/* Plaza News homepage only: lead media flows directly into the preview body. */
 .plaza-news-site .news-lead-image,
-.plaza-news-site .news-lead-image img,
-.plaza-news-site .news-article-hero,
-.plaza-news-site .news-article-hero img,
-.plaza-news-site .news-article-video .news-video-frame {
+.plaza-news-site .news-lead-image img {
   border-bottom-left-radius:0 !important;
   border-bottom-right-radius:0 !important;
 }
 
-/* Keep only the outer/top corners rounded. */
-.plaza-news-site .news-lead-image,
-.plaza-news-site .news-lead-image img {
-  border-top-left-radius:inherit;
-  border-top-right-radius:inherit;
-}
+/* Full article media stays rounded on every corner. */
 .plaza-news-site .news-article-hero,
 .plaza-news-site .news-article-hero img,
 .plaza-news-site .news-article-video .news-video-frame {
-  border-top-left-radius:17px !important;
-  border-top-right-radius:17px !important;
+  border-radius:17px !important;
 }
 @media(max-width:760px){
   .plaza-news-site .news-article-hero,
   .plaza-news-site .news-article-hero img,
   .plaza-news-site .news-article-video .news-video-frame {
-    border-top-left-radius:13px !important;
-    border-top-right-radius:13px !important;
+    border-radius:13px !important;
   }
 }
