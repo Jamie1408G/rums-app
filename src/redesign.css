@@ -5827,3 +5827,80 @@ button,input,textarea { font:inherit; }
 @media(prefers-reduced-motion:reduce){
   .site-update-play-fallback{animation:none!important}
 }
+
+
+/* Two-second soundtrack outro after the update overlay closes */
+.site-update-outro-pill{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  z-index:99990;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  max-width:min(360px,calc(100vw - 28px));
+  padding:8px 11px;
+  border:1px solid color-mix(in srgb,var(--theme-border,#d8e7f5) 78%,white);
+  border-radius:14px;
+  background:color-mix(in srgb,var(--theme-surface,#fff) 90%,transparent);
+  color:var(--theme-text,#2d4258);
+  box-shadow:0 9px 24px rgba(37,69,105,.16),inset 0 1px rgba(255,255,255,.92);
+  backdrop-filter:blur(20px) saturate(1.15);
+  -webkit-backdrop-filter:blur(20px) saturate(1.15);
+  transform:translateX(-50%);
+  animation:plazaUpdateOutroIn .2s ease both,plazaUpdateOutroFade 2s linear both;
+  pointer-events:none;
+}
+.site-update-outro-pill>div:last-child{
+  display:grid;
+  min-width:0;
+  gap:1px;
+}
+.site-update-outro-pill small{
+  color:var(--theme-accent,var(--site-accent,#3478f6));
+  font-size:6.5px;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+.site-update-outro-pill strong{
+  overflow:hidden;
+  font-size:10px;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.site-update-outro-eq{
+  display:flex;
+  align-items:flex-end;
+  gap:2px;
+  width:24px;
+  height:24px;
+  padding:5px;
+  border-radius:8px;
+  background:var(--theme-accent-soft,#eaf4ff);
+}
+.site-update-outro-eq span{
+  display:block;
+  width:3px;
+  height:12px;
+  border-radius:999px;
+  background:var(--theme-accent,var(--site-accent,#3478f6));
+  transform-origin:center bottom;
+  animation:plazaUpdateEq .55s ease-in-out infinite alternate;
+}
+.site-update-outro-eq span:nth-child(2){height:8px;animation-delay:-.2s}
+.site-update-outro-eq span:nth-child(3){height:14px;animation-delay:-.38s}
+@keyframes plazaUpdateOutroIn{
+  from{opacity:0;transform:translate(-50%,8px) scale(.97)}
+  to{opacity:1;transform:translate(-50%,0) scale(1)}
+}
+@keyframes plazaUpdateOutroFade{
+  0%,58%{opacity:1}
+  100%{opacity:0}
+}
+@media(max-width:760px){
+  .site-update-outro-pill{bottom:88px}
+}
+@media(prefers-reduced-motion:reduce){
+  .site-update-outro-pill{animation:plazaUpdateOutroFade 2s linear both!important}
+  .site-update-outro-eq span{animation:none!important}
+}

@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 24;
-const JAMIE_TUTORIAL_VERSION = 24;
+const TUTORIAL_VERSION = 25;
+const JAMIE_TUTORIAL_VERSION = 25;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -573,6 +573,7 @@ export default function RUMS() {
   const updateAudioKeepaliveGainRef = useRef(null);
   const updateStartedForVersionRef = useRef('');
   const [updateMusicState, setUpdateMusicState] = useState('ready');
+  const [updateOutroActive, setUpdateOutroActive] = useState(false);
 
   const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
     if (typeof window === 'undefined') return null;
@@ -713,7 +714,7 @@ export default function RUMS() {
     let stopped = false;
     let checking = false;
     const checkForUpdate = async () => {
-      if (stopped || checking || !navigator.onLine || updateUntil > Date.now()) return;
+      if (stopped || checking || !navigator.onLine || updateUntil > Date.now() || updateOutroActive) return;
       checking = true;
       try {
         const response = await fetch(`/version.json?check=${Date.now()}`, { cache: 'no-store' });
@@ -736,7 +737,7 @@ export default function RUMS() {
       window.clearInterval(timer);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [updateUntil]);
+  }, [updateUntil, updateOutroActive]);
 
   useEffect(() => {
     if (!updateUntil || updateUntil <= Date.now()) return undefined;
@@ -756,20 +757,48 @@ export default function RUMS() {
 
   useEffect(() => {
     if (!updateUntil || !updateTargetVersion) return undefined;
-    const timer = window.setTimeout(() => {
-      if (updateAudioSourceRef.current) {
-        try { updateAudioSourceRef.current.stop(); } catch {}
-        try { updateAudioSourceRef.current.disconnect(); } catch {}
-        updateAudioSourceRef.current = null;
+    let reloadTimer = 0;
+
+    const finishTimer = window.setTimeout(() => {
+      // First reveal the normal Plaza interface again while the SAME source
+      // keeps playing. Then fade it out for two seconds before reloading.
+      setUpdateOutroActive(true);
+      setUpdateUntil(0);
+
+      const context = updateAudioContextRef.current;
+      const gain = updateAudioGainRef.current;
+      if (context && gain) {
+        try {
+          const now = context.currentTime;
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value || 0.72), now);
+          gain.gain.linearRampToValueAtTime(0.0001, now + 2);
+        } catch { /* keep playing at current volume if ramping fails */ }
       }
-      try {
-        localStorage.setItem(UPDATE_SEEN_KEY, updateTargetVersion);
-        sessionStorage.removeItem(UPDATE_SCREEN_KEY);
-        sessionStorage.removeItem(UPDATE_RELOAD_KEY);
-      } catch { /* ignore */ }
-      window.location.reload();
+
+      reloadTimer = window.setTimeout(() => {
+        if (updateAudioSourceRef.current) {
+          try { updateAudioSourceRef.current.stop(); } catch {}
+          try { updateAudioSourceRef.current.disconnect(); } catch {}
+          updateAudioSourceRef.current = null;
+        }
+        if (updateAudioGainRef.current) {
+          try { updateAudioGainRef.current.gain.value = 0.72; } catch {}
+        }
+        setUpdateOutroActive(false);
+        try {
+          localStorage.setItem(UPDATE_SEEN_KEY, updateTargetVersion);
+          sessionStorage.removeItem(UPDATE_SCREEN_KEY);
+          sessionStorage.removeItem(UPDATE_RELOAD_KEY);
+        } catch { /* ignore */ }
+        window.location.reload();
+      }, 2000);
     }, Math.max(0, updateUntil - Date.now()));
-    return () => window.clearTimeout(timer);
+
+    return () => {
+      window.clearTimeout(finishTimer);
+      if (reloadTimer) window.clearTimeout(reloadTimer);
+    };
   }, [updateUntil, updateTargetVersion]);
 
   useEffect(() => () => {
@@ -5377,6 +5406,10 @@ export default function RUMS() {
 
   return (
     <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+      {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
+        <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
+        <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
+      </div>}
       {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite">
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
@@ -5384,7 +5417,7 @@ export default function RUMS() {
           <h1>Updating the website</h1>
           <p>Loading the latest version. You’ll be back in a moment.</p>
           <div
-            className={`site-update-now-playing ${updateMusicState === 'playing' ? 'is-playing' : ''} ${updateMusicState === 'blocked' || updateMusicState === 'paused' ? 'needs-tap' : ''}`}
+            className={`site-update-now-playing ${updateMusicState === 'playing' || updateMusicState === 'starting' ? 'is-playing' : ''} ${updateMusicState === 'blocked' || updateMusicState === 'paused' ? 'needs-tap' : ''}`}
             aria-label={`Now playing ${updateTrack.title} by ${updateTrack.artist}`}
           >
             <div className="site-update-now-icon" aria-hidden="true">
