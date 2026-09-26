@@ -4,7 +4,7 @@ import './redesign.css';
 import {
   Heart, MessageCircle, SmilePlus, Star, LogOut, ShieldCheck, Shield, User as UserIcon, Menu,
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
-  Lightbulb, Megaphone, Pencil,
+  Lightbulb, Megaphone, Newspaper, Pencil,
   GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff, Undo2, Redo2, RotateCcw,
 } from 'lucide-react';
 
@@ -125,7 +125,7 @@ function migratePlazaOverhaulAnnouncement(config) {
 
 const BUILT_IN_PAGES = [
   ['feed', 'Community feed'], ['lumina', 'Project Lumina'], ['upload', 'Add post'],
-  ['suggestions', 'Suggestions'], ['updates', 'Server updates'], ['chat', 'Chat'], ['search', 'Discover'], ['plazaPlus', 'Plaza+'],
+  ['suggestions', 'Suggestions'], ['updates', 'Server updates'], ['news', 'Plaza News'], ['chat', 'Chat'], ['search', 'Discover'], ['plazaPlus', 'Plaza+'],
   ['profile', 'Profiles'], ['postDetail', 'Post detail'],
 ];
 const TAGS = ['General', 'Lumina'];
@@ -218,6 +218,8 @@ const CHAT_ROOM_ID = 'plaza';
 const chatReadKey = (username) => `rums-chat-read-${username}`;
 const chatSeenKey = (reader, sender) => `rums-chat-seen-${reader}-${sender}`;
 const PLAZA_PLUS_KEY = 'rums-plaza-plus';
+const PLAZA_NEWS_KEY = 'rums-plaza-news';
+const NEWS_CATEGORIES = ['Plaza', 'Community', 'Projects', 'Events', 'Updates'];
 const notificationReadKey = (username) => `rums-notification-read-${encodeURIComponent(username)}`;
 const PROJECT_INDEX_KEY = 'rums-project-directory-v2';
 const projectRecordKey = (id) => `rums-project-record-${String(id).replace(/[^A-Za-z0-9_-]/g, '')}`;
@@ -527,6 +529,13 @@ export default function RUMS() {
   const [posts, setPosts] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
   const [updates, setUpdates] = useState([]);
+  const [plazaNews, setPlazaNews] = useState([]);
+  const [newsFilter, setNewsFilter] = useState('All');
+  const [newsSelectedId, setNewsSelectedId] = useState(null);
+  const [newsDraft, setNewsDraft] = useState({ title: '', summary: '', body: '', category: 'Plaza', image: '', breaking: false, pinned: false });
+  const [newsBusy, setNewsBusy] = useState(false);
+  const [newsImageBusy, setNewsImageBusy] = useState(false);
+  const [newsCommentDrafts, setNewsCommentDrafts] = useState({});
   const [siteAnnouncement, setSiteAnnouncement] = useState(null);
   const [announcementDraft, setAnnouncementDraft] = useState('');
   const [announcementBusy, setAnnouncementBusy] = useState(false);
@@ -718,6 +727,21 @@ export default function RUMS() {
     };
     void loadAnnouncement();
     const timer = window.setInterval(loadAnnouncement, 5000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, []);
+
+  useEffect(() => {
+    let stopped = false;
+    const loadNews = async () => {
+      try {
+        const record = await safeGet(PLAZA_NEWS_KEY, true);
+        if (stopped) return;
+        const parsed = record ? JSON.parse(record.value) : [];
+        if (Array.isArray(parsed)) setPlazaNews(parsed);
+      } catch (error) { console.error('Could not load Plaza News', error); }
+    };
+    void loadNews();
+    const timer = window.setInterval(loadNews, 5000);
     return () => { stopped = true; window.clearInterval(timer); };
   }, []);
 
@@ -2545,6 +2569,17 @@ export default function RUMS() {
     }
   }
 
+
+  async function savePlazaNews(next) {
+    setPlazaNews(next);
+    try {
+      await window.storage.set(PLAZA_NEWS_KEY, JSON.stringify(next), true);
+    } catch (e) {
+      console.error(e);
+      setError('Could not save Plaza News — try again.');
+    }
+  }
+
   function cloneSiteConfig(value) {
     if (typeof structuredClone === 'function') return structuredClone(value);
     return JSON.parse(JSON.stringify(value));
@@ -4079,6 +4114,79 @@ export default function RUMS() {
     setUsernameBusy(false);
   }
 
+  async function handleNewsImagePick(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { setError('Please choose an image file.'); return; }
+    setNewsImageBusy(true);
+    try {
+      const image = await resizeImage(file);
+      setNewsDraft((draft) => ({ ...draft, image }));
+    } catch (e) {
+      console.error(e);
+      setError('Could not load that news image.');
+    } finally { setNewsImageBusy(false); }
+  }
+
+  async function publishNewsArticle() {
+    if (!canEditSite || newsBusy) return;
+    const title = newsDraft.title.trim().slice(0, 120);
+    const summary = newsDraft.summary.trim().slice(0, 260);
+    const body = newsDraft.body.trim().slice(0, 8000);
+    if (!title || !body) return;
+    setNewsBusy(true);
+    const article = {
+      id: `news-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title, summary, body,
+      category: NEWS_CATEGORIES.includes(newsDraft.category) ? newsDraft.category : 'Plaza',
+      image: newsDraft.image || '',
+      breaking: !!newsDraft.breaking,
+      pinned: !!newsDraft.pinned,
+      author: currentUser.username,
+      timestamp: Date.now(),
+      reactions: {},
+      comments: [],
+    };
+    const next = [article, ...plazaNews].slice(0, 300);
+    await savePlazaNews(next);
+    void commitPlazaPlus((data) => ({ ...data, activities: [{ id:`act-${Date.now()}-news`, type:'news', actor:currentUser.username, targetUser:null, text:`Plaza News: ${article.title}`, timestamp:Date.now() }, ...(data.activities || [])].slice(0,800) }));
+    setNewsDraft({ title: '', summary: '', body: '', category: 'Plaza', image: '', breaking: false, pinned: false });
+    setNewsSelectedId(article.id);
+    setNewsBusy(false);
+  }
+
+  async function deleteNewsArticle(id) {
+    if (!canEditSite) return;
+    await savePlazaNews(plazaNews.filter((article) => article.id !== id));
+    if (newsSelectedId === id) setNewsSelectedId(null);
+  }
+
+  async function toggleNewsReaction(id, emoji) {
+    if (!currentUser) return;
+    const next = plazaNews.map((article) => {
+      if (article.id !== id) return article;
+      const reactions = { ...(article.reactions || {}) };
+      const usersForEmoji = [...(reactions[emoji] || [])];
+      const has = usersForEmoji.includes(currentUser.username);
+      reactions[emoji] = has ? usersForEmoji.filter((name) => name !== currentUser.username) : [...usersForEmoji, currentUser.username];
+      return { ...article, reactions };
+    });
+    await savePlazaNews(next);
+  }
+
+  async function submitNewsComment(articleId) {
+    if (!currentUser) return;
+    const text = (newsCommentDrafts[articleId] || '').trim().slice(0, 1200);
+    if (!text) return;
+    const next = plazaNews.map((article) => article.id === articleId ? {
+      ...article,
+      comments: [...(article.comments || []), { id:`comment-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, username:currentUser.username, text, timestamp:Date.now() }].slice(-300)
+    } : article);
+    await savePlazaNews(next);
+    setNewsCommentDrafts((drafts) => ({ ...drafts, [articleId]: '' }));
+  }
+
   async function submitSuggestion() {
     const text = suggestionDraft.trim();
     if (!text || !currentUser) return;
@@ -4479,6 +4587,8 @@ export default function RUMS() {
     .sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0) || b.timestamp - a.timestamp);
 
   const visibleUpdates = updates.slice().sort((a, b) => b.timestamp - a.timestamp);
+  const visibleNews = plazaNews.slice().sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.timestamp - a.timestamp).filter((article) => newsFilter === 'All' || article.category === newsFilter);
+  const selectedNewsArticle = plazaNews.find((article) => article.id === newsSelectedId) || null;
   const luminaPosts = !hasLumina ? [] : posts.filter((p) => p.tag === 'Lumina').sort((a, b) => b.timestamp - a.timestamp);
   const feedBoxHandle = (id) => editMode && isOwner && selectedBoxId === `feed:${id}` ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
   function renderFeedBox(id) {
@@ -4887,6 +4997,7 @@ export default function RUMS() {
               {hasLumina && siteConfig.showLumina && <button data-tutorial-nav="lumina" className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
               </>}
               <div className="rail-label">COMMUNITY</div>
+              <button className={`rail-link ${screen === 'news' ? 'selected' : ''}`} onClick={() => setScreen('news')}>{navIconWithNew(<Newspaper size={19} />, 'news')} Plaza News</button>
               <button data-tutorial-nav="chat" className={`rail-link ${screen === 'chat' ? 'selected' : ''}`} onClick={() => setScreen('chat')}>{chatNavIcon(19)} Chat</button>
               {!isProjectSpace && siteConfig.showUpdates && <button data-tutorial-nav="updates" className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
               {!isProjectSpace && siteConfig.showSuggestions && <button data-tutorial-nav="suggestions" className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
@@ -5300,6 +5411,63 @@ export default function RUMS() {
                 </div>
               )}
 
+              {screen === 'news' && (
+                <div className="plaza-news-page">
+                  <header className="news-masthead">
+                    <div><span className="eyebrow">RUMS PLAZA</span><h1>Plaza News</h1><p>Stories, announcements and everything happening across the Plaza.</p></div>
+                    <Newspaper size={30} />
+                  </header>
+
+                  {canEditSite && <section className="news-composer">
+                    <div className="news-composer-head"><div><b>Publish to Plaza News</b><small>Visible everywhere in RUMS Plaza.</small></div><Newspaper size={20}/></div>
+                    <div className="news-composer-grid">
+                      <input className="aero-input" placeholder="Headline" maxLength={120} value={newsDraft.title} onChange={(e)=>setNewsDraft({...newsDraft,title:e.target.value})}/>
+                      <select className="aero-input" value={newsDraft.category} onChange={(e)=>setNewsDraft({...newsDraft,category:e.target.value})}>{NEWS_CATEGORIES.map((category)=><option key={category}>{category}</option>)}</select>
+                    </div>
+                    <input className="aero-input" placeholder="Short summary (optional)" maxLength={260} value={newsDraft.summary} onChange={(e)=>setNewsDraft({...newsDraft,summary:e.target.value})}/>
+                    <textarea className="caption-area news-body-editor" placeholder="Write the full story…" value={newsDraft.body} onChange={(e)=>setNewsDraft({...newsDraft,body:e.target.value})}/>
+                    {newsDraft.image && <div className="news-image-preview"><img src={newsDraft.image} alt="News preview"/><button type="button" onClick={()=>setNewsDraft({...newsDraft,image:''})}><X size={14}/></button></div>}
+                    <div className="news-composer-actions">
+                      <label className="pill pill-btn news-image-picker">{newsImageBusy ? 'Loading image…' : newsDraft.image ? 'Change image' : 'Add image'}<input hidden type="file" accept="image/*" onChange={handleNewsImagePick}/></label>
+                      <label className="news-toggle"><input type="checkbox" checked={newsDraft.breaking} onChange={(e)=>setNewsDraft({...newsDraft,breaking:e.target.checked})}/><span>Breaking</span></label>
+                      <label className="news-toggle"><input type="checkbox" checked={newsDraft.pinned} onChange={(e)=>setNewsDraft({...newsDraft,pinned:e.target.checked})}/><span>Pin story</span></label>
+                      <button className="aero-btn" disabled={newsBusy || newsImageBusy || !newsDraft.title.trim() || !newsDraft.body.trim()} onClick={publishNewsArticle}>{newsBusy ? <Loader2 size={15} className="spin"/> : <Newspaper size={15}/>} Publish</button>
+                    </div>
+                  </section>}
+
+                  <nav className="news-filter-bar" aria-label="News categories">
+                    {['All', ...NEWS_CATEGORIES].map((category)=><button key={category} className={newsFilter===category?'active':''} onClick={()=>{setNewsFilter(category);setNewsSelectedId(null);}}>{category}</button>)}
+                  </nav>
+
+                  {selectedNewsArticle ? <article className="news-reader">
+                    <button className="news-back" onClick={()=>setNewsSelectedId(null)}><ArrowLeft size={15}/> Back to Plaza News</button>
+                    {selectedNewsArticle.breaking && <span className="news-breaking">BREAKING</span>}
+                    <span className="news-category">{selectedNewsArticle.category}</span>
+                    <h1>{selectedNewsArticle.title}</h1>
+                    <div className="news-byline">By <button onClick={()=>openProfile(selectedNewsArticle.author)}>{selectedNewsArticle.author}</button> · {timeAgo(selectedNewsArticle.timestamp)}</div>
+                    {selectedNewsArticle.summary && <p className="news-deck">{selectedNewsArticle.summary}</p>}
+                    {selectedNewsArticle.image && <img className="news-reader-image" src={selectedNewsArticle.image} alt=""/>}
+                    <div className="news-reader-body">{selectedNewsArticle.body.split('\n').map((line,i)=>line ? <p key={i}>{line}</p> : <br key={i}/>)}</div>
+                    <div className="news-reactions">{['❤️','👍','🔥','🎉'].map((emoji)=>{const names=selectedNewsArticle.reactions?.[emoji]||[];return <button key={emoji} className={names.includes(currentUser.username)?'active':''} onClick={()=>toggleNewsReaction(selectedNewsArticle.id,emoji)}>{emoji} {names.length||''}</button>})}</div>
+                    <section className="news-comments">
+                      <h3>Discussion <span>{selectedNewsArticle.comments?.length || 0}</span></h3>
+                      <div className="news-comment-compose"><input className="aero-input" placeholder="Add a comment…" value={newsCommentDrafts[selectedNewsArticle.id]||''} onChange={(e)=>setNewsCommentDrafts({...newsCommentDrafts,[selectedNewsArticle.id]:e.target.value})} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault();void submitNewsComment(selectedNewsArticle.id);}}}/><button className="aero-btn" onClick={()=>submitNewsComment(selectedNewsArticle.id)}>Comment</button></div>
+                      <div className="news-comment-list">{(selectedNewsArticle.comments||[]).slice().reverse().map((comment)=><div className="news-comment" key={comment.id}>{avatarNode(comment.username,32,11)}<div><div><button onClick={()=>openProfile(comment.username)}>{comment.username}</button><span>{timeAgo(comment.timestamp)}</span></div><p>{comment.text}</p></div></div>)}{!(selectedNewsArticle.comments||[]).length&&<p className="news-no-comments">No comments yet.</p>}</div>
+                    </section>
+                    {canEditSite && <button className="news-delete" onClick={()=>deleteNewsArticle(selectedNewsArticle.id)}><Trash2 size={14}/> Delete article</button>}
+                  </article> : <>
+                    {visibleNews.length > 0 && <article className="news-lead" onClick={()=>setNewsSelectedId(visibleNews[0].id)} role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==='Enter')setNewsSelectedId(visibleNews[0].id)}}>
+                      <div className="news-lead-image">{visibleNews[0].image ? <img src={visibleNews[0].image} alt=""/> : <span><Newspaper size={42}/></span>}</div>
+                      <div className="news-lead-copy">{visibleNews[0].breaking&&<span className="news-breaking">BREAKING</span>}<span className="news-category">{visibleNews[0].category}</span><h2>{visibleNews[0].title}</h2><p>{visibleNews[0].summary || visibleNews[0].body.slice(0,220)}</p><small>{timeAgo(visibleNews[0].timestamp)} · {visibleNews[0].author}</small></div>
+                    </article>}
+                    <section className="news-grid">{visibleNews.slice(1).map((article)=><article className="news-card" key={article.id} onClick={()=>setNewsSelectedId(article.id)}>
+                      {article.image && <img src={article.image} alt=""/>}<div className="news-card-content">{article.breaking&&<span className="news-breaking">BREAKING</span>}<span className="news-category">{article.category}</span><h3>{article.title}</h3><p>{article.summary || article.body.slice(0,145)}</p><footer><span>{timeAgo(article.timestamp)}</span><span>{Object.values(article.reactions||{}).reduce((n,list)=>n+(list?.length||0),0)} reactions · {article.comments?.length||0} comments</span></footer></div>
+                    </article>)}</section>
+                    {visibleNews.length===0 && <div className="news-empty"><Newspaper size={34}/><h3>No stories here yet</h3><p>{newsFilter==='All'?'Plaza News is ready for its first story.':`There are no ${newsFilter} stories yet.`}</p></div>}
+                  </>}
+                </div>
+              )}
+
               {screen === 'updates' && (
                 <div className="updates-page" data-tutorial="updates-page">
                   {currentUser.isAdmin && (
@@ -5395,7 +5563,7 @@ export default function RUMS() {
 
                   {plusTab === 'creator' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Creator tools</h2><p>Drafts, scheduled posts, richer publishing and the RUMS Plaza changelog.</p></div></div><div className="creator-grid"><article><h3>Drafts</h3>{(plazaPlus.drafts?.[currentUser.username]||[]).map((draft)=><button key={draft.id} className="plus-row" onClick={()=>{setCaption(draft.caption);setTag(draft.tag);setUploadPreview(draft.image);setScreen('upload');}}><span>Draft</span><small>{draft.caption||'Image post'} · {timeAgo(draft.timestamp)}</small></button>)}{!(plazaPlus.drafts?.[currentUser.username]||[]).length&&<p>No drafts yet. Save them from Share a build.</p>}</article><article><h3>Scheduled</h3>{(plazaPlus.scheduled||[]).filter((item)=>item.username===currentUser.username).map((item)=><div className="plus-row static" key={item.id}><span>{item.caption||'Scheduled post'}</span><small>{new Date(item.when).toLocaleString()}</small></div>)}</article><article><h3>What’s new</h3>{(plazaPlus.changelog||[]).length?(plazaPlus.changelog||[]).map((item)=><div key={item.id} className="plus-row static"><span>{item.title}</span><small>{item.body}</small></div>):<p>RUMS Plaza overhaul: themes, reactions, chat, tutorials and Plaza+.</p>}</article></div></section>}
 
-                  {plusTab === 'settings' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Accessibility & personalization</h2><p>Make RUMS Plaza easier and more comfortable to use.</p></div></div><div className="settings-grid">{[['reducedMotion','Reduced motion'],['highContrast','High contrast'],['largeText','Larger text'],['reducedTransparency','Reduced transparency']].map(([key,label])=><label className="setting-toggle" key={key}><span>{label}</span><input type="checkbox" checked={!!accessibilityPrefs[key]} onChange={(e)=>updateAccessibilityPref(key,e.target.checked)}/></label>)}</div><div className="plus-subheading">Custom theme preset</div><div className="theme-builder-row"><label>Accent <input type="color" value={themeBuilder.accent} onChange={(e)=>setThemeBuilder({...themeBuilder,accent:e.target.value})}/></label><label>Roundness <input type="range" min="0" max="30" value={themeBuilder.radius} onChange={(e)=>setThemeBuilder({...themeBuilder,radius:Number(e.target.value)})}/></label><label>Blur <input type="range" min="0" max="40" value={themeBuilder.blur} onChange={(e)=>setThemeBuilder({...themeBuilder,blur:Number(e.target.value)})}/></label><button className={`pill pill-btn ${customThemeEnabled?'active':''}`} onClick={()=>setCustomThemeEnabled((v)=>!v)}>{customThemeEnabled?'Custom theme on':'Apply custom'}</button><button className="aero-btn" onClick={()=>commitPlazaPlus((data)=>({...data,themePresets:[...(data.themePresets||[]),{id:`preset-${Date.now()}`,owner:currentUser.username,...themeBuilder}]}))}>Save preset</button></div><div className="plus-subheading">Theme preset library</div><div className="preset-grid">{(plazaPlus.themePresets||[]).map((preset)=><button key={preset.id} onClick={()=>{setThemeBuilder({accent:preset.accent,radius:preset.radius,blur:preset.blur});setCustomThemeEnabled(true);}}><span style={{background:preset.accent}}/><b>{preset.owner}'s preset</b><small>Radius {preset.radius} · Blur {preset.blur}</small></button>)}{!(plazaPlus.themePresets||[]).length&&<p>No shared presets yet.</p>}</div><div className="plus-subheading">Per-page theme</div><div className="per-page-theme-row"><select className="aero-input" value={pageThemeTarget} onChange={(e)=>setPageThemeTarget(e.target.value)}><option value="feed">Feed</option><option value="chat">Chat</option><option value="suggestions">Suggestions</option><option value="updates">Updates</option><option value="search">Discover</option><option value="profile">Profile</option>{hasLumina&&<option value="lumina">Project Lumina</option>}</select><select className="aero-input" value={plazaPlus.pageThemes?.[currentUser.username]?.[pageThemeTarget]||''} onChange={(e)=>commitPlazaPlus((data)=>({...data,pageThemes:{...data.pageThemes,[currentUser.username]:{...(data.pageThemes?.[currentUser.username]||{}),[pageThemeTarget]:e.target.value}}}))}><option value="">Use global theme</option>{RUMS_THEMES.map((t)=><option key={t.id} value={t.id}>{t.name}</option>)}</select></div><div className="plus-subheading">Keyboard shortcuts</div><div className="shortcut-grid"><span><kbd>⌘/Ctrl K</kbd> Command palette</span><span><kbd>G</kbd> Feed</span><span><kbd>C</kbd> Chat</span><span><kbd>N</kbd> New post</span><span><kbd>/</kbd> Search</span></div><div className="push-settings"><strong>Device notifications</strong><p>Get alerts for chats, mentions, replies and other Plaza+ activity when the site is closed.</p><button className="pill pill-btn" type="button" disabled={pushBusy} onClick={pushEnabled ? disableDeviceNotifications : enableDeviceNotifications}>{pushBusy ? 'Working…' : pushEnabled ? 'Turn off on this device' : 'Enable on this device'}</button>{pushEnabled && <button className="pill pill-btn" type="button" disabled={pushBusy} onClick={testDeviceNotifications}>Send test alert</button>}{pushStatus && <small role="status">{pushStatus}</small>}</div></section>}
+                  {plusTab === 'settings' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Accessibility & personalization</h2><p>Make RUMS Plaza easier and more comfortable to use.</p></div></div><div className="settings-grid">{[['reducedMotion','Reduced motion'],['highContrast','High contrast'],['largeText','Larger text'],['reducedTransparency','Reduced transparency']].map(([key,label])=><label className="setting-toggle" key={key}><span>{label}</span><input type="checkbox" checked={!!accessibilityPrefs[key]} onChange={(e)=>updateAccessibilityPref(key,e.target.checked)}/></label>)}</div><div className="plus-subheading">Custom theme preset</div><div className="theme-builder-row"><label>Accent <input type="color" value={themeBuilder.accent} onChange={(e)=>setThemeBuilder({...themeBuilder,accent:e.target.value})}/></label><label>Roundness <input type="range" min="0" max="30" value={themeBuilder.radius} onChange={(e)=>setThemeBuilder({...themeBuilder,radius:Number(e.target.value)})}/></label><label>Blur <input type="range" min="0" max="40" value={themeBuilder.blur} onChange={(e)=>setThemeBuilder({...themeBuilder,blur:Number(e.target.value)})}/></label><button className={`pill pill-btn ${customThemeEnabled?'active':''}`} onClick={()=>setCustomThemeEnabled((v)=>!v)}>{customThemeEnabled?'Custom theme on':'Apply custom'}</button><button className="aero-btn" onClick={()=>commitPlazaPlus((data)=>({...data,themePresets:[...(data.themePresets||[]),{id:`preset-${Date.now()}`,owner:currentUser.username,...themeBuilder}]}))}>Save preset</button></div><div className="plus-subheading">Theme preset library</div><div className="preset-grid">{(plazaPlus.themePresets||[]).map((preset)=><button key={preset.id} onClick={()=>{setThemeBuilder({accent:preset.accent,radius:preset.radius,blur:preset.blur});setCustomThemeEnabled(true);}}><span style={{background:preset.accent}}/><b>{preset.owner}'s preset</b><small>Radius {preset.radius} · Blur {preset.blur}</small></button>)}{!(plazaPlus.themePresets||[]).length&&<p>No shared presets yet.</p>}</div><div className="plus-subheading">Per-page theme</div><div className="per-page-theme-row"><select className="aero-input" value={pageThemeTarget} onChange={(e)=>setPageThemeTarget(e.target.value)}><option value="feed">Feed</option><option value="chat">Chat</option><option value="news">Plaza News</option><option value="suggestions">Suggestions</option><option value="updates">Updates</option><option value="search">Discover</option><option value="profile">Profile</option>{hasLumina&&<option value="lumina">Project Lumina</option>}</select><select className="aero-input" value={plazaPlus.pageThemes?.[currentUser.username]?.[pageThemeTarget]||''} onChange={(e)=>commitPlazaPlus((data)=>({...data,pageThemes:{...data.pageThemes,[currentUser.username]:{...(data.pageThemes?.[currentUser.username]||{}),[pageThemeTarget]:e.target.value}}}))}><option value="">Use global theme</option>{RUMS_THEMES.map((t)=><option key={t.id} value={t.id}>{t.name}</option>)}</select></div><div className="plus-subheading">Keyboard shortcuts</div><div className="shortcut-grid"><span><kbd>⌘/Ctrl K</kbd> Command palette</span><span><kbd>G</kbd> Feed</span><span><kbd>C</kbd> Chat</span><span><kbd>N</kbd> New post</span><span><kbd>/</kbd> Search</span></div><div className="push-settings"><strong>Device notifications</strong><p>Get alerts for chats, mentions, replies and other Plaza+ activity when the site is closed.</p><button className="pill pill-btn" type="button" disabled={pushBusy} onClick={pushEnabled ? disableDeviceNotifications : enableDeviceNotifications}>{pushBusy ? 'Working…' : pushEnabled ? 'Turn off on this device' : 'Enable on this device'}</button>{pushEnabled && <button className="pill pill-btn" type="button" disabled={pushBusy} onClick={testDeviceNotifications}>Send test alert</button>}{pushStatus && <small role="status">{pushStatus}</small>}</div></section>}
 
                   {plusTab === 'safety' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Safety, roles & invites</h2><p>Report problems, manage community roles and keep an audit trail.</p></div></div><div className="plus-form-grid"><input className="aero-input" placeholder="Post, message or username" value={reportDraft.target} onChange={(e)=>setReportDraft({...reportDraft,target:e.target.value})}/><textarea className="caption-area" placeholder="What happened?" value={reportDraft.reason} onChange={(e)=>setReportDraft({...reportDraft,reason:e.target.value})}/><button className="aero-btn" onClick={submitReport}>Submit report</button></div>{canModerate&&<><div className="plus-subheading">Invite links</div><div className="invite-tools"><button className="aero-btn" onClick={createInvite}>Create invite code</button>{(plazaPlus.invites||[]).slice(0,8).map((invite)=><code key={invite.id}>rums-plaza?invite={invite.code}</code>)}</div><div className="plus-subheading">Roles</div><div className="role-grid">{users.map((user)=><label key={user.username}><span>{user.username}</span><select value={plazaPlus.roles?.[user.username]|| (user.isAdmin?'Admin':'Member')} onChange={(e)=>commitPlazaPlus((data)=>({...data,roles:{...data.roles,[user.username]:e.target.value},audit:[{id:`audit-${Date.now()}`,actor:currentUser.username,action:`Changed ${user.username} role to ${e.target.value}`,target:user.username,timestamp:Date.now()},...(data.audit||[])].slice(0,800)}))}><option>Member</option><option>Builder</option><option>Moderator</option><option>Admin</option><option>Owner</option></select></label>)}</div><div className="plus-subheading">Reports</div>{(plazaPlus.reports||[]).map((report)=><div key={report.id} className="plus-row static"><span><b>{report.target}</b> — {report.reason}</span><small>{report.reporter} · {report.status}</small></div>)}<div className="plus-subheading">Audit log</div>{(plazaPlus.audit||[]).slice(0,40).map((entry)=><div key={entry.id} className="plus-row static"><span>{entry.action}</span><small>{entry.actor} · {timeAgo(entry.timestamp)}</small></div>)}</>}</section>}
                     </main>
@@ -5916,15 +6084,15 @@ export default function RUMS() {
               <button className={`nav-btn ${screen === 'plazaPlus' ? 'active' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }} aria-label="Plaza+ and notifications">
                 <span className="nav-icon-wrap"><span className="page-nav-icon"><Sparkles size={19} />{notificationsForCurrentUser().length > 0 && <span className="page-new-indicator page-new-count" aria-label={`${notificationsForCurrentUser().length} notifications`}>{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</span></span><span className="nav-label">Plaza+</span>
               </button>
-              <button data-tutorial-nav="suggestions" className={`nav-btn ${screen === 'suggestions' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('suggestions'); }}>
-                <span className="nav-icon-wrap">{navIconWithNew(<Lightbulb size={19} />, 'suggestions')}</span><span className="nav-label">Ideas</span>
+              <button className={`nav-btn ${screen === 'news' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('news'); }}>
+                <span className="nav-icon-wrap">{navIconWithNew(<Newspaper size={19} />, 'news')}</span><span className="nav-label">News</span>
               </button>
             </div>
           </>
         )}
 
         {commandOpen && <div className="command-palette-layer" onMouseDown={(e)=>{if(e.target===e.currentTarget)setCommandOpen(false);}}><section className="command-palette" role="dialog" aria-modal="true" aria-label="Command palette"><div className="command-search"><Search size={17}/><input autoFocus value={commandQuery} onChange={(e)=>setCommandQuery(e.target.value)} placeholder="Jump anywhere or run a command…"/><button onClick={()=>setCommandOpen(false)}><X size={15}/></button></div><div className="command-list">{[
-          ['Community feed',()=>setScreen('feed')],['Chat',()=>setScreen('chat')],['Share a build',()=>setScreen('upload')],['Discover',()=>setScreen('search')],['Suggestions',()=>setScreen('suggestions')],['Server updates',()=>setScreen('updates')],['Profile',()=>{setViewedProfile(null);setScreen('profile');}],['Notifications & Plaza+',()=>{setScreen('plazaPlus');setPlusTab('notifications');}],['Saved posts',()=>{setScreen('plazaPlus');setPlusTab('saved');}],['Events',()=>{setScreen('plazaPlus');setPlusTab('events');}],['Groups',()=>{setScreen('plazaPlus');setPlusTab('groups');}],['Projects',()=>{void openProjectsDirectory();}],['Wiki & builds',()=>{setScreen('plazaPlus');setPlusTab('knowledge');}],['Accessibility',()=>{setScreen('plazaPlus');setPlusTab('settings');}],...(hasLumina?[['Project Lumina',openLumina]]:[])
+          ['Community feed',()=>setScreen('feed')],['Chat',()=>setScreen('chat')],['Share a build',()=>setScreen('upload')],['Discover',()=>setScreen('search')],['Plaza News',()=>setScreen('news')],['Suggestions',()=>setScreen('suggestions')],['Server updates',()=>setScreen('updates')],['Profile',()=>{setViewedProfile(null);setScreen('profile');}],['Notifications & Plaza+',()=>{setScreen('plazaPlus');setPlusTab('notifications');}],['Saved posts',()=>{setScreen('plazaPlus');setPlusTab('saved');}],['Events',()=>{setScreen('plazaPlus');setPlusTab('events');}],['Groups',()=>{setScreen('plazaPlus');setPlusTab('groups');}],['Projects',()=>{void openProjectsDirectory();}],['Wiki & builds',()=>{setScreen('plazaPlus');setPlusTab('knowledge');}],['Accessibility',()=>{setScreen('plazaPlus');setPlusTab('settings');}],...(hasLumina?[['Project Lumina',openLumina]]:[])
         ].filter(([label])=>label.toLowerCase().includes(commandQuery.trim().toLowerCase())).map(([label,action])=><button key={label} onClick={()=>{action();setCommandOpen(false);setCommandQuery('');}}><span>{label}</span><small>Open</small></button>)}</div></section></div>}
 
         {tutorialActive && tutorialCurrent && (
