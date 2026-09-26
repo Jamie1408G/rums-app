@@ -6910,3 +6910,283 @@ button,input,textarea { font:inherit; }
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* MUSIC / HEADER LAYOUT 54                                                    */
+/* Feed switch joins version controls; music island owns the center.           */
+/* -------------------------------------------------------------------------- */
+
+/* Left cluster: version selector + All RUMS/Lumina in one continuous row. */
+.aero-root .aero-brand-version-switch{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  min-width:0!important;
+  max-width:370px;
+}
+
+.aero-root .aero-brand-version-switch .universal-rums-switcher{
+  flex:0 0 auto;
+  margin-left:0!important;
+}
+
+@media(min-width:901px){
+  .aero-root .aero-brand-version-switch .universal-rums-switcher button{
+    min-width:57px;
+    padding-left:7px;
+    padding-right:7px;
+  }
+
+  .aero-root .header-feed-adjacent{
+    flex:0 0 154px;
+    width:154px;
+    min-width:154px;
+  }
+
+  /*
+    This is the old centered feed switch, resized for its new home beside
+    the version control. Internal slider math stays intact.
+  */
+  .aero-root .header-feed-adjacent .feed-tabs{
+    width:154px!important;
+    min-width:154px!important;
+    min-height:35px!important;
+    margin:0!important;
+    padding:3px!important;
+    border:1px solid rgba(255,255,255,.82)!important;
+    border-radius:14px!important;
+    background:
+      radial-gradient(circle at 15% -30%,rgba(255,255,255,.95),transparent 44%),
+      linear-gradient(145deg,rgba(255,255,255,.72),rgba(232,244,255,.61))!important;
+    box-shadow:
+      inset 1px 1px 1px rgba(255,255,255,.92),
+      0 3px 10px rgba(41,77,116,.08)!important;
+    backdrop-filter:blur(18px) saturate(1.35)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(1.35)!important;
+  }
+
+  .aero-root .header-feed-adjacent .feed-tabs::before{
+    left:3px!important;
+    top:3px!important;
+    width:calc((100% - 6px)/2)!important;
+    height:calc(100% - 6px)!important;
+    border-radius:11px!important;
+  }
+
+  .aero-root .header-feed-adjacent .feed-tabs .tab-btn,
+  .aero-root .header-feed-adjacent .feed-tabs .tab-btn.active{
+    min-height:29px!important;
+    padding:0 5px!important;
+    gap:3px!important;
+    font-size:10px!important;
+    letter-spacing:-.01em!important;
+  }
+
+  .aero-root .header-feed-adjacent .feed-tabs .tab-btn svg{
+    width:11px;
+    height:11px;
+  }
+
+  .aero-root .header-feed-adjacent .feed-tabs.is-dragging::before{
+    top:3px!important;
+    height:calc(100% - 6px)!important;
+    border-radius:11px!important;
+  }
+
+  .aero-root .header-feed-adjacent .feed-tabs.is-dragging::after{
+    top:6px!important;
+  }
+
+  .aero-root .header-feed-adjacent .feed-drag-refraction{
+    left:3px!important;
+    top:3px!important;
+    height:calc(100% - 6px)!important;
+    border-radius:11px!important;
+  }
+}
+
+/*
+  The top center now belongs exclusively to music.
+  Collapsed and expanded widths are IDENTICAL.
+*/
+@media(min-width:981px){
+  .aero-root .aero-header-center{
+    width:452px!important;
+    min-width:452px!important;
+    max-width:452px!important;
+  }
+
+  .aero-root .header-center-island{
+    width:452px!important;
+    max-width:452px!important;
+    padding:0!important;
+    display:block!important;
+  }
+
+  .aero-root .dynamic-music-island{
+    width:452px!important;
+    height:46px;
+  }
+
+  .aero-root .dynamic-music-drawer{
+    left:0!important;
+    width:452px!important;
+    max-width:452px!important;
+    transform:none!important;
+    transform-origin:50% 0!important;
+    animation:music54DrawerIn .42s cubic-bezier(.16,1.2,.28,1) both!important;
+  }
+
+  .aero-root .dynamic-music-drawer::before{
+    width:430px!important;
+  }
+
+  .aero-root .dynamic-music-drawer-bridge{
+    width:420px!important;
+  }
+}
+
+/* Wide compact layout can actually breathe now. */
+@media(min-width:981px){
+  .aero-root .dynamic-music-compact{
+    grid-template-columns:34px minmax(0,1fr) 66px!important;
+    gap:10px!important;
+    padding-left:7px!important;
+    padding-right:9px!important;
+  }
+
+  .aero-root .dynamic-music-progress-line{
+    left:51px!important;
+    right:79px!important;
+  }
+
+  .aero-root .dynamic-music-compact-copy strong{
+    font-size:11px!important;
+  }
+
+  .aero-root .dynamic-music-island-status{
+    gap:7px!important;
+  }
+
+  .aero-root .dynamic-music-wave{
+    width:31px!important;
+  }
+}
+
+/* Because the open panel is slightly narrower than 53, reserve exactly what it needs. */
+@media(min-width:761px){
+  .aero-root.music-island-open .content{
+    padding-top:590px!important;
+  }
+}
+
+/* Medium desktop: retain the concept, just trim each control proportionally. */
+@media(max-width:1200px) and (min-width:981px){
+  .aero-root .aero-brand-version-switch{
+    gap:6px!important;
+    max-width:338px;
+  }
+
+  .aero-root .aero-brand-version-switch .universal-rums-switcher button{
+    min-width:53px;
+    padding-left:5px;
+    padding-right:5px;
+  }
+
+  .aero-root .header-feed-adjacent,
+  .aero-root .header-feed-adjacent .feed-tabs{
+    width:142px!important;
+    min-width:142px!important;
+    flex-basis:142px!important;
+  }
+
+  .aero-root .header-feed-adjacent .feed-tabs .tab-btn,
+  .aero-root .header-feed-adjacent .feed-tabs .tab-btn.active{
+    font-size:9px!important;
+  }
+
+  .aero-root .aero-header-center,
+  .aero-root .header-center-island,
+  .aero-root .dynamic-music-island,
+  .aero-root .dynamic-music-drawer{
+    width:420px!important;
+    min-width:420px!important;
+    max-width:420px!important;
+  }
+
+  .aero-root .dynamic-music-drawer::before{
+    width:400px!important;
+  }
+
+  .aero-root .dynamic-music-drawer-bridge{
+    width:390px!important;
+  }
+}
+
+/*
+  Smaller widths no longer try to force three large desktop controls into
+  each other. Feed filtering remains available in the mobile quick menu.
+*/
+@media(max-width:980px) and (min-width:721px){
+  .aero-root .header-feed-adjacent{
+    display:none!important;
+  }
+
+  .aero-root .aero-brand-version-switch{
+    max-width:none;
+  }
+
+  .aero-root .aero-header-center{
+    width:390px!important;
+    min-width:390px!important;
+    max-width:390px!important;
+  }
+
+  .aero-root .header-center-island,
+  .aero-root .dynamic-music-island,
+  .aero-root .dynamic-music-drawer{
+    width:390px!important;
+    max-width:390px!important;
+  }
+
+  .aero-root .dynamic-music-drawer{
+    left:0!important;
+    transform:none!important;
+    animation:music54DrawerIn .42s cubic-bezier(.16,1.2,.28,1) both!important;
+  }
+}
+
+/* Feed switch joins the version-control Wii build instead of the center build. */
+.aero-root.version-build-active .header-feed-adjacent{
+  animation:wiiPieceControl .46s .86s cubic-bezier(.14,1.5,.28,1) both;
+}
+.aero-root.version-build-active .header-feed-adjacent .feed-tabs,
+.aero-root.version-build-active .header-feed-adjacent .feed-tabs .tab-btn,
+.aero-root.version-build-active .header-feed-adjacent .feed-tabs .tab-btn.active{
+  animation:none!important;
+  transform:none!important;
+  filter:none!important;
+}
+
+/* The music island still arrives as one clean staged object. */
+.aero-root.version-build-active .dynamic-music-island{
+  animation:wiiPieceControl .48s 1.03s cubic-bezier(.14,1.5,.28,1) both!important;
+}
+
+@keyframes music54DrawerIn{
+  0%{
+    opacity:0;
+    transform:translateY(-11px) scale(.9);
+  }
+  64%{
+    opacity:1;
+    transform:translateY(2px) scale(1.008);
+  }
+  82%{
+    transform:translateY(-1px) scale(.997);
+  }
+  100%{
+    opacity:1;
+    transform:none;
+  }
+}
+
