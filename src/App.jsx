@@ -532,6 +532,7 @@ export default function RUMS() {
   const [plazaNews, setPlazaNews] = useState([]);
   const [newsFilter, setNewsFilter] = useState('All');
   const [newsSelectedId, setNewsSelectedId] = useState(null);
+  const [newsComposeOpen, setNewsComposeOpen] = useState(false);
   const [newsDraft, setNewsDraft] = useState({ title: '', summary: '', body: '', category: 'Plaza', image: '', breaking: false, pinned: false });
   const [newsBusy, setNewsBusy] = useState(false);
   const [newsImageBusy, setNewsImageBusy] = useState(false);
@@ -5412,58 +5413,103 @@ export default function RUMS() {
               )}
 
               {screen === 'news' && (
-                <div className="plaza-news-page">
-                  <header className="news-masthead">
-                    <div><span className="eyebrow">RUMS PLAZA</span><h1>Plaza News</h1><p>Stories, announcements and everything happening across the Plaza.</p></div>
-                    <Newspaper size={30} />
+                <div className="plaza-news-site">
+                  <header className="news-site-top">
+                    <div className="news-site-brand-row">
+                      <button className="news-site-logo" type="button" onClick={()=>{setNewsFilter('All');setNewsSelectedId(null);}} aria-label="Plaza News home">
+                        <span>PLAZA</span><b>NEWS</b>
+                      </button>
+                      <div className="news-site-tagline">News from across RUMS Plaza</div>
+                      {canEditSite && <button className="news-site-publish" type="button" onClick={()=>setNewsComposeOpen((open)=>!open)}><Plus size={16}/>{newsComposeOpen ? 'Close' : 'Publish'}</button>}
+                    </div>
+                    <nav className="news-site-nav" aria-label="Plaza News sections">
+                      {['All', ...NEWS_CATEGORIES].map((category)=><button key={category} className={newsFilter===category?'active':''} onClick={()=>{setNewsFilter(category);setNewsSelectedId(null);}}>{category==='All'?'Home':category}</button>)}
+                    </nav>
                   </header>
 
-                  {canEditSite && <section className="news-composer">
-                    <div className="news-composer-head"><div><b>Publish to Plaza News</b><small>Visible everywhere in RUMS Plaza.</small></div><Newspaper size={20}/></div>
+                  {canEditSite && newsComposeOpen && <section className="news-site-composer">
+                    <div className="news-composer-head"><div><b>Publish a Plaza News story</b><small>Write it like a news article: clear headline, short standfirst, full story.</small></div><button type="button" onClick={()=>setNewsComposeOpen(false)} aria-label="Close editor"><X size={17}/></button></div>
                     <div className="news-composer-grid">
                       <input className="aero-input" placeholder="Headline" maxLength={120} value={newsDraft.title} onChange={(e)=>setNewsDraft({...newsDraft,title:e.target.value})}/>
                       <select className="aero-input" value={newsDraft.category} onChange={(e)=>setNewsDraft({...newsDraft,category:e.target.value})}>{NEWS_CATEGORIES.map((category)=><option key={category}>{category}</option>)}</select>
                     </div>
-                    <input className="aero-input" placeholder="Short summary (optional)" maxLength={260} value={newsDraft.summary} onChange={(e)=>setNewsDraft({...newsDraft,summary:e.target.value})}/>
-                    <textarea className="caption-area news-body-editor" placeholder="Write the full story…" value={newsDraft.body} onChange={(e)=>setNewsDraft({...newsDraft,body:e.target.value})}/>
+                    <input className="aero-input" placeholder="Standfirst / short summary" maxLength={260} value={newsDraft.summary} onChange={(e)=>setNewsDraft({...newsDraft,summary:e.target.value})}/>
+                    <textarea className="caption-area news-body-editor" placeholder="Write the full article…" value={newsDraft.body} onChange={(e)=>setNewsDraft({...newsDraft,body:e.target.value})}/>
                     {newsDraft.image && <div className="news-image-preview"><img src={newsDraft.image} alt="News preview"/><button type="button" onClick={()=>setNewsDraft({...newsDraft,image:''})}><X size={14}/></button></div>}
                     <div className="news-composer-actions">
-                      <label className="pill pill-btn news-image-picker">{newsImageBusy ? 'Loading image…' : newsDraft.image ? 'Change image' : 'Add image'}<input hidden type="file" accept="image/*" onChange={handleNewsImagePick}/></label>
+                      <label className="pill pill-btn news-image-picker">{newsImageBusy ? 'Loading…' : newsDraft.image ? 'Change image' : 'Add image'}<input hidden type="file" accept="image/*" onChange={handleNewsImagePick}/></label>
                       <label className="news-toggle"><input type="checkbox" checked={newsDraft.breaking} onChange={(e)=>setNewsDraft({...newsDraft,breaking:e.target.checked})}/><span>Breaking</span></label>
                       <label className="news-toggle"><input type="checkbox" checked={newsDraft.pinned} onChange={(e)=>setNewsDraft({...newsDraft,pinned:e.target.checked})}/><span>Pin story</span></label>
-                      <button className="aero-btn" disabled={newsBusy || newsImageBusy || !newsDraft.title.trim() || !newsDraft.body.trim()} onClick={publishNewsArticle}>{newsBusy ? <Loader2 size={15} className="spin"/> : <Newspaper size={15}/>} Publish</button>
+                      <button className="aero-btn" disabled={newsBusy || newsImageBusy || !newsDraft.title.trim() || !newsDraft.body.trim()} onClick={async()=>{await publishNewsArticle();setNewsComposeOpen(false);}}>{newsBusy ? <Loader2 size={15} className="spin"/> : <Newspaper size={15}/>} Publish</button>
                     </div>
                   </section>}
 
-                  <nav className="news-filter-bar" aria-label="News categories">
-                    {['All', ...NEWS_CATEGORIES].map((category)=><button key={category} className={newsFilter===category?'active':''} onClick={()=>{setNewsFilter(category);setNewsSelectedId(null);}}>{category}</button>)}
-                  </nav>
+                  {selectedNewsArticle ? <main className="news-article-page">
+                    <div className="news-article-breadcrumb"><button onClick={()=>setNewsSelectedId(null)}>Plaza News</button><span>›</span><span>{selectedNewsArticle.category}</span></div>
+                    <article className="news-article-main">
+                      <div className="news-article-kicker">{selectedNewsArticle.breaking && <span className="news-site-breaking">LIVE / BREAKING</span>}<span>{selectedNewsArticle.category}</span></div>
+                      <h1>{selectedNewsArticle.title}</h1>
+                      {selectedNewsArticle.summary && <p className="news-article-standfirst">{selectedNewsArticle.summary}</p>}
+                      <div className="news-article-meta"><span>By <button onClick={()=>openProfile(selectedNewsArticle.author)}>{selectedNewsArticle.author}</button></span><span>{new Date(selectedNewsArticle.timestamp).toLocaleString([], { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span></div>
+                      {selectedNewsArticle.image && <figure className="news-article-hero"><img src={selectedNewsArticle.image} alt=""/></figure>}
+                      <div className="news-article-body">{selectedNewsArticle.body.split('\n').map((line,i)=>line ? <p key={i}>{line}</p> : <br key={i}/>)}</div>
+                      <div className="news-article-reactions"><span>What do you think?</span>{['❤️','👍','🔥','🎉'].map((emoji)=>{const names=selectedNewsArticle.reactions?.[emoji]||[];return <button key={emoji} className={names.includes(currentUser.username)?'active':''} onClick={()=>toggleNewsReaction(selectedNewsArticle.id,emoji)}>{emoji}{names.length ? <b>{names.length}</b> : null}</button>})}</div>
+                      <section className="news-article-comments">
+                        <header><h2>Comments</h2><span>{selectedNewsArticle.comments?.length || 0}</span></header>
+                        <div className="news-comment-compose"><input className="aero-input" placeholder="Join the discussion…" value={newsCommentDrafts[selectedNewsArticle.id]||''} onChange={(e)=>setNewsCommentDrafts({...newsCommentDrafts,[selectedNewsArticle.id]:e.target.value})} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault();void submitNewsComment(selectedNewsArticle.id);}}}/><button className="aero-btn" onClick={()=>submitNewsComment(selectedNewsArticle.id)}>Post</button></div>
+                        <div className="news-comment-list">{(selectedNewsArticle.comments||[]).slice().reverse().map((comment)=><div className="news-comment" key={comment.id}>{avatarNode(comment.username,32,11)}<div><div><button onClick={()=>openProfile(comment.username)}>{comment.username}</button><span>{timeAgo(comment.timestamp)}</span></div><p>{comment.text}</p></div></div>)}{!(selectedNewsArticle.comments||[]).length&&<p className="news-no-comments">No comments yet.</p>}</div>
+                      </section>
+                      {canEditSite && <button className="news-delete" onClick={()=>deleteNewsArticle(selectedNewsArticle.id)}><Trash2 size={14}/> Delete article</button>}
+                    </article>
+                    <aside className="news-article-side">
+                      <h3>More from Plaza News</h3>
+                      {plazaNews.filter((article)=>article.id!==selectedNewsArticle.id).sort((a,b)=>b.timestamp-a.timestamp).slice(0,5).map((article)=><button key={article.id} onClick={()=>setNewsSelectedId(article.id)}><span>{article.category}</span><b>{article.title}</b><small>{timeAgo(article.timestamp)}</small></button>)}
+                    </aside>
+                  </main> : <>
+                    {visibleNews.length > 0 ? <main className="news-home-layout">
+                      <section className="news-home-main">
+                        <div className="news-top-grid">
+                          <article className="news-top-story" onClick={()=>setNewsSelectedId(visibleNews[0].id)}>
+                            <div className="news-top-image">{visibleNews[0].image ? <img src={visibleNews[0].image} alt=""/> : <span><Newspaper size={44}/></span>}</div>
+                            <div className="news-top-copy">
+                              <div>{visibleNews[0].breaking&&<span className="news-site-breaking">BREAKING</span>}<span className="news-site-category">{visibleNews[0].category}</span></div>
+                              <h1>{visibleNews[0].title}</h1>
+                              <p>{visibleNews[0].summary || visibleNews[0].body.slice(0,220)}</p>
+                              <small>{timeAgo(visibleNews[0].timestamp)} · {visibleNews[0].comments?.length||0} comments</small>
+                            </div>
+                          </article>
+                          <div className="news-top-secondary">
+                            {visibleNews.slice(1,3).map((article)=><article key={article.id} onClick={()=>setNewsSelectedId(article.id)}>
+                              {article.image && <img src={article.image} alt=""/>}
+                              <div><span>{article.category}</span><h2>{article.title}</h2><small>{timeAgo(article.timestamp)}</small></div>
+                            </article>)}
+                          </div>
+                        </div>
 
-                  {selectedNewsArticle ? <article className="news-reader">
-                    <button className="news-back" onClick={()=>setNewsSelectedId(null)}><ArrowLeft size={15}/> Back to Plaza News</button>
-                    {selectedNewsArticle.breaking && <span className="news-breaking">BREAKING</span>}
-                    <span className="news-category">{selectedNewsArticle.category}</span>
-                    <h1>{selectedNewsArticle.title}</h1>
-                    <div className="news-byline">By <button onClick={()=>openProfile(selectedNewsArticle.author)}>{selectedNewsArticle.author}</button> · {timeAgo(selectedNewsArticle.timestamp)}</div>
-                    {selectedNewsArticle.summary && <p className="news-deck">{selectedNewsArticle.summary}</p>}
-                    {selectedNewsArticle.image && <img className="news-reader-image" src={selectedNewsArticle.image} alt=""/>}
-                    <div className="news-reader-body">{selectedNewsArticle.body.split('\n').map((line,i)=>line ? <p key={i}>{line}</p> : <br key={i}/>)}</div>
-                    <div className="news-reactions">{['❤️','👍','🔥','🎉'].map((emoji)=>{const names=selectedNewsArticle.reactions?.[emoji]||[];return <button key={emoji} className={names.includes(currentUser.username)?'active':''} onClick={()=>toggleNewsReaction(selectedNewsArticle.id,emoji)}>{emoji} {names.length||''}</button>})}</div>
-                    <section className="news-comments">
-                      <h3>Discussion <span>{selectedNewsArticle.comments?.length || 0}</span></h3>
-                      <div className="news-comment-compose"><input className="aero-input" placeholder="Add a comment…" value={newsCommentDrafts[selectedNewsArticle.id]||''} onChange={(e)=>setNewsCommentDrafts({...newsCommentDrafts,[selectedNewsArticle.id]:e.target.value})} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault();void submitNewsComment(selectedNewsArticle.id);}}}/><button className="aero-btn" onClick={()=>submitNewsComment(selectedNewsArticle.id)}>Comment</button></div>
-                      <div className="news-comment-list">{(selectedNewsArticle.comments||[]).slice().reverse().map((comment)=><div className="news-comment" key={comment.id}>{avatarNode(comment.username,32,11)}<div><div><button onClick={()=>openProfile(comment.username)}>{comment.username}</button><span>{timeAgo(comment.timestamp)}</span></div><p>{comment.text}</p></div></div>)}{!(selectedNewsArticle.comments||[]).length&&<p className="news-no-comments">No comments yet.</p>}</div>
-                    </section>
-                    {canEditSite && <button className="news-delete" onClick={()=>deleteNewsArticle(selectedNewsArticle.id)}><Trash2 size={14}/> Delete article</button>}
-                  </article> : <>
-                    {visibleNews.length > 0 && <article className="news-lead" onClick={()=>setNewsSelectedId(visibleNews[0].id)} role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==='Enter')setNewsSelectedId(visibleNews[0].id)}}>
-                      <div className="news-lead-image">{visibleNews[0].image ? <img src={visibleNews[0].image} alt=""/> : <span><Newspaper size={42}/></span>}</div>
-                      <div className="news-lead-copy">{visibleNews[0].breaking&&<span className="news-breaking">BREAKING</span>}<span className="news-category">{visibleNews[0].category}</span><h2>{visibleNews[0].title}</h2><p>{visibleNews[0].summary || visibleNews[0].body.slice(0,220)}</p><small>{timeAgo(visibleNews[0].timestamp)} · {visibleNews[0].author}</small></div>
-                    </article>}
-                    <section className="news-grid">{visibleNews.slice(1).map((article)=><article className="news-card" key={article.id} onClick={()=>setNewsSelectedId(article.id)}>
-                      {article.image && <img src={article.image} alt=""/>}<div className="news-card-content">{article.breaking&&<span className="news-breaking">BREAKING</span>}<span className="news-category">{article.category}</span><h3>{article.title}</h3><p>{article.summary || article.body.slice(0,145)}</p><footer><span>{timeAgo(article.timestamp)}</span><span>{Object.values(article.reactions||{}).reduce((n,list)=>n+(list?.length||0),0)} reactions · {article.comments?.length||0} comments</span></footer></div>
-                    </article>)}</section>
-                    {visibleNews.length===0 && <div className="news-empty"><Newspaper size={34}/><h3>No stories here yet</h3><p>{newsFilter==='All'?'Plaza News is ready for its first story.':`There are no ${newsFilter} stories yet.`}</p></div>}
+                        <section className="news-latest-section">
+                          <div className="news-section-heading"><h2>Latest news</h2><span>{visibleNews.length} stories</span></div>
+                          <div className="news-latest-list">
+                            {visibleNews.slice(3).map((article)=><article key={article.id} onClick={()=>setNewsSelectedId(article.id)}>
+                              <div className="news-latest-time">{new Date(article.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
+                              <div className="news-latest-copy"><span>{article.breaking?'BREAKING · ':''}{article.category}</span><h3>{article.title}</h3><p>{article.summary || article.body.slice(0,150)}</p><small>{article.author} · {article.comments?.length||0} comments</small></div>
+                              {article.image && <img src={article.image} alt=""/>}
+                            </article>)}
+                            {visibleNews.length <= 3 && <div className="news-list-empty">More stories will appear here as they are published.</div>}
+                          </div>
+                        </section>
+                      </section>
+
+                      <aside className="news-home-rail">
+                        <section className="news-rail-block news-net-binnen">
+                          <div className="news-rail-title"><h2>Net binnen</h2><span>LIVE</span></div>
+                          <div>{visibleNews.slice(0,7).map((article)=><button key={article.id} onClick={()=>setNewsSelectedId(article.id)}><time>{new Date(article.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</time><span>{article.title}</span></button>)}</div>
+                        </section>
+                        <section className="news-rail-block news-most-discussed">
+                          <div className="news-rail-title"><h2>Most discussed</h2></div>
+                          <ol>{plazaNews.slice().sort((a,b)=>(b.comments?.length||0)-(a.comments?.length||0)).slice(0,5).map((article,index)=><li key={article.id}><button onClick={()=>setNewsSelectedId(article.id)}><b>{index+1}</b><span>{article.title}</span></button></li>)}</ol>
+                        </section>
+                      </aside>
+                    </main> : <div className="news-empty"><Newspaper size={30}/><h3>No stories yet</h3><p>{newsFilter==='All'?'Plaza News is ready for its first story.':`No ${newsFilter} stories have been published.`}</p>{canEditSite&&<button className="aero-btn" onClick={()=>setNewsComposeOpen(true)}><Plus size={15}/> Publish the first story</button>}</div>}
                   </>}
                 </div>
               )}
