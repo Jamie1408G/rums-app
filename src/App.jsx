@@ -25,8 +25,8 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const TUTORIAL_VERSION = 4;
-const JAMIE_TUTORIAL_VERSION = 4;
+const TUTORIAL_VERSION = 5;
+const JAMIE_TUTORIAL_VERSION = 5;
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
   { id: 'roblox2010', name: 'Roblox 2010', year: '2010', description: 'Sky-blue classic site with framed dashboard modules, blue tabs and bevelled buttons', swatches: ['#dcecf9', '#4e86b8', '#f6c33d'] },
@@ -713,6 +713,7 @@ export default function RUMS() {
   const [tutorialRect, setTutorialRect] = useState(null);
   const [tutorialNavRect, setTutorialNavRect] = useState(null);
   const [tutorialReturningUser, setTutorialReturningUser] = useState(false);
+  const [tutorialActionPulse, setTutorialActionPulse] = useState(0);
   const [uploadPreview, setUploadPreview] = useState(null);
   const [uploadGallery, setUploadGallery] = useState([]);
   const [postAltText, setPostAltText] = useState('');
@@ -1353,143 +1354,185 @@ export default function RUMS() {
     return [
       {
         id: 'welcome',
-        title: `What’s new in ${PLATFORM_NAME}`,
+        title: `Welcome to the new ${PLATFORM_NAME}`,
         body: tutorialReturningUser
-          ? 'Plaza has changed a lot. This one-time update tour covers the new News, richer Chat, Plaza+, Lumina improvements and the expanded community tools.'
-          : 'Here’s the complete Plaza tour: spaces, feeds, News, Chat, Plaza+, Lumina, publishing, discovery and personalization.',
+          ? 'This tour is hands-on now. I’ll point out the important changes and sometimes ask you to use them before we continue.'
+          : 'This is a hands-on Plaza tour. You’ll actually open and use the main features as we go.',
         screen: 'feed',
       },
       {
         id: 'versions',
-        title: 'RUMS 4, Creative and Projects',
-        body: 'Use the top switcher to move between RUMS 4 and Creative or enter Projects. Project spaces can have their own home, forum, updates and board.',
+        title: 'Your Plaza spaces',
+        body: 'RUMS 4, Creative and Projects live in this switcher. You can move between them without leaving Plaza.',
         screen: 'feed',
         target: '[data-tutorial="version-switch"]',
       },
       hasLumina && siteConfig.showLumina ? {
-        id: 'feed-filter',
-        title: 'All RUMS or Lumina',
-        body: 'RUMS 4 has a dedicated Lumina feed. Switch here to see only Lumina posts; unread counters tell you when something new has arrived.',
+        id: 'try-lumina-filter',
+        title: 'Try the Lumina feed',
+        body: 'Tap Lumina now. The feed below will switch to only posts from Project Lumina.',
         screen: 'feed',
-        target: '[data-tutorial="feed-tabs"]',
-        navTarget: '[data-tutorial-nav="feed"]',
+        feedFilter: 'all',
+        target: '[data-tutorial-action="lumina-tab"]',
+        interaction: { selector: '[data-tutorial-action="lumina-tab"]', label: 'Tap Lumina to continue' },
       } : null,
-      {
-        id: 'feed',
-        title: 'The community feed',
-        body: 'Posts, announcements and community widgets live here. NEW markers and navigation counters stay visible until you actually view the new content.',
+      hasLumina && siteConfig.showLumina ? {
+        id: 'lumina-feed',
+        title: 'This is the Lumina feed',
+        body: 'Lumina posts have their own focused feed while still belonging to RUMS 4. The About Lumina action takes you into the project itself.',
         screen: 'feed',
+        feedFilter: 'lumina',
         target: '[data-tutorial="feed-layout"]',
-        navTarget: '[data-tutorial-nav="feed"]',
-      },
-      posts.length > 0 ? {
-        id: 'post-actions',
-        title: 'Posts are more social now',
-        body: 'Like, comment, reply, react with emoji, save posts and open profiles from a post. Saved posts can later be organised into collections in Plaza+.',
+      } : null,
+      hasLumina && siteConfig.showLumina ? {
+        id: 'open-lumina',
+        title: 'Open Project Lumina',
+        body: 'Tap About Lumina so you can see the dedicated project experience.',
         screen: 'feed',
-        target: '[data-tutorial="post-card"]',
-        navTarget: '[data-tutorial-nav="feed"]',
+        feedFilter: 'lumina',
+        target: '[data-tutorial-action="about-lumina"]',
+        interaction: { selector: '[data-tutorial-action="about-lumina"]', label: 'Open About Lumina to continue' },
       } : null,
       hasLumina && siteConfig.showLumina ? {
         id: 'project-lumina',
-        title: 'Lumina has its own home',
-        body: 'Project Lumina now has a cleaner dedicated page plus an About Lumina action. Posts made from Lumina automatically start with Lumina selected as their location.',
+        title: 'Project Lumina',
+        body: 'Lumina now has its own cleaner project home. Creating a post from here also preselects Lumina as the post location.',
         screen: 'lumina',
-        target: '[data-tutorial="lumina-page"]',
-        navTarget: '[data-tutorial-nav="lumina"]',
+        target: '.lumina-project-hero',
       } : null,
       {
+        id: 'open-share',
+        title: 'Create a post',
+        body: 'Now open Share a build using the highlighted create button.',
+        target: '[data-tutorial-nav="upload"]',
+        interaction: { selector: '[data-tutorial-nav="upload"]', label: 'Open Share a build to continue' },
+      },
+      {
         id: 'share',
-        title: 'Share a build',
-        body: 'Upload a screenshot, choose where it was taken and add a caption. On RUMS 4, posts can be General or Lumina; opening the composer from Lumina preselects Lumina.',
+        title: 'The post composer',
+        body: 'Add a screenshot, caption and location here. When you enter from Lumina, Lumina is selected automatically.',
         screen: 'upload',
-        target: '[data-tutorial="upload-page"]',
-        navTarget: '[data-tutorial-nav="upload"]',
+        target: '.composer-heading',
+      },
+      {
+        id: 'open-news',
+        title: 'Open Plaza News',
+        body: 'Tap News. It is now a full news system rather than another social feed.',
+        target: '[data-tutorial-nav="news"]',
+        interaction: { selector: '[data-tutorial-nav="news"]', label: 'Open News to continue' },
       },
       {
         id: 'news',
         title: 'Plaza News',
-        body: 'News is now a full editorial section. The newest article leads the page, breaking articles can temporarily take over, and articles carry RUMS 4, Lumina or Creative source labels.',
+        body: 'The newest article leads the page, recent breaking articles can temporarily take over, and every article can be labelled RUMS 4, Lumina or Creative.',
         screen: 'news',
-        target: '[data-tutorial="news-page"]',
-        navTarget: '[data-tutorial-nav="news"]',
+        target: '.news-site-top',
+      },
+      {
+        id: 'open-chat',
+        title: 'Open Chat',
+        body: 'Tap Chat to see the upgraded messaging system.',
+        target: '[data-tutorial-nav="chat"]',
+        interaction: { selector: '[data-tutorial-nav="chat"]', label: 'Open Chat to continue' },
       },
       {
         id: 'chat',
-        title: 'Chat got a major upgrade',
-        body: 'Plaza Chat supports public chat, DMs and group chats plus replies, emoji reactions, images, searchable GIFs and playable Spotify embeds pasted from Spotify share links.',
+        title: 'Chat is much richer now',
+        body: 'You have public chat, DMs, groups, replies, reactions, images, Spotify embeds and searchable GIFs.',
         screen: 'chat',
-        target: '[data-tutorial="chat-page"]',
-        navTarget: '[data-tutorial-nav="chat"]',
+        target: '.chat-conversation-header',
+      },
+      {
+        id: 'try-gif',
+        title: 'Try the GIF picker',
+        body: 'Tap GIF. You don’t have to send anything — just open the picker so you can see how it works.',
+        screen: 'chat',
+        target: '[data-tutorial-action="gif-open"]',
+        interaction: { selector: '[data-tutorial-action="gif-open"]', label: 'Open GIF to continue' },
+      },
+      {
+        id: 'gif-picker',
+        title: 'Search GIFs live',
+        body: 'The GIF library updates while you type. Results are kept compact so the picker stays fast and easy to browse.',
+        screen: 'chat',
+        target: '.gif-picker-panel',
+      },
+      {
+        id: 'close-gif',
+        title: 'Close the GIF picker',
+        body: 'Tap the close button and we’ll continue.',
+        screen: 'chat',
+        target: '[data-tutorial-action="gif-close"]',
+        interaction: { selector: '[data-tutorial-action="gif-close"]', label: 'Close GIF to continue' },
+      },
+      {
+        id: 'open-plus',
+        title: 'Open Plaza+',
+        body: 'Tap Plaza+ — this is where most of the new community tools live.',
+        target: '[data-tutorial-nav="plazaPlus"]',
+        interaction: { selector: '[data-tutorial-nav="plazaPlus"]', label: 'Open Plaza+ to continue' },
       },
       {
         id: 'plaza-plus',
-        title: 'Plaza+ is your social hub',
-        body: 'Plaza+ brings notifications, following, saved-post collections, trending activity, events, communities and group chats, Projects, wiki/build tools, creator tools and accessibility settings together.',
+        title: 'Plaza+',
+        body: 'Notifications, following, saved collections, activity, events, groups, Projects, wiki/build tools, creator tools, accessibility and device notifications all live here.',
         screen: 'plazaPlus',
-        target: '[data-tutorial="plaza-plus-page"]',
-        navTarget: '[data-tutorial-nav="plazaPlus"]',
+        target: '.plaza-plus-hero',
       },
       {
-        id: 'notifications',
-        title: 'Notifications can follow you',
-        body: 'Plaza+ tracks mentions, follows, likes, comments and other activity. In Plaza+ Settings you can also enable device notifications for important activity while the site is closed.',
-        screen: 'plazaPlus',
-        target: '[data-tutorial="plaza-plus-page"]',
-        navTarget: '[data-tutorial-nav="plazaPlus"]',
+        id: 'feed-social',
+        title: 'Posts are more social too',
+        body: 'Posts support likes, comments, replies, emoji reactions and saving. Saved posts can be organised into collections in Plaza+.',
+        screen: 'feed',
+        feedFilter: 'all',
+        target: '[data-tutorial="feed-layout"]',
       },
       siteConfig.showDiscover ? {
         id: 'discover',
         title: 'Discover',
-        body: 'Search members and posts in the Plaza space you are currently using, then jump directly to a profile or post.',
+        body: 'Discover searches members and posts in the Plaza space you are currently using.',
         screen: 'search',
         target: '[data-tutorial="discover-page"]',
-        navTarget: '[data-tutorial-nav="search"]',
       } : null,
       siteConfig.showSuggestions ? {
         id: 'suggestions',
         title: 'Suggestions',
-        body: 'Suggestions is still the place for community ideas. Members can vote and react so useful ideas rise quickly.',
+        body: 'Community ideas still live here, with voting and reactions to help useful suggestions stand out.',
         screen: 'suggestions',
         target: '[data-tutorial="suggestions-page"]',
-        navTarget: '[data-tutorial-nav="suggestions"]',
       } : null,
       siteConfig.showUpdates ? {
         id: 'updates',
         title: 'Server updates',
-        body: 'Official server changes live here. Unread indicators remain until you have actually viewed the new update.',
+        body: 'Official server changes live here, with unread indicators that stay until you actually view them.',
         screen: 'updates',
         target: '[data-tutorial="updates-page"]',
-        navTarget: '[data-tutorial-nav="updates"]',
       } : null,
       {
         id: 'profile',
-        title: 'Profiles, follows and identity',
-        body: 'Open profiles from posts or chat. Your own profile lets you manage your avatar and identity, while Plaza+ adds following, status, XP and badges around the social side of Plaza.',
+        title: 'Your profile',
+        body: 'Profiles now tie into follows, activity, XP and badges. Your own profile also contains Plaza appearance controls.',
         screen: 'profile',
         target: '[data-tutorial="profile-page"]',
-        navTarget: '[data-tutorial-nav="profile"]',
       },
       {
         id: 'appearance',
         title: 'Make Plaza yours',
-        body: 'Appearance includes glass strength and the full theme library: Light, Dark, Roblox eras, Frutiger styles, Liquid Glass, Solarpunk, Cyberpunk and more.',
+        body: 'Appearance includes glass strength and the complete theme library, from Light and Dark to Roblox eras, Frutiger styles, Liquid Glass, Solarpunk and more.',
         screen: 'profile',
         target: '[data-tutorial="appearance"]',
-        navTarget: '[data-tutorial-nav="profile"]',
       },
       {
         id: 'shortcuts',
-        title: 'One more shortcut',
-        body: 'Use ⌘K or Ctrl+K to open the command palette and jump quickly to Feed, Chat, News, Plaza+, Projects, saved posts, settings and other major areas.',
-        screen: 'plazaPlus',
-        target: '[data-tutorial="plaza-plus-page"]',
-        navTarget: '[data-tutorial-nav="plazaPlus"]',
+        title: 'One last power feature',
+        body: 'Press ⌘K on Mac or Ctrl+K elsewhere anytime to open the command palette and jump around Plaza quickly.',
+        screen: 'profile',
+        target: '[data-tutorial="appearance"]',
       },
       {
         id: 'done',
-        title: 'You’re up to date',
-        body: 'That’s the refreshed Plaza. This update tour only appears once; you can replay it anytime from your Profile → Appearance section.',
+        title: 'You’re ready',
+        body: 'That’s the new Plaza. This interactive update tour only runs once, and you can replay it later from Profile → Appearance.',
         screen: 'feed',
       },
     ].filter(Boolean);
@@ -1560,11 +1603,12 @@ export default function RUMS() {
     } else if (step.screen && screen !== step.screen) {
       setScreen(step.screen);
     }
-    if (step.screen === 'feed' && feedFilter !== 'all') setFeedFilter('all');
+    if (step.screen === 'feed' && step.feedFilter && feedFilter !== step.feedFilter) setFeedFilter(step.feedFilter);
 
     let cancelled = false;
     let timer = 0;
     let retryCount = 0;
+    let actionTimer = 0;
     const contentScroller = document.querySelector('.content');
 
     const findVisible = (selector) => {
@@ -1580,33 +1624,50 @@ export default function RUMS() {
     const measure = (scrollIntoView = false) => {
       if (cancelled) return;
       const target = findVisible(step.target);
-      const navTarget = findVisible(step.navTarget);
       if (!target) {
         if (!step.target) setTutorialRect(null);
-        if (step.target && retryCount < 10) {
+        if (step.target && retryCount < 18) {
           retryCount += 1;
-          timer = window.setTimeout(() => measure(retryCount === 1), 80);
+          timer = window.setTimeout(() => measure(retryCount === 1), 90);
         }
-        if (navTarget) { const nr = navTarget.getBoundingClientRect(); setTutorialNavRect({ top:nr.top,left:nr.left,width:nr.width,height:nr.height }); } else setTutorialNavRect(null);
         return;
       }
       if (scrollIntoView) target.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
       const rect = target.getBoundingClientRect();
       setTutorialRect({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
-      if (navTarget) { const nr = navTarget.getBoundingClientRect(); setTutorialNavRect({ top:nr.top,left:nr.left,width:nr.width,height:nr.height }); } else setTutorialNavRect(null);
+      setTutorialNavRect(null);
     };
 
-    timer = window.setTimeout(() => measure(true), 100);
+    const blockWrongInteraction = (event) => {
+      if (!step.interaction?.selector) return;
+      if (event.target.closest?.('.tutorial-card')) return;
+      const required = findVisible(step.interaction.selector);
+      if (!required || !required.contains(event.target)) {
+        event.preventDefault();
+        event.stopPropagation();
+        setTutorialActionPulse((value) => value + 1);
+        return;
+      }
+      actionTimer = window.setTimeout(() => {
+        if (!cancelled) moveTutorial(1);
+      }, 260);
+    };
+
+    timer = window.setTimeout(() => measure(true), 120);
     const update = () => measure(false);
     window.addEventListener('resize', update);
     window.addEventListener('scroll', update, { passive: true });
     contentScroller?.addEventListener('scroll', update, { passive: true });
+    if (step.interaction?.selector) document.addEventListener('click', blockWrongInteraction, true);
+
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
+      window.clearTimeout(actionTimer);
       window.removeEventListener('resize', update);
       window.removeEventListener('scroll', update);
       contentScroller?.removeEventListener('scroll', update);
+      if (step.interaction?.selector) document.removeEventListener('click', blockWrongInteraction, true);
     };
   }, [tutorialActive, tutorialStep, screen, feedFilter, rumsSpace]);
 
@@ -4770,7 +4831,7 @@ export default function RUMS() {
   const feedBoxHandle = (id) => editMode && isOwner && selectedBoxId === `feed:${id}` ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
   function renderFeedBox(id) {
     if (id === 'hero') return <section data-feed-box="hero" data-edit-box-id="feed:hero" className={`editable-built-in-box ${selectedBoxId === 'feed:hero' ? 'is-editor-selected' : ''}`} key="hero" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:hero'); }}>{feedBoxHandle('hero')}<div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => openPostComposer()} aria-label="Create post"><Plus size={20} /></button></div></section>;
-    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''} ${feedFilter === 'lumina' ? 'lumina-feed-posts' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>{followingOnly ? 'Following feed' : 'Recent posts'}</h2><div className="feed-heading-actions">{feedFilter === 'lumina' && <button className="pill pill-btn lumina-about-pill" onClick={openLumina}><Droplet size={12}/> About Lumina</button>}<button className={`pill pill-btn ${followingOnly?'active':''}`} onClick={()=>setFollowingOnly((v)=>!v)}>{followingOnly?'Show everyone':'Following'}</button><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div></div>{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default', newPageKey: 'feed' }))}</section>;
+    return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''} ${feedFilter === 'lumina' ? 'lumina-feed-posts' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>{followingOnly ? 'Following feed' : 'Recent posts'}</h2><div className="feed-heading-actions">{feedFilter === 'lumina' && <button data-tutorial-action="about-lumina" className="pill pill-btn lumina-about-pill" onClick={openLumina}><Droplet size={12}/> About Lumina</button>}<button className={`pill pill-btn ${followingOnly?'active':''}`} onClick={()=>setFollowingOnly((v)=>!v)}>{followingOnly?'Show everyone':'Following'}</button><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div></div>{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default', newPageKey: 'feed' }))}</section>;
   }
 
   function renderFeedTabs() {
@@ -4785,7 +4846,7 @@ export default function RUMS() {
           All RUMS
           {unseenGeneral > 0 && <span className="tab-badge">{unseenGeneral}</span>}
         </button>
-        <button className={`tab-btn ${feedFilter === 'lumina' ? 'active' : ''}`} onClick={() => setFeedFilter('lumina')}>
+        <button data-tutorial-action="lumina-tab" className={`tab-btn ${feedFilter === 'lumina' ? 'active' : ''}`} onClick={() => setFeedFilter('lumina')}>
           <Droplet size={12} /> Lumina
           {unseenLumina > 0 && <span className="tab-badge">{unseenLumina}</span>}
         </button>
@@ -5007,7 +5068,26 @@ export default function RUMS() {
   const tutorialSteps = buildTutorialSteps();
   const tutorialCurrent = tutorialSteps[Math.min(tutorialStep, Math.max(0, tutorialSteps.length - 1))] || null;
   const tutorialProgress = tutorialSteps.length ? Math.round(((Math.min(tutorialStep, tutorialSteps.length - 1) + 1) / tutorialSteps.length) * 100) : 0;
-  const tutorialCardAtTop = Boolean(tutorialRect && tutorialRect.top > window.innerHeight * 0.55);
+  const tutorialCardPosition = (() => {
+    if (!tutorialRect || !tutorialCurrent?.target) return { className: 'tutorial-card-center', style: {} };
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const gap = 18;
+    const cardW = Math.min(440, vw - 24);
+    const estimatedH = vw <= 700 ? 215 : 230;
+    if (vw <= 700) {
+      const roomBelow = vh - (tutorialRect.top + tutorialRect.height);
+      if (roomBelow >= estimatedH + gap) return { className: 'tutorial-card-free', style: { top: Math.min(vh - estimatedH - 10, tutorialRect.top + tutorialRect.height + gap), left: 10, width: vw - 20 } };
+      return { className: 'tutorial-card-free', style: { top: Math.max(10, tutorialRect.top - estimatedH - gap), left: 10, width: vw - 20 } };
+    }
+    const rightRoom = vw - (tutorialRect.left + tutorialRect.width);
+    const leftRoom = tutorialRect.left;
+    if (rightRoom >= cardW + gap) return { className: 'tutorial-card-free', style: { top: Math.max(16, Math.min(vh - estimatedH - 16, tutorialRect.top)), left: tutorialRect.left + tutorialRect.width + gap, width: cardW } };
+    if (leftRoom >= cardW + gap) return { className: 'tutorial-card-free', style: { top: Math.max(16, Math.min(vh - estimatedH - 16, tutorialRect.top)), left: tutorialRect.left - cardW - gap, width: cardW } };
+    const roomBelow = vh - (tutorialRect.top + tutorialRect.height);
+    if (roomBelow >= estimatedH + gap) return { className: 'tutorial-card-free', style: { top: tutorialRect.top + tutorialRect.height + gap, left: Math.max(16, Math.min(vw - cardW - 16, tutorialRect.left + tutorialRect.width / 2 - cardW / 2)), width: cardW } };
+    return { className: 'tutorial-card-free', style: { top: Math.max(16, tutorialRect.top - estimatedH - gap), left: Math.max(16, Math.min(vw - cardW - 16, tutorialRect.left + tutorialRect.width / 2 - cardW / 2)), width: cardW } };
+  })();
 
   return (
     <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
@@ -5467,7 +5547,7 @@ export default function RUMS() {
                               <span className="gif-picker-mark">GIF</span>
                               <div><strong>Choose a GIF</strong><small>Search or pick one below</small></div>
                             </div>
-                            <button type="button" className="gif-picker-close" onClick={() => setGifPickerOpen(false)} aria-label="Close GIF picker"><X size={18} /></button>
+                            <button data-tutorial-action="gif-close" type="button" className="gif-picker-close" onClick={() => setGifPickerOpen(false)} aria-label="Close GIF picker"><X size={18} /></button>
                           </header>
 
                           <form className="gif-picker-search" onSubmit={(event) => { event.preventDefault(); if (gifSearchTimerRef.current) clearTimeout(gifSearchTimerRef.current); void loadKlipyGifs({ query: gifQuery, next: '', append: false }); }}>
@@ -5517,7 +5597,7 @@ export default function RUMS() {
                             {chatImageBusy ? <Loader2 size={15} className="spin" /> : <ImagePlus size={15} />}
                             <span>{chatImageDraft ? 'Change image' : 'Add image'}</span>
                           </button>
-                          <button className={`chat-attach-button klipy-button ${gifPickerOpen ? 'active' : ''}`} type="button" onClick={openGifPicker} disabled={chatBusy || chatImageBusy}>
+                          <button data-tutorial-action="gif-open" className={`chat-attach-button klipy-button ${gifPickerOpen ? 'active' : ''}`} type="button" onClick={openGifPicker} disabled={chatBusy || chatImageBusy}>
                             <span className="klipy-button-gif">GIF</span>
                             <span>GIF</span>
                           </button>
@@ -6339,21 +6419,25 @@ export default function RUMS() {
         {tutorialActive && tutorialCurrent && (
           <div className="tutorial-layer" aria-live="polite">
             <div className="tutorial-blocker" />
-            {tutorialNavRect && tutorialCurrent.navTarget && (
-              <div className="tutorial-spotlight tutorial-nav-spotlight" style={{ top:Math.max(6,tutorialNavRect.top-5), left:Math.max(6,tutorialNavRect.left-5), width:Math.max(20,tutorialNavRect.width+10), height:Math.max(20,tutorialNavRect.height+10) }} />
-            )}
             {tutorialRect && tutorialCurrent.target && (
               <div
-                className="tutorial-spotlight"
+                className={`tutorial-spotlight ${tutorialCurrent.interaction ? 'tutorial-spotlight-interactive' : ''}`}
                 style={{
-                  top: Math.max(8, tutorialRect.top - 8),
-                  left: Math.max(8, tutorialRect.left - 8),
-                  width: Math.max(24, tutorialRect.width + 16),
-                  height: Math.max(24, tutorialRect.height + 16),
+                  top: Math.max(6, tutorialRect.top - 7),
+                  left: Math.max(6, tutorialRect.left - 7),
+                  width: Math.max(24, Math.min(window.innerWidth - 12, tutorialRect.width + 14)),
+                  height: Math.max(24, Math.min(window.innerHeight - 12, tutorialRect.height + 14)),
                 }}
               />
             )}
-            <section className={`tutorial-card ${tutorialCardAtTop ? 'tutorial-card-top' : 'tutorial-card-bottom'} ${tutorialCurrent.target ? '' : 'tutorial-card-center'}`} role="dialog" aria-modal="true" aria-label="RUMS Plaza tutorial">
+            <section
+              className={`tutorial-card ${tutorialCardPosition.className} ${tutorialCurrent.interaction ? 'tutorial-card-task' : ''} ${tutorialActionPulse ? 'tutorial-card-pulse' : ''}`}
+              style={tutorialCardPosition.style}
+              role="dialog"
+              aria-modal="true"
+              aria-label="RUMS Plaza tutorial"
+              key={`${tutorialCurrent.id}-${tutorialActionPulse}`}
+            >
               <div className="tutorial-card-topline">
                 <span className="tutorial-step-count">{Math.min(tutorialStep + 1, tutorialSteps.length)} / {tutorialSteps.length}</span>
                 <button type="button" className="tutorial-skip" onClick={() => { void completeTutorial(); }}>Skip tutorial</button>
@@ -6362,14 +6446,19 @@ export default function RUMS() {
               <div className="tutorial-icon"><Sparkles size={19} /></div>
               <h2>{tutorialCurrent.title}</h2>
               <p>{tutorialCurrent.body}</p>
+              {tutorialCurrent.interaction && <div className="tutorial-task"><span className="tutorial-task-dot" /><strong>{tutorialCurrent.interaction.label}</strong></div>}
               <div className="tutorial-actions">
                 <button type="button" className="tutorial-back" onClick={() => moveTutorial(-1)} disabled={tutorialStep === 0}><ArrowLeft size={15} /> Back</button>
-                <button type="button" className="tutorial-next" onClick={() => {
-                  if (tutorialStep >= tutorialSteps.length - 1) void completeTutorial();
-                  else moveTutorial(1);
-                }}>
-                  {tutorialStep >= tutorialSteps.length - 1 ? <><Check size={15} /> Finish</> : <>Next <span>→</span></>}
-                </button>
+                {tutorialCurrent.interaction ? (
+                  <span className="tutorial-waiting">Waiting for you…</span>
+                ) : (
+                  <button type="button" className="tutorial-next" onClick={() => {
+                    if (tutorialStep >= tutorialSteps.length - 1) void completeTutorial();
+                    else moveTutorial(1);
+                  }}>
+                    {tutorialStep >= tutorialSteps.length - 1 ? <><Check size={15} /> Finish</> : <>Next <span>→</span></>}
+                  </button>
+                )}
               </div>
             </section>
           </div>
