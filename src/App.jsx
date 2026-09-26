@@ -42,7 +42,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'single-account-gate-boot-74';
+const FORCE_UPDATE_REVISION = 'key-press-music-animation-75';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -53,8 +53,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 74;
-const JAMIE_TUTORIAL_VERSION = 74;
+const TUTORIAL_VERSION = 75;
+const JAMIE_TUTORIAL_VERSION = 75;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -1494,6 +1494,41 @@ export default function RUMS() {
     void playSiteMusicTrack(next, { reset: true });
   }
 
+  function animateSiteMusicControlPress(control) {
+    if (!control || typeof document === 'undefined') return;
+
+    try {
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    } catch {}
+
+    const nodes = document.querySelectorAll(`[data-music-control="${control}"]`);
+    nodes.forEach((node) => {
+      if (!(node instanceof HTMLElement) || typeof node.animate !== 'function') return;
+
+      try {
+        node.getAnimations().forEach((animation) => {
+          if (animation?.id === 'plaza-music-key-press') animation.cancel();
+        });
+      } catch {}
+
+      const animation = node.animate(
+        [
+          { transform: 'scale(1)', offset: 0 },
+          { transform: 'scale(.94)', offset: 0.34 },
+          { transform: 'scale(1.065)', offset: 0.68 },
+          { transform: 'scale(1)', offset: 1 },
+        ],
+        {
+          duration: 190,
+          easing: 'cubic-bezier(.16,1.35,.3,1)',
+          fill: 'none',
+        },
+      );
+
+      try { animation.id = 'plaza-music-key-press'; } catch {}
+    });
+  }
+
   function seekSiteMusic(value) {
     const audio = siteMusicAudioRef.current;
     const target = Number(value);
@@ -1612,15 +1647,19 @@ export default function RUMS() {
 
     const handlers = {
       play: () => {
+        animateSiteMusicControlPress('toggle');
         void playSiteMusicTrack(siteMusicTrackIndexRef.current);
       },
       pause: () => {
+        animateSiteMusicControlPress('toggle');
         pauseSiteMusic();
       },
       previoustrack: () => {
+        animateSiteMusicControlPress('previous');
         skipSiteMusic(-1);
       },
       nexttrack: () => {
+        animateSiteMusicControlPress('next');
         skipSiteMusic(1);
       },
     };
@@ -1680,18 +1719,21 @@ export default function RUMS() {
 
       if (mediaPlayPause) {
         event.preventDefault();
+        animateSiteMusicControlPress('toggle');
         toggleSiteMusic();
         return;
       }
 
       if (mediaPrevious) {
         event.preventDefault();
+        animateSiteMusicControlPress('previous');
         skipSiteMusic(-1);
         return;
       }
 
       if (mediaNext) {
         event.preventDefault();
+        animateSiteMusicControlPress('next');
         skipSiteMusic(1);
         return;
       }
@@ -1701,18 +1743,21 @@ export default function RUMS() {
       // MediaTrackPrevious / MediaPlayPause / MediaTrackNext.
       if (key === 'F7' || code === 'F7') {
         event.preventDefault();
+        animateSiteMusicControlPress('previous');
         skipSiteMusic(-1);
         return;
       }
 
       if (key === 'F8' || code === 'F8') {
         event.preventDefault();
+        animateSiteMusicControlPress('toggle');
         toggleSiteMusic();
         return;
       }
 
       if (key === 'F9' || code === 'F9') {
         event.preventDefault();
+        animateSiteMusicControlPress('next');
         skipSiteMusic(1);
         return;
       }
@@ -1721,18 +1766,21 @@ export default function RUMS() {
 
       if (key === ' ' || key.toLowerCase() === 'k') {
         event.preventDefault();
+        animateSiteMusicControlPress('toggle');
         toggleSiteMusic();
         return;
       }
 
       if (key === 'ArrowLeft' || key.toLowerCase() === 'j') {
         event.preventDefault();
+        animateSiteMusicControlPress('previous');
         skipSiteMusic(-1);
         return;
       }
 
       if (key === 'ArrowRight' || key.toLowerCase() === 'l') {
         event.preventDefault();
+        animateSiteMusicControlPress('next');
         skipSiteMusic(1);
       }
     };
@@ -1905,6 +1953,7 @@ export default function RUMS() {
             <button
               type="button"
               className="dynamic-music-compact-control"
+              data-music-control="previous"
               onClick={() => skipSiteMusic(-1)}
               aria-label="Previous track"
             >
@@ -1914,6 +1963,7 @@ export default function RUMS() {
             <button
               type="button"
               className="dynamic-music-compact-control dynamic-music-compact-play"
+              data-music-control="toggle"
               onClick={toggleSiteMusic}
               aria-label={siteMusicPlaying ? 'Pause music' : 'Play music'}
             >
@@ -1923,6 +1973,7 @@ export default function RUMS() {
             <button
               type="button"
               className="dynamic-music-compact-control"
+              data-music-control="next"
               onClick={() => skipSiteMusic(1)}
               aria-label="Next track"
             >
@@ -1993,11 +2044,11 @@ export default function RUMS() {
               </div>
 
               <div className="dynamic-music-controls">
-                <button type="button" onClick={() => skipSiteMusic(-1)} aria-label="Previous track"><SkipBack size={21}/></button>
-                <button type="button" className="dynamic-music-main-control" onClick={toggleSiteMusic} aria-label={siteMusicPlaying ? 'Pause' : 'Play'}>
+                <button type="button" data-music-control="previous" onClick={() => skipSiteMusic(-1)} aria-label="Previous track"><SkipBack size={21}/></button>
+                <button type="button" className="dynamic-music-main-control" data-music-control="toggle" onClick={toggleSiteMusic} aria-label={siteMusicPlaying ? 'Pause' : 'Play'}>
                   {siteMusicPlaying ? <Pause size={25}/> : <Play size={25}/>}
                 </button>
-                <button type="button" onClick={() => skipSiteMusic(1)} aria-label="Next track"><SkipForward size={21}/></button>
+                <button type="button" data-music-control="next" onClick={() => skipSiteMusic(1)} aria-label="Next track"><SkipForward size={21}/></button>
               </div>
 
               <div className="dynamic-music-volume">
