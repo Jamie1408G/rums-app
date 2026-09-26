@@ -2219,7 +2219,7 @@ export default function RUMS() {
       const key = event.key.toLowerCase();
       if (key === 'g') setScreen('feed');
       else if (key === 'c') setScreen('chat');
-      else if (key === 'n') setScreen('upload');
+      else if (key === 'n') openPostComposer();
       else if (key === '/') { event.preventDefault(); setScreen('search'); setTimeout(() => document.querySelector('.search-bar')?.focus(), 50); }
     };
     window.addEventListener('keydown', onKey);
@@ -3333,6 +3333,17 @@ export default function RUMS() {
   function openPost(postId) {
     setViewingPostId(postId);
     goTo('postDetail');
+  }
+
+  function openPostComposer(preferredTag = null) {
+    setError('');
+    const fromLuminaContext = hasLumina && (
+      preferredTag === 'Lumina' ||
+      screen === 'lumina' ||
+      (screen === 'feed' && feedFilter === 'lumina')
+    );
+    setTag(fromLuminaContext ? 'Lumina' : (preferredTag || 'General'));
+    setScreen('upload');
   }
 
   function openLumina() {
@@ -4724,7 +4735,7 @@ export default function RUMS() {
   const luminaPosts = !hasLumina ? [] : posts.filter((p) => p.tag === 'Lumina').sort((a, b) => b.timestamp - a.timestamp);
   const feedBoxHandle = (id) => editMode && isOwner && selectedBoxId === `feed:${id}` ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
   function renderFeedBox(id) {
-    if (id === 'hero') return <section data-feed-box="hero" data-edit-box-id="feed:hero" className={`editable-built-in-box ${selectedBoxId === 'feed:hero' ? 'is-editor-selected' : ''}`} key="hero" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:hero'); }}>{feedBoxHandle('hero')}<div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => setScreen('upload')} aria-label="Create post"><Plus size={20} /></button></div></section>;
+    if (id === 'hero') return <section data-feed-box="hero" data-edit-box-id="feed:hero" className={`editable-built-in-box ${selectedBoxId === 'feed:hero' ? 'is-editor-selected' : ''}`} key="hero" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:hero'); }}>{feedBoxHandle('hero')}<div className="community-hero"><div className="hero-copy"><span className="eyebrow">{siteConfig.brandName} COMMUNITY</span><h1 {...(feedFilter === 'all' ? editableTextProps('feed.heading') : {})}>{feedFilter === 'lumina' ? 'Lumina' : siteText('feed.heading', siteConfig.heroTitle)}{feedFilter === 'all' && textDragHandle('feed.heading')}</h1><p {...(feedFilter === 'all' ? editableTextProps('feed.description') : {})}>{feedFilter === 'lumina' ? 'A closer look at the city being built on RUMS.' : siteText('feed.description', siteConfig.heroText)}{feedFilter === 'all' && textDragHandle('feed.description')}</p></div><button className="hero-create" onClick={() => openPostComposer()} aria-label="Create post"><Plus size={20} /></button></div></section>;
     return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>{followingOnly ? 'Following feed' : 'Recent posts'}</h2><div className="feed-heading-actions"><button className={`pill pill-btn ${followingOnly?'active':''}`} onClick={()=>setFollowingOnly((v)=>!v)}>{followingOnly?'Show everyone':'Following'}</button><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div></div>{feedFilter === 'lumina' && <div className="lumina-banner clickable-row" onClick={openLumina}><div className="droplet-badge lumina-page-badge"><Droplet size={18} color="white" />{sessionNewCountOnPage('lumina') > 0 && <span className="page-new-indicator page-new-count" title={`${sessionNewCountOnPage('lumina')} new in Project Lumina`}>{sessionNewCountOnPage('lumina') > 99 ? '99+' : sessionNewCountOnPage('lumina')}</span>}</div><div><h4>Lumina</h4><p>Screenshots from the city district, in one place.</p></div><span className="lumina-banner-arrow">About the city →</span></div>}{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default', newPageKey: 'feed' }))}</section>;
   }
 
@@ -5136,7 +5147,7 @@ export default function RUMS() {
               {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{navIconWithNew(<Pencil size={19} />, `custom:${tab.id}`)} {tab.label}</button>)}
               {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
               {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onClick={() => setEditMode(true)}>{editMode ? <Check size={19} /> : <Eye size={19} />} {editMode ? 'Editing website' : 'Edit website'}</button>}
-              {!isProjectSpace && <button data-tutorial-nav="upload" className="rail-create" onClick={() => setScreen('upload')}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>}
+              {!isProjectSpace && <button data-tutorial-nav="upload" className="rail-create" onClick={() => openPostComposer()}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>}
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS Plaza · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
@@ -5216,10 +5227,10 @@ export default function RUMS() {
 
               {screen === 'lumina' && hasLumina && (
                 <div className="lumina-page" data-tutorial="lumina-page">
-                  <div className="lumina-topbar"><button className="glass-circle-btn" onClick={goBack} aria-label="Back"><ArrowLeft size={19} /></button><span>Project</span><button className="glass-circle-btn" onClick={() => { setTag('Lumina'); setScreen('upload'); }} aria-label="Share from Lumina"><Plus size={19} /></button></div>
+                  <div className="lumina-topbar"><button className="glass-circle-btn" onClick={goBack} aria-label="Back"><ArrowLeft size={19} /></button><span>Project</span><button className="glass-circle-btn" onClick={() => { openPostComposer('Lumina'); }} aria-label="Share from Lumina"><Plus size={19} /></button></div>
                   <section className="lumina-project-hero">
                     <div className="lumina-project-glow" aria-hidden="true"><span /><span /></div>
-                    <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1 {...editableTextProps('lumina.heading')}>{siteText('lumina.heading', 'Project Lumina')}{textDragHandle('lumina.heading')}</h1><p {...editableTextProps('lumina.description')}>{siteText('lumina.description', 'A bright community city where Frutiger Aero optimism, Frutiger Eco nature and solarpunk urbanism meet.')}{textDragHandle('lumina.description')}</p><div className="lumina-hero-actions"><button onClick={() => setLuminaView('metro')}>Explore the metro</button><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}><Plus size={14} /> Share a view</button></div></div>
+                    <div className="lumina-project-copy"><span className="lumina-kicker"><Droplet size={12} /> A CITY ON RUMS</span><h1 {...editableTextProps('lumina.heading')}>{siteText('lumina.heading', 'Project Lumina')}{textDragHandle('lumina.heading')}</h1><p {...editableTextProps('lumina.description')}>{siteText('lumina.description', 'A bright community city where Frutiger Aero optimism, Frutiger Eco nature and solarpunk urbanism meet.')}{textDragHandle('lumina.description')}</p><div className="lumina-hero-actions"><button onClick={() => setLuminaView('metro')}>Explore the metro</button><button onClick={() => { openPostComposer('Lumina'); }}><Plus size={14} /> Share a view</button></div></div>
                     <div className="lumina-project-stats"><div><strong>{luminaPosts.length}</strong><span>community posts</span></div><div><strong>M1</strong><span>every minute</span></div></div>
                   </section>
 
@@ -5240,8 +5251,8 @@ export default function RUMS() {
 
                   {luminaView === 'community' && <section className="lumina-view-panel lumina-community-section">
                     <div className="lumina-section-heading"><div><span className="eyebrow">FROM THE COMMUNITY</span><h2>Latest views</h2><p>Places and progress shared by RUMS members.</p></div><button onClick={() => { setFeedFilter('lumina'); setScreen('feed'); }}>Open feed</button></div>
-                    {luminaPosts.length ? <div className="lumina-gallery">{luminaPosts.slice(0, 8).map((p) => <button key={p.id} data-session-new-key={sessionNewKey('lumina', 'post', p.id)} onClick={() => openPost(p.id)} aria-label={`Open post by ${p.username}`}>{newContentLabel('lumina', 'post', p.id)}<img src={p.image} alt="" /><span>{p.username}</span>{p.caption && <small>{p.caption}</small>}</button>)}</div> : <div className="lumina-gallery-empty"><Droplet size={22} /><p>No Lumina views have been shared yet.</p><button onClick={() => { setTag('Lumina'); setScreen('upload'); }}>Share the first</button></div>}
-                    <button className="lumina-share-card" onClick={() => { setTag('Lumina'); setScreen('upload'); }}><span className="composer-upload-icon"><ImagePlus size={21} /></span><span><b>Add your view of Lumina</b><small>Share a build, street or skyline moment</small></span><Plus size={18} /></button>
+                    {luminaPosts.length ? <div className="lumina-gallery">{luminaPosts.slice(0, 8).map((p) => <button key={p.id} data-session-new-key={sessionNewKey('lumina', 'post', p.id)} onClick={() => openPost(p.id)} aria-label={`Open post by ${p.username}`}>{newContentLabel('lumina', 'post', p.id)}<img src={p.image} alt="" /><span>{p.username}</span>{p.caption && <small>{p.caption}</small>}</button>)}</div> : <div className="lumina-gallery-empty"><Droplet size={22} /><p>No Lumina views have been shared yet.</p><button onClick={() => { openPostComposer('Lumina'); }}>Share the first</button></div>}
+                    <button className="lumina-share-card" onClick={() => { openPostComposer('Lumina'); }}><span className="composer-upload-icon"><ImagePlus size={21} /></span><span><b>Add your view of Lumina</b><small>Share a build, street or skyline moment</small></span><Plus size={18} /></button>
                   </section>}
                 </div>
               )}
@@ -6274,7 +6285,7 @@ export default function RUMS() {
               <button data-tutorial-nav="chat" className={`nav-btn ${screen === 'chat' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('chat'); }}>
                 <span className="nav-icon-wrap">{chatNavIcon(19)}</span><span className="nav-label">Chat</span>
               </button>
-              <button data-tutorial-nav="upload" className="nav-upload" onClick={() => { setError(''); setScreen('upload'); }}>
+              <button data-tutorial-nav="upload" className="nav-upload" onClick={() => openPostComposer()}>
                 {navIconWithNew(<Plus size={24} />, 'upload')}
               </button>
               <button className={`nav-btn ${screen === 'plazaPlus' ? 'active' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }} aria-label="Plaza+ and notifications">
@@ -6288,7 +6299,7 @@ export default function RUMS() {
         )}
 
         {commandOpen && <div className="command-palette-layer" onMouseDown={(e)=>{if(e.target===e.currentTarget)setCommandOpen(false);}}><section className="command-palette" role="dialog" aria-modal="true" aria-label="Command palette"><div className="command-search"><Search size={17}/><input autoFocus value={commandQuery} onChange={(e)=>setCommandQuery(e.target.value)} placeholder="Jump anywhere or run a command…"/><button onClick={()=>setCommandOpen(false)}><X size={15}/></button></div><div className="command-list">{[
-          ['Community feed',()=>setScreen('feed')],['Chat',()=>setScreen('chat')],['Share a build',()=>setScreen('upload')],['Discover',()=>setScreen('search')],['Plaza News',()=>setScreen('news')],['Suggestions',()=>setScreen('suggestions')],['Server updates',()=>setScreen('updates')],['Profile',()=>{setViewedProfile(null);setScreen('profile');}],['Notifications & Plaza+',()=>{setScreen('plazaPlus');setPlusTab('notifications');}],['Saved posts',()=>{setScreen('plazaPlus');setPlusTab('saved');}],['Events',()=>{setScreen('plazaPlus');setPlusTab('events');}],['Groups',()=>{setScreen('plazaPlus');setPlusTab('groups');}],['Projects',()=>{void openProjectsDirectory();}],['Wiki & builds',()=>{setScreen('plazaPlus');setPlusTab('knowledge');}],['Accessibility',()=>{setScreen('plazaPlus');setPlusTab('settings');}],...(hasLumina?[['Project Lumina',openLumina]]:[])
+          ['Community feed',()=>setScreen('feed')],['Chat',()=>setScreen('chat')],['Share a build',()=>openPostComposer()],['Discover',()=>setScreen('search')],['Plaza News',()=>setScreen('news')],['Suggestions',()=>setScreen('suggestions')],['Server updates',()=>setScreen('updates')],['Profile',()=>{setViewedProfile(null);setScreen('profile');}],['Notifications & Plaza+',()=>{setScreen('plazaPlus');setPlusTab('notifications');}],['Saved posts',()=>{setScreen('plazaPlus');setPlusTab('saved');}],['Events',()=>{setScreen('plazaPlus');setPlusTab('events');}],['Groups',()=>{setScreen('plazaPlus');setPlusTab('groups');}],['Projects',()=>{void openProjectsDirectory();}],['Wiki & builds',()=>{setScreen('plazaPlus');setPlusTab('knowledge');}],['Accessibility',()=>{setScreen('plazaPlus');setPlusTab('settings');}],...(hasLumina?[['Project Lumina',openLumina]]:[])
         ].filter(([label])=>label.toLowerCase().includes(commandQuery.trim().toLowerCase())).map(([label,action])=><button key={label} onClick={()=>{action();setCommandOpen(false);setCommandQuery('');}}><span>{label}</span><small>Open</small></button>)}</div></section></div>}
 
         {tutorialActive && tutorialCurrent && (
