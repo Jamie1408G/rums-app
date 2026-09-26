@@ -42,7 +42,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'media-keys-clean-account-gate-73';
+const FORCE_UPDATE_REVISION = 'single-account-gate-boot-74';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -53,8 +53,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 73;
-const JAMIE_TUTORIAL_VERSION = 73;
+const TUTORIAL_VERSION = 74;
+const JAMIE_TUTORIAL_VERSION = 74;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -2066,7 +2066,7 @@ export default function RUMS() {
     if (!manifest) { manifest = document.createElement('link'); manifest.rel = 'manifest'; manifest.href = '/manifest.webmanifest'; document.head.appendChild(manifest); }
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   }, []);
-  const [screen, setScreen] = useState('accountGate');
+  const [screen, setScreen] = useState('boot');
   const [versionMenuEntryKey, setVersionMenuEntryKey] = useState(1);
   const [entryAuth, setEntryAuth] = useState(false);
   const [entrySessionReady, setEntrySessionReady] = useState(false);
@@ -4112,6 +4112,53 @@ export default function RUMS() {
       .finally(() => { if (!cancelled) setEntrySessionReady(true); });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (
+      !entrySessionReady ||
+      screen !== 'boot' ||
+      updateUntil > Date.now() ||
+      updateOverlayLeaving ||
+      updateHandoffPhase !== 'idle' ||
+      updateCycleRef.current.phase !== 'idle' ||
+      hardRefreshInFlightRef.current
+    ) return undefined;
+
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        if (
+          screen !== 'boot' ||
+          updateCycleRef.current.phase !== 'idle' ||
+          hardRefreshInFlightRef.current
+        ) return;
+
+        /*
+          Mount the signed-in page for the FIRST time only after the final
+          session state is known. Its bubbly CSS animation therefore begins
+          from frame zero instead of running behind an updater or loading state.
+        */
+        setScreen('accountGate');
+
+        try {
+          if (sessionStorage.getItem(HARD_REFRESH_KEY)) {
+            sessionStorage.removeItem(HARD_REFRESH_KEY);
+          }
+        } catch {}
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+    };
+  }, [
+    entrySessionReady,
+    screen,
+    updateUntil,
+    updateOverlayLeaving,
+    updateHandoffPhase,
+  ]);
 
   useEffect(() => {
     if (
@@ -6880,6 +6927,12 @@ export default function RUMS() {
         </defs>
       </svg>
       <div className="aero-frame">
+        {screen === 'boot' && (
+          <section className="plaza-entry-boot" aria-label="Loading RUMS Plaza">
+            <div className="plaza-entry-boot-mark" aria-hidden="true">R</div>
+          </section>
+        )}
+
         {screen === 'accountGate' && (
           <section className="plaza-account-gate" aria-labelledby="plaza-account-gate-title">
             <div className="plaza-account-gate-card">
@@ -7081,7 +7134,7 @@ export default function RUMS() {
           </div>
         )}
 
-        {screen !== 'accountGate' && screen !== 'spaceSelect' && screen !== 'projectsDirectory' && screen !== 'loading' && screen !== 'login' && screen !== 'signup' && currentUser && (
+        {screen !== 'boot' && screen !== 'accountGate' && screen !== 'spaceSelect' && screen !== 'projectsDirectory' && screen !== 'loading' && screen !== 'login' && screen !== 'signup' && currentUser && (
           <>
             <aside className="desktop-rail">
               <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span></div>

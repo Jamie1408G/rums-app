@@ -8622,3 +8622,63 @@ button,input,textarea { font:inherit; }
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* SINGLE ACCOUNT-GATE BOOT — 74                                              */
+/* Never show or animate the signed-in page before session/update readiness.   */
+/* -------------------------------------------------------------------------- */
+
+.aero-frame > .plaza-entry-boot{
+  grid-column:1 / -1;
+  position:fixed;
+  inset:0;
+  z-index:3;
+  display:grid;
+  place-items:center;
+  min-height:100dvh;
+  background:
+    radial-gradient(circle at 50% 38%,rgba(255,255,255,.92),transparent 23%),
+    linear-gradient(180deg,#f8fbff 0%,#eef6fc 54%,#edf7f4 100%);
+}
+
+.plaza-entry-boot-mark{
+  width:56px;
+  height:56px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.96);
+  border-radius:19px;
+  color:#316ba2;
+  font-size:25px;
+  font-weight:900;
+  letter-spacing:-.05em;
+  background:
+    radial-gradient(circle at 28% 15%,#fff,transparent 34%),
+    linear-gradient(145deg,rgba(255,255,255,.92),rgba(218,239,255,.78));
+  box-shadow:
+    inset 1px 1px 1px #fff,
+    inset -1px -2px 5px rgba(72,113,158,.08),
+    0 18px 50px rgba(52,91,132,.15);
+}
+
+.aero-root[data-theme="dark"] .plaza-entry-boot{
+  background:
+    radial-gradient(circle at 50% 38%,rgba(255,255,255,.055),transparent 24%),
+    linear-gradient(180deg,#222b38 0%,#19222f 58%,#17272a 100%);
+}
+
+.aero-root[data-theme="dark"] .plaza-entry-boot-mark{
+  color:#8bd0ff;
+  border-color:rgba(255,255,255,.12);
+  background:
+    radial-gradient(circle at 28% 15%,rgba(255,255,255,.11),transparent 34%),
+    linear-gradient(145deg,rgba(55,67,84,.9),rgba(32,44,58,.84));
+}
+
+/*
+  If an updater/handoff starts while boot is mounted, the updater layers sit
+  above it. The account page itself does not exist in the DOM yet.
+*/
+.aero-root .plaza-entry-boot{
+  pointer-events:none;
+}
+
