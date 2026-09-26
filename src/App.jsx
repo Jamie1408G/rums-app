@@ -3673,7 +3673,7 @@ export default function RUMS() {
       const params = new URLSearchParams();
       if (query.trim()) params.set('q', query.trim());
       if (next) params.set('pos', next);
-      params.set('limit', '18');
+      params.set('limit', '12');
       const response = await fetch(`/api/klipy?${params.toString()}`);
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error || 'Could not load GIFs.');
@@ -5160,26 +5160,44 @@ export default function RUMS() {
                       {chatReplyTo && <div className="chat-replying"><span>Replying to <b>{chatReplyTo.sender}</b>: {chatReplyTo.text || 'Image'}</span><button onClick={() => setChatReplyTo(null)}><X size={13} /></button></div>}
                       {chatImageDraft && <div className="chat-image-preview"><img src={chatImageDraft} alt="Selected chat upload" /><button type="button" className="chat-image-remove" onClick={() => setChatImageDraft('')} aria-label="Remove image"><X size={14} /></button></div>}
                       {chatGifDraft && <div className="chat-image-preview chat-gif-preview"><KlipyMedia gif={chatGifDraft} /><button type="button" className="chat-image-remove" onClick={() => setChatGifDraft(null)} aria-label="Remove GIF"><X size={14} /></button></div>}
-                      {gifPickerOpen && <div className="klipy-picker" role="dialog" aria-label="GIF picker">
-                        <div className="klipy-picker-head">
-                          <form className="klipy-search" onSubmit={(event) => { event.preventDefault(); void loadKlipyGifs({ query: gifQuery, next: '', append: false }); }}>
-                            <Search size={16} />
+                      {gifPickerOpen && <div className="gif-picker-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setGifPickerOpen(false); }}>
+                        <section className="gif-picker-panel" role="dialog" aria-modal="true" aria-label="GIF picker">
+                          <header className="gif-picker-header">
+                            <div className="gif-picker-title">
+                              <span className="gif-picker-mark">GIF</span>
+                              <div><strong>Choose a GIF</strong><small>Search or pick one below</small></div>
+                            </div>
+                            <button type="button" className="gif-picker-close" onClick={() => setGifPickerOpen(false)} aria-label="Close GIF picker"><X size={18} /></button>
+                          </header>
+
+                          <form className="gif-picker-search" onSubmit={(event) => { event.preventDefault(); void loadKlipyGifs({ query: gifQuery, next: '', append: false }); }}>
+                            <Search size={17} />
                             <input value={gifQuery} onChange={(event) => setGifQuery(event.target.value)} placeholder="Search GIFs" aria-label="Search GIFs" autoFocus />
                             {gifQuery && <button type="button" onClick={() => { setGifQuery(''); void loadKlipyGifs({ query: '', next: '', append: false }); }} aria-label="Clear GIF search"><X size={14} /></button>}
+                            <button type="submit" className="gif-picker-search-button">Search</button>
                           </form>
-                          <button type="button" className="klipy-close" onClick={() => setGifPickerOpen(false)} aria-label="Close GIF picker"><X size={16} /></button>
-                        </div>
-                        <div className="klipy-picker-label"><strong>{gifQuery.trim() ? 'Search results' : 'Trending GIFs'}</strong></div>
-                        {gifError ? <div className="klipy-state">{gifError}</div> : <>
-                          <div className="klipy-grid">
-                            {gifResults.map((gif) => <button key={gif.id} type="button" className="klipy-gif" onClick={() => { void selectKlipyGif(gif); }} title={gif.title || 'Send GIF'}>
-                              <img src={gif.preview || gif.url} alt={gif.title || 'GIF'} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
-                            </button>)}
+
+                          <div className="gif-picker-section-label">
+                            <strong>{gifQuery.trim() ? 'Search results' : 'Trending'}</strong>
+                            {!gifLoading && gifResults.length > 0 && <span>{gifResults.length} GIFs</span>}
                           </div>
-                          {gifLoading && <div className="klipy-state"><Loader2 size={18} className="spin" /> Loading GIFs…</div>}
-                          {!gifLoading && gifResults.length === 0 && <div className="klipy-state">No GIFs found.</div>}
-                          {!gifLoading && gifNext && <button type="button" className="klipy-more" onClick={() => { void loadKlipyGifs({ query: gifQuery, next: gifNext, append: true }); }}>Load more</button>}
-                        </>}
+
+                          <div className="gif-picker-body">
+                            {gifError ? <div className="gif-picker-state"><span>Couldn’t load GIFs.</span><button type="button" onClick={() => void loadKlipyGifs({ query: gifQuery, next: '', append: false })}>Try again</button></div> : <>
+                              {gifLoading && gifResults.length === 0 ? <div className="gif-picker-skeletons">{Array.from({ length: 12 }).map((_, index) => <span key={index} />)}</div> : <div className="gif-picker-grid">
+                                {gifResults.map((gif) => <button key={gif.id} type="button" className="gif-picker-item" onClick={() => { void selectKlipyGif(gif); }} title={gif.title || 'Send GIF'}>
+                                  <img src={gif.preview || gif.url} alt={gif.title || 'GIF'} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
+                                </button>)}
+                              </div>}
+                              {!gifLoading && gifResults.length === 0 && <div className="gif-picker-state"><span>No GIFs found.</span><small>Try a different search.</small></div>}
+                            </>}
+                          </div>
+
+                          <footer className="gif-picker-footer">
+                            <span>{gifLoading && gifResults.length > 0 ? 'Loading more…' : 'Pick a GIF to attach it'}</span>
+                            {gifNext && <button type="button" className="gif-picker-more" disabled={gifLoading} onClick={() => { void loadKlipyGifs({ query: gifQuery, next: gifNext, append: true }); }}>{gifLoading ? 'Loading…' : 'Load more'}</button>}
+                          </footer>
+                        </section>
                       </div>}
                       <textarea
                         value={chatDraft}
