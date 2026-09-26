@@ -7862,3 +7862,122 @@ button,input,textarea { font:inherit; }
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* ACCOUNT GATE BUBBLY BUILD — 65                                             */
+/* Mirrors the staged spring language of the Welcome/version chooser.          */
+/* -------------------------------------------------------------------------- */
+
+/* Main glass surface arrives first. */
+.plaza-account-gate-card{
+  animation:
+    plazaAccountGateReveal65 .34s .03s cubic-bezier(.16,.88,.22,1.04) both,
+    plazaStartupSurface .68s .04s cubic-bezier(.16,.88,.22,1.08) both;
+  transform-origin:50% 48%;
+}
+
+/* Logo + heading sequence matches the version chooser's opening rhythm. */
+.plaza-account-gate-card .space-chooser-mark{
+  animation:plazaStartupLogo .68s .20s cubic-bezier(.16,.92,.2,1.18) both;
+}
+
+.plaza-account-gate-card .space-chooser-kicker{
+  animation:plazaStartupText .50s .36s cubic-bezier(.16,.88,.22,1.04) both;
+}
+
+.plaza-account-gate-card h1{
+  animation:plazaStartupText .58s .48s cubic-bezier(.16,.88,.22,1.04) both;
+}
+
+.plaza-account-gate-card .plaza-account-gate-intro{
+  animation:plazaStartupText .58s .62s cubic-bezier(.16,.88,.22,1.04) both;
+}
+
+/* Account panel gets the same buoyant card-pop as a Plaza version card. */
+.plaza-account-gate-card .plaza-account-gate-profile{
+  animation:plazaStartupCard .64s .84s cubic-bezier(.16,.9,.22,1.12) both;
+  transform-origin:50% 50%;
+}
+
+.plaza-account-gate-card .plaza-account-gate-profile > :first-child{
+  animation:plazaStartupBadge .50s 1.02s cubic-bezier(.16,.9,.22,1.16) both;
+}
+
+.plaza-account-gate-card .plaza-account-gate-profile > div{
+  animation:plazaStartupDetail .50s 1.10s cubic-bezier(.16,.88,.22,1.06) both;
+}
+
+/* Buttons bubble in separately instead of appearing as one static row. */
+.plaza-account-gate-card .plaza-account-gate-actions .plaza-account-continue{
+  animation:plazaStartupCard .60s 1.18s cubic-bezier(.16,.9,.22,1.12) both;
+  transform-origin:50% 50%;
+}
+
+.plaza-account-gate-card .plaza-account-gate-actions .plaza-account-continue > span{
+  animation:plazaStartupBadge .48s 1.36s cubic-bezier(.16,.9,.22,1.16) both;
+}
+
+.plaza-account-gate-card .plaza-account-gate-actions .plaza-account-logout{
+  animation:plazaStartupCard .58s 1.36s cubic-bezier(.16,.9,.22,1.12) both;
+  transform-origin:50% 50%;
+}
+
+/* Logged-out / session-checking states still use the same staged build. */
+.plaza-account-gate-card .plaza-account-gate-loading{
+  animation:plazaStartupCard .60s .84s cubic-bezier(.16,.9,.22,1.12) both;
+}
+
+.plaza-account-gate-card .plaza-account-gate-actions.single{
+  animation:plazaAccountGateActions65 .01s 0s linear both;
+}
+
+.plaza-account-gate-card .plaza-account-gate-actions.single .plaza-account-continue{
+  animation:plazaStartupCard .62s .88s cubic-bezier(.16,.9,.22,1.12) both;
+}
+
+/* Tiny overshoot on the full card makes it feel like the chooser's bubble-in. */
+@keyframes plazaAccountGateReveal65{
+  0%{
+    opacity:0;
+    transform:translateY(13px) scale(.94);
+  }
+  58%{
+    opacity:1;
+    transform:translateY(-2px) scale(1.012);
+  }
+  78%{
+    transform:translateY(1px) scale(.997);
+  }
+  100%{
+    opacity:1;
+    transform:none;
+  }
+}
+
+@keyframes plazaAccountGateActions65{
+  from{opacity:1}
+  to{opacity:1}
+}
+
+/* Preserve the existing hover/press feedback after the entrance finishes. */
+.plaza-account-gate-card .plaza-account-continue:hover,
+.plaza-account-gate-card .plaza-account-logout:hover{
+  animation-play-state:paused;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .plaza-account-gate-card,
+  .plaza-account-gate-card .space-chooser-mark,
+  .plaza-account-gate-card .space-chooser-kicker,
+  .plaza-account-gate-card h1,
+  .plaza-account-gate-card .plaza-account-gate-intro,
+  .plaza-account-gate-card .plaza-account-gate-profile,
+  .plaza-account-gate-card .plaza-account-gate-profile > :first-child,
+  .plaza-account-gate-card .plaza-account-gate-profile > div,
+  .plaza-account-gate-card .plaza-account-gate-actions .plaza-account-continue,
+  .plaza-account-gate-card .plaza-account-gate-actions .plaza-account-continue > span,
+  .plaza-account-gate-card .plaza-account-gate-actions .plaza-account-logout,
+  .plaza-account-gate-card .plaza-account-gate-loading{
+    animation:none!important;
+  }
+}
+
