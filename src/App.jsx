@@ -220,6 +220,7 @@ const chatSeenKey = (reader, sender) => `rums-chat-seen-${reader}-${sender}`;
 const PLAZA_PLUS_KEY = 'rums-plaza-plus';
 const PLAZA_NEWS_KEY = 'rums-plaza-news';
 const NEWS_CATEGORIES = ['Plaza', 'Community', 'Projects', 'Events', 'Updates'];
+const NEWS_SOURCES = ['RUMS 4', 'Lumina', 'Creative'];
 const notificationReadKey = (username) => `rums-notification-read-${encodeURIComponent(username)}`;
 const PROJECT_INDEX_KEY = 'rums-project-directory-v2';
 const projectRecordKey = (id) => `rums-project-record-${String(id).replace(/[^A-Za-z0-9_-]/g, '')}`;
@@ -579,7 +580,7 @@ export default function RUMS() {
   const [newsFilter, setNewsFilter] = useState('All');
   const [newsSelectedId, setNewsSelectedId] = useState(null);
   const [newsComposeOpen, setNewsComposeOpen] = useState(false);
-  const [newsDraft, setNewsDraft] = useState({ title: '', summary: '', body: '', category: 'Plaza', image: '', video: '', breaking: false, pinned: false });
+  const [newsDraft, setNewsDraft] = useState({ title: '', summary: '', body: '', category: 'Plaza', source: 'RUMS 4', image: '', video: '', breaking: false, pinned: false });
   const [newsBusy, setNewsBusy] = useState(false);
   const [newsImageBusy, setNewsImageBusy] = useState(false);
   const [newsVideoBusy, setNewsVideoBusy] = useState(false);
@@ -4206,6 +4207,7 @@ export default function RUMS() {
       id: `news-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       title, summary, body,
       category: NEWS_CATEGORIES.includes(newsDraft.category) ? newsDraft.category : 'Plaza',
+      source: NEWS_SOURCES.includes(newsDraft.source) ? newsDraft.source : 'RUMS 4',
       image,
       video,
       breaking: !!newsDraft.breaking,
@@ -4218,7 +4220,7 @@ export default function RUMS() {
     const next = [article, ...plazaNews].slice(0, 300);
     await savePlazaNews(next);
     void commitPlazaPlus((data) => ({ ...data, activities: [{ id:`act-${Date.now()}-news`, type:'news', actor:currentUser.username, targetUser:null, text:`Plaza News: ${article.title}`, timestamp:Date.now() }, ...(data.activities || [])].slice(0,800) }));
-    setNewsDraft({ title: '', summary: '', body: '', category: 'Plaza', image: '', video: '', breaking: false, pinned: false });
+    setNewsDraft({ title: '', summary: '', body: '', category: 'Plaza', source: 'RUMS 4', image: '', video: '', breaking: false, pinned: false });
     setNewsSelectedId(article.id);
     setNewsBusy(false);
   }
@@ -4654,7 +4656,12 @@ export default function RUMS() {
     .sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0) || b.timestamp - a.timestamp);
 
   const visibleUpdates = updates.slice().sort((a, b) => b.timestamp - a.timestamp);
-  const visibleNews = plazaNews.slice().sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.timestamp - a.timestamp).filter((article) => newsFilter === 'All' || article.category === newsFilter);
+  const visibleNews = plazaNews.slice().filter((article) => newsFilter === 'All' || article.category === newsFilter).sort((a, b) => b.timestamp - a.timestamp);
+  const BREAKING_HERO_MS = 13 * 60 * 60 * 1000;
+  const newestNewsArticle = visibleNews[0] || null;
+  const activeBreakingNews = visibleNews.find((article) => article.breaking && (Date.now() - Number(article.timestamp || 0)) <= BREAKING_HERO_MS) || null;
+  const heroNewsArticle = activeBreakingNews || newestNewsArticle;
+  const newsAfterHero = heroNewsArticle ? visibleNews.filter((article) => article.id !== heroNewsArticle.id) : [];
   const selectedNewsArticle = plazaNews.find((article) => article.id === newsSelectedId) || null;
   const luminaPosts = !hasLumina ? [] : posts.filter((p) => p.tag === 'Lumina').sort((a, b) => b.timestamp - a.timestamp);
   const feedBoxHandle = (id) => editMode && isOwner && selectedBoxId === `feed:${id}` ? <button type="button" className="built-in-box-handle" onPointerDown={(event) => { setSelectedBoxId(`feed:${id}`); startFeedBoxReorder(id, event); }}><GripVertical size={15} /> Move box</button> : null;
@@ -5498,6 +5505,7 @@ export default function RUMS() {
                     <div className="news-editor-fields">
                       <label className="news-editor-field news-editor-title"><span>Headline</span><input placeholder="Write a clear, factual headline" maxLength={120} value={newsDraft.title} onChange={(e)=>setNewsDraft({...newsDraft,title:e.target.value})}/><small>{newsDraft.title.length}/120</small></label>
                       <label className="news-editor-field news-editor-category"><span>Section</span><select value={newsDraft.category} onChange={(e)=>setNewsDraft({...newsDraft,category:e.target.value})}>{NEWS_CATEGORIES.map((category)=><option key={category}>{category}</option>)}</select></label>
+                      <label className="news-editor-field news-editor-source"><span>Source</span><select value={newsDraft.source} onChange={(e)=>setNewsDraft({...newsDraft,source:e.target.value})}>{NEWS_SOURCES.map((source)=><option key={source}>{source}</option>)}</select></label>
                       <label className="news-editor-field news-editor-summary"><span>Standfirst</span><textarea rows={3} placeholder="Summarise the story in one or two sentences" maxLength={260} value={newsDraft.summary} onChange={(e)=>setNewsDraft({...newsDraft,summary:e.target.value})}/><small>{newsDraft.summary.length}/260</small></label>
                       <label className="news-editor-field news-editor-body"><span>Article</span><textarea rows={12} placeholder="Write the full article. Use blank lines to start a new paragraph." value={newsDraft.body} onChange={(e)=>setNewsDraft({...newsDraft,body:e.target.value})}/><small>{newsDraft.body.length}/8000</small></label>
                     </div>
@@ -5530,7 +5538,7 @@ export default function RUMS() {
                   {selectedNewsArticle ? <main className="news-article-page">
                     <div className="news-article-breadcrumb"><button onClick={()=>setNewsSelectedId(null)}>Plaza News</button><span>›</span><span>{selectedNewsArticle.category}</span></div>
                     <article className="news-article-main">
-                      <div className="news-article-kicker">{selectedNewsArticle.breaking && <span className="news-site-breaking">LIVE / BREAKING</span>}<span>{selectedNewsArticle.category}</span></div>
+                      <div className="news-article-kicker">{selectedNewsArticle.breaking && <span className="news-site-breaking">LIVE / BREAKING</span>}<span>{selectedNewsArticle.category}</span><span className={`news-source-badge news-source-${String(selectedNewsArticle.source || 'RUMS 4').toLowerCase().replace(/[^a-z0-9]+/g,'-')}`}>{selectedNewsArticle.source || 'RUMS 4'}</span></div>
                       <h1>{selectedNewsArticle.title}</h1>
                       {selectedNewsArticle.summary && <p className="news-article-standfirst">{selectedNewsArticle.summary}</p>}
                       <div className="news-article-meta"><span>By <button onClick={()=>openProfile(selectedNewsArticle.author)}>{selectedNewsArticle.author}</button></span><span>{new Date(selectedNewsArticle.timestamp).toLocaleString([], { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span></div>
@@ -5547,25 +5555,25 @@ export default function RUMS() {
                     </article>
                     <aside className="news-article-side">
                       <h3>More from Plaza News</h3>
-                      {plazaNews.filter((article)=>article.id!==selectedNewsArticle.id).sort((a,b)=>b.timestamp-a.timestamp).slice(0,5).map((article)=><button key={article.id} onClick={()=>setNewsSelectedId(article.id)}><span>{article.category}</span><b>{article.title}</b><small>{timeAgo(article.timestamp)}</small></button>)}
+                      {plazaNews.filter((article)=>article.id!==selectedNewsArticle.id).sort((a,b)=>b.timestamp-a.timestamp).slice(0,5).map((article)=><button key={article.id} onClick={()=>setNewsSelectedId(article.id)}><span>{article.category} · {article.source || 'RUMS 4'}</span><b>{article.title}</b><small>{timeAgo(article.timestamp)}</small></button>)}
                     </aside>
                   </main> : <>
                     {visibleNews.length > 0 ? <main className="news-home-layout">
                       <section className="news-home-main">
                         <div className="news-top-grid">
-                          <article className="news-top-story" onClick={()=>setNewsSelectedId(visibleNews[0].id)}>
-                            <div className="news-top-image">{visibleNews[0].image ? <img src={visibleNews[0].image} alt=""/> : <span><Newspaper size={44}/></span>}</div>
+                          <article className="news-top-story" onClick={()=>setNewsSelectedId(heroNewsArticle.id)}>
+                            <div className="news-top-image">{heroNewsArticle.image ? <img src={heroNewsArticle.image} alt=""/> : <span><Newspaper size={44}/></span>}</div>
                             <div className="news-top-copy">
-                              <div>{visibleNews[0].breaking&&<span className="news-site-breaking">BREAKING</span>}<span className="news-site-category">{visibleNews[0].category}</span></div>
-                              <h1>{visibleNews[0].title}</h1>
-                              <p>{visibleNews[0].summary || visibleNews[0].body.slice(0,220)}</p>
-                              <small>{timeAgo(visibleNews[0].timestamp)} · {visibleNews[0].comments?.length||0} comments</small>
+                              <div>{heroNewsArticle.breaking ? <span className="news-site-breaking">BREAKING</span> : <span className="news-site-new">NEW</span>}<span className="news-site-category">{heroNewsArticle.category}</span><span className={`news-source-badge news-source-${String(heroNewsArticle.source || 'RUMS 4').toLowerCase().replace(/[^a-z0-9]+/g,'-')}`}>{heroNewsArticle.source || 'RUMS 4'}</span></div>
+                              <h1>{heroNewsArticle.title}</h1>
+                              <p>{heroNewsArticle.summary || heroNewsArticle.body.slice(0,220)}</p>
+                              <small>{timeAgo(heroNewsArticle.timestamp)} · {heroNewsArticle.comments?.length||0} comments</small>
                             </div>
                           </article>
                           <div className="news-top-secondary">
-                            {visibleNews.slice(1,3).map((article)=><article key={article.id} onClick={()=>setNewsSelectedId(article.id)}>
+                            {newsAfterHero.slice(0,2).map((article)=><article key={article.id} onClick={()=>setNewsSelectedId(article.id)}>
                               {article.image && <img src={article.image} alt=""/>}
-                              <div><span>{article.category}</span><h2>{article.title}</h2><small>{timeAgo(article.timestamp)}</small></div>
+                              <div><div className="news-secondary-tags"><span>{article.category}</span><span className={`news-source-badge news-source-${String(article.source || 'RUMS 4').toLowerCase().replace(/[^a-z0-9]+/g,'-')}`}>{article.source || 'RUMS 4'}</span></div><h2>{article.title}</h2><small>{timeAgo(article.timestamp)}</small></div>
                             </article>)}
                           </div>
                         </div>
@@ -5573,12 +5581,12 @@ export default function RUMS() {
                         <section className="news-latest-section">
                           <div className="news-section-heading"><h2>Latest news</h2><span>{visibleNews.length} stories</span></div>
                           <div className="news-latest-list">
-                            {visibleNews.slice(3).map((article)=><article key={article.id} onClick={()=>setNewsSelectedId(article.id)}>
+                            {newsAfterHero.slice(2).map((article)=><article key={article.id} onClick={()=>setNewsSelectedId(article.id)}>
                               <div className="news-latest-time">{new Date(article.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
-                              <div className="news-latest-copy"><span>{article.breaking?'BREAKING · ':''}{article.category}</span><h3>{article.title}</h3><p>{article.summary || article.body.slice(0,150)}</p><small>{article.author} · {article.comments?.length||0} comments</small></div>
+                              <div className="news-latest-copy"><div className="news-latest-tags"><span>{article.breaking?'BREAKING · ':''}{article.category}</span><span className={`news-source-badge news-source-${String(article.source || 'RUMS 4').toLowerCase().replace(/[^a-z0-9]+/g,'-')}`}>{article.source || 'RUMS 4'}</span></div><h3>{article.title}</h3><p>{article.summary || article.body.slice(0,150)}</p><small>{article.author} · {article.comments?.length||0} comments</small></div>
                               {article.image && <img src={article.image} alt=""/>}
                             </article>)}
-                            {visibleNews.length <= 3 && <div className="news-list-empty">More stories will appear here as they are published.</div>}
+                            {newsAfterHero.length <= 2 && <div className="news-list-empty">More stories will appear here as they are published.</div>}
                           </div>
                         </section>
                       </section>
