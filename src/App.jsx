@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 18;
-const JAMIE_TUTORIAL_VERSION = 18;
+const TUTORIAL_VERSION = 19;
+const JAMIE_TUTORIAL_VERSION = 19;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -667,7 +667,11 @@ export default function RUMS() {
       if (primed || updateUntil > Date.now()) return;
       primed = true;
       const oldVolume = audio.volume;
-      audio.volume = 0;
+      // Reuse this exact media element later for the update soundtrack.
+      // A tiny, near-silent playback is initiated inside the user's genuine
+      // gesture, then paused immediately after the browser accepts it.
+      audio.volume = 0.001;
+      audio.currentTime = 0;
       const promise = audio.play();
       if (promise?.then) {
         promise.then(() => {
@@ -675,7 +679,8 @@ export default function RUMS() {
             audio.pause();
             audio.currentTime = 0;
             audio.volume = oldVolume;
-          }, 40);
+            setUpdateMusicState('ready');
+          }, 55);
         }).catch(() => {
           primed = false;
           audio.volume = oldVolume;
@@ -693,7 +698,7 @@ export default function RUMS() {
       audio.removeEventListener('pause', onPause);
       audio.removeEventListener('error', onError);
     };
-  }, [updateTrack.src]);
+  }, [updateTrack.src, updateUntil]);
 
   useEffect(() => {
     if (!updateUntil || updateUntil <= Date.now()) return undefined;
@@ -5314,8 +5319,15 @@ export default function RUMS() {
 
   return (
     <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+      <audio
+        ref={updateAudioRef}
+        className="site-update-background-player"
+        preload="auto"
+        src={updateTrack.src}
+        playsInline
+        aria-hidden="true"
+      />
       {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite">
-        <audio ref={updateAudioRef} className="site-update-background-player" preload="auto" src={updateTrack.src} aria-hidden="true" />
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
           <span className="site-update-kicker">RUMS PLAZA</span>
