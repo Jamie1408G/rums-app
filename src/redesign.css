@@ -8241,3 +8241,210 @@ button,input,textarea { font:inherit; }
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* THREE-SECOND Wii / BUBBLY SPACE BUILD — 69                                */
+/* RUMS 4, Creative and Projects all assemble in <= ~3 seconds.               */
+/* -------------------------------------------------------------------------- */
+
+/* Projects directory participates in the same pending phase as the app shell. */
+.aero-root.version-build-pending .projects-directory-page{
+  opacity:0!important;
+  visibility:hidden!important;
+}
+
+/* The Projects directory gets the same staged Wii assembly language. */
+.aero-root.version-build-active .projects-directory-page{
+  transform-origin:50% 12%;
+  animation:wiiPieceBubble .50s .18s cubic-bezier(.14,1.5,.28,1) both;
+}
+
+.aero-root.version-build-active .projects-directory-topbar .projects-back-btn{
+  animation:wiiPieceControl .38s .35s cubic-bezier(.14,1.5,.28,1) both;
+}
+.aero-root.version-build-active .projects-directory-heading .space-chooser-kicker{
+  animation:wiiPieceText .34s .43s cubic-bezier(.18,1.3,.3,1) both;
+}
+.aero-root.version-build-active .projects-directory-heading h1{
+  animation:wiiPieceText .40s .52s cubic-bezier(.18,1.34,.3,1) both;
+}
+.aero-root.version-build-active .projects-directory-heading p{
+  animation:wiiPieceText .36s .62s cubic-bezier(.18,1.3,.3,1) both;
+}
+.aero-root.version-build-active .projects-directory-topbar .projects-create-btn{
+  animation:wiiPieceControl .40s .72s cubic-bezier(.14,1.5,.28,1) both;
+}
+.aero-root.version-build-active .project-directory-login-note{
+  animation:wiiPieceBubble .38s .82s cubic-bezier(.14,1.45,.28,1) both;
+}
+
+.aero-root.version-build-active .project-directory-section{
+  animation:wiiPieceBubble .48s cubic-bezier(.14,1.5,.28,1) both;
+}
+.aero-root.version-build-active .project-directory-section:nth-child(1){animation-delay:.82s}
+.aero-root.version-build-active .project-directory-section:nth-child(2){animation-delay:1.02s}
+.aero-root.version-build-active .project-directory-section:nth-child(3){animation-delay:1.22s}
+
+.aero-root.version-build-active .project-directory-section-head{
+  animation:wiiPieceText .34s cubic-bezier(.18,1.3,.3,1) both;
+}
+.aero-root.version-build-active .project-directory-section:nth-child(1) .project-directory-section-head{animation-delay:.94s}
+.aero-root.version-build-active .project-directory-section:nth-child(2) .project-directory-section-head{animation-delay:1.14s}
+.aero-root.version-build-active .project-directory-section:nth-child(3) .project-directory-section-head{animation-delay:1.34s}
+
+.aero-root.version-build-active .projects-directory-page .project-directory-card{
+  --project-card-build-delay:1.16s;
+  transform-origin:50% 18%;
+  animation:wiiPieceCard .44s var(--project-card-build-delay) cubic-bezier(.14,1.48,.28,1) both;
+}
+.aero-root.version-build-active .projects-directory-page .project-directory-card:nth-child(2){--project-card-build-delay:1.32s}
+.aero-root.version-build-active .projects-directory-page .project-directory-card:nth-child(3){--project-card-build-delay:1.48s}
+.aero-root.version-build-active .projects-directory-page .project-directory-card:nth-child(4){--project-card-build-delay:1.64s}
+.aero-root.version-build-active .projects-directory-page .project-directory-card:nth-child(5){--project-card-build-delay:1.80s}
+.aero-root.version-build-active .projects-directory-page .project-directory-card:nth-child(n+6){--project-card-build-delay:1.94s}
+
+.aero-root.version-build-active .projects-directory-page .project-directory-card .project-card-top{
+  animation:wiiPieceText .30s calc(var(--project-card-build-delay) + .07s) cubic-bezier(.18,1.3,.3,1) both;
+}
+.aero-root.version-build-active .projects-directory-page .project-directory-card > strong{
+  animation:wiiPieceText .30s calc(var(--project-card-build-delay) + .13s) cubic-bezier(.18,1.3,.3,1) both;
+}
+.aero-root.version-build-active .projects-directory-page .project-directory-card > p{
+  animation:wiiPieceText .28s calc(var(--project-card-build-delay) + .19s) cubic-bezier(.18,1.3,.3,1) both;
+}
+.aero-root.version-build-active .projects-directory-page .project-directory-card > small{
+  animation:wiiPieceText .26s calc(var(--project-card-build-delay) + .25s) cubic-bezier(.18,1.3,.3,1) both;
+}
+.aero-root.version-build-active .project-directory-empty{
+  animation:wiiPieceBubble .40s 1.55s cubic-bezier(.14,1.45,.28,1) both;
+}
+
+/*
+  The existing version build was designed for ~4.4s. Compress the tail so
+  even a long feed is visibly assembled before the 3s active window ends.
+*/
+.aero-root.version-build-active .post-card{
+  --wii-card-delay:1.38s!important;
+  animation-duration:.44s!important;
+}
+.aero-root.version-build-active .post-card:nth-child(2){--wii-card-delay:1.38s!important}
+.aero-root.version-build-active .post-card:nth-child(3){--wii-card-delay:1.55s!important}
+.aero-root.version-build-active .post-card:nth-child(4){--wii-card-delay:1.72s!important}
+.aero-root.version-build-active .post-card:nth-child(5){--wii-card-delay:1.89s!important}
+.aero-root.version-build-active .post-card:nth-child(6){--wii-card-delay:2.06s!important}
+.aero-root.version-build-active .post-card:nth-child(n+7){--wii-card-delay:2.20s!important}
+
+.aero-root.version-build-active .post-card .post-top{
+  animation-duration:.30s!important;
+  animation-delay:calc(var(--wii-card-delay) + .06s)!important;
+}
+.aero-root.version-build-active .post-card .post-img-wrap{
+  animation-duration:.38s!important;
+  animation-delay:calc(var(--wii-card-delay) + .12s)!important;
+}
+.aero-root.version-build-active .post-card .post-actions{
+  animation-duration:.32s!important;
+  animation-delay:calc(var(--wii-card-delay) + .18s)!important;
+}
+.aero-root.version-build-active .post-card .post-caption{
+  animation-duration:.30s!important;
+  animation-delay:calc(var(--wii-card-delay) + .24s)!important;
+}
+.aero-root.version-build-active .post-card .comments-box{
+  animation-duration:.28s!important;
+  animation-delay:calc(var(--wii-card-delay) + .30s)!important;
+}
+
+/* Page-level shells that previously appeared without their own assembly. */
+.aero-root.version-build-active .content > :is(
+  .feed-box-layout,
+  .detail-back-row,
+  .lumina-page,
+  .saved-page,
+  .collections-page,
+  .notifications-page,
+  .settings-page,
+  .project-page,
+  .custom-mobile-tabs
+){
+  animation:wiiPieceBubble .46s .92s cubic-bezier(.14,1.5,.28,1) both;
+}
+
+/* First-level panels/buttons/cards across RUMS 4, Creative and project spaces. */
+.aero-root.version-build-active .content :is(
+  .feed-box-layout > *,
+  .lumina-page > *,
+  .project-workspace > *,
+  .news-home > *,
+  .news-article > *,
+  .profile-wrap > *,
+  .search-wrap > *,
+  .upload-wrap > *,
+  .admin-wrap > *,
+  .plaza-plus-page > *
+){
+  animation-duration:.44s;
+  animation-timing-function:cubic-bezier(.14,1.48,.28,1);
+  animation-fill-mode:both;
+}
+
+/* Existing generic cards finish comfortably inside the three-second window. */
+.aero-root.version-build-active .content :is(
+  .suggestion-card,
+  .update-card,
+  .user-row,
+  .project-directory-card,
+  .news-card,
+  .saved-collection-card,
+  .lumina-station-detail,
+  .profile-section,
+  .project-panel,
+  .project-board-column
+):nth-child(3n+1){animation-delay:1.34s!important}
+.aero-root.version-build-active .content :is(
+  .suggestion-card,
+  .update-card,
+  .user-row,
+  .project-directory-card,
+  .news-card,
+  .saved-collection-card,
+  .lumina-station-detail,
+  .profile-section,
+  .project-panel,
+  .project-board-column
+):nth-child(3n+2){animation-delay:1.52s!important}
+.aero-root.version-build-active .content :is(
+  .suggestion-card,
+  .update-card,
+  .user-row,
+  .project-directory-card,
+  .news-card,
+  .saved-collection-card,
+  .lumina-station-detail,
+  .profile-section,
+  .project-panel,
+  .project-board-column
+):nth-child(3n){animation-delay:1.70s!important}
+
+/* Modal created during the opening window also bubbles rather than snapping in. */
+.aero-root.version-build-active .project-create-overlay{
+  animation:wiiPieceCanvas .30s .25s ease-out both;
+}
+.aero-root.version-build-active .project-create-modal{
+  animation:wiiPieceBubble .48s .35s cubic-bezier(.14,1.5,.28,1) both;
+}
+
+/* Reduced-motion still shows everything immediately. */
+@media(prefers-reduced-motion:reduce){
+  .aero-root.version-build-pending .projects-directory-page{
+    opacity:1!important;
+    visibility:visible!important;
+  }
+  .aero-root.version-build-active .projects-directory-page,
+  .aero-root.version-build-active .projects-directory-page *,
+  .aero-root.version-build-active .content *,
+  .aero-root.version-build-active .content *::before,
+  .aero-root.version-build-active .content *::after{
+    animation:none!important;
+  }
+}
+
