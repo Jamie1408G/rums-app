@@ -26,13 +26,45 @@ const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
 const UPDATE_SPOTIFY_TRACKS = [
-  { id: '5ByNaNLNThAHXjQanON9eB', title: 'Rafflesia Online', artist: 'Xploshi' },
-  { id: '3iBcwCAJOl4EZq62WbNyai', title: 'リサフランク420 / 現代のコンピュー', artist: 'Macintosh Plus' },
+  { id: '1KBFCXmzqxMBpc4RBJo3r3', title: 'xscape', artist: '13 Miles' },
+  { id: '0Ubp7kMZ6MWZIL8qkloYub', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
+  { id: '46DQgCLYUqsrfLmvN5Ymre', title: 'URL 湖', artist: 'Webinar™' },
+  { id: '7zGzS7L6LnI5qQqMm8wTPB', title: 'New Look - Wii U Mii Maker Lofi Mix', artist: 'Secret Potion, Lofi Beats To Chill Study Sleep, Nostalgiacore' },
 ];
 const UPDATE_SPOTIFY_TRACK_IDS = UPDATE_SPOTIFY_TRACKS.map((track) => track.id);
 const pickUpdateSpotifyTrack = () => UPDATE_SPOTIFY_TRACK_IDS[Math.floor(Math.random() * UPDATE_SPOTIFY_TRACK_IDS.length)];
-const TUTORIAL_VERSION = 14;
-const JAMIE_TUTORIAL_VERSION = 14;
+
+function loadSpotifyIframeApi() {
+  if (typeof window === 'undefined') return Promise.reject(new Error('Spotify player is browser-only'));
+  if (window.__rumsSpotifyIframeApi) return Promise.resolve(window.__rumsSpotifyIframeApi);
+  if (window.__rumsSpotifyIframeApiPromise) return window.__rumsSpotifyIframeApiPromise;
+
+  window.__rumsSpotifyIframeApiPromise = new Promise((resolve, reject) => {
+    const previousReady = window.onSpotifyIframeApiReady;
+    window.onSpotifyIframeApiReady = (IFrameAPI) => {
+      window.__rumsSpotifyIframeApi = IFrameAPI;
+      if (typeof previousReady === 'function') {
+        try { previousReady(IFrameAPI); } catch { /* another Spotify embed must not break update audio */ }
+      }
+      resolve(IFrameAPI);
+    };
+
+    let script = document.querySelector('script[data-rums-spotify-iframe-api]');
+    if (!script) {
+      script = document.createElement('script');
+      script.src = 'https://open.spotify.com/embed/iframe-api/v1';
+      script.async = true;
+      script.dataset.rumsSpotifyIframeApi = 'true';
+      script.onerror = () => reject(new Error('Could not load Spotify player'));
+      document.body.appendChild(script);
+    }
+  });
+
+  return window.__rumsSpotifyIframeApiPromise;
+}
+
+const TUTORIAL_VERSION = 15;
+const JAMIE_TUTORIAL_VERSION = 15;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -612,6 +644,68 @@ export default function RUMS() {
   });
 
   const updateTrack = UPDATE_SPOTIFY_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_SPOTIFY_TRACKS[0];
+  const updateSpotifyHostRef = useRef(null);
+  const updateSpotifyControllerRef = useRef(null);
+  const [updateMusicState, setUpdateMusicState] = useState('loading');
+
+  const startUpdateMusic = () => {
+    const controller = updateSpotifyControllerRef.current;
+    if (!controller) return;
+    setUpdateMusicState('starting');
+    try { controller.play(); } catch { setUpdateMusicState('blocked'); }
+  };
+
+  useEffect(() => {
+    if (!updateUntil || updateUntil <= Date.now()) return undefined;
+    let disposed = false;
+    let fallbackTimer = 0;
+    setUpdateMusicState('loading');
+
+    loadSpotifyIframeApi().then((IFrameAPI) => {
+      if (disposed || !updateSpotifyHostRef.current) return;
+      IFrameAPI.createController(
+        updateSpotifyHostRef.current,
+        { width: 1, height: 1, uri: `spotify:track:${updateTrackId}` },
+        (controller) => {
+          if (disposed) {
+            try { controller.destroy(); } catch {}
+            return;
+          }
+          updateSpotifyControllerRef.current = controller;
+          controller.addListener('ready', () => {
+            if (disposed) return;
+            setUpdateMusicState('starting');
+            try { controller.play(); } catch { setUpdateMusicState('blocked'); }
+          });
+          controller.addListener('playback_started', () => {
+            if (!disposed) setUpdateMusicState('playing');
+          });
+          controller.addListener('playback_update', (event) => {
+            if (disposed) return;
+            if (event?.data?.isBuffering) setUpdateMusicState('starting');
+            else if (event?.data?.isPaused === false) setUpdateMusicState('playing');
+            else if (event?.data?.position > 0) setUpdateMusicState('paused');
+          });
+          fallbackTimer = window.setTimeout(() => {
+            if (!disposed) setUpdateMusicState((state) => (state === 'playing' ? state : 'blocked'));
+          }, 1800);
+        }
+      );
+    }).catch(() => {
+      if (!disposed) setUpdateMusicState('blocked');
+    });
+
+    return () => {
+      disposed = true;
+      window.clearTimeout(fallbackTimer);
+      const controller = updateSpotifyControllerRef.current;
+      updateSpotifyControllerRef.current = null;
+      if (controller) {
+        try { controller.destroy(); } catch {}
+      }
+    };
+  }, [updateUntil, updateTrackId]);
+
 
   useEffect(() => {
     if (!updateUntil) return undefined;
@@ -5209,34 +5303,28 @@ export default function RUMS() {
   return (
     <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite">
-        <iframe
-          className="site-update-background-player"
-          title="Plaza update soundtrack"
-          src={`https://open.spotify.com/embed/track/${updateTrackId}?utm_source=generator&theme=0&autoplay=1`}
-          width="1"
-          height="1"
-          frameBorder="0"
-          allow="autoplay; encrypted-media"
-          loading="eager"
-          tabIndex={-1}
-          aria-hidden="true"
-        />
+        <div ref={updateSpotifyHostRef} className="site-update-background-player" aria-hidden="true" />
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
           <span className="site-update-kicker">RUMS PLAZA</span>
           <h1>Updating the website</h1>
           <p>Loading the latest version. You’ll be back in a moment.</p>
-          <div className="site-update-now-playing" aria-label={`Now playing ${updateTrack.title} by ${updateTrack.artist}`}>
+          <button
+            type="button"
+            className={`site-update-now-playing ${updateMusicState === 'playing' ? 'is-playing' : ''} ${updateMusicState === 'blocked' || updateMusicState === 'paused' ? 'needs-tap' : ''}`}
+            onClick={startUpdateMusic}
+            aria-label={`${updateMusicState === 'playing' ? 'Now playing' : 'Start'} ${updateTrack.title} by ${updateTrack.artist}`}
+          >
             <div className="site-update-now-icon" aria-hidden="true">
               <span/><span/><span/><span/>
             </div>
             <div className="site-update-now-copy">
-              <small>NOW PLAYING</small>
+              <small>{updateMusicState === 'playing' ? 'NOW PLAYING' : updateMusicState === 'blocked' || updateMusicState === 'paused' ? 'TAP TO START' : 'STARTING MUSIC'}</small>
               <strong>{updateTrack.title}</strong>
               <span>{updateTrack.artist}</span>
             </div>
             <div className="site-update-spotify-badge" aria-hidden="true">♫</div>
-          </div>
+          </button>
           <div className="site-update-loader" aria-hidden="true"><span /></div>
         </div>
       </div>}

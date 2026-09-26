@@ -5784,3 +5784,34 @@ button,input,textarea { font:inherit; }
 @media(prefers-reduced-motion:reduce){
   .site-update-now-icon span{animation:none!important;transform:none!important}
 }
+
+
+/* Update music fallback: the Now Playing card doubles as the autoplay-unlock control. */
+.site-update-now-playing{
+  width:100%;
+  border-style:solid;
+  font:inherit;
+  color:inherit;
+  cursor:default;
+}
+.site-update-now-playing.needs-tap{
+  cursor:pointer;
+  border-color:color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 34%,white);
+  box-shadow:inset 0 1px rgba(255,255,255,.95),0 8px 22px color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 13%,transparent);
+}
+.site-update-now-playing.needs-tap .site-update-now-icon{
+  animation:plazaUpdateMusicTap 1.25s ease-in-out infinite;
+}
+.site-update-now-playing:not(.is-playing) .site-update-now-icon span{
+  animation-play-state:paused;
+  transform:scaleY(.48);
+}
+.site-update-now-playing.is-playing .site-update-now-icon span{
+  animation-play-state:running;
+}
+@keyframes plazaUpdateMusicTap{
+  50%{transform:scale(1.055);box-shadow:inset 0 1px #fff,0 6px 16px color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 20%,transparent)}
+}
+@media(prefers-reduced-motion:reduce){
+  .site-update-now-playing.needs-tap .site-update-now-icon{animation:none!important}
+}
