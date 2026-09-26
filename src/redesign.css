@@ -5850,7 +5850,16 @@ button,input,textarea { font:inherit; }
 }
 
 /* The animation belongs to the startup/version chooser — not the normal feed. */
+/* Keep the startup chooser completely hidden underneath the updater until
+   the fade has finished and the staged reveal is ready to begin. */
+.aero-root.startup-reveal-pending:not(.startup-reveal-active) .rums-space-chooser{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
 .aero-root.startup-reveal-active .rums-space-chooser{
+  visibility:visible!important;
   pointer-events:none;
 }
 .aero-root.startup-reveal-active .rums-space-chooser::before{

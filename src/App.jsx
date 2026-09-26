@@ -26,7 +26,7 @@ const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
-const FORCE_UPDATE_REVISION = 'startup-menu-reveal-31';
+const FORCE_UPDATE_REVISION = 'startup-menu-reveal-32';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -578,6 +578,9 @@ export default function RUMS() {
   const [updateOutroActive, setUpdateOutroActive] = useState(false);
   const [updateOverlayLeaving, setUpdateOverlayLeaving] = useState(false);
   const [startupRevealActive, setStartupRevealActive] = useState(false);
+  const [startupRevealPending, setStartupRevealPending] = useState(false);
+  const updateAudioArmedRef = useRef(false);
+  const forcedUpdatePendingRef = useRef(false);
 
   const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
     if (typeof window === 'undefined') return null;
@@ -637,6 +640,20 @@ export default function RUMS() {
       } catch { /* ignore cleanup failures */ }
     };
   }, [updateTrack.src]);
+
+  const triggerForcedUpdate = () => {
+    try {
+      if (localStorage.getItem(FORCE_UPDATE_KEY) === FORCE_UPDATE_REVISION) return;
+      localStorage.setItem(FORCE_UPDATE_KEY, FORCE_UPDATE_REVISION);
+      updateStartedForVersionRef.current = `forced:${FORCE_UPDATE_REVISION}`;
+      setUpdateTargetVersion(`forced:${FORCE_UPDATE_REVISION}`);
+      setUpdateOverlayLeaving(false);
+      setUpdateOutroActive(false);
+      setStartupRevealActive(false);
+      setStartupRevealPending(true);
+      setUpdateUntil(Date.now() + UPDATE_SCREEN_MS);
+    } catch { /* normal live-update detection still works if storage is unavailable */ }
+  };
 
   const startUpdateMusic = async () => {
     setUpdateMusicState('starting');
@@ -703,7 +720,12 @@ export default function RUMS() {
         }
       }
 
+      updateAudioArmedRef.current = true;
       setUpdateMusicState('ready');
+      if (forcedUpdatePendingRef.current) {
+        forcedUpdatePendingRef.current = false;
+        triggerForcedUpdate();
+      }
     };
     document.addEventListener('pointerdown', arm, { capture: true, passive: true });
     document.addEventListener('keydown', arm, true);
@@ -717,14 +739,11 @@ export default function RUMS() {
     if (!import.meta.env.PROD) return;
     try {
       if (localStorage.getItem(FORCE_UPDATE_KEY) === FORCE_UPDATE_REVISION) return;
-      // Mark first so the final reload cannot start the forced sequence again.
-      localStorage.setItem(FORCE_UPDATE_KEY, FORCE_UPDATE_REVISION);
-      updateStartedForVersionRef.current = `forced:${FORCE_UPDATE_REVISION}`;
-      setUpdateTargetVersion(`forced:${FORCE_UPDATE_REVISION}`);
-      setUpdateOverlayLeaving(false);
-      setUpdateOutroActive(false);
-      setStartupRevealActive(false);
-      setUpdateUntil(Date.now() + UPDATE_SCREEN_MS);
+      // Do not show the forced update before audio has been authorized. The
+      // user's first ordinary Plaza interaction arms Web Audio, then this
+      // forced update begins immediately so sound can start with the overlay.
+      if (updateAudioArmedRef.current) triggerForcedUpdate();
+      else forcedUpdatePendingRef.current = true;
     } catch { /* normal live-update detection still works if storage is unavailable */ }
   }, []);
 
@@ -743,6 +762,10 @@ export default function RUMS() {
         if (updateStartedForVersionRef.current === version) return;
         updateStartedForVersionRef.current = version;
         setUpdateTargetVersion(version);
+        setUpdateOverlayLeaving(false);
+        setUpdateOutroActive(false);
+        setStartupRevealActive(false);
+        setStartupRevealPending(true);
         setUpdateUntil(Date.now() + UPDATE_SCREEN_MS);
       } catch { /* stay on current build when offline/check fails */ }
       finally { checking = false; }
@@ -5432,7 +5455,7 @@ export default function RUMS() {
   })();
 
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
