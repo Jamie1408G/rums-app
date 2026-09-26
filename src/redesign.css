@@ -5207,3 +5207,65 @@ button,input,textarea { font:inherit; }
     font-size:13.5px!important;
   }
 }
+
+
+/* =========================================================
+   Plaza News — dedicated wide page geometry
+   News must not inherit the narrow social-feed column.
+   ========================================================= */
+.aero-root.screen-news .content.content-news {
+  padding-left:clamp(18px,2.4vw,34px)!important;
+  padding-right:clamp(18px,2.4vw,34px)!important;
+}
+.aero-root.screen-news .plaza-news-site {
+  width:min(1120px,100%)!important;
+  max-width:1120px!important;
+}
+
+@media(max-width:900px){
+  .aero-root.screen-news .content.content-news {
+    padding-left:14px!important;
+    padding-right:14px!important;
+  }
+}
+
+@media(max-width:600px){
+  .aero-root.screen-news .content.content-news {
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+  .aero-root.screen-news .plaza-news-site {
+    width:100%!important;
+    max-width:none!important;
+  }
+  .aero-root.screen-news .news-site-top {
+    margin-left:10px!important;
+    margin-right:10px!important;
+  }
+  .aero-root.screen-news .news-home-main,
+  .aero-root.screen-news .news-home-rail,
+  .aero-root.screen-news .news-article-page,
+  .aero-root.screen-news .news-site-composer {
+    margin-left:12px!important;
+    margin-right:12px!important;
+  }
+  .aero-root.screen-news .news-top-story {
+    margin-left:-12px!important;
+    margin-right:-12px!important;
+  }
+  .aero-root.screen-news .news-top-image {
+    border-radius:0!important;
+  }
+  .aero-root.screen-news .news-top-copy {
+    padding-left:18px!important;
+    padding-right:18px!important;
+  }
+  .aero-root.screen-news .news-top-copy h1 {
+    font-size:clamp(30px,9.1vw,38px)!important;
+    line-height:1.02!important;
+  }
+  .aero-root.screen-news .news-top-copy p {
+    font-size:15px!important;
+    line-height:1.48!important;
+  }
+}

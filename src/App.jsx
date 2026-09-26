@@ -4907,7 +4907,7 @@ export default function RUMS() {
   const tutorialCardAtTop = Boolean(tutorialRect && tutorialRect.top > window.innerHeight * 0.55);
 
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite"><div className="site-update-card"><div className="site-update-mark" aria-hidden="true">R</div><span className="site-update-kicker">RUMS PLAZA</span><h1>Updating the website</h1><p>Loading the latest version. You’ll be back in a moment.</p><div className="site-update-loader" aria-hidden="true"><span /></div></div></div>}
       {siteAnnouncement && !(dismissedAnnouncement.username === (currentUser?.username || 'guest') && dismissedAnnouncement.id === siteAnnouncement.id) && (
         <aside className="site-announcement" role="status" aria-live="polite">
@@ -5118,7 +5118,7 @@ export default function RUMS() {
               </div>
             </div>
 
-            <div className={`content ${screen === 'plazaPlus' ? 'content-plaza-plus' : ''} ${screen === 'chat' ? 'content-chat' : ''}`}>
+            <div className={`content ${screen === 'plazaPlus' ? 'content-plaza-plus' : ''} ${screen === 'chat' ? 'content-chat' : ''} ${screen === 'news' ? 'content-news' : ''}`}>
               {siteConfig.customTabs.length > 0 && <div className="custom-mobile-tabs">{siteConfig.customTabs.map((tab) => <button key={tab.id} className={screen === 'custom' && customPageId === tab.id ? 'active' : ''} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{tab.label}{sessionNewCountOnPage(`custom:${tab.id}`) > 0 && <span className="custom-tab-new">{sessionNewCountOnPage(`custom:${tab.id}`) > 99 ? '99+' : sessionNewCountOnPage(`custom:${tab.id}`)}</span>}</button>)}</div>}
               {editMode && isOwner && screen !== 'admin' && renderVisualEditToolbar()}
               {error && (
