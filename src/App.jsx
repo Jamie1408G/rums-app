@@ -5501,17 +5501,17 @@ export default function RUMS() {
                   </header>
 
                   {canEditSite && newsComposeOpen && <section className="news-site-composer news-room-editor">
-                    <div className="news-composer-head"><div><span className="news-editor-eyebrow">PLAZA NEWS DESK</span><b>Create article</b><small>Build the story exactly as it will appear on the news site.</small></div><button type="button" onClick={()=>setNewsComposeOpen(false)} aria-label="Close editor"><X size={17}/></button></div>
+                    <div className="news-composer-head"><div><span className="news-editor-eyebrow">PLAZA NEWS DESK</span><b>Create article</b><small>Build the article exactly as it will appear on the news site.</small></div><button type="button" onClick={()=>setNewsComposeOpen(false)} aria-label="Close editor"><X size={17}/></button></div>
                     <div className="news-editor-fields">
                       <label className="news-editor-field news-editor-title"><span>Headline</span><input placeholder="Write a clear, factual headline" maxLength={120} value={newsDraft.title} onChange={(e)=>setNewsDraft({...newsDraft,title:e.target.value})}/><small>{newsDraft.title.length}/120</small></label>
                       <label className="news-editor-field news-editor-category"><span>Section</span><select value={newsDraft.category} onChange={(e)=>setNewsDraft({...newsDraft,category:e.target.value})}>{NEWS_CATEGORIES.map((category)=><option key={category}>{category}</option>)}</select></label>
                       <label className="news-editor-field news-editor-source"><span>Source</span><select value={newsDraft.source} onChange={(e)=>setNewsDraft({...newsDraft,source:e.target.value})}>{NEWS_SOURCES.map((source)=><option key={source}>{source}</option>)}</select></label>
-                      <label className="news-editor-field news-editor-summary"><span>Standfirst</span><textarea rows={3} placeholder="Summarise the story in one or two sentences" maxLength={260} value={newsDraft.summary} onChange={(e)=>setNewsDraft({...newsDraft,summary:e.target.value})}/><small>{newsDraft.summary.length}/260</small></label>
+                      <label className="news-editor-field news-editor-summary"><span>Standfirst</span><textarea rows={3} placeholder="Summarise the article in one or two sentences" maxLength={260} value={newsDraft.summary} onChange={(e)=>setNewsDraft({...newsDraft,summary:e.target.value})}/><small>{newsDraft.summary.length}/260</small></label>
                       <label className="news-editor-field news-editor-body"><span>Article</span><textarea rows={12} placeholder="Write the full article. Use blank lines to start a new paragraph." value={newsDraft.body} onChange={(e)=>setNewsDraft({...newsDraft,body:e.target.value})}/><small>{newsDraft.body.length}/8000</small></label>
                     </div>
 
                     <section className="news-media-editor" aria-label="Article media">
-                      <div className="news-media-editor-head"><div><b>Media</b><small>Add a lead image and/or a video. Images are also used as story thumbnails.</small></div></div>
+                      <div className="news-media-editor-head"><div><b>Media</b><small>Add a lead image and/or a video. Images are also used as article thumbnails.</small></div></div>
                       <div className="news-media-controls">
                         <label className="news-media-upload"><ImagePlus size={16}/><span><b>{newsImageBusy ? 'Processing image…' : 'Upload image'}</b><small>JPG, PNG, WebP or GIF</small></span><input hidden type="file" accept="image/*" onChange={handleNewsImagePick} disabled={newsImageBusy}/></label>
                         <label className="news-media-upload"><Video size={16}/><span><b>{newsVideoBusy ? 'Loading video…' : 'Upload video'}</b><small>Up to 20 MB</small></span><input hidden type="file" accept="video/*" onChange={handleNewsVideoPick} disabled={newsVideoBusy}/></label>
@@ -5529,7 +5529,7 @@ export default function RUMS() {
                     <div className="news-editor-footer">
                       <div className="news-editor-options">
                         <label className="news-toggle"><input type="checkbox" checked={newsDraft.breaking} onChange={(e)=>setNewsDraft({...newsDraft,breaking:e.target.checked})}/><span>Breaking news</span></label>
-                        <label className="news-toggle"><input type="checkbox" checked={newsDraft.pinned} onChange={(e)=>setNewsDraft({...newsDraft,pinned:e.target.checked})}/><span>Lead story</span></label>
+                        <label className="news-toggle"><input type="checkbox" checked={newsDraft.pinned} onChange={(e)=>setNewsDraft({...newsDraft,pinned:e.target.checked})}/><span>Lead article</span></label>
                       </div>
                       <button className="news-editor-publish" disabled={newsBusy || newsImageBusy || newsVideoBusy || !newsDraft.title.trim() || !newsDraft.body.trim()} onClick={async()=>{await publishNewsArticle();setNewsComposeOpen(false);}}>{newsBusy ? <Loader2 size={16} className="spin"/> : <Newspaper size={16}/>} Publish article</button>
                     </div>
@@ -5579,14 +5579,14 @@ export default function RUMS() {
                         </div>
 
                         <section className="news-latest-section">
-                          <div className="news-section-heading"><h2>Latest news</h2><span>{visibleNews.length} stories</span></div>
+                          <div className="news-section-heading"><h2>Latest news</h2><span>{visibleNews.length} articles</span></div>
                           <div className="news-latest-list">
                             {newsAfterHero.slice(2).map((article)=><article key={article.id} onClick={()=>setNewsSelectedId(article.id)}>
                               <div className="news-latest-time">{new Date(article.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
                               <div className="news-latest-copy"><div className="news-latest-tags"><span>{article.breaking?'BREAKING · ':''}{article.category}</span><span className={`news-source-badge news-source-${String(article.source || 'RUMS 4').toLowerCase().replace(/[^a-z0-9]+/g,'-')}`}>{article.source || 'RUMS 4'}</span></div><h3>{article.title}</h3><p>{article.summary || article.body.slice(0,150)}</p><small>{article.author} · {article.comments?.length||0} comments</small></div>
                               {article.image && <img src={article.image} alt=""/>}
                             </article>)}
-                            {newsAfterHero.length <= 2 && <div className="news-list-empty">More stories will appear here as they are published.</div>}
+                            {newsAfterHero.length <= 2 && <div className="news-list-empty">More articles will appear here as they are published.</div>}
                           </div>
                         </section>
                       </section>
@@ -5601,7 +5601,7 @@ export default function RUMS() {
                           <ol>{plazaNews.slice().sort((a,b)=>(b.comments?.length||0)-(a.comments?.length||0)).slice(0,5).map((article,index)=><li key={article.id}><button onClick={()=>setNewsSelectedId(article.id)}><b>{index+1}</b><span>{article.title}</span></button></li>)}</ol>
                         </section>
                       </aside>
-                    </main> : <div className="news-empty"><Newspaper size={30}/><h3>No stories yet</h3><p>{newsFilter==='All'?'Plaza News is ready for its first story.':`No ${newsFilter} stories have been published.`}</p>{canEditSite&&<button className="aero-btn" onClick={()=>setNewsComposeOpen(true)}><Plus size={15}/> Publish the first story</button>}</div>}
+                    </main> : <div className="news-empty"><Newspaper size={30}/><h3>No articles yet</h3><p>{newsFilter==='All'?'Plaza News is ready for its first article.':`No ${newsFilter} articles have been published.`}</p>{canEditSite&&<button className="aero-btn" onClick={()=>setNewsComposeOpen(true)}><Plus size={15}/> Publish the first article</button>}</div>}
                   </>}
                 </div>
               )}
