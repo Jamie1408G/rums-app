@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 21;
-const JAMIE_TUTORIAL_VERSION = 21;
+const TUTORIAL_VERSION = 22;
+const JAMIE_TUTORIAL_VERSION = 22;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -569,6 +569,8 @@ export default function RUMS() {
   const updateAudioSourceRef = useRef(null);
   const updateAudioGainRef = useRef(null);
   const updateAudioLoadingRef = useRef(null);
+  const updateAudioKeepaliveRef = useRef(null);
+  const updateAudioKeepaliveGainRef = useRef(null);
   const updateStartedForVersionRef = useRef('');
   const [updateMusicState, setUpdateMusicState] = useState('ready');
 
@@ -652,8 +654,34 @@ export default function RUMS() {
       if (armed) return;
       armed = true;
       const context = await ensureUpdateAudioReady({ resume: true });
-      if (!context || context.state !== 'running') armed = false;
-      else setUpdateMusicState('ready');
+      if (!context || context.state !== 'running') {
+        armed = false;
+        return;
+      }
+
+      // Safari/Chrome can suspend an unlocked AudioContext again when it sits
+      // completely idle. Start one inaudible oscillator during the genuine
+      // user gesture and keep it connected for the session so this SAME
+      // authorized context stays alive until an update needs audible sound.
+      if (!updateAudioKeepaliveRef.current) {
+        try {
+          const keepaliveGain = context.createGain();
+          keepaliveGain.gain.value = 0.000001;
+          keepaliveGain.connect(context.destination);
+
+          const keepalive = context.createOscillator();
+          keepalive.frequency.value = 30;
+          keepalive.connect(keepaliveGain);
+          keepalive.start();
+
+          updateAudioKeepaliveRef.current = keepalive;
+          updateAudioKeepaliveGainRef.current = keepaliveGain;
+        } catch {
+          // Even without the keepalive, leave the context armed if it is running.
+        }
+      }
+
+      setUpdateMusicState('ready');
     };
     document.addEventListener('pointerdown', arm, { capture: true, passive: true });
     document.addEventListener('keydown', arm, true);
@@ -697,7 +725,7 @@ export default function RUMS() {
     if (!updateUntil || updateUntil <= Date.now()) return undefined;
     let cancelled = false;
     const launch = async () => {
-      const context = await ensureUpdateAudioReady({ resume: false });
+      const context = await ensureUpdateAudioReady({ resume: true });
       if (cancelled) return;
       if (context?.state === 'running') {
         await startUpdateMusic();
@@ -731,6 +759,15 @@ export default function RUMS() {
     if (updateAudioSourceRef.current) {
       try { updateAudioSourceRef.current.stop(); } catch {}
       try { updateAudioSourceRef.current.disconnect(); } catch {}
+    }
+    if (updateAudioKeepaliveRef.current) {
+      try { updateAudioKeepaliveRef.current.stop(); } catch {}
+      try { updateAudioKeepaliveRef.current.disconnect(); } catch {}
+      updateAudioKeepaliveRef.current = null;
+    }
+    if (updateAudioKeepaliveGainRef.current) {
+      try { updateAudioKeepaliveGainRef.current.disconnect(); } catch {}
+      updateAudioKeepaliveGainRef.current = null;
     }
     if (updateAudioContextRef.current) {
       try { updateAudioContextRef.current.close(); } catch {}
