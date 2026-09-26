@@ -29,14 +29,17 @@ const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const UPDATE_FADE_MS = 2400;
 const VERSION_COLOR_FADE_MS = 1150;
+const STARTUP_BUILD_MS = 2250;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const MUSIC_PLAYER_KEY = 'rums-plaza-music-player';
 const UI_SFX = {
-  click: { src: '/audio/ui-click.wav', volume: 0.34 },
+  click2: { src: '/audio/ui-click2.wav', volume: 0.30 },
+  click: { src: '/audio/ui-click.wav', volume: 0.30 },
+  change: { src: '/audio/ui-change.wav', volume: 0.60 },
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'update-handoff-sfx-58';
+const FORCE_UPDATE_REVISION = 'ui-sound-roles-60';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -47,8 +50,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 58;
-const JAMIE_TUTORIAL_VERSION = 58;
+const TUTORIAL_VERSION = 60;
+const JAMIE_TUTORIAL_VERSION = 60;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -590,6 +593,8 @@ export default function RUMS() {
   const uiSfxPoolsRef = useRef({});
   const uiSfxBuffersRef = useRef({});
   const uiSfxBufferLoadsRef = useRef({});
+  const startupEntryRevealPlayedRef = useRef(false);
+  const startupEntryRevealTimerRef = useRef(0);
 
   const pendingUpdateRef = useRef(null);
   const updateCycleRef = useRef({ id: '', forced: false, phase: 'idle' });
@@ -600,7 +605,7 @@ export default function RUMS() {
   const [updateOverlayLeaving, setUpdateOverlayLeaving] = useState(false);
   const [updateHandoffPhase, setUpdateHandoffPhase] = useState('idle');
   const [startupRevealActive, setStartupRevealActive] = useState(false);
-  const [startupRevealPending, setStartupRevealPending] = useState(false);
+  const [startupRevealPending, setStartupRevealPending] = useState(true);
   const [versionBuildPending, setVersionBuildPending] = useState(false);
   const [versionBuildActive, setVersionBuildActive] = useState(false);
   const versionBuildTimerRef = useRef(0);
@@ -642,7 +647,6 @@ export default function RUMS() {
     const config = UI_SFX[name];
     if (!config) return false;
 
-    // Normal clicks/open actions use preloaded HTMLAudio so they start instantly.
     const poolEntry = uiSfxPoolsRef.current[name];
     if (poolEntry?.pool?.length) {
       const audio = poolEntry.pool[poolEntry.index % poolEntry.pool.length];
@@ -657,8 +661,8 @@ export default function RUMS() {
       } catch {}
     }
 
-    // Automatic "start" after the updater can fall back to the already-unlocked
-    // WebAudio context used by the update soundtrack.
+    // Automatic startup sound can use the already-unlocked updater WebAudio
+    // context if normal <audio> autoplay is denied.
     const context = updateAudioContextRef.current;
     if (!context || context.state !== 'running') return false;
 
@@ -751,8 +755,9 @@ export default function RUMS() {
 
   useEffect(() => {
     const pools = {};
+
     for (const [name, config] of Object.entries(UI_SFX)) {
-      const size = name === 'click' ? 5 : 2;
+      const size = (name === 'click2' || name === 'click') ? 6 : 2;
       pools[name] = {
         index: 0,
         pool: Array.from({ length: size }, () => {
@@ -764,15 +769,82 @@ export default function RUMS() {
         }),
       };
     }
+
     uiSfxPoolsRef.current = pools;
 
-    const onEveryClick = () => {
-      void playUiSfx('click');
+    const onPointerSfx = (event) => {
+      if (event.button != null && event.button !== 0) return;
+
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) {
+        void playUiSfx('click2');
+        return;
+      }
+
+      /*
+        OPEN and CHANGE are played from their actual action handler. Suppress
+        the default click so one interaction never produces two UI sounds.
+      */
+      if (target.closest('.rums-space-chooser .space-choice-card')) return;
+      if (target.closest('.header-center-version-switcher .universal-rums-switcher')) return;
+      if (target.closest('.mobile-version-switcher .universal-rums-switcher')) return;
+
+      const explicit = target.closest('[data-ui-sfx]')?.getAttribute('data-ui-sfx');
+      if (explicit && UI_SFX[explicit]) {
+        void playUiSfx(explicit);
+        return;
+      }
+
+      const control = target.closest('button, a, [role="button"], [role="link"]');
+      const aria = String(control?.getAttribute?.('aria-label') || '').trim();
+      const title = String(control?.getAttribute?.('title') || '').trim();
+      const text = String(control?.textContent || '').replace(/\s+/g, ' ').trim();
+
+      const dismissiveControl = target.closest(
+        [
+          '.dynamic-music-collapse-button',
+          '.detail-back-btn',
+          '.project-workspace-back',
+          '.projects-back-btn',
+          '.collection-back',
+          '.tutorial-back',
+          '.chat-mobile-close',
+          '.gif-picker-close',
+          '.site-announcement-close',
+          '.modal-close',
+          '.dialog-close',
+          '.close-btn',
+          '.back-btn',
+        ].join(',')
+      );
+
+      const dismissiveLabel =
+        /^(close|collapse|dismiss|back)\b/i.test(aria) ||
+        /^(close|collapse|dismiss|back)\b/i.test(title) ||
+        /^(←\s*)?(back|all projects|all collections)\b/i.test(text);
+
+      if (dismissiveControl || dismissiveLabel) {
+        void playUiSfx('click');
+        return;
+      }
+
+      /*
+        A click outside an open music player closes it, so use the close/back
+        sound instead of the default interaction sound.
+      */
+      const openMusicIsland = document.querySelector('.dynamic-music-island.is-open');
+      if (openMusicIsland && !openMusicIsland.contains(target)) {
+        void playUiSfx('click');
+        return;
+      }
+
+      void playUiSfx('click2');
     };
-    document.addEventListener('click', onEveryClick, true);
+
+    document.addEventListener('pointerdown', onPointerSfx, true);
 
     return () => {
-      document.removeEventListener('click', onEveryClick, true);
+      document.removeEventListener('pointerdown', onPointerSfx, true);
       Object.values(uiSfxPoolsRef.current).forEach((entry) => {
         entry?.pool?.forEach((audio) => {
           try {
@@ -1053,24 +1125,27 @@ export default function RUMS() {
     if (!updateUntil || !updateTargetVersion) return undefined;
 
     const cycleId = updateTargetVersion;
-    let fadeDoneTimer = 0;
-    let colorDoneTimer = 0;
-    let interactionUnlockTimer = 0;
-    let endTimer = 0;
+    let fadeTimer = 0;
+    let colourTimer = 0;
+    let revealTimer = 0;
+    let finishTimer = 0;
 
-    const finishTimer = window.setTimeout(() => {
+    const updateEndTimer = window.setTimeout(() => {
       if (
         updateCycleRef.current.id !== cycleId ||
         updateCycleRef.current.phase !== 'updating'
       ) return;
 
       /*
-        Stage 1 — updater and soundtrack disappear together.
-        This deliberately takes its time rather than snapping to the chooser.
+        Stage 1
+        The blank handoff layer is already behind the updater BEFORE the fade,
+        so the old feed can never show through.
       */
       updateCycleRef.current.phase = 'fading';
+      setUpdateHandoffPhase('blank');
       setUpdateOverlayLeaving(true);
 
+      // Fade the updater soundtrack for exactly the same time as the screen.
       const context = updateAudioContextRef.current;
       const gain = updateAudioGainRef.current;
       if (context && gain) {
@@ -1079,11 +1154,14 @@ export default function RUMS() {
           const current = Math.max(0.0001, gain.gain.value || 0.72);
           gain.gain.cancelScheduledValues(now);
           gain.gain.setValueAtTime(current, now);
-          gain.gain.linearRampToValueAtTime(0.0001, now + (UPDATE_FADE_MS / 1000));
+          gain.gain.linearRampToValueAtTime(
+            0.0001,
+            now + (UPDATE_FADE_MS / 1000),
+          );
         } catch {}
       }
 
-      fadeDoneTimer = window.setTimeout(() => {
+      fadeTimer = window.setTimeout(() => {
         if (updateCycleRef.current.id !== cycleId) return;
 
         if (updateAudioSourceRef.current) {
@@ -1094,42 +1172,48 @@ export default function RUMS() {
         setUpdateMusicState('ready');
 
         /*
-          Stage 2 — the updater is now completely empty. Put the chooser
-          underneath, keep it hidden, and crossfade only the background colour.
+          Stage 2
+          The screen is now genuinely empty. Put the chooser underneath but
+          keep it hidden, then fade the blank layer to the chooser colour.
         */
-        updateCycleRef.current.phase = 'color-handoff';
+        updateCycleRef.current.phase = 'colour';
         setScreen('spaceSelect');
         setRumsSpace(null);
-        setUpdateOverlayLeaving(false);
-        setUpdateOutroActive(false);
         setStartupRevealPending(true);
         setStartupRevealActive(false);
-        setUpdateHandoffPhase('color');
+        setUpdateOverlayLeaving(false);
+        setUpdateOutroActive(false);
+        setUpdateHandoffPhase('version');
 
-        colorDoneTimer = window.setTimeout(() => {
+        colourTimer = window.setTimeout(() => {
           if (updateCycleRef.current.id !== cycleId) return;
 
           /*
-            Stage 3 — once the version-screen colour has fully arrived, play
-            the supplied START sound and build the chooser over it.
+            Stage 3
+            Version colour is fully present. Remove the transition layer,
+            play START, then construct the chooser.
           */
           updateCycleRef.current.phase = 'revealing';
+          startupEntryRevealPlayedRef.current = true;
           setUpdateHandoffPhase('idle');
-          void playUiSfx('start');
-          setStartupRevealPending(false);
-          setStartupRevealActive(true);
 
-          interactionUnlockTimer = window.setTimeout(() => {
+          void playUiSfx('start');
+
+          window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+              if (updateCycleRef.current.id !== cycleId) return;
+              setStartupRevealPending(false);
+              setStartupRevealActive(true);
+            });
+          });
+
+          revealTimer = window.setTimeout(() => {
             if (updateCycleRef.current.id !== cycleId) return;
             setStartupRevealActive(false);
             setStartupRevealPending(false);
-          }, 2250);
+          }, STARTUP_BUILD_MS);
 
-          /*
-            Keep the existing real-update handoff/reload protection. We wait
-            long enough for start.wav (~2.84s) and the chooser reveal to finish.
-          */
-          endTimer = window.setTimeout(() => {
+          finishTimer = window.setTimeout(() => {
             if (updateCycleRef.current.id !== cycleId) return;
 
             const forcedCycle = updateCycleRef.current.forced;
@@ -1169,11 +1253,11 @@ export default function RUMS() {
     }, Math.max(0, updateUntil - Date.now()));
 
     return () => {
-      window.clearTimeout(finishTimer);
-      if (fadeDoneTimer) window.clearTimeout(fadeDoneTimer);
-      if (colorDoneTimer) window.clearTimeout(colorDoneTimer);
-      if (interactionUnlockTimer) window.clearTimeout(interactionUnlockTimer);
-      if (endTimer) window.clearTimeout(endTimer);
+      window.clearTimeout(updateEndTimer);
+      if (fadeTimer) window.clearTimeout(fadeTimer);
+      if (colourTimer) window.clearTimeout(colourTimer);
+      if (revealTimer) window.clearTimeout(revealTimer);
+      if (finishTimer) window.clearTimeout(finishTimer);
     };
   }, [updateUntil, updateTargetVersion]);
 
@@ -1514,6 +1598,7 @@ export default function RUMS() {
       >
         <div
           className="dynamic-music-compact"
+          data-ui-sfx={siteMusicOpen ? 'click' : 'click2'}
           role="button"
           tabIndex={0}
           aria-expanded={siteMusicOpen}
@@ -1589,6 +1674,7 @@ export default function RUMS() {
               <button
                 type="button"
                 className="dynamic-music-collapse-button"
+                data-ui-sfx="click"
                 onClick={closeSiteMusicIsland}
                 aria-label="Collapse music player"
               >
@@ -3688,6 +3774,58 @@ export default function RUMS() {
   }, []);
 
   useEffect(() => {
+    if (
+      startupEntryRevealPlayedRef.current ||
+      !entrySessionReady ||
+      screen !== 'spaceSelect' ||
+      updateUntil > Date.now() ||
+      updateOverlayLeaving ||
+      updateHandoffPhase !== 'idle' ||
+      updateCycleRef.current.phase !== 'idle'
+    ) return undefined;
+
+    startupEntryRevealPlayedRef.current = true;
+    setStartupRevealPending(true);
+    setStartupRevealActive(false);
+
+    let buildTimer = 0;
+    const frame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        void playUiSfx('start');
+        setStartupRevealPending(false);
+        setStartupRevealActive(true);
+
+        buildTimer = window.setTimeout(() => {
+          setStartupRevealActive(false);
+          setStartupRevealPending(false);
+        }, STARTUP_BUILD_MS);
+        startupEntryRevealTimerRef.current = buildTimer;
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (buildTimer) window.clearTimeout(buildTimer);
+      if (startupEntryRevealTimerRef.current === buildTimer) {
+        startupEntryRevealTimerRef.current = 0;
+      }
+    };
+  }, [
+    entrySessionReady,
+    screen,
+    updateUntil,
+    updateOverlayLeaving,
+    updateHandoffPhase,
+  ]);
+
+  useEffect(() => () => {
+    if (startupEntryRevealTimerRef.current) {
+      window.clearTimeout(startupEntryRevealTimerRef.current);
+      startupEntryRevealTimerRef.current = 0;
+    }
+  }, []);
+
+  useEffect(() => {
     if (!sharedPostRequest || rumsSpace) return;
     void chooseRumsSpace(sharedPostRequest.space);
     // This runs only for a post permalink opened from outside the app.
@@ -3703,12 +3841,12 @@ export default function RUMS() {
 
   async function switchRumsSpace(space) {
     if (space === 'projects') {
-      if (!spaceSwitchBusy && !isProjectSpace) void playUiSfx('open');
+      if (!spaceSwitchBusy && !isProjectSpace) void playUiSfx('change');
       await openProjectsDirectory();
       return;
     }
     if (!isContentSpaceId(space) || space === rumsSpace || spaceSwitchBusy) return;
-    void playUiSfx('open');
+    void playUiSfx('change');
     if (!currentUser) {
       await chooseRumsSpace(space);
       return;
@@ -6312,7 +6450,12 @@ export default function RUMS() {
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
       </div>}
-      {updateHandoffPhase === 'color' && <div className="version-color-handoff" aria-hidden="true" />}
+      {updateHandoffPhase !== 'idle' && (
+        <div
+          className={`update-handoff-layer is-${updateHandoffPhase}`}
+          aria-hidden="true"
+        />
+      )}
       {(updateUntil > Date.now() || updateOverlayLeaving) && <div className={`site-update-screen ${updateOverlayLeaving ? 'is-leaving' : ''}`} role="status" aria-live="polite">
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
@@ -6373,7 +6516,7 @@ export default function RUMS() {
                 <span className="space-choice-number">✦</span>
                 <span className="space-choice-copy"><strong>Creative</strong></span>
               </button>
-              <button type="button" className="space-choice-card projects-choice" onClick={() => void openProjectsDirectory()}>
+              <button type="button" className="space-choice-card projects-choice" onClick={() => { void playUiSfx('open'); void openProjectsDirectory(); }}>
                 <span className="space-choice-number">PR</span>
                 <span className="space-choice-copy"><strong>Projects</strong></span>
               </button>

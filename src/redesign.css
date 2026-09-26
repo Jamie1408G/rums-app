@@ -5828,29 +5828,83 @@ button,input,textarea { font:inherit; }
   .site-update-play-fallback{animation:none!important}
 }
 
-/* Update handoff: fade the updater completely, then construct the startup chooser. */
+/* Update handoff 59: updater -> blank -> version colour -> build. */
 .aero-root .site-update-screen{
   transition:
-    opacity .8s cubic-bezier(.22,.8,.22,1),
-    backdrop-filter .8s ease,
-    -webkit-backdrop-filter .8s ease;
+    opacity 2.4s cubic-bezier(.22,.74,.18,1),
+    backdrop-filter 2.4s ease,
+    -webkit-backdrop-filter 2.4s ease!important;
 }
 .aero-root .site-update-screen:not(.is-leaving){
   opacity:1!important;
 }
 .aero-root .site-update-screen.is-leaving{
-  opacity:0;
-  pointer-events:none;
-  backdrop-filter:blur(2px) saturate(1);
-  -webkit-backdrop-filter:blur(2px) saturate(1);
+  opacity:0!important;
+  pointer-events:none!important;
+  backdrop-filter:blur(0) saturate(1)!important;
+  -webkit-backdrop-filter:blur(0) saturate(1)!important;
 }
 .aero-root .site-update-screen.is-leaving .site-update-card{
-  animation:plazaUpdateCardLeave .7s cubic-bezier(.22,.8,.22,1) both;
+  animation:plazaUpdateCardLeave59 2.2s cubic-bezier(.22,.74,.18,1) both!important;
 }
-@keyframes plazaUpdateCardLeave{
-  from{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
-  to{opacity:0;transform:translateY(-12px) scale(.98);filter:blur(5px)}
+@keyframes plazaUpdateCardLeave59{
+  0%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
+  60%{opacity:.55;transform:translateY(-4px) scale(.995);filter:blur(1px)}
+  100%{opacity:0;transform:translateY(-10px) scale(.985);filter:blur(7px)}
 }
+
+/*
+  This layer is turned on BEFORE the updater begins fading, so no feed/page
+  content can ever appear underneath the update fade.
+*/
+.update-handoff-layer{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  pointer-events:none;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(223,238,255,.98),
+      rgba(247,250,255,.99) 52%,
+      rgba(227,242,252,.98)
+    );
+}
+.update-handoff-layer.is-blank{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(223,238,255,.98),
+      rgba(247,250,255,.99) 52%,
+      rgba(227,242,252,.98)
+    );
+}
+.update-handoff-layer.is-version{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(223,238,255,.98),
+      rgba(247,250,255,.99) 52%,
+      rgba(227,242,252,.98)
+    );
+}
+.update-handoff-layer.is-version::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:#f7f8fb;
+  opacity:0;
+  animation:plazaVersionColour59 1.15s cubic-bezier(.2,.7,.2,1) forwards;
+}
+@keyframes plazaVersionColour59{
+  from{opacity:0}
+  to{opacity:1}
+}
+.aero-root[data-theme="dark"] .update-handoff-layer.is-version::after{background:#11161d}
+.aero-root[data-theme="frutiger"] .update-handoff-layer.is-version::after{background:#f5ffff}
+.aero-root[data-theme="y2k"] .update-handoff-layer.is-version::after{background:#f6f9fb}
+.aero-root[data-theme="minecraft"] .update-handoff-layer.is-version::after{background:#c6c6c6}
+.aero-root[data-theme^="roblox"] .update-handoff-layer.is-version::after{background:var(--rbx-frame,#f2f2f2)}
 
 /* The animation belongs to the startup/version chooser — not the normal feed. */
 /* Keep the startup chooser completely hidden underneath the updater until
@@ -7551,108 +7605,30 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
 /* -------------------------------------------------------------------------- */
-/* UPDATE -> VERSION HANDOFF + UI SFX 58                                      */
+/* VERSION CHOOSER BUILDS ON EVERY FRESH WEBSITE ENTRY — 59                  */
 /* -------------------------------------------------------------------------- */
-
-/* A genuinely slow fade. The soundtrack gain uses the exact same 2.4 seconds. */
-.aero-root .site-update-screen{
-  transition:
-    opacity 2.4s cubic-bezier(.22,.74,.18,1),
-    backdrop-filter 2.4s ease,
-    -webkit-backdrop-filter 2.4s ease!important;
-}
-.aero-root .site-update-screen.is-leaving{
-  opacity:0!important;
-  pointer-events:none!important;
-  backdrop-filter:blur(0) saturate(1)!important;
-  -webkit-backdrop-filter:blur(0) saturate(1)!important;
-}
-.aero-root .site-update-screen.is-leaving .site-update-card{
-  animation:plazaUpdateCardLeave58 2.2s cubic-bezier(.22,.74,.18,1) both!important;
-}
-@keyframes plazaUpdateCardLeave58{
-  0%{
-    opacity:1;
-    transform:translateY(0) scale(1);
-    filter:blur(0);
-  }
-  62%{
-    opacity:.54;
-    transform:translateY(-4px) scale(.995);
-    filter:blur(1px);
-  }
-  100%{
-    opacity:0;
-    transform:translateY(-10px) scale(.985);
-    filter:blur(7px);
-  }
-}
-
-/*
-  Once the updater is fully gone, this is the ONLY visible layer.
-  It starts as the updater colour and softly crossfades to the exact base
-  colour used by the default version/space-selection frame.
-*/
-.version-color-handoff{
-  position:fixed;
-  inset:0;
-  z-index:99999;
-  pointer-events:none;
-  overflow:hidden;
-  background:
-    linear-gradient(
-      145deg,
-      rgba(223,238,255,.98),
-      rgba(247,250,255,.99) 52%,
-      rgba(227,242,252,.98)
-    );
-}
-.version-color-handoff::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:#f7f8fb;
-  opacity:0;
-  animation:plazaVersionColour58 1.15s cubic-bezier(.2,.7,.2,1) forwards;
-}
-@keyframes plazaVersionColour58{
-  from{opacity:0}
-  to{opacity:1}
-}
-
-/* Theme-aware landing colour so the handoff does not flash on custom themes. */
-.aero-root[data-theme="dark"] .version-color-handoff::after{background:#11161d}
-.aero-root[data-theme="frutiger"] .version-color-handoff::after{background:#f5ffff}
-.aero-root[data-theme="y2k"] .version-color-handoff::after{background:#f6f9fb}
-.aero-root[data-theme="minecraft"] .version-color-handoff::after{background:#c6c6c6}
-.aero-root[data-theme^="roblox"] .version-color-handoff::after{background:var(--rbx-frame,#f2f2f2)}
-
-/* The chooser stays completely absent until the colour handoff has finished. */
 .aero-root.startup-reveal-pending:not(.startup-reveal-active) .rums-space-chooser{
   opacity:0!important;
   visibility:hidden!important;
   pointer-events:none!important;
 }
 
-/* Make the actual chooser fade/build feel like a continuation of start.wav. */
+/* Slightly slower first-stage fade so the build reads clearly on fresh entry. */
 .aero-root.startup-reveal-active .rums-space-chooser{
-  animation:plazaStartupChooserReveal58 .5s .03s cubic-bezier(.16,.88,.22,1.04) both!important;
-}
-@keyframes plazaStartupChooserReveal58{
-  from{opacity:0;filter:blur(3px)}
-  to{opacity:1;filter:none}
+  animation-duration:.42s!important;
 }
 
 @media(prefers-reduced-motion:reduce){
   .aero-root .site-update-screen.is-leaving{
-    transition:opacity .6s ease!important;
+    transition:opacity .65s ease!important;
   }
   .aero-root .site-update-screen.is-leaving .site-update-card{
-    animation:plazaUpdateCardLeave58 .6s ease both!important;
+    animation-duration:.65s!important;
   }
-  .version-color-handoff::after{
+  .update-handoff-layer.is-version::after{
     animation-duration:.45s!important;
   }
 }
-
