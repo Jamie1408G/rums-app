@@ -39,7 +39,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'version-menu-start-62';
+const FORCE_UPDATE_REVISION = 'version-menu-start-fix-63';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -50,8 +50,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 62;
-const JAMIE_TUTORIAL_VERSION = 62;
+const TUTORIAL_VERSION = 63;
+const JAMIE_TUTORIAL_VERSION = 63;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -593,6 +593,8 @@ export default function RUMS() {
   const uiSfxPoolsRef = useRef({});
   const uiSfxBuffersRef = useRef({});
   const uiSfxBufferLoadsRef = useRef({});
+  const versionMenuEntryKeyRef = useRef(1);
+  const versionMenuStartHandledKeyRef = useRef(0);
   const startupEntryRevealTimerRef = useRef(0);
 
   const pendingUpdateRef = useRef(null);
@@ -1201,7 +1203,7 @@ export default function RUMS() {
             play START, then construct the chooser.
           */
           updateCycleRef.current.phase = 'revealing';
-          startupEntryRevealPlayedRef.current = true;
+          versionMenuStartHandledKeyRef.current = versionMenuEntryKeyRef.current;
           setUpdateHandoffPhase('idle');
 
           void playUiSfx('start');
@@ -3738,7 +3740,14 @@ export default function RUMS() {
   }
 
   function enterVersionMenu() {
-    setVersionMenuEntryKey((value) => value + 1);
+    const nextEntryKey = versionMenuEntryKeyRef.current + 1;
+    versionMenuEntryKeyRef.current = nextEntryKey;
+    versionMenuStartHandledKeyRef.current = nextEntryKey;
+
+    // Keep START inside the actual gesture that opens Welcome to RUMS Plaza.
+    void playUiSfx('start');
+
+    setVersionMenuEntryKey(nextEntryKey);
     setScreen('spaceSelect');
   }
 
@@ -3803,11 +3812,14 @@ export default function RUMS() {
     const frame = window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         /*
-          START belongs to ENTERING the version menu.
-          It is deliberately not deferred to the first click, so selecting a
-          version can only produce OPEN and can never accidentally release START.
+          On a cold website entry, attempt START automatically.
+          For every in-app return to Welcome to RUMS Plaza, enterVersionMenu()
+          already fired START synchronously inside the user's click/tap.
         */
-        void playUiSfx('start');
+        if (versionMenuStartHandledKeyRef.current !== versionMenuEntryKey) {
+          versionMenuStartHandledKeyRef.current = versionMenuEntryKey;
+          void playUiSfx('start');
+        }
 
         setStartupRevealPending(false);
         setStartupRevealActive(true);
