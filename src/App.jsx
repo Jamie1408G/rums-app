@@ -544,6 +544,8 @@ export default function RUMS() {
   const [gifNext, setGifNext] = useState('');
   const [gifLoading, setGifLoading] = useState(false);
   const [gifError, setGifError] = useState('');
+  const gifSearchTimerRef = useRef(null);
+  const gifSearchRequestRef = useRef(0);
   const [chatSearch, setChatSearch] = useState('');
   const [chatListOpen, setChatListOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -3666,27 +3668,37 @@ export default function RUMS() {
   }
 
   async function loadKlipyGifs({ query = gifQuery, next = '', append = false } = {}) {
-    if (gifLoading) return;
+    const requestId = ++gifSearchRequestRef.current;
     setGifLoading(true);
     setGifError('');
     try {
       const params = new URLSearchParams();
       if (query.trim()) params.set('q', query.trim());
       if (next) params.set('pos', next);
-      params.set('limit', '12');
+      params.set('limit', '16');
       const response = await fetch(`/api/klipy?${params.toString()}`);
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error || 'Could not load GIFs.');
+      if (requestId !== gifSearchRequestRef.current) return;
       const incoming = Array.isArray(payload.results) ? payload.results : [];
       setGifResults((current) => append ? [...current, ...incoming] : incoming);
       setGifNext(payload.next || '');
     } catch (error) {
+      if (requestId !== gifSearchRequestRef.current) return;
       console.error(error);
       setGifError(error?.message || 'Could not load GIFs.');
       if (!append) setGifResults([]);
     } finally {
-      setGifLoading(false);
+      if (requestId === gifSearchRequestRef.current) setGifLoading(false);
     }
+  }
+
+  function queueGifSearch(value) {
+    setGifQuery(value);
+    if (gifSearchTimerRef.current) clearTimeout(gifSearchTimerRef.current);
+    gifSearchTimerRef.current = setTimeout(() => {
+      void loadKlipyGifs({ query: value, next: '', append: false });
+    }, 220);
   }
 
   function openGifPicker() {
@@ -5170,11 +5182,10 @@ export default function RUMS() {
                             <button type="button" className="gif-picker-close" onClick={() => setGifPickerOpen(false)} aria-label="Close GIF picker"><X size={18} /></button>
                           </header>
 
-                          <form className="gif-picker-search" onSubmit={(event) => { event.preventDefault(); void loadKlipyGifs({ query: gifQuery, next: '', append: false }); }}>
+                          <form className="gif-picker-search" onSubmit={(event) => { event.preventDefault(); if (gifSearchTimerRef.current) clearTimeout(gifSearchTimerRef.current); void loadKlipyGifs({ query: gifQuery, next: '', append: false }); }}>
                             <Search size={17} />
-                            <input value={gifQuery} onChange={(event) => setGifQuery(event.target.value)} placeholder="Search GIFs" aria-label="Search GIFs" autoFocus />
-                            {gifQuery && <button type="button" onClick={() => { setGifQuery(''); void loadKlipyGifs({ query: '', next: '', append: false }); }} aria-label="Clear GIF search"><X size={14} /></button>}
-                            <button type="submit" className="gif-picker-search-button">Search</button>
+                            <input value={gifQuery} onChange={(event) => queueGifSearch(event.target.value)} placeholder="Search GIFs" aria-label="Search GIFs" autoFocus />
+                            {gifQuery && <button type="button" onClick={() => { if (gifSearchTimerRef.current) clearTimeout(gifSearchTimerRef.current); setGifQuery(''); void loadKlipyGifs({ query: '', next: '', append: false }); }} aria-label="Clear GIF search"><X size={14} /></button>}
                           </form>
 
                           <div className="gif-picker-section-label">
@@ -5184,7 +5195,7 @@ export default function RUMS() {
 
                           <div className="gif-picker-body">
                             {gifError ? <div className="gif-picker-state"><span>Couldn’t load GIFs.</span><button type="button" onClick={() => void loadKlipyGifs({ query: gifQuery, next: '', append: false })}>Try again</button></div> : <>
-                              {gifLoading && gifResults.length === 0 ? <div className="gif-picker-skeletons">{Array.from({ length: 12 }).map((_, index) => <span key={index} />)}</div> : <div className="gif-picker-grid">
+                              {gifLoading && gifResults.length === 0 ? <div className="gif-picker-skeletons">{Array.from({ length: 16 }).map((_, index) => <span key={index} />)}</div> : <div className="gif-picker-grid">
                                 {gifResults.map((gif) => <button key={gif.id} type="button" className="gif-picker-item" onClick={() => { void selectKlipyGif(gif); }} title={gif.title || 'Send GIF'}>
                                   <img src={gif.preview || gif.url} alt={gif.title || 'GIF'} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                                 </button>)}
