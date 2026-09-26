@@ -5570,24 +5570,21 @@ button,input,textarea { font:inherit; }
   }
 }
 
-/* Like: blue glossy fill + spring pop */
+/* Like: clean Plaza-blue heart inside the glossy control + spring pop */
 .aero-root .like-btn.liked .post-action-like-icon{
-  color:#fff;
-  border-color:color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 74%,white);
-  background:
-    linear-gradient(180deg,
-      color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 60%,white),
-      var(--theme-accent,var(--site-accent,#3478f6)) 54%,
-      color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 82%,#174fbd));
-  box-shadow:
-    inset 0 1px rgba(255,255,255,.72),
-    inset 0 -2px rgba(0,45,119,.13),
-    0 5px 13px color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 27%,transparent);
-  animation:plazaLikeGlassPop .42s cubic-bezier(.16,.9,.25,1.35);
+  color:var(--theme-accent,var(--site-accent,#3478f6));
+  border-color:color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 38%,white);
+  background:linear-gradient(180deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.58) 46%,var(--theme-accent-soft,#eaf4ff) 100%);
+  box-shadow:inset 0 1px rgba(255,255,255,.96),inset 0 -1px rgba(71,111,154,.07),0 4px 11px color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 15%,transparent);
+  animation:plazaLikeGlassPop .34s cubic-bezier(.16,.9,.25,1.28);
+}
+.aero-root .like-btn.liked .post-action-like-icon::before{
+  opacity:.32;
 }
 .aero-root .like-btn.liked .post-action-like-icon svg{
-  filter:drop-shadow(0 1px 1px rgba(0,48,120,.22));
-  animation:plazaHeartPop .42s cubic-bezier(.16,.9,.25,1.35);
+  color:var(--theme-accent,var(--site-accent,#3478f6));
+  filter:none!important;
+  animation:plazaHeartPop .34s cubic-bezier(.16,.9,.25,1.28);
 }
 @keyframes plazaLikeGlassPop{
   0%{transform:scale(.72) rotate(-8deg)}

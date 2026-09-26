@@ -25,8 +25,8 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const TUTORIAL_VERSION = 11;
-const JAMIE_TUTORIAL_VERSION = 11;
+const TUTORIAL_VERSION = 12;
+const JAMIE_TUTORIAL_VERSION = 12;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -3608,6 +3608,7 @@ export default function RUMS() {
   async function toggleLike(postId) {
     const post = posts.find((p) => p.id === postId);
     if (!post || !currentUser) return;
+    const previousPosts = posts;
     const wasLiked = post.likes.includes(currentUser.username);
     const next = posts.map((p) => {
       if (p.id !== postId) return p;
@@ -3616,12 +3617,20 @@ export default function RUMS() {
         likes: wasLiked ? p.likes.filter((u) => u !== currentUser.username) : [...p.likes, currentUser.username],
       };
     });
-    const saved = await savePosts(next);
-    if (!saved) return;
-    showActionToast('like', wasLiked ? 'Like removed' : 'Post liked');
-    const becameLiked = !wasLiked;
-    if (becameLiked && post.username !== currentUser.username) {
-      void commitPlazaPlus((data) => ({ ...data, activities: [{ id:`act-${Date.now()}-${Math.random().toString(36).slice(2,5)}`, type:'like', actor:currentUser.username, targetUser:post.username, postId, text:`${currentUser.username} liked your post`, timestamp:Date.now() }, ...(data.activities||[])].slice(0,800) }));
+
+    // Optimistic UI: update the heart immediately, then persist in the background.
+    setPosts(next);
+    try {
+      await persistPostsForSpace(rumsSpace || 'rums4', next);
+      showActionToast('like', wasLiked ? 'Like removed' : 'Post liked');
+      const becameLiked = !wasLiked;
+      if (becameLiked && post.username !== currentUser.username) {
+        void commitPlazaPlus((data) => ({ ...data, activities: [{ id:`act-${Date.now()}-${Math.random().toString(36).slice(2,5)}`, type:'like', actor:currentUser.username, targetUser:post.username, postId, text:`${currentUser.username} liked your post`, timestamp:Date.now() }, ...(data.activities||[])].slice(0,800) }));
+      }
+    } catch (e) {
+      console.error(e);
+      setPosts(previousPosts);
+      setError('Could not save — try again.');
     }
   }
 
