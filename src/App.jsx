@@ -5541,7 +5541,7 @@ export default function RUMS() {
                       <div className="news-article-kicker">{selectedNewsArticle.breaking && <span className="news-site-breaking">LIVE / BREAKING</span>}<span>{selectedNewsArticle.category}</span><span className={`news-source-badge news-source-${String(selectedNewsArticle.source || 'RUMS 4').toLowerCase().replace(/[^a-z0-9]+/g,'-')}`}>{selectedNewsArticle.source || 'RUMS 4'}</span></div>
                       <h1>{selectedNewsArticle.title}</h1>
                       {selectedNewsArticle.summary && <p className="news-article-standfirst">{selectedNewsArticle.summary}</p>}
-                      <div className="news-article-meta"><span>By <button onClick={()=>openProfile(selectedNewsArticle.author)}>{selectedNewsArticle.author}</button></span><span>{new Date(selectedNewsArticle.timestamp).toLocaleString([], { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span></div>
+                      <div className="news-article-meta"><span>By <button onClick={()=>openProfile(selectedNewsArticle.author)}>{selectedNewsArticle.author}</button></span><span>Published {new Date(selectedNewsArticle.timestamp).toLocaleString([], { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span></div>
                       {selectedNewsArticle.image && <figure className="news-article-hero"><img src={selectedNewsArticle.image} alt=""/></figure>}
                       {selectedNewsArticle.video && <div className="news-article-video"><NewsVideo src={selectedNewsArticle.video} title={selectedNewsArticle.title}/></div>}
                       <div className="news-article-body">{selectedNewsArticle.body.split('\n').map((line,i)=>line ? <p key={i}>{line}</p> : <br key={i}/>)}</div>
