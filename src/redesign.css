@@ -4685,3 +4685,11 @@ button,input,textarea { font:inherit; }
 .aero-root .chat-klipy-message{width:min(520px,100%);max-width:100%;overflow:hidden;border-radius:14px;background:var(--theme-surface-2,#111);line-height:0}
 .aero-root .chat-klipy-media{display:block;width:100%;height:auto;max-height:420px;object-fit:contain;background:#111}
 .aero-root .chat-message:has(.chat-klipy-message) .chat-message-bubble{width:min(540px,100%);max-width:100%}
+
+/* GIF grid hard-stop: dimensions are intentionally fixed in JSX to avoid legacy grid overrides. */
+.aero-root .gif-picker-grid .gif-picker-item { flex:none !important; min-width:180px !important; max-width:180px !important; width:180px !important; height:112px !important; }
+.aero-root .gif-picker-grid .gif-picker-item img { width:180px !important; height:112px !important; object-fit:cover !important; }
+@media(max-width:430px){
+  .aero-root .gif-picker-grid .gif-picker-item { min-width:152px !important; max-width:152px !important; width:152px !important; height:96px !important; }
+  .aero-root .gif-picker-grid .gif-picker-item img { width:152px !important; height:96px !important; }
+}
