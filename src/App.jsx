@@ -44,7 +44,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'force-account-open-sound-81';
+const FORCE_UPDATE_REVISION = 'account-open-safe-82';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -55,8 +55,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 81;
-const JAMIE_TUTORIAL_VERSION = 81;
+const TUTORIAL_VERSION = 82;
+const JAMIE_TUTORIAL_VERSION = 82;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -600,8 +600,9 @@ export default function RUMS() {
   const uiSfxBufferLoadsRef = useRef({});
   const versionMenuEntryKeyRef = useRef(1);
   const versionMenuStartHandledKeyRef = useRef(0);
+  const accountGateEntrySeqRef = useRef(1);
   const accountGateOpenSoundEntryRef = useRef(0);
-  const accountGateOpenSoundPendingRef = useRef(false);
+  const accountGateOpenPlayedRef = useRef(false);
   const startupEntryRevealTimerRef = useRef(0);
   const versionOpenSoundTimerRef = useRef(0);
 
@@ -795,17 +796,6 @@ export default function RUMS() {
       if (event.button != null && event.button !== 0) return;
 
       const target = event.target instanceof Element ? event.target : null;
-
-      if (
-        accountGateOpenSoundPendingRef.current &&
-        !target?.closest?.('.plaza-account-continue')
-      ) {
-        // This is the browser-unlock fallback for the very first cold load.
-        // Use this interaction for OPEN only; do not stack CLICK2 on top.
-        void playAccountGateOpenSound();
-        return;
-      }
-
       if (!target) {
         void playUiSfx('click2');
         return;
@@ -1644,23 +1634,6 @@ export default function RUMS() {
       try { audio.volume = siteMusicVolume; } catch {}
     }
   }, [siteMusicVolume]);
-
-  useEffect(() => {
-    const releaseAccountGateOpenOnKey = (event) => {
-      if (
-        event.repeat ||
-        screen !== 'accountGate' ||
-        !accountGateOpenSoundPendingRef.current
-      ) return;
-
-      void playAccountGateOpenSound();
-    };
-
-    window.addEventListener('keydown', releaseAccountGateOpenOnKey, true);
-    return () => {
-      window.removeEventListener('keydown', releaseAccountGateOpenOnKey, true);
-    };
-  }, [screen]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return undefined;
@@ -4210,7 +4183,9 @@ export default function RUMS() {
           session state is known. Its bubbly CSS animation therefore begins
           from frame zero instead of running behind an updater or loading state.
         */
-        setAccountGateEntryKey((value) => value + 1);
+        const nextEntryKey = accountGateEntrySeqRef.current + 1;
+        accountGateEntrySeqRef.current = nextEntryKey;
+        setAccountGateEntryKey(nextEntryKey);
         setScreen('accountGate');
 
         try {
@@ -4246,10 +4221,10 @@ export default function RUMS() {
     if (accountGateOpenSoundEntryRef.current === accountGateEntryKey) return;
     accountGateOpenSoundEntryRef.current = accountGateEntryKey;
 
-    // OPEN belongs specifically to the Logged in as / Continue with page.
-    // On a cold load this may be denied by browser autoplay policy; the
-    // pending flag releases it on the first real interaction on this page.
-    void playAccountGateOpenSound();
+    // OPEN is dedicated to the Logged in as / Continue with page.
+    void playUiSfx('open').then((played) => {
+      accountGateOpenPlayedRef.current = Boolean(played);
+    });
   }, [
     entrySessionReady,
     screen,
@@ -4261,7 +4236,7 @@ export default function RUMS() {
 
   useEffect(() => {
     if (screen !== 'accountGate') {
-      accountGateOpenSoundPendingRef.current = false;
+      accountGateOpenPlayedRef.current = false;
     }
   }, [screen]);
 
@@ -4439,25 +4414,20 @@ export default function RUMS() {
     enterVersionMenu();
   }
 
-  async function playAccountGateOpenSound() {
-    const played = await playUiSfx('open');
-    accountGateOpenSoundPendingRef.current = !played;
-    return played;
-  }
-
   function openAccountGate() {
     setEntryAuth(false);
     setError('');
     setAuthForm({ username: '', password: '' });
 
-    const nextEntryKey = accountGateOpenSoundEntryRef.current + 1;
+    const nextEntryKey = accountGateEntrySeqRef.current + 1;
+    accountGateEntrySeqRef.current = nextEntryKey;
     accountGateOpenSoundEntryRef.current = nextEntryKey;
 
-    // Back/return navigation is already a real user gesture, so OPEN is
-    // requested here before React changes screens.
-    void playAccountGateOpenSound();
+    void playUiSfx('open').then((played) => {
+      accountGateOpenPlayedRef.current = Boolean(played);
+    });
 
-    setAccountGateEntryKey((value) => Math.max(value + 1, nextEntryKey));
+    setAccountGateEntryKey(nextEntryKey);
     setScreen('accountGate');
   }
 
@@ -4470,10 +4440,9 @@ export default function RUMS() {
   }
 
   async function continueFromAccountGate() {
-    if (accountGateOpenSoundPendingRef.current) {
-      // Cold-load autoplay fallback: the Continue click is a trusted gesture,
-      // so release the page OPEN sound first instead of losing it.
-      await playAccountGateOpenSound();
+    if (!accountGateOpenPlayedRef.current) {
+      const played = await playUiSfx('open');
+      accountGateOpenPlayedRef.current = Boolean(played);
 
       window.setTimeout(() => {
         void playUiSfx('select');
