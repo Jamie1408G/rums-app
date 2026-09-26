@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import './legacy.css';
 import './redesign.css';
 import {
@@ -27,7 +27,7 @@ const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
-const FORCE_UPDATE_REVISION = 'updater-always-shows-39';
+const FORCE_UPDATE_REVISION = 'deterministic-updater-40';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -38,8 +38,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 39;
-const JAMIE_TUTORIAL_VERSION = 39;
+const TUTORIAL_VERSION = 40;
+const JAMIE_TUTORIAL_VERSION = 40;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -643,16 +643,10 @@ export default function RUMS() {
     updateStartInFlightRef.current = true;
     setUpdateMusicState('starting');
 
-    const wasForced = pendingForcedUpdateRef.current;
+    const wasForced = false;
     pendingUpdateVersionRef.current = '';
     pendingForcedUpdateRef.current = false;
     updateCycleForcedRef.current = wasForced;
-
-    if (wasForced) {
-      // Mark the forced revision immediately so a reload/StrictMode/remount
-      // cannot schedule the exact same forced test a second time.
-      try { localStorage.setItem(FORCE_UPDATE_KEY, FORCE_UPDATE_REVISION); } catch {}
-    }
 
     let shown = false;
     const showOnce = () => {
@@ -767,12 +761,58 @@ export default function RUMS() {
     };
   }, [updateTrack.src, updateUntil, updateMusicState]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!import.meta.env.PROD) return;
+
+    let alreadyHandled = false;
     try {
-      if (localStorage.getItem(FORCE_UPDATE_KEY) === FORCE_UPDATE_REVISION) return;
+      alreadyHandled = localStorage.getItem(FORCE_UPDATE_KEY) === FORCE_UPDATE_REVISION;
     } catch {}
-    queueUpdate(`forced:${FORCE_UPDATE_REVISION}`, { forced: true });
+    if (alreadyHandled) return;
+
+    const forcedVersion = `forced:${FORCE_UPDATE_REVISION}`;
+
+    // Force-test updates bypass the normal detector/audio queue completely.
+    // Establish the updater state before paint so the underlying version chooser
+    // cannot flash and audio failure can never suppress the updater.
+    updateCycleForcedRef.current = true;
+    updateCycleActiveRef.current = true;
+    updateStartedForVersionRef.current = forcedVersion;
+    pendingUpdateVersionRef.current = '';
+    pendingForcedUpdateRef.current = false;
+
+    setUpdateTargetVersion(forcedVersion);
+    setUpdateOverlayLeaving(false);
+    setUpdateOutroActive(false);
+    setStartupRevealActive(false);
+    setStartupRevealPending(true);
+    setUpdateUntil(Date.now() + UPDATE_SCREEN_MS);
+
+    // Mark the revision only AFTER the forced updater state has been established.
+    try {
+      localStorage.setItem(FORCE_UPDATE_KEY, FORCE_UPDATE_REVISION);
+    } catch {}
+
+    // Best-effort audible autoplay. This is intentionally independent from the
+    // updater state: rejection affects only music, never the update screen.
+    const audio = updateAudioElementRef.current;
+    if (audio) {
+      try {
+        audio.currentTime = 0;
+        audio.volume = 0.72;
+        audio.muted = false;
+        const result = audio.play();
+        Promise.resolve(result).then(() => {
+          setUpdateMusicState('playing');
+        }).catch(() => {
+          setUpdateMusicState('blocked');
+        });
+      } catch {
+        setUpdateMusicState('blocked');
+      }
+    } else {
+      setUpdateMusicState('blocked');
+    }
   }, []);
 
   useEffect(() => {
