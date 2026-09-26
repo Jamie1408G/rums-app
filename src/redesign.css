@@ -5144,7 +5144,7 @@ button,input,textarea { font:inherit; }
     min-height:0!important;
     aspect-ratio:16/9!important;
     overflow:hidden!important;
-    border-radius:12px!important;
+    border-radius:12px 12px 0 0!important;
     background:var(--theme-surface-2,#eef3f8)!important;
   }
   .plaza-news-site .news-top-image img{
@@ -5270,9 +5270,8 @@ button,input,textarea { font:inherit; }
   }
 }
 
-/* Plaza News homepage only: lead media flows directly into the preview body. */
-.plaza-news-site .news-lead-image,
-.plaza-news-site .news-lead-image img {
+/* Plaza News homepage only: the lead image flows directly into the preview body. */
+.plaza-news-site .news-top-image {
   border-bottom-left-radius:0 !important;
   border-bottom-right-radius:0 !important;
 }
