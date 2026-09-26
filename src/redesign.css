@@ -5506,3 +5506,163 @@ button,input,textarea { font:inherit; }
 @media(prefers-reduced-motion:reduce){
   .plaza-action-toast{animation:none!important;}
 }
+
+
+/* Plaza glossy icon language */
+.aero-root .post-actions{
+  align-items:center;
+}
+.aero-root .post-actions > button{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border-radius:12px;
+  transition:color .18s ease,background .18s ease,transform .16s ease;
+}
+.aero-root .post-actions > button:active{
+  transform:scale(.96);
+}
+.aero-root .post-action-icon{
+  position:relative;
+  display:inline-grid;
+  place-items:center;
+  width:30px;
+  height:30px;
+  flex:0 0 30px;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--theme-border,#dbe7f2) 72%,white);
+  border-radius:11px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.84) 0%,rgba(255,255,255,.38) 42%,rgba(226,238,251,.42) 100%);
+  color:inherit;
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.94),
+    inset 0 -1px rgba(93,124,157,.08),
+    0 3px 9px rgba(39,72,108,.09);
+  backdrop-filter:blur(12px) saturate(1.18);
+  -webkit-backdrop-filter:blur(12px) saturate(1.18);
+  transition:transform .2s cubic-bezier(.2,.85,.25,1.2),background .18s ease,border-color .18s ease,box-shadow .18s ease,color .18s ease;
+}
+.aero-root .post-action-icon::before{
+  content:"";
+  position:absolute;
+  left:4px;
+  right:4px;
+  top:3px;
+  height:42%;
+  border-radius:8px 8px 50% 50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(255,255,255,0));
+  opacity:.72;
+  pointer-events:none;
+}
+.aero-root .post-action-icon svg{
+  position:relative;
+  z-index:1;
+  stroke-width:2.15;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.68));
+  transition:transform .2s cubic-bezier(.2,.85,.25,1.2),filter .18s ease;
+}
+@media(hover:hover) and (pointer:fine){
+  .aero-root .post-actions > button:hover .post-action-icon{
+    transform:translateY(-1px);
+    border-color:color-mix(in srgb,var(--theme-accent,#3478f6) 25%,white);
+    box-shadow:inset 0 1px #fff,0 5px 13px rgba(39,72,108,.13);
+  }
+}
+
+/* Like: blue glossy fill + spring pop */
+.aero-root .like-btn.liked .post-action-like-icon{
+  color:#fff;
+  border-color:color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 74%,white);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 60%,white),
+      var(--theme-accent,var(--site-accent,#3478f6)) 54%,
+      color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 82%,#174fbd));
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.72),
+    inset 0 -2px rgba(0,45,119,.13),
+    0 5px 13px color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 27%,transparent);
+  animation:plazaLikeGlassPop .42s cubic-bezier(.16,.9,.25,1.35);
+}
+.aero-root .like-btn.liked .post-action-like-icon svg{
+  filter:drop-shadow(0 1px 1px rgba(0,48,120,.22));
+  animation:plazaHeartPop .42s cubic-bezier(.16,.9,.25,1.35);
+}
+@keyframes plazaLikeGlassPop{
+  0%{transform:scale(.72) rotate(-8deg)}
+  58%{transform:scale(1.15) rotate(3deg)}
+  100%{transform:scale(1) rotate(0)}
+}
+@keyframes plazaHeartPop{
+  0%{transform:scale(.62)}
+  54%{transform:scale(1.25)}
+  100%{transform:scale(1)}
+}
+
+/* Share: quick outward/send motion when completed */
+.aero-root .share-btn.share-done{
+  color:var(--theme-accent,var(--site-accent,#3478f6));
+}
+.aero-root .share-btn.share-done .post-action-share-icon{
+  color:#fff;
+  border-color:color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 70%,white);
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 58%,white),
+    var(--theme-accent,var(--site-accent,#3478f6)));
+  box-shadow:inset 0 1px rgba(255,255,255,.76),0 5px 13px color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 24%,transparent);
+  animation:plazaShareBubble .44s cubic-bezier(.2,.8,.2,1);
+}
+.aero-root .share-btn.share-done .post-action-share-icon svg{
+  animation:plazaShareSend .44s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes plazaShareBubble{
+  0%{transform:scale(.88)}
+  55%{transform:scale(1.1)}
+  100%{transform:scale(1)}
+}
+@keyframes plazaShareSend{
+  0%{transform:translate(-3px,3px) scale(.82);opacity:.25}
+  55%{transform:translate(2px,-2px) scale(1.12);opacity:1}
+  100%{transform:none;opacity:1}
+}
+
+/* Saved/reacted states use the same Plaza glass language */
+.aero-root .bookmark-btn.active .post-action-icon,
+.aero-root .post-react-btn.active .post-action-icon{
+  color:var(--theme-accent,var(--site-accent,#3478f6));
+  border-color:color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 32%,white);
+  background:linear-gradient(180deg,rgba(255,255,255,.9),var(--theme-accent-soft,#eaf4ff));
+  box-shadow:inset 0 1px #fff,0 4px 11px color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 14%,transparent);
+}
+
+/* Make the broader Plaza icon system feel less like raw outline SVGs. */
+.aero-root :is(.rail-link,.nav-btn,.chat-mobile-conversations,.aero-header button,.plaza-plus-tab) > svg,
+.aero-root .mobile-menu-icon svg{
+  stroke-width:2.1;
+  filter:drop-shadow(0 1px 0 rgba(255,255,255,.72)) drop-shadow(0 2px 3px rgba(34,66,103,.08));
+  transition:transform .18s ease,filter .18s ease;
+}
+@media(hover:hover) and (pointer:fine){
+  .aero-root :is(.rail-link,.nav-btn,.chat-mobile-conversations,.aero-header button,.plaza-plus-tab):hover > svg{
+    transform:translateY(-1px) scale(1.035);
+    filter:drop-shadow(0 1px 0 rgba(255,255,255,.82)) drop-shadow(0 3px 5px rgba(34,66,103,.13));
+  }
+}
+.aero-root .mobile-menu-icon{
+  border:1px solid color-mix(in srgb,var(--theme-border,#dce8f5) 66%,white);
+  background:linear-gradient(180deg,rgba(255,255,255,.82),var(--theme-accent-soft,#eaf4ff));
+  box-shadow:inset 0 1px rgba(255,255,255,.9),0 3px 9px rgba(39,72,108,.08);
+}
+
+@media(max-width:760px){
+  .aero-root .post-action-icon{width:29px;height:29px;flex-basis:29px;border-radius:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .aero-root .post-action-icon,
+  .aero-root .post-action-icon svg,
+  .aero-root :is(.rail-link,.nav-btn,.chat-mobile-conversations,.aero-header button,.plaza-plus-tab) > svg{
+    animation:none!important;
+    transition:none!important;
+  }
+}

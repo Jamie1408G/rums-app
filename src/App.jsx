@@ -25,8 +25,8 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const TUTORIAL_VERSION = 10;
-const JAMIE_TUTORIAL_VERSION = 10;
+const TUTORIAL_VERSION = 11;
+const JAMIE_TUTORIAL_VERSION = 11;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -5075,22 +5075,22 @@ export default function RUMS() {
         </div>
         <div className="post-actions">
           <button className={`like-btn ${liked ? 'liked' : ''}`} onClick={() => toggleLike(post.id)} aria-label={liked ? 'Unlike post' : 'Like post'}>
-            <Heart size={19} fill={liked ? 'currentColor' : 'none'} />
+            <span className="post-action-icon post-action-like-icon"><Heart size={18} fill={liked ? 'currentColor' : 'none'} /></span>
             {post.likes.length > 0 ? post.likes.length : 'Like'}
           </button>
           <button
             className="comment-btn"
             onClick={() => setOpenComments((o) => ({ ...o, [post.id]: !o[post.id] }))}
           >
-            <MessageCircle size={18} />
+            <span className="post-action-icon"><MessageCircle size={17} /></span>
             {postComments.length > 0 ? postComments.length : 'Comments'}
           </button>
-          <button className={`comment-btn post-react-btn ${reactionMenus[`post:${post.id}`] ? 'active' : ''}`} onClick={() => toggleReactionMenu(`post:${post.id}`)} aria-label="React to post" title="React to post"><SmilePlus size={19} /></button>
-          <button className="comment-btn" onClick={() => sharePost(post)}>
-            {shareStatus[post.id] ? <Check size={17} color="#0fb8a6" /> : <Share2 size={17} />}
+          <button className={`comment-btn post-react-btn ${reactionMenus[`post:${post.id}`] ? 'active' : ''}`} onClick={() => toggleReactionMenu(`post:${post.id}`)} aria-label="React to post" title="React to post"><span className="post-action-icon"><SmilePlus size={18} /></span></button>
+          <button className={`comment-btn share-btn ${shareStatus[post.id] ? 'share-done' : ''}`} onClick={() => sharePost(post)}>
+            <span className="post-action-icon post-action-share-icon">{shareStatus[post.id] ? <Check size={16} /> : <Share2 size={16} />}</span>
             {shareStatus[post.id] === 'copied' ? 'Copied' : shareStatus[post.id] === 'shared' ? 'Shared' : ''}
           </button>
-          <button className={`comment-btn bookmark-btn ${bookmarkedPosts().includes(post.id) ? 'active' : ''}`} onClick={() => toggleBookmark(post.id)} title={bookmarkedPosts().includes(post.id) ? 'Remove from favorites' : 'Add to favorites'} aria-label={bookmarkedPosts().includes(post.id) ? 'Remove from favorites' : 'Add to favorites'} aria-pressed={bookmarkedPosts().includes(post.id)}><Star size={19} fill={bookmarkedPosts().includes(post.id) ? 'currentColor' : 'none'} /></button>
+          <button className={`comment-btn bookmark-btn ${bookmarkedPosts().includes(post.id) ? 'active' : ''}`} onClick={() => toggleBookmark(post.id)} title={bookmarkedPosts().includes(post.id) ? 'Remove from favorites' : 'Add to favorites'} aria-label={bookmarkedPosts().includes(post.id) ? 'Remove from favorites' : 'Add to favorites'} aria-pressed={bookmarkedPosts().includes(post.id)}><span className="post-action-icon"><Star size={18} fill={bookmarkedPosts().includes(post.id) ? 'currentColor' : 'none'} /></span></button>
           {post.username === currentUser.username && <button className={`comment-btn pin-btn ${plusProfile().pinnedPostIds?.includes(post.id) ? 'active' : ''}`} onClick={() => togglePinnedPost(post.id)} title="Pin to profile">📌</button>}
         </div>
         {renderReactionBar(post, 'post', reactionContext)}
