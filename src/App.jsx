@@ -27,9 +27,16 @@ const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
+const UPDATE_FADE_MS = 2400;
+const VERSION_COLOR_FADE_MS = 1150;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const MUSIC_PLAYER_KEY = 'rums-plaza-music-player';
-const FORCE_UPDATE_REVISION = 'left-anchored-top-bar-57';
+const UI_SFX = {
+  click: { src: '/audio/ui-click.wav', volume: 0.34 },
+  start: { src: '/audio/ui-start.wav', volume: 0.72 },
+  open: { src: '/audio/ui-open.wav', volume: 0.72 },
+};
+const FORCE_UPDATE_REVISION = 'update-handoff-sfx-58';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -40,8 +47,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 57;
-const JAMIE_TUTORIAL_VERSION = 57;
+const TUTORIAL_VERSION = 58;
+const JAMIE_TUTORIAL_VERSION = 58;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -580,6 +587,10 @@ export default function RUMS() {
   const updateAudioKeepaliveRef = useRef(null);
   const updateAudioKeepaliveGainRef = useRef(null);
 
+  const uiSfxPoolsRef = useRef({});
+  const uiSfxBuffersRef = useRef({});
+  const uiSfxBufferLoadsRef = useRef({});
+
   const pendingUpdateRef = useRef(null);
   const updateCycleRef = useRef({ id: '', forced: false, phase: 'idle' });
   const updateStartInFlightRef = useRef(false);
@@ -587,6 +598,7 @@ export default function RUMS() {
   const [updateMusicState, setUpdateMusicState] = useState('ready');
   const [updateOutroActive, setUpdateOutroActive] = useState(false);
   const [updateOverlayLeaving, setUpdateOverlayLeaving] = useState(false);
+  const [updateHandoffPhase, setUpdateHandoffPhase] = useState('idle');
   const [startupRevealActive, setStartupRevealActive] = useState(false);
   const [startupRevealPending, setStartupRevealPending] = useState(false);
   const [versionBuildPending, setVersionBuildPending] = useState(false);
@@ -625,6 +637,72 @@ export default function RUMS() {
   const [siteMusicProgress, setSiteMusicProgress] = useState(0);
   const [siteMusicDuration, setSiteMusicDuration] = useState(0);
   const [siteMusicError, setSiteMusicError] = useState('');
+
+  const playUiSfx = async (name) => {
+    const config = UI_SFX[name];
+    if (!config) return false;
+
+    // Normal clicks/open actions use preloaded HTMLAudio so they start instantly.
+    const poolEntry = uiSfxPoolsRef.current[name];
+    if (poolEntry?.pool?.length) {
+      const audio = poolEntry.pool[poolEntry.index % poolEntry.pool.length];
+      poolEntry.index = (poolEntry.index + 1) % poolEntry.pool.length;
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.volume = config.volume;
+        const attempt = audio.play();
+        if (attempt?.then) await attempt;
+        return true;
+      } catch {}
+    }
+
+    // Automatic "start" after the updater can fall back to the already-unlocked
+    // WebAudio context used by the update soundtrack.
+    const context = updateAudioContextRef.current;
+    if (!context || context.state !== 'running') return false;
+
+    try {
+      if (!uiSfxBuffersRef.current[name]) {
+        if (!uiSfxBufferLoadsRef.current[name]) {
+          uiSfxBufferLoadsRef.current[name] = fetch(config.src, { cache: 'force-cache' })
+            .then((response) => {
+              if (!response.ok) throw new Error(`Could not load ${name} sound`);
+              return response.arrayBuffer();
+            })
+            .then((bytes) => context.decodeAudioData(bytes.slice(0)))
+            .then((buffer) => {
+              uiSfxBuffersRef.current[name] = buffer;
+              return buffer;
+            })
+            .catch(() => {
+              uiSfxBufferLoadsRef.current[name] = null;
+              return null;
+            });
+        }
+        await uiSfxBufferLoadsRef.current[name];
+      }
+
+      const buffer = uiSfxBuffersRef.current[name];
+      if (!buffer) return false;
+
+      const gain = context.createGain();
+      gain.gain.value = config.volume;
+      gain.connect(context.destination);
+
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(gain);
+      source.addEventListener('ended', () => {
+        try { source.disconnect(); } catch {}
+        try { gain.disconnect(); } catch {}
+      }, { once: true });
+      source.start();
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
     if (typeof window === 'undefined') return null;
@@ -670,6 +748,43 @@ export default function RUMS() {
 
     return context;
   };
+
+  useEffect(() => {
+    const pools = {};
+    for (const [name, config] of Object.entries(UI_SFX)) {
+      const size = name === 'click' ? 5 : 2;
+      pools[name] = {
+        index: 0,
+        pool: Array.from({ length: size }, () => {
+          const audio = new Audio(config.src);
+          audio.preload = 'auto';
+          audio.volume = config.volume;
+          try { audio.load(); } catch {}
+          return audio;
+        }),
+      };
+    }
+    uiSfxPoolsRef.current = pools;
+
+    const onEveryClick = () => {
+      void playUiSfx('click');
+    };
+    document.addEventListener('click', onEveryClick, true);
+
+    return () => {
+      document.removeEventListener('click', onEveryClick, true);
+      Object.values(uiSfxPoolsRef.current).forEach((entry) => {
+        entry?.pool?.forEach((audio) => {
+          try {
+            audio.pause();
+            audio.removeAttribute('src');
+            audio.load();
+          } catch {}
+        });
+      });
+      uiSfxPoolsRef.current = {};
+    };
+  }, []);
 
   useEffect(() => {
     // Proven-safe cache warming from the older working patch. This warms the
@@ -736,6 +851,7 @@ export default function RUMS() {
 
     setUpdateTargetVersion(version);
     setUpdateOverlayLeaving(false);
+    setUpdateHandoffPhase('idle');
     setUpdateOutroActive(false);
     setStartupRevealActive(false);
     setStartupRevealPending(true);
@@ -937,7 +1053,8 @@ export default function RUMS() {
     if (!updateUntil || !updateTargetVersion) return undefined;
 
     const cycleId = updateTargetVersion;
-    let revealTimer = 0;
+    let fadeDoneTimer = 0;
+    let colorDoneTimer = 0;
     let interactionUnlockTimer = 0;
     let endTimer = 0;
 
@@ -947,93 +1064,114 @@ export default function RUMS() {
         updateCycleRef.current.phase !== 'updating'
       ) return;
 
+      /*
+        Stage 1 — updater and soundtrack disappear together.
+        This deliberately takes its time rather than snapping to the chooser.
+      */
       updateCycleRef.current.phase = 'fading';
       setUpdateOverlayLeaving(true);
 
-      revealTimer = window.setTimeout(() => {
+      const context = updateAudioContextRef.current;
+      const gain = updateAudioGainRef.current;
+      if (context && gain) {
+        try {
+          const now = context.currentTime;
+          const current = Math.max(0.0001, gain.gain.value || 0.72);
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(current, now);
+          gain.gain.linearRampToValueAtTime(0.0001, now + (UPDATE_FADE_MS / 1000));
+        } catch {}
+      }
+
+      fadeDoneTimer = window.setTimeout(() => {
         if (updateCycleRef.current.id !== cycleId) return;
 
-        updateCycleRef.current.phase = 'revealing';
+        if (updateAudioSourceRef.current) {
+          try { updateAudioSourceRef.current.stop(); } catch {}
+          try { updateAudioSourceRef.current.disconnect(); } catch {}
+          updateAudioSourceRef.current = null;
+        }
+        setUpdateMusicState('ready');
 
-        // The update page has completed its fade BEFORE this menu is shown.
+        /*
+          Stage 2 — the updater is now completely empty. Put the chooser
+          underneath, keep it hidden, and crossfade only the background colour.
+        */
+        updateCycleRef.current.phase = 'color-handoff';
         setScreen('spaceSelect');
         setRumsSpace(null);
-        setUpdateOutroActive(true);
-        setStartupRevealPending(false);
-        setStartupRevealActive(true);
+        setUpdateOverlayLeaving(false);
+        setUpdateOutroActive(false);
+        setStartupRevealPending(true);
+        setStartupRevealActive(false);
+        setUpdateHandoffPhase('color');
 
-        interactionUnlockTimer = window.setTimeout(() => {
+        colorDoneTimer = window.setTimeout(() => {
           if (updateCycleRef.current.id !== cycleId) return;
-          setStartupRevealActive(false);
+
+          /*
+            Stage 3 — once the version-screen colour has fully arrived, play
+            the supplied START sound and build the chooser over it.
+          */
+          updateCycleRef.current.phase = 'revealing';
+          setUpdateHandoffPhase('idle');
+          void playUiSfx('start');
           setStartupRevealPending(false);
-        }, 2250);
+          setStartupRevealActive(true);
 
-        const context = updateAudioContextRef.current;
-        const gain = updateAudioGainRef.current;
-        if (context && gain) {
-          try {
-            const now = context.currentTime;
-            gain.gain.cancelScheduledValues(now);
-            gain.gain.setValueAtTime(
-              Math.max(0.0001, gain.gain.value || 0.72),
-              now,
-            );
-            gain.gain.linearRampToValueAtTime(0.0001, now + 5);
-          } catch {}
-        }
-
-        endTimer = window.setTimeout(() => {
-          if (updateCycleRef.current.id !== cycleId) return;
-
-          if (updateAudioSourceRef.current) {
-            try { updateAudioSourceRef.current.stop(); } catch {}
-            try { updateAudioSourceRef.current.disconnect(); } catch {}
-            updateAudioSourceRef.current = null;
-          }
-
-          const forcedCycle = updateCycleRef.current.forced;
-
-          try {
-            localStorage.setItem(UPDATE_SEEN_KEY, cycleId);
-            sessionStorage.removeItem(UPDATE_SCREEN_KEY);
-            sessionStorage.removeItem(UPDATE_RELOAD_KEY);
-
-            if (!forcedCycle) {
-              // This handoff marker has two jobs:
-              // 1) stop the new document from immediately detecting the same build;
-              // 2) suppress that build's forced-test revision, preventing the
-              //    exact second update cycle that kept occurring before.
-              sessionStorage.setItem(
-                UPDATE_HANDOFF_KEY,
-                String(Date.now() + 30000),
-              );
-            }
-          } catch {}
-
-          setUpdateMusicState('ready');
-
-          if (forcedCycle) {
-            // Forced testing happens inside the build already running, so there
-            // is nothing to reload afterward.
-            updateCycleRef.current = { id: '', forced: false, phase: 'idle' };
-            setUpdateUntil(0);
-            setUpdateTargetVersion('');
-            setUpdateOverlayLeaving(false);
-            setUpdateOutroActive(false);
+          interactionUnlockTimer = window.setTimeout(() => {
+            if (updateCycleRef.current.id !== cycleId) return;
             setStartupRevealActive(false);
             setStartupRevealPending(false);
-            return;
-          }
+          }, 2250);
 
-          updateCycleRef.current.phase = 'reloading';
-          window.location.reload();
-        }, 5150);
-      }, 850);
+          /*
+            Keep the existing real-update handoff/reload protection. We wait
+            long enough for start.wav (~2.84s) and the chooser reveal to finish.
+          */
+          endTimer = window.setTimeout(() => {
+            if (updateCycleRef.current.id !== cycleId) return;
+
+            const forcedCycle = updateCycleRef.current.forced;
+
+            try {
+              localStorage.setItem(UPDATE_SEEN_KEY, cycleId);
+              sessionStorage.removeItem(UPDATE_SCREEN_KEY);
+              sessionStorage.removeItem(UPDATE_RELOAD_KEY);
+
+              if (!forcedCycle) {
+                sessionStorage.setItem(
+                  UPDATE_HANDOFF_KEY,
+                  String(Date.now() + 30000),
+                );
+              }
+            } catch {}
+
+            setUpdateMusicState('ready');
+            setUpdateHandoffPhase('idle');
+
+            if (forcedCycle) {
+              updateCycleRef.current = { id: '', forced: false, phase: 'idle' };
+              setUpdateUntil(0);
+              setUpdateTargetVersion('');
+              setUpdateOverlayLeaving(false);
+              setUpdateOutroActive(false);
+              setStartupRevealActive(false);
+              setStartupRevealPending(false);
+              return;
+            }
+
+            updateCycleRef.current.phase = 'reloading';
+            window.location.reload();
+          }, 4300);
+        }, VERSION_COLOR_FADE_MS);
+      }, UPDATE_FADE_MS);
     }, Math.max(0, updateUntil - Date.now()));
 
     return () => {
       window.clearTimeout(finishTimer);
-      if (revealTimer) window.clearTimeout(revealTimer);
+      if (fadeDoneTimer) window.clearTimeout(fadeDoneTimer);
+      if (colorDoneTimer) window.clearTimeout(colorDoneTimer);
       if (interactionUnlockTimer) window.clearTimeout(interactionUnlockTimer);
       if (endTimer) window.clearTimeout(endTimer);
     };
@@ -2275,7 +2413,7 @@ export default function RUMS() {
   }
 
   function renderProjectWorkspace() {
-    if (!activeProject) return <div className="project-workspace"><p>This project is no longer available.</p><button onClick={() => void openProjectsDirectory()}>Browse projects</button></div>;
+    if (!activeProject) return <div className="project-workspace"><p>This project is no longer available.</p><button onClick={() => { void playUiSfx('open'); void openProjectsDirectory(); }}>Browse projects</button></div>;
     const owner = activeProject.owner === currentUser?.username;
     const topics = activeProject.topics || [];
     const projectUpdates = activeProject.projectUpdates || [];
@@ -3515,7 +3653,8 @@ export default function RUMS() {
     await chooseRumsSpace(projectSpaceId(project.id));
   }
 
-  async function chooseRumsSpace(space) {
+  async function chooseRumsSpace(space, { playOpenSound = false } = {}) {
+    if (playOpenSound) void playUiSfx('open');
     if (!isContentSpaceId(space)) return;
     const requestId = ++spaceLoadTokenRef.current;
     setVersionBuildPending(true);
@@ -3563,8 +3702,13 @@ export default function RUMS() {
   }, [sharedPostRequest, currentUser, rumsSpace, posts]);
 
   async function switchRumsSpace(space) {
-    if (space === 'projects') { await openProjectsDirectory(); return; }
+    if (space === 'projects') {
+      if (!spaceSwitchBusy && !isProjectSpace) void playUiSfx('open');
+      await openProjectsDirectory();
+      return;
+    }
     if (!isContentSpaceId(space) || space === rumsSpace || spaceSwitchBusy) return;
+    void playUiSfx('open');
     if (!currentUser) {
       await chooseRumsSpace(space);
       return;
@@ -6168,6 +6312,7 @@ export default function RUMS() {
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
       </div>}
+      {updateHandoffPhase === 'color' && <div className="version-color-handoff" aria-hidden="true" />}
       {(updateUntil > Date.now() || updateOverlayLeaving) && <div className={`site-update-screen ${updateOverlayLeaving ? 'is-leaving' : ''}`} role="status" aria-live="polite">
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
@@ -6220,11 +6365,11 @@ export default function RUMS() {
             <h1 id="rums-space-title">Welcome to RUMS Plaza</h1>
             <p className="space-chooser-intro">Choose where you want to enter. Projects opens a directory of community-made spaces inside RUMS 4, Creative and outside RUMS.</p>
             <div className="space-choice-grid">
-              <button type="button" className="space-choice-card rums4-choice" onClick={() => chooseRumsSpace('rums4')}>
+              <button type="button" className="space-choice-card rums4-choice" onClick={() => chooseRumsSpace('rums4', { playOpenSound: true })}>
                 <span className="space-choice-number">04</span>
                 <span className="space-choice-copy"><strong>RUMS 4</strong></span>
               </button>
-              <button type="button" className="space-choice-card rums5-choice" onClick={() => chooseRumsSpace('rums5')}>
+              <button type="button" className="space-choice-card rums5-choice" onClick={() => chooseRumsSpace('rums5', { playOpenSound: true })}>
                 <span className="space-choice-number">✦</span>
                 <span className="space-choice-copy"><strong>Creative</strong></span>
               </button>
