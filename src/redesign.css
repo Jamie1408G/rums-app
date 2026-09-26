@@ -7357,3 +7357,197 @@ button,input,textarea { font:inherit; }
   100%{opacity:1;transform:none}
 }
 
+/* -------------------------------------------------------------------------- */
+/* LEFT-ANCHORED TOP PLAZA BAR 57                                             */
+/* Put the version selector back at its original header position.              */
+/* -------------------------------------------------------------------------- */
+
+@media(min-width:761px){
+  /*
+    The version selector originally sat against the left side of .aero-header.
+    Anchor the WHOLE unified module there instead of centering it.
+  */
+  .aero-root .aero-header-center{
+    left:14px!important;
+    right:300px!important;
+    top:8px!important;
+
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+
+    transform:none!important;
+  }
+
+  /*
+    Fill only the space between the original version-slider position and the
+    existing action/icon cluster on the right.
+  */
+  .aero-root .header-center-control-stack{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+
+    grid-template-columns:214px 152px minmax(210px,1fr)!important;
+  }
+
+  .aero-root .header-center-version-switcher{
+    width:214px!important;
+    min-width:214px!important;
+    max-width:214px!important;
+  }
+
+  .aero-root .header-center-feed-switcher{
+    width:152px!important;
+    min-width:152px!important;
+    max-width:152px!important;
+  }
+
+  /*
+    Music receives all remaining room. Collapsed island and expanded drawer
+    always share this exact width.
+  */
+  .aero-root .header-center-music-row{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-island,
+  .aero-root .header-center-music-row .dynamic-music-compact,
+  .aero-root .header-center-music-row .dynamic-music-drawer{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-drawer::before{
+    width:calc(100% - 18px)!important;
+    max-width:none!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-drawer-bridge{
+    width:calc(100% - 28px)!important;
+    max-width:none!important;
+  }
+
+  /*
+    The right-side actions are explicitly kept above the center bar and given
+    their own stable space so the player can never run beneath them.
+  */
+  .aero-root .aero-header-actions{
+    position:relative!important;
+    z-index:30!important;
+    flex:0 0 auto!important;
+    margin-left:auto!important;
+  }
+}
+
+/* Common laptop width: reserve a little less for icons, tighten fixed controls. */
+@media(max-width:1280px) and (min-width:1051px){
+  .aero-root .aero-header-center{
+    left:14px!important;
+    right:278px!important;
+  }
+
+  .aero-root .header-center-control-stack{
+    grid-template-columns:196px 140px minmax(180px,1fr)!important;
+  }
+
+  .aero-root .header-center-version-switcher,
+  .aero-root .header-center-version-switcher .universal-rums-switcher{
+    width:196px!important;
+    min-width:196px!important;
+    max-width:196px!important;
+  }
+
+  .aero-root .header-center-feed-switcher,
+  .aero-root .header-center-feed-switcher .feed-tabs{
+    width:140px!important;
+    min-width:140px!important;
+    max-width:140px!important;
+  }
+}
+
+/*
+  Narrow desktop/tablet: keep the version selector at that same original
+  left edge, but compress the two fixed selectors so music still has room.
+*/
+@media(max-width:1050px) and (min-width:761px){
+  .aero-root .aero-header-center{
+    left:14px!important;
+    right:220px!important;
+  }
+
+  .aero-root .header-center-control-stack{
+    grid-template-columns:174px 122px minmax(120px,1fr)!important;
+    gap:6px!important;
+  }
+
+  .aero-root .header-center-version-switcher,
+  .aero-root .header-center-version-switcher .universal-rums-switcher{
+    width:174px!important;
+    min-width:174px!important;
+    max-width:174px!important;
+  }
+
+  .aero-root .header-center-version-switcher .universal-rums-switcher button{
+    padding-left:2px!important;
+    padding-right:2px!important;
+    font-size:8px!important;
+  }
+
+  .aero-root .header-center-feed-switcher,
+  .aero-root .header-center-feed-switcher .feed-tabs{
+    width:122px!important;
+    min-width:122px!important;
+    max-width:122px!important;
+  }
+
+  .aero-root .header-center-feed-switcher .feed-tabs .tab-btn,
+  .aero-root .header-center-feed-switcher .feed-tabs .tab-btn.active{
+    padding-left:2px!important;
+    padding-right:2px!important;
+    font-size:8px!important;
+  }
+
+  .aero-root .header-center-feed-switcher .feed-tabs .tab-btn svg{
+    display:none!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-compact{
+    grid-template-columns:29px minmax(0,1fr) 18px!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-wave{
+    display:none!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-progress-line{
+    right:27px!important;
+  }
+}
+
+/* Phone layout remains the existing mobile header / quick menu. */
+@media(max-width:760px){
+  .aero-root .aero-header-center{
+    left:auto!important;
+    right:auto!important;
+    transform:none!important;
+  }
+}
+
+/* Ensure the open drawer follows the flexible music width, never the viewport. */
+@keyframes music57DrawerIn{
+  0%{opacity:0;transform:translateY(-10px) scale(.91)}
+  64%{opacity:1;transform:translateY(2px) scale(1.008)}
+  82%{transform:translateY(-1px) scale(.997)}
+  100%{opacity:1;transform:none}
+}
+
+@media(min-width:761px){
+  .aero-root .header-center-music-row .dynamic-music-drawer{
+    animation:music57DrawerIn .4s cubic-bezier(.16,1.2,.28,1) both!important;
+  }
+}
+
