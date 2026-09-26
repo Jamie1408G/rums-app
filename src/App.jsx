@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 29;
-const JAMIE_TUTORIAL_VERSION = 29;
+const TUTORIAL_VERSION = 30;
+const JAMIE_TUTORIAL_VERSION = 30;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -575,6 +575,7 @@ export default function RUMS() {
   const [updateMusicState, setUpdateMusicState] = useState('ready');
   const [updateOutroActive, setUpdateOutroActive] = useState(false);
   const [updateOverlayLeaving, setUpdateOverlayLeaving] = useState(false);
+  const [startupRevealActive, setStartupRevealActive] = useState(false);
 
   const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
     if (typeof window === 'undefined') return null;
@@ -633,22 +634,6 @@ export default function RUMS() {
         preloadAudio.load();
       } catch { /* ignore cleanup failures */ }
     };
-  }, [updateTrack.src]);
-
-  useEffect(() => {
-    // Decode the chosen update track in the background as soon as Plaza loads.
-    // This does not start audible playback or resume the AudioContext, so it
-    // keeps the proven gesture/keep-alive playback path intact while removing
-    // the fetch/decode delay when an update is detected.
-    let cancelled = false;
-    const prepare = async () => {
-      const context = await ensureUpdateAudioReady({ resume: false });
-      if (!cancelled && context && updateAudioBufferRef.current) {
-        setUpdateMusicState((state) => state === 'playing' ? state : 'ready');
-      }
-    };
-    void prepare();
-    return () => { cancelled = true; };
   }, [updateTrack.src]);
 
   const startUpdateMusic = async () => {
@@ -774,40 +759,54 @@ export default function RUMS() {
 
   useEffect(() => {
     if (!updateUntil || !updateTargetVersion) return undefined;
+    let revealTimer = 0;
     let reloadTimer = 0;
+
     const finishTimer = window.setTimeout(() => {
-      // Keep the proven update trigger untouched. Only after the update screen
-      // has completed do we enter the visual/audio outro.
+      // Stage 1: let the update page visibly fade away first.
       setUpdateOverlayLeaving(true);
-      setUpdateOutroActive(true);
 
-      const context = updateAudioContextRef.current;
-      const gain = updateAudioGainRef.current;
-      if (context && gain) {
-        try {
-          const now = context.currentTime;
-          gain.gain.cancelScheduledValues(now);
-          gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value || 0.72), now);
-          gain.gain.linearRampToValueAtTime(0.0001, now + 5);
-        } catch { /* keep playing if fading is unavailable */ }
-      }
+      revealTimer = window.setTimeout(() => {
+        // Stage 2: only after the update page has faded do we reveal the actual
+        // startup/version chooser and build it in piece by piece.
+        setScreen('spaceSelect');
+        setRumsSpace(null);
+        setUpdateOutroActive(true);
+        setStartupRevealActive(true);
 
-      reloadTimer = window.setTimeout(() => {
-        if (updateAudioSourceRef.current) {
-          try { updateAudioSourceRef.current.stop(); } catch {}
-          try { updateAudioSourceRef.current.disconnect(); } catch {}
-          updateAudioSourceRef.current = null;
+        const context = updateAudioContextRef.current;
+        const gain = updateAudioGainRef.current;
+        if (context && gain) {
+          try {
+            const now = context.currentTime;
+            gain.gain.cancelScheduledValues(now);
+            gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value || 0.72), now);
+            gain.gain.linearRampToValueAtTime(0.0001, now + 5);
+          } catch { /* keep playing if fading is unavailable */ }
         }
-        try {
-          localStorage.setItem(UPDATE_SEEN_KEY, updateTargetVersion);
-          sessionStorage.removeItem(UPDATE_SCREEN_KEY);
-          sessionStorage.removeItem(UPDATE_RELOAD_KEY);
-        } catch { /* ignore */ }
-        window.location.reload();
-      }, 5150);
+
+        // Leave the animated chooser visible while the five-second soundtrack
+        // outro completes. The chooser is non-interactive during this short
+        // handoff so a version choice cannot be interrupted by the final reload.
+        reloadTimer = window.setTimeout(() => {
+          if (updateAudioSourceRef.current) {
+            try { updateAudioSourceRef.current.stop(); } catch {}
+            try { updateAudioSourceRef.current.disconnect(); } catch {}
+            updateAudioSourceRef.current = null;
+          }
+          try {
+            localStorage.setItem(UPDATE_SEEN_KEY, updateTargetVersion);
+            sessionStorage.removeItem(UPDATE_SCREEN_KEY);
+            sessionStorage.removeItem(UPDATE_RELOAD_KEY);
+          } catch { /* ignore */ }
+          window.location.reload();
+        }, 5150);
+      }, 850);
     }, Math.max(0, updateUntil - Date.now()));
+
     return () => {
       window.clearTimeout(finishTimer);
+      if (revealTimer) window.clearTimeout(revealTimer);
       if (reloadTimer) window.clearTimeout(reloadTimer);
     };
   }, [updateUntil, updateTargetVersion]);
@@ -5416,7 +5415,7 @@ export default function RUMS() {
   })();
 
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${updateOutroActive ? 'update-reveal-active' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>

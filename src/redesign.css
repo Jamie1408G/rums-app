@@ -5828,42 +5828,109 @@ button,input,textarea { font:inherit; }
   .site-update-play-fallback{animation:none!important}
 }
 
-/* Cinematic update reveal layered on top of the proven update trigger. */
+/* Update handoff: fade the updater completely, then construct the startup chooser. */
 .aero-root .site-update-screen{
-  transition:opacity .82s cubic-bezier(.22,.8,.22,1),backdrop-filter .82s ease,-webkit-backdrop-filter .82s ease;
+  transition:
+    opacity .8s cubic-bezier(.22,.8,.22,1),
+    backdrop-filter .8s ease,
+    -webkit-backdrop-filter .8s ease;
 }
 .aero-root .site-update-screen.is-leaving{
   opacity:0;
   pointer-events:none;
-  backdrop-filter:blur(3px) saturate(1);
-  -webkit-backdrop-filter:blur(3px) saturate(1);
+  backdrop-filter:blur(2px) saturate(1);
+  -webkit-backdrop-filter:blur(2px) saturate(1);
 }
 .aero-root .site-update-screen.is-leaving .site-update-card{
-  animation:plazaUpdateCardLeave .72s cubic-bezier(.22,.8,.22,1) both;
+  animation:plazaUpdateCardLeave .7s cubic-bezier(.22,.8,.22,1) both;
 }
 @keyframes plazaUpdateCardLeave{
   from{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
-  to{opacity:0;transform:translateY(-13px) scale(.975);filter:blur(5px)}
+  to{opacity:0;transform:translateY(-12px) scale(.98);filter:blur(5px)}
 }
-.aero-root.update-reveal-active :is(.desktop-rail,.aero-header,.bottom-nav){
-  animation:plazaRevealShell .72s .72s cubic-bezier(.16,.88,.22,1.08) both!important;
+
+/* The animation belongs to the startup/version chooser — not the normal feed. */
+.aero-root.startup-reveal-active .rums-space-chooser{
+  pointer-events:none;
 }
-.aero-root.update-reveal-active :is(.community-hero,.post-card,.suggestion-card,.update-card,.custom-site-widget,.profile-section,.chat-sidebar,.chat-conversation,.plaza-plus-panel,.news-site-top,.news-top-story,.news-latest-section,.news-home-rail,.lumina-project-hero,.lumina-overview-card,.lumina-metro-panel,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty){
-  animation:plazaRevealSurface .72s cubic-bezier(.16,.88,.22,1.08) both!important;
+.aero-root.startup-reveal-active .rums-space-chooser::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:var(--theme-surface,#fff);
+  z-index:-1;
+  animation:plazaStartupSurface .62s cubic-bezier(.16,.88,.22,1.06) both;
 }
-.aero-root.update-reveal-active :is(.community-hero,.news-site-top,.lumina-project-hero,.upload-wrap,.search-wrap,.profile-wrap){animation-delay:1.05s!important}
-.aero-root.update-reveal-active :is(.post-card,.news-top-story,.chat-conversation,.plaza-plus-panel,.lumina-overview-card,.lumina-metro-panel){animation-delay:1.35s!important}
-.aero-root.update-reveal-active :is(.suggestion-card,.update-card,.custom-site-widget,.news-latest-section,.news-home-rail,.chat-sidebar,.profile-section,.admin-wrap,.feed-empty){animation-delay:1.62s!important}
-.aero-root.update-reveal-active :is(.post-card,.suggestion-card,.update-card,.community-hero,.news-top-story,.plaza-plus-panel,.chat-conversation,.lumina-project-hero) :is(h1,h2,h3,p,small,strong,button,.pill,.tag,.post-meta,.post-actions,.news-story-meta,.news-card-kicker){
-  animation:plazaRevealDetail .68s 2.05s cubic-bezier(.16,.88,.22,1.05) both!important;
+.aero-root.startup-reveal-active .rums-space-chooser .entrance-account{
+  animation:plazaStartupTop .55s .12s cubic-bezier(.16,.88,.22,1.06) both;
 }
-.aero-root.update-reveal-active :is(.post-image,.news-top-image,.news-top-image img,.chat-message-image,.profile-avatar,.avatar,.lumina-project-hero img){
-  animation:plazaRevealMedia .74s 1.82s cubic-bezier(.16,.88,.22,1.04) both!important;
+.aero-root.startup-reveal-active .rums-space-chooser .space-chooser-mark{
+  animation:plazaStartupLogo .68s .2s cubic-bezier(.16,.92,.2,1.18) both;
 }
-@keyframes plazaRevealShell{from{opacity:0;transform:translateY(-9px) scale(.985);filter:blur(7px)}to{opacity:1;transform:none;filter:none}}
-@keyframes plazaRevealSurface{from{opacity:0;transform:translateY(24px) scale(.955);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
-@keyframes plazaRevealDetail{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
-@keyframes plazaRevealMedia{from{opacity:0;transform:scale(.965);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+.aero-root.startup-reveal-active .rums-space-chooser .space-chooser-kicker{
+  animation:plazaStartupText .5s .36s cubic-bezier(.16,.88,.22,1.04) both;
+}
+.aero-root.startup-reveal-active .rums-space-chooser h1{
+  animation:plazaStartupText .58s .48s cubic-bezier(.16,.88,.22,1.04) both;
+}
+.aero-root.startup-reveal-active .rums-space-chooser .space-chooser-intro{
+  animation:plazaStartupText .58s .62s cubic-bezier(.16,.88,.22,1.04) both;
+}
+.aero-root.startup-reveal-active .rums-space-chooser .space-choice-card{
+  animation:plazaStartupCard .64s cubic-bezier(.16,.9,.22,1.12) both;
+}
+.aero-root.startup-reveal-active .rums-space-chooser .space-choice-card:nth-child(1){animation-delay:.88s}
+.aero-root.startup-reveal-active .rums-space-chooser .space-choice-card:nth-child(2){animation-delay:1.08s}
+.aero-root.startup-reveal-active .rums-space-chooser .space-choice-card:nth-child(3){animation-delay:1.28s}
+.aero-root.startup-reveal-active .rums-space-chooser .space-choice-card .space-choice-number{
+  animation:plazaStartupBadge .5s 1.46s cubic-bezier(.16,.9,.22,1.16) both;
+}
+.aero-root.startup-reveal-active .rums-space-chooser .space-choice-card .space-choice-copy,
+.aero-root.startup-reveal-active .rums-space-chooser .space-choice-card .space-choice-arrow{
+  animation:plazaStartupDetail .5s 1.58s cubic-bezier(.16,.88,.22,1.06) both;
+}
+
+@keyframes plazaStartupSurface{
+  from{opacity:0;transform:scale(.97);filter:blur(10px)}
+  to{opacity:1;transform:none;filter:none}
+}
+@keyframes plazaStartupTop{
+  from{opacity:0;transform:translateY(-10px)}
+  to{opacity:1;transform:none}
+}
+@keyframes plazaStartupLogo{
+  from{opacity:0;transform:translateY(14px) scale(.72) rotate(-7deg);filter:blur(5px)}
+  70%{opacity:1;transform:translateY(-2px) scale(1.06) rotate(2deg);filter:none}
+  to{opacity:1;transform:none;filter:none}
+}
+@keyframes plazaStartupText{
+  from{opacity:0;transform:translateY(11px);filter:blur(5px)}
+  to{opacity:1;transform:none;filter:none}
+}
+@keyframes plazaStartupCard{
+  from{opacity:0;transform:translateY(22px) scale(.94);filter:blur(8px)}
+  72%{opacity:1;transform:translateY(-2px) scale(1.012);filter:none}
+  to{opacity:1;transform:none;filter:none}
+}
+@keyframes plazaStartupBadge{
+  from{opacity:0;transform:scale(.66) rotate(-5deg)}
+  70%{opacity:1;transform:scale(1.08) rotate(1deg)}
+  to{opacity:1;transform:none}
+}
+@keyframes plazaStartupDetail{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:none}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .aero-root .site-update-screen.is-leaving{transition:opacity .25s ease!important}
+  .aero-root .site-update-screen.is-leaving .site-update-card,
+  .aero-root.startup-reveal-active .rums-space-chooser,
+  .aero-root.startup-reveal-active .rums-space-chooser *{
+    animation:none!important;
+  }
+}
 
 .site-update-outro-pill{
   position:fixed;left:50%;bottom:24px;z-index:99990;display:flex;align-items:center;gap:9px;
