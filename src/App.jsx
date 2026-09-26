@@ -18,6 +18,7 @@ const RUMS5_POSTS_KEY = 'rums5-posts';
 const RUMS5_SUGGESTIONS_KEY = 'rums5-suggestions';
 const RUMS5_UPDATES_KEY = 'rums5-updates';
 const RUMS5_SITE_CONFIG_KEY = 'rums5-site-config';
+const LUMINA_POSTS_KEY = 'rums-lumina-posts';
 const PLATFORM_NAME = 'RUMS Plaza';
 const THEME_STORAGE_KEY = 'rums-plaza-theme';
 const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
@@ -378,6 +379,57 @@ async function safeGet(key, shared) {
   } catch {
     return null;
   }
+}
+
+function storageArray(record) {
+  if (!record?.value) return [];
+  try {
+    const parsed = JSON.parse(record.value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function loadPostsRecordForSpace(space = 'rums4') {
+  const keys = storageKeysForSpace(space);
+  const mainRecord = await safeGet(keys.posts, true);
+  if (space !== 'rums4') return mainRecord;
+
+  const mainPosts = storageArray(mainRecord);
+  const generalPosts = mainPosts.filter((post) => post?.tag !== 'Lumina');
+  const legacyLuminaPosts = mainPosts.filter((post) => post?.tag === 'Lumina');
+  const luminaRecord = await safeGet(LUMINA_POSTS_KEY, true);
+  const dedicatedLuminaPosts = storageArray(luminaRecord);
+  const mergedLumina = [...new Map([...legacyLuminaPosts, ...dedicatedLuminaPosts].filter((post) => post?.id).map((post) => [post.id, post])).values()]
+    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  // One-time safe migration: write Lumina first, then shrink the old RUMS 4 record.
+  // If the second write fails, duplicates are harmless because reads de-duplicate by id.
+  if (legacyLuminaPosts.length) {
+    try {
+      await window.storage.set(LUMINA_POSTS_KEY, JSON.stringify(mergedLumina), true);
+      await window.storage.set(keys.posts, JSON.stringify(generalPosts), true);
+    } catch (error) {
+      console.error('Could not migrate Lumina posts yet', error);
+    }
+  }
+
+  return { value: JSON.stringify([...generalPosts, ...mergedLumina].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))) };
+}
+
+async function persistPostsForSpace(space = 'rums4', posts = []) {
+  const keys = storageKeysForSpace(space);
+  if (space !== 'rums4') {
+    await window.storage.set(keys.posts, JSON.stringify(posts), true);
+    return;
+  }
+
+  const generalPosts = posts.filter((post) => post?.tag !== 'Lumina');
+  const luminaPosts = posts.filter((post) => post?.tag === 'Lumina');
+  // Save the new Lumina record first so an interrupted migration cannot lose posts.
+  await window.storage.set(LUMINA_POSTS_KEY, JSON.stringify(luminaPosts), true);
+  await window.storage.set(keys.posts, JSON.stringify(generalPosts), true);
 }
 
 function timeAgo(ts) {
@@ -2188,7 +2240,7 @@ export default function RUMS() {
     if (!currentUser) return;
     const id = setInterval(async () => {
       const [p, u, sg, up, cfg, emojiRec] = await Promise.all([
-        safeGet(activeStorageKeys.posts, true),
+        loadPostsRecordForSpace(rumsSpace || 'rums4'),
         safeGet(USERS_KEY, true),
         safeGet(activeStorageKeys.suggestions, true),
         safeGet(activeStorageKeys.updates, true),
@@ -2377,7 +2429,7 @@ export default function RUMS() {
     try {
       const keys = storageKeysForSpace(space);
       const [p, sg, up, cfg] = await Promise.all([
-        safeGet(keys.posts, true),
+        loadPostsRecordForSpace(space),
         safeGet(keys.suggestions, true),
         safeGet(keys.updates, true),
         safeGet(keys.siteConfig, true),
@@ -2463,7 +2515,7 @@ export default function RUMS() {
       const keys = storageKeysForSpace(space);
       const [u, p, sessRec, sg, up, cfg] = await Promise.all([
         safeGet(USERS_KEY, true),
-        safeGet(keys.posts, true),
+        loadPostsRecordForSpace(space),
         safeGet(SESSION_KEY, false),
         safeGet(keys.suggestions, true),
         safeGet(keys.updates, true),
@@ -2589,12 +2641,14 @@ export default function RUMS() {
   }
 
   async function savePosts(next) {
-    setPosts(next);
     try {
-      await window.storage.set(activeStorageKeys.posts, JSON.stringify(next), true);
+      await persistPostsForSpace(rumsSpace || 'rums4', next);
+      setPosts(next);
+      return true;
     } catch (e) {
       console.error(e);
       setError('Could not save — try again.');
+      return false;
     }
   }
 
@@ -3321,7 +3375,11 @@ export default function RUMS() {
       comments: [],
       reactions: {},
     };
-    await savePosts([newPost, ...posts]);
+    const saved = await savePosts([newPost, ...posts]);
+    if (!saved) {
+      setBusy(false);
+      return;
+    }
     const mentioned = [...new Set(((newPost.caption || '').match(/@[A-Za-z0-9_]+/g) || []).map((m)=>m.slice(1)).filter((name)=>users.some((u)=>u.username.toLowerCase()===name.toLowerCase()) && name.toLowerCase()!==currentUser.username.toLowerCase()))];
     if (mentioned.length) void commitPlazaPlus((data)=>({...data,activities:[...mentioned.map((targetUser,i)=>({id:`act-${Date.now()}-post-${i}`,type:'mention',actor:currentUser.username,targetUser,postId:newPost.id,text:`${currentUser.username} mentioned you in a post`,timestamp:Date.now()})),...(data.activities||[])].slice(0,800)}));
     setUploadPreview(null);
@@ -3733,7 +3791,7 @@ export default function RUMS() {
     await Promise.all(['rums4', 'rums5'].map(async (space) => {
       const keys = storageKeysForSpace(space);
       const [postRecord, suggestionRecord] = await Promise.all([
-        safeGet(keys.posts, true),
+        loadPostsRecordForSpace(space),
         safeGet(keys.suggestions, true),
       ]);
       const spacePosts = postRecord ? JSON.parse(postRecord.value) : [];
@@ -3741,7 +3799,7 @@ export default function RUMS() {
       const cleanedPosts = spacePosts.map((post) => ({ ...post, reactions: strip(post.reactions) }));
       const cleanedSuggestions = spaceSuggestions.map((suggestion) => ({ ...suggestion, reactions: strip(suggestion.reactions) }));
       await Promise.all([
-        window.storage.set(keys.posts, JSON.stringify(cleanedPosts), true),
+        persistPostsForSpace(space, cleanedPosts),
         window.storage.set(keys.suggestions, JSON.stringify(cleanedSuggestions), true),
       ]);
       if (space === rumsSpace) {
