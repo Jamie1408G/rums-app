@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 25;
-const JAMIE_TUTORIAL_VERSION = 25;
+const TUTORIAL_VERSION = 26;
+const JAMIE_TUTORIAL_VERSION = 26;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -763,7 +763,6 @@ export default function RUMS() {
       // First reveal the normal Plaza interface again while the SAME source
       // keeps playing. Then fade it out for two seconds before reloading.
       setUpdateOutroActive(true);
-      setUpdateUntil(0);
 
       const context = updateAudioContextRef.current;
       const gain = updateAudioGainRef.current;
@@ -792,7 +791,7 @@ export default function RUMS() {
           sessionStorage.removeItem(UPDATE_RELOAD_KEY);
         } catch { /* ignore */ }
         window.location.reload();
-      }, 2000);
+      }, 2150);
     }, Math.max(0, updateUntil - Date.now()));
 
     return () => {
@@ -5410,7 +5409,7 @@ export default function RUMS() {
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
       </div>}
-      {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite">
+      {updateUntil > Date.now() && !updateOutroActive && <div className="site-update-screen" role="status" aria-live="polite">
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
           <span className="site-update-kicker">RUMS PLAZA</span>
