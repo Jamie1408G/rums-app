@@ -25,8 +25,9 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const TUTORIAL_VERSION = 5;
-const JAMIE_TUTORIAL_VERSION = 5;
+const TUTORIAL_VERSION = 6;
+const JAMIE_TUTORIAL_VERSION = 6;
+// TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
   { id: 'roblox2010', name: 'Roblox 2010', year: '2010', description: 'Sky-blue classic site with framed dashboard modules, blue tabs and bevelled buttons', swatches: ['#dcecf9', '#4e86b8', '#f6c33d'] },
@@ -1648,9 +1649,12 @@ export default function RUMS() {
         setTutorialActionPulse((value) => value + 1);
         return;
       }
+      // Advance independently of this effect's lifecycle. Required actions often
+      // change the current feed/screen, which tears this effect down immediately.
+      // A zero-delay task lets the actual button click finish first, then advances.
       actionTimer = window.setTimeout(() => {
-        if (!cancelled) moveTutorial(1);
-      }, 260);
+        moveTutorial(1);
+      }, 0);
     };
 
     timer = window.setTimeout(() => measure(true), 120);
