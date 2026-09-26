@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 28;
-const JAMIE_TUTORIAL_VERSION = 28;
+const TUTORIAL_VERSION = 29;
+const JAMIE_TUTORIAL_VERSION = 29;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -633,6 +633,22 @@ export default function RUMS() {
         preloadAudio.load();
       } catch { /* ignore cleanup failures */ }
     };
+  }, [updateTrack.src]);
+
+  useEffect(() => {
+    // Decode the chosen update track in the background as soon as Plaza loads.
+    // This does not start audible playback or resume the AudioContext, so it
+    // keeps the proven gesture/keep-alive playback path intact while removing
+    // the fetch/decode delay when an update is detected.
+    let cancelled = false;
+    const prepare = async () => {
+      const context = await ensureUpdateAudioReady({ resume: false });
+      if (!cancelled && context && updateAudioBufferRef.current) {
+        setUpdateMusicState((state) => state === 'playing' ? state : 'ready');
+      }
+    };
+    void prepare();
+    return () => { cancelled = true; };
   }, [updateTrack.src]);
 
   const startUpdateMusic = async () => {
