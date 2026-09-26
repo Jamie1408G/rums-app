@@ -5973,3 +5973,206 @@ button,input,textarea { font:inherit; }
   .aero-root.update-reveal-active :is(.desktop-rail,.aero-header,.bottom-nav,.community-hero,.post-card,.suggestion-card,.update-card,.custom-site-widget,.profile-section,.chat-sidebar,.chat-conversation,.plaza-plus-panel,.news-site-top,.news-top-story,.news-latest-section,.news-home-rail,.lumina-project-hero,.lumina-overview-card,.lumina-metro-panel,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty){animation:none!important}
   .site-update-outro-eq span{animation:none!important}
 }
+
+/* Selected-version build: playful Wii-like assembly, not a modern app slide-in. */
+.aero-root.version-build-pending .desktop-rail,
+.aero-root.version-build-pending .aero-header,
+.aero-root.version-build-pending .content,
+.aero-root.version-build-pending .bottom-nav,
+.aero-root.version-build-pending .auth-wrap{
+  opacity:0 !important;
+  visibility:hidden !important;
+}
+
+.aero-root.version-build-active .desktop-rail{
+  transform-origin:50% 18%;
+  animation:wiiBuildRail .78s cubic-bezier(.2,1.42,.35,1) both;
+}
+.aero-root.version-build-active .aero-header{
+  transform-origin:50% 0%;
+  animation:wiiBuildHeader .72s .12s cubic-bezier(.2,1.45,.34,1) both;
+}
+.aero-root.version-build-active .bottom-nav{
+  transform-origin:50% 100%;
+  animation:wiiBuildBottom .72s .18s cubic-bezier(.2,1.4,.34,1) both;
+}
+.aero-root.version-build-active .content{
+  animation:wiiBuildContent .72s .26s cubic-bezier(.2,1.28,.32,1) both;
+}
+
+/* Big surfaces arrive like rounded Wii channels. */
+.aero-root.version-build-active .content > :is(
+  .community-hero,
+  .upload-wrap,
+  .search-wrap,
+  .profile-wrap,
+  .admin-wrap,
+  .feed-empty,
+  .lumina-intro-card,
+  .lumina-metro-panel,
+  .lumina-share-card,
+  .news-home,
+  .news-article,
+  .updates-composer,
+  .chat-layout,
+  .plaza-plus-page,
+  .custom-site-widget,
+  .auth-wrap
+){
+  transform-origin:50% 55%;
+  animation:wiiBuildBubble .7s .5s cubic-bezier(.18,1.46,.32,1) both;
+}
+
+/* Repeating cards bounce in as a soft cascade instead of a rigid stagger. */
+.aero-root.version-build-active .content :is(
+  .post-card,
+  .suggestion-card,
+  .update-card,
+  .user-row,
+  .project-directory-card,
+  .news-card,
+  .saved-collection-card,
+  .lumina-station-detail,
+  .profile-section
+){
+  transform-origin:50% 50%;
+  animation:wiiBuildCard .68s cubic-bezier(.16,1.5,.3,1) both;
+}
+.aero-root.version-build-active .content :is(
+  .post-card,
+  .suggestion-card,
+  .update-card,
+  .user-row,
+  .project-directory-card,
+  .news-card,
+  .saved-collection-card,
+  .lumina-station-detail,
+  .profile-section
+):nth-child(3n+1){animation-delay:.72s}
+.aero-root.version-build-active .content :is(
+  .post-card,
+  .suggestion-card,
+  .update-card,
+  .user-row,
+  .project-directory-card,
+  .news-card,
+  .saved-collection-card,
+  .lumina-station-detail,
+  .profile-section
+):nth-child(3n+2){animation-delay:.86s}
+.aero-root.version-build-active .content :is(
+  .post-card,
+  .suggestion-card,
+  .update-card,
+  .user-row,
+  .project-directory-card,
+  .news-card,
+  .saved-collection-card,
+  .lumina-station-detail,
+  .profile-section
+):nth-child(3n){animation-delay:1s}
+
+/* Text/buttons/icons arrive after their containers, like the Wii UI filling in. */
+.aero-root.version-build-active .desktop-rail :is(.rail-brand,.rail-label,.rail-link,.rail-create,.rail-footer),
+.aero-root.version-build-active .aero-header > *,
+.aero-root.version-build-active .content :is(
+  h1,h2,h3,p,small,
+  button,
+  .post-user,
+  .post-caption,
+  .post-actions,
+  .feed-tabs,
+  .hero-actions,
+  .section-title,
+  .section-subtitle
+){
+  animation:wiiBuildDetail .5s 1.15s cubic-bezier(.18,1.34,.34,1) both;
+}
+
+/* A tiny elastic "settle" on round/icon-like controls sells the Wii feel. */
+.aero-root.version-build-active :is(
+  .rail-orb,
+  .icon-btn,
+  .pill,
+  .post-action-icon,
+  .profile-avatar-new-wrap,
+  .status-light
+){
+  transform-origin:50% 50%;
+  animation:wiiBuildDot .56s 1.42s cubic-bezier(.16,1.55,.3,1) both;
+}
+
+@keyframes wiiBuildRail{
+  0%{opacity:0;transform:translateX(-18px) scale(.88) rotate(-1.5deg);filter:blur(7px)}
+  62%{opacity:1;transform:translateX(3px) scale(1.035) rotate(.35deg);filter:blur(0)}
+  82%{transform:translateX(-1px) scale(.992)}
+  100%{opacity:1;transform:none;filter:none}
+}
+@keyframes wiiBuildHeader{
+  0%{opacity:0;transform:translateY(-15px) scale(.9);filter:blur(7px)}
+  62%{opacity:1;transform:translateY(3px) scale(1.025);filter:none}
+  82%{transform:translateY(-1px) scale(.995)}
+  100%{opacity:1;transform:none}
+}
+@keyframes wiiBuildBottom{
+  0%{opacity:0;transform:translateY(18px) scale(.9);filter:blur(6px)}
+  62%{opacity:1;transform:translateY(-3px) scale(1.03);filter:none}
+  84%{transform:translateY(1px) scale(.994)}
+  100%{opacity:1;transform:none}
+}
+@keyframes wiiBuildContent{
+  0%{opacity:0;transform:scale(.965);filter:blur(8px)}
+  55%{opacity:1;transform:scale(1.012);filter:none}
+  78%{transform:scale(.997)}
+  100%{opacity:1;transform:none}
+}
+@keyframes wiiBuildBubble{
+  0%{opacity:0;transform:translateY(20px) scale(.78);filter:blur(9px)}
+  58%{opacity:1;transform:translateY(-4px) scale(1.045);filter:none}
+  76%{transform:translateY(1px) scale(.986)}
+  90%{transform:translateY(-1px) scale(1.008)}
+  100%{opacity:1;transform:none}
+}
+@keyframes wiiBuildCard{
+  0%{opacity:0;transform:translateY(15px) scale(.82) rotate(-.7deg);filter:blur(6px)}
+  55%{opacity:1;transform:translateY(-4px) scale(1.045) rotate(.35deg);filter:none}
+  74%{transform:translateY(1px) scale(.986) rotate(-.12deg)}
+  90%{transform:translateY(-1px) scale(1.006)}
+  100%{opacity:1;transform:none}
+}
+@keyframes wiiBuildDetail{
+  0%{opacity:0;transform:translateY(7px) scale(.93);filter:blur(4px)}
+  64%{opacity:1;transform:translateY(-1px) scale(1.018);filter:none}
+  100%{opacity:1;transform:none}
+}
+@keyframes wiiBuildDot{
+  0%{opacity:0;transform:scale(.55) rotate(-8deg)}
+  58%{opacity:1;transform:scale(1.16) rotate(3deg)}
+  78%{transform:scale(.93) rotate(-1deg)}
+  92%{transform:scale(1.035)}
+  100%{opacity:1;transform:none}
+}
+
+@media(max-width:760px){
+  .aero-root.version-build-active .desktop-rail{animation:none}
+  .aero-root.version-build-active .content{
+    animation:wiiBuildContent .65s .16s cubic-bezier(.2,1.3,.32,1) both;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .aero-root.version-build-pending .desktop-rail,
+  .aero-root.version-build-pending .aero-header,
+  .aero-root.version-build-pending .content,
+  .aero-root.version-build-pending .bottom-nav,
+  .aero-root.version-build-pending .auth-wrap{
+    opacity:1 !important;
+    visibility:visible !important;
+  }
+  .aero-root.version-build-active *,
+  .aero-root.version-build-active *::before,
+  .aero-root.version-build-active *::after{
+    animation:none !important;
+  }
+}
+

@@ -27,7 +27,7 @@ const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
-const FORCE_UPDATE_REVISION = 'startup-menu-reveal-34';
+const FORCE_UPDATE_REVISION = 'startup-menu-reveal-36';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -38,8 +38,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 34;
-const JAMIE_TUTORIAL_VERSION = 34;
+const TUTORIAL_VERSION = 37;
+const JAMIE_TUTORIAL_VERSION = 37;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -567,224 +567,230 @@ export default function RUMS() {
   const [updateTargetVersion, setUpdateTargetVersion] = useState('');
   const [updateTrackId] = useState(() => pickUpdateAudioTrack());
   const updateTrack = UPDATE_AUDIO_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_AUDIO_TRACKS[0];
+  const updateAudioElementRef = useRef(null);
   const updateAudioContextRef = useRef(null);
-  const updateAudioBufferRef = useRef(null);
-  const updateAudioSourceRef = useRef(null);
+  const updateAudioMediaSourceRef = useRef(null);
   const updateAudioGainRef = useRef(null);
-  const updateAudioLoadingRef = useRef(null);
-  const updateAudioKeepaliveRef = useRef(null);
-  const updateAudioKeepaliveGainRef = useRef(null);
+  const updateAudioFadeFrameRef = useRef(0);
   const updateStartedForVersionRef = useRef('');
+  const pendingUpdateVersionRef = useRef('');
+  const pendingForcedUpdateRef = useRef(false);
+  const updateStartInFlightRef = useRef(false);
+  const userGestureSeenRef = useRef(false);
   const [updateMusicState, setUpdateMusicState] = useState('ready');
   const [updateOutroActive, setUpdateOutroActive] = useState(false);
   const [updateOverlayLeaving, setUpdateOverlayLeaving] = useState(false);
   const [startupRevealActive, setStartupRevealActive] = useState(false);
   const [startupRevealPending, setStartupRevealPending] = useState(false);
-  const updateAudioArmedRef = useRef(false);
-  const forcedUpdatePendingRef = useRef(false);
+  const [versionBuildPending, setVersionBuildPending] = useState(false);
+  const [versionBuildActive, setVersionBuildActive] = useState(false);
+  const versionBuildTimerRef = useRef(0);
 
-  const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
-    if (typeof window === 'undefined') return null;
+  const ensureUpdateMediaGraph = () => {
+    const audio = updateAudioElementRef.current;
+    if (!audio || typeof window === 'undefined') return null;
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextCtor) return null;
 
-    if (!updateAudioContextRef.current) {
-      const context = new AudioContextCtor();
-      const gain = context.createGain();
-      gain.gain.value = 0.72;
-      gain.connect(context.destination);
-      updateAudioContextRef.current = context;
-      updateAudioGainRef.current = gain;
-    }
-
-    const context = updateAudioContextRef.current;
-    if (resume && context.state !== 'running') {
-      try { await context.resume(); } catch { /* browser may require another gesture */ }
-    }
-
-    if (!updateAudioBufferRef.current) {
-      if (!updateAudioLoadingRef.current) {
-        updateAudioLoadingRef.current = fetch(updateTrack.src, { cache: 'force-cache' })
-          .then((response) => {
-            if (!response.ok) throw new Error('Could not load update soundtrack');
-            return response.arrayBuffer();
-          })
-          .then((bytes) => context.decodeAudioData(bytes.slice(0)))
-          .then((buffer) => {
-            updateAudioBufferRef.current = buffer;
-            return buffer;
-          })
-          .catch((error) => {
-            updateAudioLoadingRef.current = null;
-            throw error;
-          });
+    try {
+      if (!updateAudioContextRef.current) {
+        const context = new AudioContextCtor();
+        const gain = context.createGain();
+        gain.gain.value = 0.72;
+        gain.connect(context.destination);
+        updateAudioContextRef.current = context;
+        updateAudioGainRef.current = gain;
       }
-      try { await updateAudioLoadingRef.current; } catch { return null; }
+      if (!updateAudioMediaSourceRef.current) {
+        const source = updateAudioContextRef.current.createMediaElementSource(audio);
+        source.connect(updateAudioGainRef.current);
+        updateAudioMediaSourceRef.current = source;
+      }
+      return updateAudioContextRef.current;
+    } catch {
+      return updateAudioContextRef.current;
     }
-
-    return context;
   };
 
   useEffect(() => {
-    // Warm the normal browser media cache only. Do NOT decode or alter the
-    // Web Audio context here; the keep-alive playback path below is the
-    // version that proved reliable in-browser.
-    const preloadAudio = new Audio();
-    preloadAudio.preload = 'auto';
-    preloadAudio.src = updateTrack.src;
-    try { preloadAudio.load(); } catch { /* cache warming is best-effort */ }
+    // Use a real media element for playback. Browsers are most reliable when
+    // HTMLMediaElement.play() is called directly from the user's real gesture.
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.src = updateTrack.src;
+    audio.loop = true;
+    audio.volume = 0.72;
+    audio.playsInline = true;
+    updateAudioElementRef.current = audio;
+
+    const ready = () => setUpdateMusicState((state) => state === 'playing' ? state : 'ready');
+    const ended = () => {
+      if (updateUntil > Date.now()) setUpdateMusicState('paused');
+    };
+    audio.addEventListener('canplaythrough', ready);
+    audio.addEventListener('ended', ended);
+    try { audio.load(); } catch {}
+
     return () => {
+      if (updateAudioFadeFrameRef.current) cancelAnimationFrame(updateAudioFadeFrameRef.current);
+      try { audio.pause(); } catch {}
+      audio.removeEventListener('canplaythrough', ready);
+      audio.removeEventListener('ended', ended);
       try {
-        preloadAudio.pause();
-        preloadAudio.removeAttribute('src');
-        preloadAudio.load();
-      } catch { /* ignore cleanup failures */ }
+        audio.removeAttribute('src');
+        audio.load();
+      } catch {}
+      updateAudioElementRef.current = null;
     };
   }, [updateTrack.src]);
 
-  useEffect(() => {
-    // Decode the chosen track ahead of time while the AudioContext may remain
-    // suspended. Playback is NOT started here; this only removes fetch/decode
-    // work from the later user-gesture unlock path.
-    let cancelled = false;
-    const prepare = async () => {
-      const context = await ensureUpdateAudioReady({ resume: false });
-      if (!cancelled && context && updateAudioBufferRef.current && updateMusicState !== 'playing') {
-        setUpdateMusicState('ready');
-      }
-    };
-    void prepare();
-    return () => { cancelled = true; };
-  }, [updateTrack.src]);
-
-  const triggerForcedUpdate = () => {
-    try {
-      if (localStorage.getItem(FORCE_UPDATE_KEY) === FORCE_UPDATE_REVISION) return;
-      localStorage.setItem(FORCE_UPDATE_KEY, FORCE_UPDATE_REVISION);
-      updateStartedForVersionRef.current = `forced:${FORCE_UPDATE_REVISION}`;
-      setUpdateTargetVersion(`forced:${FORCE_UPDATE_REVISION}`);
-      setUpdateOverlayLeaving(false);
-      setUpdateOutroActive(false);
-      setStartupRevealActive(false);
-      setStartupRevealPending(true);
-      setUpdateUntil(Date.now() + UPDATE_SCREEN_MS);
-    } catch { /* normal live-update detection still works if storage is unavailable */ }
+  const showUpdateScreen = (version) => {
+    updateStartedForVersionRef.current = version;
+    setUpdateTargetVersion(version);
+    setUpdateOverlayLeaving(false);
+    setUpdateOutroActive(false);
+    setStartupRevealActive(false);
+    setStartupRevealPending(true);
+    setUpdateUntil(Date.now() + UPDATE_SCREEN_MS);
   };
 
-  const startUpdateMusic = async () => {
+  const startPendingUpdateFromGesture = () => {
+    const version = pendingUpdateVersionRef.current;
+    if (!version || updateStartInFlightRef.current || updateUntil > Date.now()) return;
+
+    const audio = updateAudioElementRef.current;
+    if (!audio) return;
+
+    updateStartInFlightRef.current = true;
     setUpdateMusicState('starting');
-    const context = await ensureUpdateAudioReady({ resume: true });
-    if (!context || context.state !== 'running' || !updateAudioBufferRef.current) {
+
+    // IMPORTANT: play() is invoked synchronously in the pointer/key handler.
+    // We do not show the updater until this promise has actually succeeded.
+    try {
+      audio.currentTime = 0;
+      audio.volume = 0.72;
+    } catch {}
+
+    const context = ensureUpdateMediaGraph();
+    try {
+      if (context && context.state !== 'running') void context.resume();
+    } catch {}
+
+    let playResult;
+    try {
+      playResult = audio.play();
+    } catch {
+      updateStartInFlightRef.current = false;
       setUpdateMusicState('blocked');
-      return false;
+      return;
     }
 
-    try {
-      if (updateAudioSourceRef.current) {
-        try { updateAudioSourceRef.current.stop(); } catch {}
-        updateAudioSourceRef.current.disconnect();
+    Promise.resolve(playResult).then(async () => {
+      try {
+        if (context && context.state !== 'running') await context.resume();
+      } catch {}
+
+      // If the media graph could not be created, the element still plays
+      // directly; if it exists, the gain node gives us the five-second fade.
+      pendingUpdateVersionRef.current = '';
+      if (pendingForcedUpdateRef.current) {
+        pendingForcedUpdateRef.current = false;
+        try { localStorage.setItem(FORCE_UPDATE_KEY, FORCE_UPDATE_REVISION); } catch {}
       }
-      const source = context.createBufferSource();
-      source.buffer = updateAudioBufferRef.current;
-      source.connect(updateAudioGainRef.current);
-      source.addEventListener('ended', () => {
-        if (updateUntil > Date.now()) setUpdateMusicState('paused');
-      }, { once: true });
-      updateAudioSourceRef.current = source;
-      source.start(0);
       setUpdateMusicState('playing');
-      return true;
+      showUpdateScreen(version);
+      updateStartInFlightRef.current = false;
+    }).catch(() => {
+      // Do not show a silent update page. Leave it queued for the next ordinary
+      // Plaza interaction instead of asking for a separate music-button click.
+      updateStartInFlightRef.current = false;
+      setUpdateMusicState('blocked');
+    });
+  };
+
+  const queueUpdate = (version, { forced = false } = {}) => {
+    if (!version) return;
+    if (updateStartedForVersionRef.current === version) return;
+    pendingUpdateVersionRef.current = version;
+    if (forced) pendingForcedUpdateRef.current = true;
+
+    // If the browser already has sticky user activation, try immediately.
+    // If it declines, the normal pointer/key listener below retries on the next
+    // genuine interaction and the update screen remains hidden meanwhile.
+    if (userGestureSeenRef.current) startPendingUpdateFromGesture();
+  };
+
+  const startUpdateMusic = () => {
+    // Fallback button only: normally the updater is not shown until playback
+    // has already succeeded, so users should never need this.
+    const audio = updateAudioElementRef.current;
+    if (!audio) return Promise.resolve(false);
+    setUpdateMusicState('starting');
+    try {
+      audio.currentTime = 0;
+      audio.volume = 0.72;
+    } catch {}
+    const context = ensureUpdateMediaGraph();
+    try { if (context && context.state !== 'running') void context.resume(); } catch {}
+    try {
+      return Promise.resolve(audio.play()).then(() => {
+        setUpdateMusicState('playing');
+        return true;
+      }).catch(() => {
+        setUpdateMusicState('blocked');
+        return false;
+      });
     } catch {
       setUpdateMusicState('blocked');
-      return false;
+      return Promise.resolve(false);
     }
   };
 
   useEffect(() => {
-    // Unlock one persistent Web Audio context from the user's first ordinary
-    // Plaza interaction. Once running, this context can start the local update
-    // soundtrack later without creating a fresh media element at update time.
-    let armed = false;
-    const arm = async () => {
-      if (armed) return;
-      armed = true;
-      const context = await ensureUpdateAudioReady({ resume: true });
-      if (!context || context.state !== 'running') {
-        armed = false;
-        return;
-      }
-
-      // Safari/Chrome can suspend an unlocked AudioContext again when it sits
-      // completely idle. Start one inaudible oscillator during the genuine
-      // user gesture and keep it connected for the session so this SAME
-      // authorized context stays alive until an update needs audible sound.
-      if (!updateAudioKeepaliveRef.current) {
-        try {
-          const keepaliveGain = context.createGain();
-          keepaliveGain.gain.value = 0.000001;
-          keepaliveGain.connect(context.destination);
-
-          const keepalive = context.createOscillator();
-          keepalive.frequency.value = 30;
-          keepalive.connect(keepaliveGain);
-          keepalive.start();
-
-          updateAudioKeepaliveRef.current = keepalive;
-          updateAudioKeepaliveGainRef.current = keepaliveGain;
-        } catch {
-          // Even without the keepalive, leave the context armed if it is running.
-        }
-      }
-
-      updateAudioArmedRef.current = true;
-      setUpdateMusicState('ready');
-      if (forcedUpdatePendingRef.current) {
-        forcedUpdatePendingRef.current = false;
-        // Start the actual soundtrack while we are STILL inside the genuine
-        // user gesture that unlocked Web Audio. Only show the update screen
-        // once playback has been started on this authorized context.
-        const started = await startUpdateMusic();
-        if (started) triggerForcedUpdate();
-        else {
-          // If playback still fails, keep the forced update pending so another
-          // ordinary interaction can retry rather than showing a silent updater.
-          forcedUpdatePendingRef.current = true;
-          armed = false;
-        }
-      }
+    // One ordinary click/tap/key press is enough. If an update is queued, the
+    // soundtrack starts from THIS gesture and only then does the update UI mount.
+    const onGesture = () => {
+      userGestureSeenRef.current = true;
+      startPendingUpdateFromGesture();
     };
-    document.addEventListener('pointerdown', arm, { capture: true, passive: true });
-    document.addEventListener('keydown', arm, true);
+    document.addEventListener('pointerdown', onGesture, true);
+    document.addEventListener('keydown', onGesture, true);
     return () => {
-      document.removeEventListener('pointerdown', arm, true);
-      document.removeEventListener('keydown', arm, true);
+      document.removeEventListener('pointerdown', onGesture, true);
+      document.removeEventListener('keydown', onGesture, true);
     };
-  }, [updateTrack.src]);
+  }, [updateTrack.src, updateUntil]);
 
   useEffect(() => {
     if (!import.meta.env.PROD) return;
     try {
       if (localStorage.getItem(FORCE_UPDATE_KEY) === FORCE_UPDATE_REVISION) return;
-      // Do not show the forced update before audio has been authorized. The
-      // user's first ordinary Plaza interaction arms Web Audio, then this
-      // forced update begins immediately so sound can start with the overlay.
-      if (updateAudioArmedRef.current) triggerForcedUpdate();
-      else forcedUpdatePendingRef.current = true;
-    } catch { /* normal live-update detection still works if storage is unavailable */ }
+    } catch {}
+    queueUpdate(`forced:${FORCE_UPDATE_REVISION}`, { forced: true });
   }, []);
 
   useEffect(() => {
     if (!import.meta.env.PROD) return undefined;
     let stopped = false;
     let checking = false;
+
     const checkForUpdate = async () => {
       let handoffUntil = 0;
-      try { handoffUntil = Number(sessionStorage.getItem(UPDATE_HANDOFF_KEY) || 0); } catch { /* ignore */ }
+      try { handoffUntil = Number(sessionStorage.getItem(UPDATE_HANDOFF_KEY) || 0); } catch {}
       if (handoffUntil && handoffUntil <= Date.now()) {
-        try { sessionStorage.removeItem(UPDATE_HANDOFF_KEY); } catch { /* ignore */ }
+        try { sessionStorage.removeItem(UPDATE_HANDOFF_KEY); } catch {}
         handoffUntil = 0;
       }
-      if (stopped || checking || !navigator.onLine || updateUntil > Date.now() || updateOutroActive || handoffUntil > Date.now()) return;
+      if (
+        stopped ||
+        checking ||
+        !navigator.onLine ||
+        updateUntil > Date.now() ||
+        updateOutroActive ||
+        handoffUntil > Date.now() ||
+        pendingUpdateVersionRef.current
+      ) return;
+
       checking = true;
       try {
         const response = await fetch(`/version.json?check=${Date.now()}`, { cache: 'no-store' });
@@ -792,16 +798,14 @@ export default function RUMS() {
         const { version } = await response.json();
         if (stopped || !version || version === __RUMS_BUILD_ID__) return;
         if (updateStartedForVersionRef.current === version) return;
-        updateStartedForVersionRef.current = version;
-        setUpdateTargetVersion(version);
-        setUpdateOverlayLeaving(false);
-        setUpdateOutroActive(false);
-        setStartupRevealActive(false);
-        setStartupRevealPending(true);
-        setUpdateUntil(Date.now() + UPDATE_SCREEN_MS);
-      } catch { /* stay on current build when offline/check fails */ }
-      finally { checking = false; }
+        queueUpdate(version);
+      } catch {
+        // Stay on the current build when offline/check fails.
+      } finally {
+        checking = false;
+      }
     };
+
     void checkForUpdate();
     const timer = window.setInterval(checkForUpdate, 15000);
     const onVisible = () => { if (!document.hidden) void checkForUpdate(); };
@@ -812,25 +816,6 @@ export default function RUMS() {
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, [updateUntil, updateOutroActive]);
-
-  useEffect(() => {
-    if (!updateUntil || updateUntil <= Date.now()) return undefined;
-    let cancelled = false;
-    const launch = async () => {
-      // Forced updates may already have started the source synchronously from
-      // the unlocking gesture. Never stop/recreate that working source.
-      if (updateAudioSourceRef.current) return;
-      const context = await ensureUpdateAudioReady({ resume: true });
-      if (cancelled) return;
-      if (context?.state === 'running') {
-        await startUpdateMusic();
-      } else {
-        setUpdateMusicState('blocked');
-      }
-    };
-    void launch();
-    return () => { cancelled = true; };
-  }, [updateUntil, updateTrack.src]);
 
   useEffect(() => {
     if (!updateUntil || !updateTargetVersion) return undefined;
@@ -849,6 +834,7 @@ export default function RUMS() {
         setUpdateOutroActive(true);
         setStartupRevealActive(true);
 
+        const audio = updateAudioElementRef.current;
         const context = updateAudioContextRef.current;
         const gain = updateAudioGainRef.current;
         if (context && gain) {
@@ -857,17 +843,30 @@ export default function RUMS() {
             gain.gain.cancelScheduledValues(now);
             gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value || 0.72), now);
             gain.gain.linearRampToValueAtTime(0.0001, now + 5);
-          } catch { /* keep playing if fading is unavailable */ }
+          } catch {}
+        } else if (audio) {
+          // Fallback for browsers where a media element could play but could not
+          // be attached to Web Audio. Animate the element volume for five seconds.
+          const startedAt = performance.now();
+          const startVolume = Number.isFinite(audio.volume) ? audio.volume : 0.72;
+          const fade = (now) => {
+            const progress = Math.min(1, (now - startedAt) / 5000);
+            try { audio.volume = Math.max(0, startVolume * (1 - progress)); } catch {}
+            if (progress < 1) updateAudioFadeFrameRef.current = requestAnimationFrame(fade);
+          };
+          updateAudioFadeFrameRef.current = requestAnimationFrame(fade);
         }
 
         // Leave the animated chooser visible while the five-second soundtrack
         // outro completes. The chooser is non-interactive during this short
         // handoff so a version choice cannot be interrupted by the final reload.
         reloadTimer = window.setTimeout(() => {
-          if (updateAudioSourceRef.current) {
-            try { updateAudioSourceRef.current.stop(); } catch {}
-            try { updateAudioSourceRef.current.disconnect(); } catch {}
-            updateAudioSourceRef.current = null;
+          const audio = updateAudioElementRef.current;
+          if (audio) {
+            try {
+              audio.pause();
+              audio.currentTime = 0;
+            } catch {}
           }
           try {
             localStorage.setItem(UPDATE_SEEN_KEY, updateTargetVersion);
@@ -891,21 +890,32 @@ export default function RUMS() {
   }, [updateUntil, updateTargetVersion]);
 
   useEffect(() => () => {
-    if (updateAudioSourceRef.current) {
-      try { updateAudioSourceRef.current.stop(); } catch {}
-      try { updateAudioSourceRef.current.disconnect(); } catch {}
+    if (versionBuildTimerRef.current) {
+      window.clearTimeout(versionBuildTimerRef.current);
+      versionBuildTimerRef.current = 0;
     }
-    if (updateAudioKeepaliveRef.current) {
-      try { updateAudioKeepaliveRef.current.stop(); } catch {}
-      try { updateAudioKeepaliveRef.current.disconnect(); } catch {}
-      updateAudioKeepaliveRef.current = null;
+  }, []);
+
+  useEffect(() => () => {
+    if (updateAudioFadeFrameRef.current) {
+      cancelAnimationFrame(updateAudioFadeFrameRef.current);
+      updateAudioFadeFrameRef.current = 0;
     }
-    if (updateAudioKeepaliveGainRef.current) {
-      try { updateAudioKeepaliveGainRef.current.disconnect(); } catch {}
-      updateAudioKeepaliveGainRef.current = null;
+    const audio = updateAudioElementRef.current;
+    if (audio) {
+      try { audio.pause(); } catch {}
+    }
+    if (updateAudioMediaSourceRef.current) {
+      try { updateAudioMediaSourceRef.current.disconnect(); } catch {}
+      updateAudioMediaSourceRef.current = null;
+    }
+    if (updateAudioGainRef.current) {
+      try { updateAudioGainRef.current.disconnect(); } catch {}
+      updateAudioGainRef.current = null;
     }
     if (updateAudioContextRef.current) {
       try { updateAudioContextRef.current.close(); } catch {}
+      updateAudioContextRef.current = null;
     }
   }, []);
 
@@ -2848,6 +2858,25 @@ export default function RUMS() {
     setScreen('projectsDirectory');
   }
 
+  function beginSelectedVersionBuild() {
+    setVersionBuildPending(true);
+    setVersionBuildActive(false);
+    if (versionBuildTimerRef.current) window.clearTimeout(versionBuildTimerRef.current);
+
+    // Two animation frames guarantee that the destination UI is first painted
+    // in its hidden/pending state. That prevents a one-frame fully-built flash.
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        setVersionBuildPending(false);
+        setVersionBuildActive(true);
+        versionBuildTimerRef.current = window.setTimeout(() => {
+          setVersionBuildActive(false);
+          versionBuildTimerRef.current = 0;
+        }, 4300);
+      });
+    });
+  }
+
   async function chooseProject(project) {
     if (!project?.id) return;
     try {
@@ -2861,6 +2890,8 @@ export default function RUMS() {
   async function chooseRumsSpace(space) {
     if (!isContentSpaceId(space)) return;
     const requestId = ++spaceLoadTokenRef.current;
+    setVersionBuildPending(true);
+    setVersionBuildActive(false);
     setEditMode(false);
     setSelectedBoxId(null);
     setFeedFilter('all');
@@ -2974,6 +3005,12 @@ export default function RUMS() {
   }
 
   function openRumsChooser() {
+    setVersionBuildPending(false);
+    setVersionBuildActive(false);
+    if (versionBuildTimerRef.current) {
+      window.clearTimeout(versionBuildTimerRef.current);
+      versionBuildTimerRef.current = 0;
+    }
     setEditMode(false);
     setSelectedBoxId(null);
     setFeedFilter('all');
@@ -3060,6 +3097,7 @@ export default function RUMS() {
         if (found) {
           setCurrentUser(found);
           setScreen('feed');
+          beginSelectedVersionBuild();
           if (Number(found.tutorialVersion || 0) < requiredTutorialVersionForUser(found)) {
             setTutorialStep(0);
             setTutorialReturningUser(true);
@@ -3071,10 +3109,12 @@ export default function RUMS() {
       }
       setCurrentUser(null);
       setScreen('login');
+      beginSelectedVersionBuild();
     } catch (e) {
       console.error(e);
       setCurrentUser(null);
       setScreen('login');
+      beginSelectedVersionBuild();
     }
   }
 
@@ -5494,7 +5534,7 @@ export default function RUMS() {
   })();
 
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
