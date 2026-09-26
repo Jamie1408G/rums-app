@@ -42,7 +42,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'three-second-wii-build-69';
+const FORCE_UPDATE_REVISION = 'version-select-sound-timing-70';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -53,8 +53,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 69;
-const JAMIE_TUTORIAL_VERSION = 69;
+const TUTORIAL_VERSION = 70;
+const JAMIE_TUTORIAL_VERSION = 70;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -599,6 +599,7 @@ export default function RUMS() {
   const versionMenuEntryKeyRef = useRef(1);
   const versionMenuStartHandledKeyRef = useRef(0);
   const startupEntryRevealTimerRef = useRef(0);
+  const versionOpenSoundTimerRef = useRef(0);
 
   const pendingUpdateRef = useRef(null);
   const hardRefreshInFlightRef = useRef(false);
@@ -2704,7 +2705,7 @@ export default function RUMS() {
   }
 
   function renderProjectWorkspace() {
-    if (!activeProject) return <div className="project-workspace"><p>This project is no longer available.</p><button onClick={() => { void playUiSfx('open'); void openProjectsDirectory(); }}>Browse projects</button></div>;
+    if (!activeProject) return <div className="project-workspace"><p>This project is no longer available.</p><button onClick={() => void chooseProjectsFromVersionMenu()}>Browse projects</button></div>;
     const owner = activeProject.owner === currentUser?.username;
     const topics = activeProject.topics || [];
     const projectUpdates = activeProject.projectUpdates || [];
@@ -3881,6 +3882,12 @@ export default function RUMS() {
     };
   }
 
+  async function chooseProjectsFromVersionMenu() {
+    void playUiSfx('click2');
+    await openProjectsDirectory();
+    scheduleVersionOpenSound();
+  }
+
   async function openProjectsDirectory() {
     const requestId = ++spaceLoadTokenRef.current;
     setVersionBuildPending(true);
@@ -3951,6 +3958,16 @@ export default function RUMS() {
     setScreen('spaceSelect');
   }
 
+  function scheduleVersionOpenSound() {
+    if (versionOpenSoundTimerRef.current) {
+      window.clearTimeout(versionOpenSoundTimerRef.current);
+    }
+    versionOpenSoundTimerRef.current = window.setTimeout(() => {
+      versionOpenSoundTimerRef.current = 0;
+      void playUiSfx('open');
+    }, 500);
+  }
+
   async function chooseProject(project) {
     if (!project?.id) return;
     try {
@@ -3961,9 +3978,14 @@ export default function RUMS() {
     await chooseRumsSpace(projectSpaceId(project.id));
   }
 
-  async function chooseRumsSpace(space, { playOpenSound = false } = {}) {
-    if (playOpenSound) void playUiSfx('open');
+  async function chooseRumsSpace(space, { versionMenuSelection = false } = {}) {
     if (!isContentSpaceId(space)) return;
+
+    if (versionMenuSelection) {
+      // Selection feedback happens at the moment the version card is clicked.
+      void playUiSfx('click2');
+    }
+
     const requestId = ++spaceLoadTokenRef.current;
     setVersionBuildPending(true);
     setVersionBuildActive(false);
@@ -3975,6 +3997,14 @@ export default function RUMS() {
     setRumsSpace(space);
     setScreen('loading');
     await init(space, requestId);
+
+    if (
+      versionMenuSelection &&
+      requestId === spaceLoadTokenRef.current
+    ) {
+      // OPEN belongs to the version itself opening, not the selection click.
+      scheduleVersionOpenSound();
+    }
   }
 
   useEffect(() => {
@@ -4049,6 +4079,10 @@ export default function RUMS() {
     if (startupEntryRevealTimerRef.current) {
       window.clearTimeout(startupEntryRevealTimerRef.current);
       startupEntryRevealTimerRef.current = 0;
+    }
+    if (versionOpenSoundTimerRef.current) {
+      window.clearTimeout(versionOpenSoundTimerRef.current);
+      versionOpenSoundTimerRef.current = 0;
     }
   }, []);
 
@@ -6832,11 +6866,11 @@ export default function RUMS() {
             <h1 id="rums-space-title">Welcome to RUMS Plaza</h1>
             <p className="space-chooser-intro">Choose where you want to enter. Projects opens a directory of community-made spaces inside RUMS 4, Creative and outside RUMS.</p>
             <div className="space-choice-grid">
-              <button type="button" className="space-choice-card rums4-choice" onClick={() => chooseRumsSpace('rums4', { playOpenSound: true })}>
+              <button type="button" className="space-choice-card rums4-choice" onClick={() => chooseRumsSpace('rums4', { versionMenuSelection: true })}>
                 <span className="space-choice-number">04</span>
                 <span className="space-choice-copy"><strong>RUMS 4</strong></span>
               </button>
-              <button type="button" className="space-choice-card rums5-choice" onClick={() => chooseRumsSpace('rums5', { playOpenSound: true })}>
+              <button type="button" className="space-choice-card rums5-choice" onClick={() => chooseRumsSpace('rums5', { versionMenuSelection: true })}>
                 <span className="space-choice-number">✦</span>
                 <span className="space-choice-copy"><strong>Creative</strong></span>
               </button>
