@@ -5987,69 +5987,69 @@ button,input,textarea { font:inherit; }
 /* First bring in only the three large app surfaces. Children stay on their own clocks. */
 .aero-root.version-build-active .desktop-rail{
   transform-origin:18% 18%;
-  animation:wiiPieceRail .68s .05s cubic-bezier(.16,1.42,.28,1) both;
+  animation:wiiPieceRail .68s .038s cubic-bezier(.16,1.42,.28,1) both;
 }
 .aero-root.version-build-active .aero-header{
   transform-origin:50% 0;
-  animation:wiiPieceHeader .62s .18s cubic-bezier(.16,1.4,.3,1) both;
+  animation:wiiPieceHeader .62s .135s cubic-bezier(.16,1.4,.3,1) both;
 }
 .aero-root.version-build-active .content{
-  animation:wiiPieceCanvas .42s .82s ease-out both;
+  animation:wiiPieceCanvas .42s .615s ease-out both;
 }
 .aero-root.version-build-active .bottom-nav{
   transform-origin:50% 100%;
-  animation:wiiPieceBottom .62s .56s cubic-bezier(.16,1.42,.3,1) both;
+  animation:wiiPieceBottom .62s .42s cubic-bezier(.16,1.42,.3,1) both;
 }
 
 /* Left rail: logo, text, labels and every navigation item arrive separately. */
 .aero-root.version-build-active .rail-brand{
-  animation:wiiPieceBubble .56s .28s cubic-bezier(.16,1.5,.28,1) both;
+  animation:wiiPieceBubble .56s .21s cubic-bezier(.16,1.5,.28,1) both;
 }
 .aero-root.version-build-active .rail-orb{
-  animation:wiiPieceDot .54s .38s cubic-bezier(.14,1.58,.26,1) both;
+  animation:wiiPieceDot .54s .285s cubic-bezier(.14,1.58,.26,1) both;
 }
 .aero-root.version-build-active .rail-brand > span:last-child{
-  animation:wiiPieceText .46s .5s cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .46s .375s cubic-bezier(.18,1.3,.3,1) both;
 }
 .aero-root.version-build-active .desktop-rail > .rail-label:first-of-type{
-  animation:wiiPieceText .42s .66s cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .42s .495s cubic-bezier(.18,1.3,.3,1) both;
 }
 .aero-root.version-build-active .desktop-rail > .rail-label:nth-of-type(2){
-  animation:wiiPieceText .42s 1.42s cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .42s 1.065s cubic-bezier(.18,1.3,.3,1) both;
 }
 .aero-root.version-build-active .desktop-rail > .rail-link{
   animation:wiiPieceNav .5s cubic-bezier(.14,1.48,.28,1) both;
 }
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(1){animation-delay:.78s}
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(2){animation-delay:.9s}
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(3){animation-delay:1.02s}
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(4){animation-delay:1.14s}
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(5){animation-delay:1.26s}
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(6){animation-delay:1.5s}
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(7){animation-delay:1.62s}
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(8){animation-delay:1.74s}
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(9){animation-delay:1.86s}
-.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(10){animation-delay:1.98s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(1){animation-delay:.585s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(2){animation-delay:.675s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(3){animation-delay:.765s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(4){animation-delay:.855s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(5){animation-delay:.945s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(6){animation-delay:1.125s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(7){animation-delay:1.215s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(8){animation-delay:1.305s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(9){animation-delay:1.395s}
+.aero-root.version-build-active .desktop-rail > .rail-link:nth-of-type(10){animation-delay:1.485s}
 .aero-root.version-build-active .desktop-rail > .rail-create{
-  animation:wiiPieceBubble .54s 2.08s cubic-bezier(.14,1.5,.28,1) both;
+  animation:wiiPieceBubble .54s 1.56s cubic-bezier(.14,1.5,.28,1) both;
 }
 .aero-root.version-build-active .desktop-rail > .rail-footer{
-  animation:wiiPieceText .48s 2.24s cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .48s 1.68s cubic-bezier(.18,1.3,.3,1) both;
 }
 
 /* Header: version switch, centered feed slider, then each action. */
 .aero-root.version-build-active .aero-brand{
-  animation:wiiPieceBubble .55s .48s cubic-bezier(.14,1.5,.28,1) both;
+  animation:wiiPieceBubble .55s .36s cubic-bezier(.14,1.5,.28,1) both;
 }
 .aero-root.version-build-active .universal-rums-switcher{
-  animation:wiiPieceControl .55s .62s cubic-bezier(.14,1.5,.28,1) both;
+  animation:wiiPieceControl .55s .465s cubic-bezier(.14,1.5,.28,1) both;
 }
 .aero-root.version-build-active .universal-rums-switcher > button{
   animation:wiiPieceDot .46s cubic-bezier(.14,1.58,.26,1) both;
 }
-.aero-root.version-build-active .universal-rums-switcher > button:nth-of-type(1){animation-delay:.76s}
-.aero-root.version-build-active .universal-rums-switcher > button:nth-of-type(2){animation-delay:.87s}
-.aero-root.version-build-active .universal-rums-switcher > button:nth-of-type(3){animation-delay:.98s}
+.aero-root.version-build-active .universal-rums-switcher > button:nth-of-type(1){animation-delay:.57s}
+.aero-root.version-build-active .universal-rums-switcher > button:nth-of-type(2){animation-delay:.652s}
+.aero-root.version-build-active .universal-rums-switcher > button:nth-of-type(3){animation-delay:.735s}
 
 /*
   IMPORTANT: aero-header-center normally relies on translate(-50%,-50%).
@@ -6059,12 +6059,12 @@ button,input,textarea { font:inherit; }
 */
 @media(min-width:681px){
   .aero-root.version-build-active .aero-header-center{
-    animation:wiiPieceHeaderCenterDesktop .58s 1.02s cubic-bezier(.14,1.46,.28,1) both;
+    animation:wiiPieceHeaderCenterDesktop .58s .765s cubic-bezier(.14,1.46,.28,1) both;
   }
 }
 @media(max-width:680px){
   .aero-root.version-build-active .aero-header-center{
-    animation:wiiPieceHeaderCenterMobile .58s 1.02s cubic-bezier(.14,1.46,.28,1) both;
+    animation:wiiPieceHeaderCenterMobile .58s .765s cubic-bezier(.14,1.46,.28,1) both;
   }
 }
 
@@ -6082,82 +6082,82 @@ button,input,textarea { font:inherit; }
 .aero-root.version-build-active .aero-header-actions > *{
   animation:wiiPieceDot .48s cubic-bezier(.14,1.56,.26,1) both;
 }
-.aero-root.version-build-active .aero-header-actions > :nth-child(1){animation-delay:1.22s}
-.aero-root.version-build-active .aero-header-actions > :nth-child(2){animation-delay:1.34s}
-.aero-root.version-build-active .aero-header-actions > :nth-child(3){animation-delay:1.46s}
-.aero-root.version-build-active .aero-header-actions > :nth-child(4){animation-delay:1.58s}
-.aero-root.version-build-active .aero-header-actions > :nth-child(5){animation-delay:1.7s}
-.aero-root.version-build-active .aero-header-actions > :nth-child(6){animation-delay:1.82s}
+.aero-root.version-build-active .aero-header-actions > :nth-child(1){animation-delay:.915s}
+.aero-root.version-build-active .aero-header-actions > :nth-child(2){animation-delay:1.005s}
+.aero-root.version-build-active .aero-header-actions > :nth-child(3){animation-delay:1.095s}
+.aero-root.version-build-active .aero-header-actions > :nth-child(4){animation-delay:1.185s}
+.aero-root.version-build-active .aero-header-actions > :nth-child(5){animation-delay:1.275s}
+.aero-root.version-build-active .aero-header-actions > :nth-child(6){animation-delay:1.365s}
 .aero-root.version-build-active .mobile-header-menu-button{
-  animation:wiiPieceDot .48s 1.34s cubic-bezier(.14,1.56,.26,1) both;
+  animation:wiiPieceDot .48s 1.005s cubic-bezier(.14,1.56,.26,1) both;
 }
 
 /* Mobile bottom navigation also assembles one button at a time. */
 .aero-root.version-build-active .bottom-nav > *{
   animation:wiiPieceDot .48s cubic-bezier(.14,1.56,.26,1) both;
 }
-.aero-root.version-build-active .bottom-nav > :nth-child(1){animation-delay:.82s}
-.aero-root.version-build-active .bottom-nav > :nth-child(2){animation-delay:.94s}
-.aero-root.version-build-active .bottom-nav > :nth-child(3){animation-delay:1.06s}
-.aero-root.version-build-active .bottom-nav > :nth-child(4){animation-delay:1.18s}
-.aero-root.version-build-active .bottom-nav > :nth-child(5){animation-delay:1.3s}
+.aero-root.version-build-active .bottom-nav > :nth-child(1){animation-delay:.615s}
+.aero-root.version-build-active .bottom-nav > :nth-child(2){animation-delay:.705s}
+.aero-root.version-build-active .bottom-nav > :nth-child(3){animation-delay:.795s}
+.aero-root.version-build-active .bottom-nav > :nth-child(4){animation-delay:.885s}
+.aero-root.version-build-active .bottom-nav > :nth-child(5){animation-delay:.975s}
 
 /* Feed page: the hero itself appears first, then its contents one at a time. */
 .aero-root.version-build-active .community-hero{
   transform-origin:50% 55%;
-  animation:wiiPieceBubble .62s 1.36s cubic-bezier(.14,1.5,.28,1) both;
+  animation:wiiPieceBubble .62s 1.02s cubic-bezier(.14,1.5,.28,1) both;
 }
 .aero-root.version-build-active .community-hero .eyebrow{
-  animation:wiiPieceText .42s 1.56s cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .42s 1.17s cubic-bezier(.18,1.3,.3,1) both;
 }
 .aero-root.version-build-active .community-hero h1{
-  animation:wiiPieceText .48s 1.7s cubic-bezier(.18,1.34,.3,1) both;
+  animation:wiiPieceText .48s 1.275s cubic-bezier(.18,1.34,.3,1) both;
 }
 .aero-root.version-build-active .community-hero p{
-  animation:wiiPieceText .46s 1.86s cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .46s 1.395s cubic-bezier(.18,1.3,.3,1) both;
 }
 .aero-root.version-build-active .community-hero .hero-create{
-  animation:wiiPieceDot .52s 2.04s cubic-bezier(.14,1.58,.26,1) both;
+  animation:wiiPieceDot .52s 1.53s cubic-bezier(.14,1.58,.26,1) both;
 }
 
 .aero-root.version-build-active .section-heading h2{
-  animation:wiiPieceText .46s 2.18s cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .46s 1.635s cubic-bezier(.18,1.3,.3,1) both;
 }
 .aero-root.version-build-active .section-heading .feed-heading-actions{
-  animation:wiiPieceBubble .48s 2.32s cubic-bezier(.14,1.45,.28,1) both;
+  animation:wiiPieceBubble .48s 1.74s cubic-bezier(.14,1.45,.28,1) both;
 }
 .aero-root.version-build-active .section-heading > span,
 .aero-root.version-build-active .section-heading > small{
-  animation:wiiPieceText .42s 2.42s cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .42s 1.815s cubic-bezier(.18,1.3,.3,1) both;
 }
 
 /* Give post cards individual clocks, then assemble each card from top to bottom. */
 .aero-root.version-build-active .post-card{
-  --wii-card-delay:2.5s;
+  --wii-card-delay:1.875s;
   transform-origin:50% 20%;
   animation:wiiPieceCard .62s var(--wii-card-delay) cubic-bezier(.14,1.5,.28,1) both;
 }
-.aero-root.version-build-active .post-card:nth-child(2){--wii-card-delay:2.5s}
-.aero-root.version-build-active .post-card:nth-child(3){--wii-card-delay:2.82s}
-.aero-root.version-build-active .post-card:nth-child(4){--wii-card-delay:3.14s}
-.aero-root.version-build-active .post-card:nth-child(5){--wii-card-delay:3.46s}
-.aero-root.version-build-active .post-card:nth-child(6){--wii-card-delay:3.78s}
-.aero-root.version-build-active .post-card:nth-child(n+7){--wii-card-delay:4.02s}
+.aero-root.version-build-active .post-card:nth-child(2){--wii-card-delay:1.875s}
+.aero-root.version-build-active .post-card:nth-child(3){--wii-card-delay:2.115s}
+.aero-root.version-build-active .post-card:nth-child(4){--wii-card-delay:2.355s}
+.aero-root.version-build-active .post-card:nth-child(5){--wii-card-delay:2.595s}
+.aero-root.version-build-active .post-card:nth-child(6){--wii-card-delay:2.835s}
+.aero-root.version-build-active .post-card:nth-child(n+7){--wii-card-delay:3.015s}
 
 .aero-root.version-build-active .post-card .post-top{
-  animation:wiiPieceText .42s calc(var(--wii-card-delay) + .14s) cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .42s calc(var(--wii-card-delay) + .112s) cubic-bezier(.18,1.3,.3,1) both;
 }
 .aero-root.version-build-active .post-card .post-img-wrap{
-  animation:wiiPieceMedia .52s calc(var(--wii-card-delay) + .28s) cubic-bezier(.14,1.4,.28,1) both;
+  animation:wiiPieceMedia .52s calc(var(--wii-card-delay) + .224s) cubic-bezier(.14,1.4,.28,1) both;
 }
 .aero-root.version-build-active .post-card .post-actions{
-  animation:wiiPieceBubble .44s calc(var(--wii-card-delay) + .42s) cubic-bezier(.14,1.45,.28,1) both;
+  animation:wiiPieceBubble .44s calc(var(--wii-card-delay) + .336s) cubic-bezier(.14,1.45,.28,1) both;
 }
 .aero-root.version-build-active .post-card .post-caption{
-  animation:wiiPieceText .42s calc(var(--wii-card-delay) + .56s) cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .42s calc(var(--wii-card-delay) + .448s) cubic-bezier(.18,1.3,.3,1) both;
 }
 .aero-root.version-build-active .post-card .comments-box{
-  animation:wiiPieceText .42s calc(var(--wii-card-delay) + .7s) cubic-bezier(.18,1.3,.3,1) both;
+  animation:wiiPieceText .42s calc(var(--wii-card-delay) + .56s) cubic-bezier(.18,1.3,.3,1) both;
 }
 
 /* Other page types get the same language, still staggered instead of one giant batch. */
@@ -6180,7 +6180,7 @@ button,input,textarea { font:inherit; }
   .custom-site-widget,
   .project-workspace
 ){
-  animation:wiiPieceBubble .64s 1.45s cubic-bezier(.14,1.5,.28,1) both;
+  animation:wiiPieceBubble .64s 1.087s cubic-bezier(.14,1.5,.28,1) both;
 }
 .aero-root.version-build-active .content :is(
   .suggestion-card,
@@ -6207,7 +6207,7 @@ button,input,textarea { font:inherit; }
   .profile-section,
   .project-panel,
   .project-board-column
-):nth-child(3n+1){animation-delay:2.05s}
+):nth-child(3n+1){animation-delay:1.537s}
 .aero-root.version-build-active .content :is(
   .suggestion-card,
   .update-card,
@@ -6219,7 +6219,7 @@ button,input,textarea { font:inherit; }
   .profile-section,
   .project-panel,
   .project-board-column
-):nth-child(3n+2){animation-delay:2.32s}
+):nth-child(3n+2){animation-delay:1.74s}
 .aero-root.version-build-active .content :is(
   .suggestion-card,
   .update-card,
@@ -6231,20 +6231,20 @@ button,input,textarea { font:inherit; }
   .profile-section,
   .project-panel,
   .project-board-column
-):nth-child(3n){animation-delay:2.59s}
+):nth-child(3n){animation-delay:1.942s}
 
 /* Logged-out destination: build the login card just as deliberately. */
 .aero-root.version-build-active .auth-wrap{
-  animation:wiiPieceBubble .68s .76s cubic-bezier(.14,1.5,.28,1) both;
+  animation:wiiPieceBubble .68s .57s cubic-bezier(.14,1.5,.28,1) both;
 }
-.aero-root.version-build-active .auth-wrap .auth-logo{animation:wiiPieceDot .54s 1.02s cubic-bezier(.14,1.58,.26,1) both}
-.aero-root.version-build-active .auth-wrap .auth-title{animation:wiiPieceText .46s 1.18s cubic-bezier(.18,1.3,.3,1) both}
-.aero-root.version-build-active .auth-wrap .auth-sub{animation:wiiPieceText .44s 1.34s cubic-bezier(.18,1.3,.3,1) both}
-.aero-root.version-build-active .auth-wrap .auth-space-switch{animation:wiiPieceBubble .46s 1.5s cubic-bezier(.14,1.45,.28,1) both}
-.aero-root.version-build-active .auth-wrap .auth-form > :nth-child(1){animation:wiiPieceBubble .46s 1.66s cubic-bezier(.14,1.45,.28,1) both}
-.aero-root.version-build-active .auth-wrap .auth-form > :nth-child(2){animation:wiiPieceBubble .46s 1.82s cubic-bezier(.14,1.45,.28,1) both}
-.aero-root.version-build-active .auth-wrap .auth-form > :nth-child(3){animation:wiiPieceBubble .46s 1.98s cubic-bezier(.14,1.45,.28,1) both}
-.aero-root.version-build-active .auth-wrap .switch-line{animation:wiiPieceText .44s 2.14s cubic-bezier(.18,1.3,.3,1) both}
+.aero-root.version-build-active .auth-wrap .auth-logo{animation:wiiPieceDot .54s .765s cubic-bezier(.14,1.58,.26,1) both}
+.aero-root.version-build-active .auth-wrap .auth-title{animation:wiiPieceText .46s .885s cubic-bezier(.18,1.3,.3,1) both}
+.aero-root.version-build-active .auth-wrap .auth-sub{animation:wiiPieceText .44s 1.005s cubic-bezier(.18,1.3,.3,1) both}
+.aero-root.version-build-active .auth-wrap .auth-space-switch{animation:wiiPieceBubble .46s 1.125s cubic-bezier(.14,1.45,.28,1) both}
+.aero-root.version-build-active .auth-wrap .auth-form > :nth-child(1){animation:wiiPieceBubble .46s 1.245s cubic-bezier(.14,1.45,.28,1) both}
+.aero-root.version-build-active .auth-wrap .auth-form > :nth-child(2){animation:wiiPieceBubble .46s 1.365s cubic-bezier(.14,1.45,.28,1) both}
+.aero-root.version-build-active .auth-wrap .auth-form > :nth-child(3){animation:wiiPieceBubble .46s 1.485s cubic-bezier(.14,1.45,.28,1) both}
+.aero-root.version-build-active .auth-wrap .switch-line{animation:wiiPieceText .44s 1.605s cubic-bezier(.18,1.3,.3,1) both}
 
 /* Wii-ish motion: round, elastic and slightly toy-like rather than slick/linear. */
 @keyframes wiiPieceRail{
@@ -6326,7 +6326,7 @@ button,input,textarea { font:inherit; }
 
 @media(max-width:760px){
   .aero-root.version-build-active .desktop-rail{animation:none}
-  .aero-root.version-build-active .content{animation:wiiPieceCanvas .35s .68s ease-out both}
+  .aero-root.version-build-active .content{animation:wiiPieceCanvas .35s .51s ease-out both}
 }
 
 @media(prefers-reduced-motion:reduce){
