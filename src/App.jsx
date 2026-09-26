@@ -1663,7 +1663,9 @@ export default function RUMS() {
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
-      window.clearTimeout(actionTimer);
+      // Do not cancel a successful interaction's advance timer here.
+      // Required actions often change screen/feed state, which re-runs this effect
+      // before the short advance delay has fired.
       window.removeEventListener('resize', update);
       window.removeEventListener('scroll', update);
       contentScroller?.removeEventListener('scroll', update);
