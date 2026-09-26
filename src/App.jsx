@@ -27,7 +27,7 @@ const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
-const FORCE_UPDATE_REVISION = 'startup-menu-reveal-36';
+const FORCE_UPDATE_REVISION = 'single-cycle-direct-audio-38';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -38,8 +38,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 37;
-const JAMIE_TUTORIAL_VERSION = 37;
+const TUTORIAL_VERSION = 38;
+const JAMIE_TUTORIAL_VERSION = 38;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -568,13 +568,12 @@ export default function RUMS() {
   const [updateTrackId] = useState(() => pickUpdateAudioTrack());
   const updateTrack = UPDATE_AUDIO_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_AUDIO_TRACKS[0];
   const updateAudioElementRef = useRef(null);
-  const updateAudioContextRef = useRef(null);
-  const updateAudioMediaSourceRef = useRef(null);
-  const updateAudioGainRef = useRef(null);
   const updateAudioFadeFrameRef = useRef(0);
   const updateStartedForVersionRef = useRef('');
   const pendingUpdateVersionRef = useRef('');
   const pendingForcedUpdateRef = useRef(false);
+  const updateCycleForcedRef = useRef(false);
+  const updateCycleActiveRef = useRef(false);
   const updateStartInFlightRef = useRef(false);
   const userGestureSeenRef = useRef(false);
   const [updateMusicState, setUpdateMusicState] = useState('ready');
@@ -585,32 +584,8 @@ export default function RUMS() {
   const [versionBuildPending, setVersionBuildPending] = useState(false);
   const [versionBuildActive, setVersionBuildActive] = useState(false);
   const versionBuildTimerRef = useRef(0);
+  const versionBuildRequestRef = useRef(0);
 
-  const ensureUpdateMediaGraph = () => {
-    const audio = updateAudioElementRef.current;
-    if (!audio || typeof window === 'undefined') return null;
-    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextCtor) return null;
-
-    try {
-      if (!updateAudioContextRef.current) {
-        const context = new AudioContextCtor();
-        const gain = context.createGain();
-        gain.gain.value = 0.72;
-        gain.connect(context.destination);
-        updateAudioContextRef.current = context;
-        updateAudioGainRef.current = gain;
-      }
-      if (!updateAudioMediaSourceRef.current) {
-        const source = updateAudioContextRef.current.createMediaElementSource(audio);
-        source.connect(updateAudioGainRef.current);
-        updateAudioMediaSourceRef.current = source;
-      }
-      return updateAudioContextRef.current;
-    } catch {
-      return updateAudioContextRef.current;
-    }
-  };
 
   useEffect(() => {
     // Use a real media element for playback. Browsers are most reliable when
@@ -645,6 +620,7 @@ export default function RUMS() {
   }, [updateTrack.src]);
 
   const showUpdateScreen = (version) => {
+    updateCycleActiveRef.current = true;
     updateStartedForVersionRef.current = version;
     setUpdateTargetVersion(version);
     setUpdateOverlayLeaving(false);
@@ -656,7 +632,12 @@ export default function RUMS() {
 
   const startPendingUpdateFromGesture = () => {
     const version = pendingUpdateVersionRef.current;
-    if (!version || updateStartInFlightRef.current || updateUntil > Date.now()) return;
+    if (
+      !version ||
+      updateCycleActiveRef.current ||
+      updateStartInFlightRef.current ||
+      updateUntil > Date.now()
+    ) return;
 
     const audio = updateAudioElementRef.current;
     if (!audio) return;
@@ -664,18 +645,16 @@ export default function RUMS() {
     updateStartInFlightRef.current = true;
     setUpdateMusicState('starting');
 
-    // IMPORTANT: play() is invoked synchronously in the pointer/key handler.
-    // We do not show the updater until this promise has actually succeeded.
     try {
+      audio.pause();
       audio.currentTime = 0;
       audio.volume = 0.72;
+      audio.muted = false;
     } catch {}
 
-    const context = ensureUpdateMediaGraph();
-    try {
-      if (context && context.state !== 'running') void context.resume();
-    } catch {}
-
+    // Deliberately DO NOT connect this media element to Web Audio here.
+    // A suspended AudioContext can reroute an otherwise-playing <audio> element
+    // into silence. Direct HTMLMediaElement playback is the reliable path.
     let playResult;
     try {
       playResult = audio.play();
@@ -685,24 +664,23 @@ export default function RUMS() {
       return;
     }
 
-    Promise.resolve(playResult).then(async () => {
-      try {
-        if (context && context.state !== 'running') await context.resume();
-      } catch {}
-
-      // If the media graph could not be created, the element still plays
-      // directly; if it exists, the gain node gives us the five-second fade.
+    Promise.resolve(playResult).then(() => {
+      // Only mount the update page after the browser confirms playback started.
+      const wasForced = pendingForcedUpdateRef.current;
       pendingUpdateVersionRef.current = '';
-      if (pendingForcedUpdateRef.current) {
-        pendingForcedUpdateRef.current = false;
+      pendingForcedUpdateRef.current = false;
+      updateCycleForcedRef.current = wasForced;
+
+      if (wasForced) {
         try { localStorage.setItem(FORCE_UPDATE_KEY, FORCE_UPDATE_REVISION); } catch {}
       }
+
       setUpdateMusicState('playing');
       showUpdateScreen(version);
       updateStartInFlightRef.current = false;
     }).catch(() => {
-      // Do not show a silent update page. Leave it queued for the next ordinary
-      // Plaza interaction instead of asking for a separate music-button click.
+      // Keep the update queued. A later ordinary user gesture gets another try,
+      // but the updater itself never appears silently.
       updateStartInFlightRef.current = false;
       setUpdateMusicState('blocked');
     });
@@ -710,29 +688,26 @@ export default function RUMS() {
 
   const queueUpdate = (version, { forced = false } = {}) => {
     if (!version) return;
-    if (updateStartedForVersionRef.current === version) return;
-    pendingUpdateVersionRef.current = version;
-    if (forced) pendingForcedUpdateRef.current = true;
+    if (
+      updateCycleActiveRef.current ||
+      updateStartInFlightRef.current ||
+      pendingUpdateVersionRef.current ||
+      updateStartedForVersionRef.current
+    ) return;
 
-    // If the browser already has sticky user activation, try immediately.
-    // If it declines, the normal pointer/key listener below retries on the next
-    // genuine interaction and the update screen remains hidden meanwhile.
+    pendingUpdateVersionRef.current = version;
+    pendingForcedUpdateRef.current = forced;
+
     if (userGestureSeenRef.current) startPendingUpdateFromGesture();
   };
 
   const startUpdateMusic = () => {
-    // Fallback button only: normally the updater is not shown until playback
-    // has already succeeded, so users should never need this.
     const audio = updateAudioElementRef.current;
     if (!audio) return Promise.resolve(false);
     setUpdateMusicState('starting');
     try {
-      audio.currentTime = 0;
       audio.volume = 0.72;
-    } catch {}
-    const context = ensureUpdateMediaGraph();
-    try { if (context && context.state !== 'running') void context.resume(); } catch {}
-    try {
+      audio.muted = false;
       return Promise.resolve(audio.play()).then(() => {
         setUpdateMusicState('playing');
         return true;
@@ -785,10 +760,13 @@ export default function RUMS() {
         stopped ||
         checking ||
         !navigator.onLine ||
+        updateCycleActiveRef.current ||
+        updateStartInFlightRef.current ||
         updateUntil > Date.now() ||
         updateOutroActive ||
         handoffUntil > Date.now() ||
-        pendingUpdateVersionRef.current
+        pendingUpdateVersionRef.current ||
+        updateStartedForVersionRef.current
       ) return;
 
       checking = true;
@@ -835,24 +813,17 @@ export default function RUMS() {
         setStartupRevealActive(true);
 
         const audio = updateAudioElementRef.current;
-        const context = updateAudioContextRef.current;
-        const gain = updateAudioGainRef.current;
-        if (context && gain) {
-          try {
-            const now = context.currentTime;
-            gain.gain.cancelScheduledValues(now);
-            gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value || 0.72), now);
-            gain.gain.linearRampToValueAtTime(0.0001, now + 5);
-          } catch {}
-        } else if (audio) {
-          // Fallback for browsers where a media element could play but could not
-          // be attached to Web Audio. Animate the element volume for five seconds.
+        if (audio) {
           const startedAt = performance.now();
           const startVolume = Number.isFinite(audio.volume) ? audio.volume : 0.72;
           const fade = (now) => {
             const progress = Math.min(1, (now - startedAt) / 5000);
             try { audio.volume = Math.max(0, startVolume * (1 - progress)); } catch {}
-            if (progress < 1) updateAudioFadeFrameRef.current = requestAnimationFrame(fade);
+            if (progress < 1) {
+              updateAudioFadeFrameRef.current = requestAnimationFrame(fade);
+            } else {
+              updateAudioFadeFrameRef.current = 0;
+            }
           };
           updateAudioFadeFrameRef.current = requestAnimationFrame(fade);
         }
@@ -868,15 +839,31 @@ export default function RUMS() {
               audio.currentTime = 0;
             } catch {}
           }
+          const forcedCycle = updateCycleForcedRef.current;
           try {
             localStorage.setItem(UPDATE_SEEN_KEY, updateTargetVersion);
             sessionStorage.removeItem(UPDATE_SCREEN_KEY);
             sessionStorage.removeItem(UPDATE_RELOAD_KEY);
-            // Prevent the freshly loaded document from interpreting the same
-            // deployment handoff as another update. The lock is intentionally
-            // short-lived; later genuine deployments still trigger normally.
-            sessionStorage.setItem(UPDATE_HANDOFF_KEY, String(Date.now() + 30000));
+            if (!forcedCycle) {
+              // Only a real deployment needs a reload to fetch the new bundle.
+              sessionStorage.setItem(UPDATE_HANDOFF_KEY, String(Date.now() + 30000));
+            }
           } catch { /* ignore */ }
+
+          updateCycleActiveRef.current = false;
+          updateCycleForcedRef.current = false;
+          setUpdateMusicState('ready');
+
+          if (forcedCycle) {
+            // The code running right now IS already the forced test build.
+            // Do not reload and give the updater/reveal a second chance to fire.
+            setUpdateUntil(0);
+            setUpdateOverlayLeaving(false);
+            setUpdateOutroActive(false);
+            setStartupRevealPending(false);
+            return;
+          }
+
           window.location.reload();
         }, 5150);
       }, 850);
@@ -904,18 +891,6 @@ export default function RUMS() {
     const audio = updateAudioElementRef.current;
     if (audio) {
       try { audio.pause(); } catch {}
-    }
-    if (updateAudioMediaSourceRef.current) {
-      try { updateAudioMediaSourceRef.current.disconnect(); } catch {}
-      updateAudioMediaSourceRef.current = null;
-    }
-    if (updateAudioGainRef.current) {
-      try { updateAudioGainRef.current.disconnect(); } catch {}
-      updateAudioGainRef.current = null;
-    }
-    if (updateAudioContextRef.current) {
-      try { updateAudioContextRef.current.close(); } catch {}
-      updateAudioContextRef.current = null;
     }
   }, []);
 
@@ -2858,19 +2833,23 @@ export default function RUMS() {
     setScreen('projectsDirectory');
   }
 
-  function beginSelectedVersionBuild() {
+  function beginSelectedVersionBuild(requestId = spaceLoadTokenRef.current) {
+    if (versionBuildRequestRef.current === requestId) return;
+    versionBuildRequestRef.current = requestId;
+
     setVersionBuildPending(true);
     setVersionBuildActive(false);
     if (versionBuildTimerRef.current) window.clearTimeout(versionBuildTimerRef.current);
 
-    // Two animation frames guarantee that the destination UI is first painted
-    // in its hidden/pending state. That prevents a one-frame fully-built flash.
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
+        if (versionBuildRequestRef.current !== requestId) return;
         setVersionBuildPending(false);
         setVersionBuildActive(true);
         versionBuildTimerRef.current = window.setTimeout(() => {
-          setVersionBuildActive(false);
+          if (versionBuildRequestRef.current === requestId) {
+            setVersionBuildActive(false);
+          }
           versionBuildTimerRef.current = 0;
         }, 4300);
       });
@@ -3005,6 +2984,7 @@ export default function RUMS() {
   }
 
   function openRumsChooser() {
+    versionBuildRequestRef.current = 0;
     setVersionBuildPending(false);
     setVersionBuildActive(false);
     if (versionBuildTimerRef.current) {
@@ -3097,7 +3077,7 @@ export default function RUMS() {
         if (found) {
           setCurrentUser(found);
           setScreen('feed');
-          beginSelectedVersionBuild();
+          beginSelectedVersionBuild(requestId);
           if (Number(found.tutorialVersion || 0) < requiredTutorialVersionForUser(found)) {
             setTutorialStep(0);
             setTutorialReturningUser(true);
@@ -3109,12 +3089,12 @@ export default function RUMS() {
       }
       setCurrentUser(null);
       setScreen('login');
-      beginSelectedVersionBuild();
+      beginSelectedVersionBuild(requestId);
     } catch (e) {
       console.error(e);
       setCurrentUser(null);
       setScreen('login');
-      beginSelectedVersionBuild();
+      beginSelectedVersionBuild(requestId);
     }
   }
 
