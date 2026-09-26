@@ -25,8 +25,8 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const TUTORIAL_VERSION = 8;
-const JAMIE_TUTORIAL_VERSION = 8;
+const TUTORIAL_VERSION = 10;
+const JAMIE_TUTORIAL_VERSION = 10;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -709,6 +709,8 @@ export default function RUMS() {
   const [pushBusy, setPushBusy] = useState(false);
   const [pushStatus, setPushStatus] = useState('');
   const [error, setError] = useState('');
+  const [actionToast, setActionToast] = useState(null);
+  const actionToastTimerRef = useRef(null);
   const [authMode, setAuthMode] = useState('login');
   const [authForm, setAuthForm] = useState({ username: '', password: '' });
   const [busy, setBusy] = useState(false);
@@ -1025,13 +1027,24 @@ export default function RUMS() {
     return plazaPlus.bookmarks?.[username] || [];
   }
 
+  function showActionToast(kind, message) {
+    if (actionToastTimerRef.current) window.clearTimeout(actionToastTimerRef.current);
+    setActionToast({ id: `${kind}-${Date.now()}`, kind, message });
+    actionToastTimerRef.current = window.setTimeout(() => {
+      setActionToast(null);
+      actionToastTimerRef.current = null;
+    }, 1900);
+  }
+
   async function toggleBookmark(postId) {
     if (!currentUser) return;
-    await commitPlazaPlus((data) => {
+    const wasBookmarked = bookmarkedPosts().includes(postId);
+    const saved = await commitPlazaPlus((data) => {
       const mine = new Set(data.bookmarks?.[currentUser.username] || []);
       if (mine.has(postId)) mine.delete(postId); else mine.add(postId);
       return { ...data, bookmarks: { ...data.bookmarks, [currentUser.username]: [...mine] } };
     });
+    if (saved) showActionToast('save', wasBookmarked ? 'Removed from saved posts' : 'Saved to Plaza+');
   }
 
   async function createCollection() {
@@ -3593,18 +3606,21 @@ export default function RUMS() {
   }
 
   async function toggleLike(postId) {
+    const post = posts.find((p) => p.id === postId);
+    if (!post || !currentUser) return;
+    const wasLiked = post.likes.includes(currentUser.username);
     const next = posts.map((p) => {
       if (p.id !== postId) return p;
-      const liked = p.likes.includes(currentUser.username);
       return {
         ...p,
-        likes: liked ? p.likes.filter((u) => u !== currentUser.username) : [...p.likes, currentUser.username],
+        likes: wasLiked ? p.likes.filter((u) => u !== currentUser.username) : [...p.likes, currentUser.username],
       };
     });
-    await savePosts(next);
-    const post = posts.find((p) => p.id === postId);
-    const becameLiked = post && !post.likes.includes(currentUser.username);
-    if (becameLiked && post?.username !== currentUser.username) {
+    const saved = await savePosts(next);
+    if (!saved) return;
+    showActionToast('like', wasLiked ? 'Like removed' : 'Post liked');
+    const becameLiked = !wasLiked;
+    if (becameLiked && post.username !== currentUser.username) {
       void commitPlazaPlus((data) => ({ ...data, activities: [{ id:`act-${Date.now()}-${Math.random().toString(36).slice(2,5)}`, type:'like', actor:currentUser.username, targetUser:post.username, postId, text:`${currentUser.username} liked your post`, timestamp:Date.now() }, ...(data.activities||[])].slice(0,800) }));
     }
   }
@@ -5059,7 +5075,7 @@ export default function RUMS() {
         </div>
         <div className="post-actions">
           <button className={`like-btn ${liked ? 'liked' : ''}`} onClick={() => toggleLike(post.id)} aria-label={liked ? 'Unlike post' : 'Like post'}>
-            <Heart size={19} fill={liked ? '#e0546b' : 'none'} />
+            <Heart size={19} fill={liked ? 'currentColor' : 'none'} />
             {post.likes.length > 0 ? post.likes.length : 'Like'}
           </button>
           <button
@@ -5730,7 +5746,7 @@ export default function RUMS() {
                             className={`like-btn suggestion-vote-btn ${voted ? 'liked' : ''}`}
                             onClick={() => toggleSuggestionVote(s.id)}
                           >
-                            <Heart size={14} fill={voted ? '#e0546b' : 'none'} />
+                            <Heart size={14} fill={voted ? 'currentColor' : 'none'} />
                             {(s.votes || []).length > 0 ? (s.votes || []).length : 'Upvote'}
                           </button>
                           {renderReactionAddButton(s, 'suggestion')}
@@ -6609,6 +6625,14 @@ export default function RUMS() {
                 )}
               </div>
             </section>
+          </div>
+        )}
+
+        {actionToast && (
+          <div className={`plaza-action-toast plaza-action-toast-${actionToast.kind}`} key={actionToast.id} role="status" aria-live="polite">
+            <span className="plaza-action-toast-icon">{actionToast.kind === 'like' ? <Heart size={16} fill="currentColor" /> : <Star size={16} fill="currentColor" />}</span>
+            <span>{actionToast.message}</span>
+            <Check size={14} className="plaza-action-toast-check" />
           </div>
         )}
 
