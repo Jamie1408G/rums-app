@@ -5195,8 +5195,8 @@ export default function RUMS() {
 
                           <div className="gif-picker-body">
                             {gifError ? <div className="gif-picker-state"><span>Couldn’t load GIFs.</span><button type="button" onClick={() => void loadKlipyGifs({ query: gifQuery, next: '', append: false })}>Try again</button></div> : <>
-                              {gifLoading && gifResults.length === 0 ? <div className="gif-picker-skeletons" style={{ display: 'grid', gridTemplateColumns: '180px 180px', gridAutoRows: '112px', gap: '8px', justifyContent: 'center', width: '100%', maxWidth: '100%', margin: '0 auto', overflowX: 'hidden' }}>{Array.from({ length: 8 }).map((_, index) => <span key={index} style={{ width: '180px', height: '112px' }} />)}</div> : <div className="gif-picker-grid" style={{ display: 'grid', gridTemplateColumns: '180px 180px', gridAutoRows: '112px', gap: '8px', justifyContent: 'center', alignItems: 'stretch', width: '100%', maxWidth: '100%', margin: '0 auto', overflowX: 'hidden' }}>
-                                {gifResults.slice(0, 8).map((gif) => <button key={gif.id} type="button" className="gif-picker-item" style={{ width: '180px', height: '112px', minWidth: 0, maxWidth: '180px' }} onClick={() => { void selectKlipyGif(gif); }} title={gif.title || 'Send GIF'}>
+                              {gifLoading && gifResults.length === 0 ? <div className="gif-picker-skeletons">{Array.from({ length: 8 }).map((_, index) => <span key={index} />)}</div> : <div className="gif-picker-grid">
+                                {gifResults.slice(0, 8).map((gif) => <button key={gif.id} type="button" className="gif-picker-item" onClick={() => { void selectKlipyGif(gif); }} title={gif.title || 'Send GIF'}>
                                   <img src={gif.preview || gif.url} alt={gif.title || 'GIF'} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                                 </button>)}
                               </div>}

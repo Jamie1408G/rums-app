@@ -4626,7 +4626,7 @@ button,input,textarea { font:inherit; }
   }
 }
 
-/* GIF picker — isolated Plaza modal; never overlaps the composer */
+/* GIF picker — clean responsive Plaza modal */
 .aero-root .gif-picker-overlay{
   position:fixed;inset:0;z-index:4000;display:grid;place-items:center;padding:22px;
   background:rgba(21,31,48,.32);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
@@ -4651,15 +4651,17 @@ button,input,textarea { font:inherit; }
 .aero-root .gif-picker-search input::placeholder{color:var(--theme-muted,#8b98a8)}
 .aero-root .gif-picker-search>button:not(.gif-picker-search-button){display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--theme-muted,#728196);cursor:pointer}
 .aero-root .gif-picker-section-label{display:flex;align-items:center;justify-content:space-between;min-height:30px;padding:0 17px 7px;color:var(--theme-muted,#7c8ca1);font-size:10px}.aero-root .gif-picker-section-label strong{color:var(--theme-text,#314763);font-size:11px}
-.aero-root .gif-picker-body{min-height:0;overflow-y:auto;padding:0 14px 14px;scrollbar-width:thin;scrollbar-color:var(--theme-border,#dce8f5) transparent}
-.aero-root .gif-picker-grid,.aero-root .gif-picker-skeletons{display:grid;grid-template-columns:repeat(2,180px);grid-template-rows:repeat(4,112px);gap:8px;align-items:stretch;justify-content:center;width:100%;max-width:100%;margin:0 auto}
-.aero-root .gif-picker-item,.aero-root .gif-picker-skeletons span{min-width:0;width:100%;height:112px;border-radius:12px;overflow:hidden}
+.aero-root .gif-picker-body{min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 14px 14px;scrollbar-width:thin;scrollbar-color:var(--theme-border,#dce8f5) transparent}
+.aero-root .gif-picker-grid,.aero-root .gif-picker-skeletons{
+  width:368px;max-width:100%;margin:0 auto;display:grid;grid-template-columns:repeat(2,180px);grid-auto-rows:112px;gap:8px;place-content:start center;
+}
+.aero-root .gif-picker-item,.aero-root .gif-picker-skeletons span{display:block;min-width:0;width:180px;height:112px;border-radius:12px;overflow:hidden}
 .aero-root .gif-picker-item{position:relative;padding:0;border:1px solid var(--theme-border,#e0e7ef);background:var(--theme-surface-2,#eef2f7);cursor:pointer;box-shadow:none!important;transform:none!important;isolation:auto!important}
 .aero-root .gif-picker-item::before{display:none!important}
 .aero-root .gif-picker-item img{display:block;width:100%;height:100%;object-fit:cover;background:var(--theme-surface-2,#eef2f7)}
 .aero-root .gif-picker-item:hover{border-color:var(--theme-accent,#3478f6);box-shadow:0 0 0 2px color-mix(in srgb,var(--theme-accent,#3478f6) 18%,transparent)!important}
 .aero-root .gif-picker-item:focus-visible{outline:3px solid var(--theme-accent,#3478f6);outline-offset:2px}
-.aero-root .gif-picker-skeletons span{display:block;background:linear-gradient(100deg,var(--theme-surface-2,#eef2f7) 20%,var(--theme-surface,#fff) 45%,var(--theme-surface-2,#eef2f7) 70%);background-size:220% 100%;animation:gif-skeleton 1.25s linear infinite}
+.aero-root .gif-picker-skeletons span{background:linear-gradient(100deg,var(--theme-surface-2,#eef2f7) 20%,var(--theme-surface,#fff) 45%,var(--theme-surface-2,#eef2f7) 70%);background-size:220% 100%;animation:gif-skeleton 1.25s linear infinite}
 @keyframes gif-skeleton{to{background-position:-220% 0}}
 .aero-root .gif-picker-state{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;color:var(--theme-muted,#7c8ca1);font-size:12px}.aero-root .gif-picker-state span{color:var(--theme-text,#314763);font-weight:750}.aero-root .gif-picker-state small{font-size:10px}.aero-root .gif-picker-state button{padding:7px 11px;border:1px solid var(--theme-border,#dce8f5);border-radius:9px;background:var(--theme-surface-2,#f5f7fb);color:var(--theme-accent,#3478f6);font:inherit;font-size:10px;font-weight:800;cursor:pointer}
 .aero-root .gif-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:51px;padding:9px 16px 11px;border-top:1px solid var(--theme-border,#e3e9f1);background:var(--theme-surface,rgba(255,255,255,.75));color:var(--theme-muted,#7c8ca1);font-size:10px}
@@ -4671,13 +4673,13 @@ button,input,textarea { font:inherit; }
   .aero-root .gif-picker-panel{width:100%;height:min(78vh,680px);min-height:460px;border-left:0;border-right:0;border-bottom:0;border-radius:24px 24px 0 0}
   .aero-root .gif-picker-header{padding:13px 14px 10px}.aero-root .gif-picker-title small{display:none}.aero-root .gif-picker-mark{width:38px;height:29px}
   .aero-root .gif-picker-search{margin:10px 12px 8px}.aero-root .gif-picker-section-label{padding-left:13px;padding-right:13px}.aero-root .gif-picker-body{padding:0 10px 12px}
-  .aero-root .gif-picker-grid,.aero-root .gif-picker-skeletons{grid-template-columns:repeat(2,minmax(0,148px));grid-template-rows:repeat(4,88px);gap:7px;justify-content:center;width:100%;max-width:100%;margin:0 auto;overflow:hidden}
-  .aero-root .gif-picker-item,.aero-root .gif-picker-skeletons span{height:88px}
+  .aero-root .gif-picker-grid,.aero-root .gif-picker-skeletons{width:328px;grid-template-columns:repeat(2,160px);grid-auto-rows:96px;gap:8px}
+  .aero-root .gif-picker-item,.aero-root .gif-picker-skeletons span{width:160px;height:96px}
   .aero-root .gif-picker-footer{padding-left:12px;padding-right:12px;padding-bottom:max(11px,env(safe-area-inset-bottom))}
 }
-@media(max-width:390px){
-  .aero-root .gif-picker-search{grid-template-columns:auto minmax(0,1fr) auto}
-  .aero-root .gif-picker-grid,.aero-root .gif-picker-skeletons{grid-template-columns:repeat(2,minmax(0,136px));gap:6px}
+@media(max-width:350px){
+  .aero-root .gif-picker-grid,.aero-root .gif-picker-skeletons{width:296px;grid-template-columns:repeat(2,144px);grid-auto-rows:88px;gap:8px}
+  .aero-root .gif-picker-item,.aero-root .gif-picker-skeletons span{width:144px;height:88px}
 }
 
 /* GIF message / selected preview rendering */
@@ -4686,10 +4688,4 @@ button,input,textarea { font:inherit; }
 .aero-root .chat-klipy-media{display:block;width:100%;height:auto;max-height:420px;object-fit:contain;background:#111}
 .aero-root .chat-message:has(.chat-klipy-message) .chat-message-bubble{width:min(540px,100%);max-width:100%}
 
-/* GIF grid hard-stop: dimensions are intentionally fixed in JSX to avoid legacy grid overrides. */
-.aero-root .gif-picker-grid .gif-picker-item { flex:none !important; min-width:180px !important; max-width:180px !important; width:180px !important; height:112px !important; }
-.aero-root .gif-picker-grid .gif-picker-item img { width:180px !important; height:112px !important; object-fit:cover !important; }
-@media(max-width:430px){
-  .aero-root .gif-picker-grid .gif-picker-item { min-width:152px !important; max-width:152px !important; width:152px !important; height:96px !important; }
-  .aero-root .gif-picker-grid .gif-picker-item img { width:152px !important; height:96px !important; }
-}
+
