@@ -4,7 +4,7 @@ import './redesign.css';
 import {
   Heart, MessageCircle, SmilePlus, Star, LogOut, ShieldCheck, Shield, User as UserIcon, Menu,
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
-  Lightbulb, Megaphone, Newspaper, Pencil,
+  Lightbulb, Megaphone, Newspaper, Pencil, Video, Link2,
   GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff, Undo2, Redo2, RotateCcw,
 } from 'lucide-react';
 
@@ -424,6 +424,52 @@ function resizeImage(file, maxW = 900) {
   });
 }
 
+
+function readMediaFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => resolve(String(event.target?.result || ''));
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function newsVideoInfo(value = '') {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  if (raw.startsWith('data:video/')) return { kind: 'video', src: raw };
+  try {
+    const normalized = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    const url = new URL(normalized);
+    const host = url.hostname.replace(/^www\./, '').toLowerCase();
+    if (host === 'youtu.be') {
+      const id = url.pathname.split('/').filter(Boolean)[0];
+      if (id) return { kind: 'embed', src: `https://www.youtube.com/embed/${id}` };
+    }
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      const id = url.searchParams.get('v') || (url.pathname.startsWith('/shorts/') ? url.pathname.split('/')[2] : '') || (url.pathname.startsWith('/embed/') ? url.pathname.split('/')[2] : '');
+      if (id) return { kind: 'embed', src: `https://www.youtube.com/embed/${id}` };
+    }
+    if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+      const parts = url.pathname.split('/').filter(Boolean);
+      const id = parts.find((part) => /^\d+$/.test(part));
+      if (id) return { kind: 'embed', src: `https://player.vimeo.com/video/${id}` };
+    }
+    return { kind: 'video', src: url.href };
+  } catch {
+    return null;
+  }
+}
+
+function NewsVideo({ src, title = 'News video' }) {
+  const info = newsVideoInfo(src);
+  if (!info) return null;
+  if (info.kind === 'embed') {
+    return <div className="news-video-frame"><iframe src={info.src} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen loading="lazy" /></div>;
+  }
+  return <div className="news-video-frame"><video src={info.src} controls playsInline preload="metadata" /></div>;
+}
+
 function resizeEmojiImage(file, size = 96) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -533,9 +579,10 @@ export default function RUMS() {
   const [newsFilter, setNewsFilter] = useState('All');
   const [newsSelectedId, setNewsSelectedId] = useState(null);
   const [newsComposeOpen, setNewsComposeOpen] = useState(false);
-  const [newsDraft, setNewsDraft] = useState({ title: '', summary: '', body: '', category: 'Plaza', image: '', breaking: false, pinned: false });
+  const [newsDraft, setNewsDraft] = useState({ title: '', summary: '', body: '', category: 'Plaza', image: '', video: '', breaking: false, pinned: false });
   const [newsBusy, setNewsBusy] = useState(false);
   const [newsImageBusy, setNewsImageBusy] = useState(false);
+  const [newsVideoBusy, setNewsVideoBusy] = useState(false);
   const [newsCommentDrafts, setNewsCommentDrafts] = useState({});
   const [siteAnnouncement, setSiteAnnouncement] = useState(null);
   const [announcementDraft, setAnnouncementDraft] = useState('');
@@ -4130,6 +4177,22 @@ export default function RUMS() {
     } finally { setNewsImageBusy(false); }
   }
 
+  async function handleNewsVideoPick(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('video/')) { setError('Please choose a video file.'); return; }
+    if (file.size > 20 * 1024 * 1024) { setError('Video files must be 20 MB or smaller. For larger videos, paste a YouTube, Vimeo, MP4 or WebM link instead.'); return; }
+    setNewsVideoBusy(true);
+    try {
+      const video = await readMediaFile(file);
+      setNewsDraft((draft) => ({ ...draft, video }));
+    } catch (e) {
+      console.error(e);
+      setError('Could not load that news video.');
+    } finally { setNewsVideoBusy(false); }
+  }
+
   async function publishNewsArticle() {
     if (!canEditSite || newsBusy) return;
     const title = newsDraft.title.trim().slice(0, 120);
@@ -4137,11 +4200,14 @@ export default function RUMS() {
     const body = newsDraft.body.trim().slice(0, 8000);
     if (!title || !body) return;
     setNewsBusy(true);
+    const image = newsDraft.image?.startsWith('data:image/') ? newsDraft.image : safeExternalUrl(newsDraft.image || '');
+    const video = newsDraft.video?.startsWith('data:video/') ? newsDraft.video : safeExternalUrl(newsDraft.video || '');
     const article = {
       id: `news-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       title, summary, body,
       category: NEWS_CATEGORIES.includes(newsDraft.category) ? newsDraft.category : 'Plaza',
-      image: newsDraft.image || '',
+      image,
+      video,
       breaking: !!newsDraft.breaking,
       pinned: !!newsDraft.pinned,
       author: currentUser.username,
@@ -4152,7 +4218,7 @@ export default function RUMS() {
     const next = [article, ...plazaNews].slice(0, 300);
     await savePlazaNews(next);
     void commitPlazaPlus((data) => ({ ...data, activities: [{ id:`act-${Date.now()}-news`, type:'news', actor:currentUser.username, targetUser:null, text:`Plaza News: ${article.title}`, timestamp:Date.now() }, ...(data.activities || [])].slice(0,800) }));
-    setNewsDraft({ title: '', summary: '', body: '', category: 'Plaza', image: '', breaking: false, pinned: false });
+    setNewsDraft({ title: '', summary: '', body: '', category: 'Plaza', image: '', video: '', breaking: false, pinned: false });
     setNewsSelectedId(article.id);
     setNewsBusy(false);
   }
@@ -5427,20 +5493,37 @@ export default function RUMS() {
                     </nav>
                   </header>
 
-                  {canEditSite && newsComposeOpen && <section className="news-site-composer">
-                    <div className="news-composer-head"><div><b>Publish a Plaza News story</b><small>Write it like a news article: clear headline, short standfirst, full story.</small></div><button type="button" onClick={()=>setNewsComposeOpen(false)} aria-label="Close editor"><X size={17}/></button></div>
-                    <div className="news-composer-grid">
-                      <input className="aero-input" placeholder="Headline" maxLength={120} value={newsDraft.title} onChange={(e)=>setNewsDraft({...newsDraft,title:e.target.value})}/>
-                      <select className="aero-input" value={newsDraft.category} onChange={(e)=>setNewsDraft({...newsDraft,category:e.target.value})}>{NEWS_CATEGORIES.map((category)=><option key={category}>{category}</option>)}</select>
+                  {canEditSite && newsComposeOpen && <section className="news-site-composer news-room-editor">
+                    <div className="news-composer-head"><div><span className="news-editor-eyebrow">PLAZA NEWS DESK</span><b>Create article</b><small>Build the story exactly as it will appear on the news site.</small></div><button type="button" onClick={()=>setNewsComposeOpen(false)} aria-label="Close editor"><X size={17}/></button></div>
+                    <div className="news-editor-fields">
+                      <label className="news-editor-field news-editor-title"><span>Headline</span><input placeholder="Write a clear, factual headline" maxLength={120} value={newsDraft.title} onChange={(e)=>setNewsDraft({...newsDraft,title:e.target.value})}/><small>{newsDraft.title.length}/120</small></label>
+                      <label className="news-editor-field news-editor-category"><span>Section</span><select value={newsDraft.category} onChange={(e)=>setNewsDraft({...newsDraft,category:e.target.value})}>{NEWS_CATEGORIES.map((category)=><option key={category}>{category}</option>)}</select></label>
+                      <label className="news-editor-field news-editor-summary"><span>Standfirst</span><textarea rows={3} placeholder="Summarise the story in one or two sentences" maxLength={260} value={newsDraft.summary} onChange={(e)=>setNewsDraft({...newsDraft,summary:e.target.value})}/><small>{newsDraft.summary.length}/260</small></label>
+                      <label className="news-editor-field news-editor-body"><span>Article</span><textarea rows={12} placeholder="Write the full article. Use blank lines to start a new paragraph." value={newsDraft.body} onChange={(e)=>setNewsDraft({...newsDraft,body:e.target.value})}/><small>{newsDraft.body.length}/8000</small></label>
                     </div>
-                    <input className="aero-input" placeholder="Standfirst / short summary" maxLength={260} value={newsDraft.summary} onChange={(e)=>setNewsDraft({...newsDraft,summary:e.target.value})}/>
-                    <textarea className="caption-area news-body-editor" placeholder="Write the full article…" value={newsDraft.body} onChange={(e)=>setNewsDraft({...newsDraft,body:e.target.value})}/>
-                    {newsDraft.image && <div className="news-image-preview"><img src={newsDraft.image} alt="News preview"/><button type="button" onClick={()=>setNewsDraft({...newsDraft,image:''})}><X size={14}/></button></div>}
-                    <div className="news-composer-actions">
-                      <label className="pill pill-btn news-image-picker">{newsImageBusy ? 'Loading…' : newsDraft.image ? 'Change image' : 'Add image'}<input hidden type="file" accept="image/*" onChange={handleNewsImagePick}/></label>
-                      <label className="news-toggle"><input type="checkbox" checked={newsDraft.breaking} onChange={(e)=>setNewsDraft({...newsDraft,breaking:e.target.checked})}/><span>Breaking</span></label>
-                      <label className="news-toggle"><input type="checkbox" checked={newsDraft.pinned} onChange={(e)=>setNewsDraft({...newsDraft,pinned:e.target.checked})}/><span>Pin story</span></label>
-                      <button className="aero-btn" disabled={newsBusy || newsImageBusy || !newsDraft.title.trim() || !newsDraft.body.trim()} onClick={async()=>{await publishNewsArticle();setNewsComposeOpen(false);}}>{newsBusy ? <Loader2 size={15} className="spin"/> : <Newspaper size={15}/>} Publish</button>
+
+                    <section className="news-media-editor" aria-label="Article media">
+                      <div className="news-media-editor-head"><div><b>Media</b><small>Add a lead image and/or a video. Images are also used as story thumbnails.</small></div></div>
+                      <div className="news-media-controls">
+                        <label className="news-media-upload"><ImagePlus size={16}/><span><b>{newsImageBusy ? 'Processing image…' : 'Upload image'}</b><small>JPG, PNG, WebP or GIF</small></span><input hidden type="file" accept="image/*" onChange={handleNewsImagePick} disabled={newsImageBusy}/></label>
+                        <label className="news-media-upload"><Video size={16}/><span><b>{newsVideoBusy ? 'Loading video…' : 'Upload video'}</b><small>Up to 20 MB</small></span><input hidden type="file" accept="video/*" onChange={handleNewsVideoPick} disabled={newsVideoBusy}/></label>
+                      </div>
+                      <div className="news-media-url-grid">
+                        <label><span><Link2 size={13}/> Image URL</span><input placeholder="https://…" value={newsDraft.image?.startsWith('data:') ? '' : newsDraft.image} onChange={(e)=>setNewsDraft({...newsDraft,image:e.target.value})}/></label>
+                        <label><span><Link2 size={13}/> Video URL</span><input placeholder="YouTube, Vimeo, MP4 or WebM URL" value={newsDraft.video?.startsWith('data:') ? '' : newsDraft.video} onChange={(e)=>setNewsDraft({...newsDraft,video:e.target.value})}/></label>
+                      </div>
+                      {(newsDraft.image || newsDraft.video) && <div className="news-media-preview-grid">
+                        {newsDraft.image && <div className="news-media-preview"><div className="news-media-preview-label">Lead image</div><img src={newsDraft.image} alt="News preview"/><button type="button" onClick={()=>setNewsDraft({...newsDraft,image:''})} aria-label="Remove image"><X size={14}/></button></div>}
+                        {newsDraft.video && <div className="news-media-preview news-video-preview"><div className="news-media-preview-label">Video</div><NewsVideo src={newsDraft.video} title="News video preview"/><button type="button" onClick={()=>setNewsDraft({...newsDraft,video:''})} aria-label="Remove video"><X size={14}/></button></div>}
+                      </div>}
+                    </section>
+
+                    <div className="news-editor-footer">
+                      <div className="news-editor-options">
+                        <label className="news-toggle"><input type="checkbox" checked={newsDraft.breaking} onChange={(e)=>setNewsDraft({...newsDraft,breaking:e.target.checked})}/><span>Breaking news</span></label>
+                        <label className="news-toggle"><input type="checkbox" checked={newsDraft.pinned} onChange={(e)=>setNewsDraft({...newsDraft,pinned:e.target.checked})}/><span>Lead story</span></label>
+                      </div>
+                      <button className="news-editor-publish" disabled={newsBusy || newsImageBusy || newsVideoBusy || !newsDraft.title.trim() || !newsDraft.body.trim()} onClick={async()=>{await publishNewsArticle();setNewsComposeOpen(false);}}>{newsBusy ? <Loader2 size={16} className="spin"/> : <Newspaper size={16}/>} Publish article</button>
                     </div>
                   </section>}
 
@@ -5452,6 +5535,7 @@ export default function RUMS() {
                       {selectedNewsArticle.summary && <p className="news-article-standfirst">{selectedNewsArticle.summary}</p>}
                       <div className="news-article-meta"><span>By <button onClick={()=>openProfile(selectedNewsArticle.author)}>{selectedNewsArticle.author}</button></span><span>{new Date(selectedNewsArticle.timestamp).toLocaleString([], { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}</span></div>
                       {selectedNewsArticle.image && <figure className="news-article-hero"><img src={selectedNewsArticle.image} alt=""/></figure>}
+                      {selectedNewsArticle.video && <div className="news-article-video"><NewsVideo src={selectedNewsArticle.video} title={selectedNewsArticle.title}/></div>}
                       <div className="news-article-body">{selectedNewsArticle.body.split('\n').map((line,i)=>line ? <p key={i}>{line}</p> : <br key={i}/>)}</div>
                       <div className="news-article-reactions"><span>What do you think?</span>{['❤️','👍','🔥','🎉'].map((emoji)=>{const names=selectedNewsArticle.reactions?.[emoji]||[];return <button key={emoji} className={names.includes(currentUser.username)?'active':''} onClick={()=>toggleNewsReaction(selectedNewsArticle.id,emoji)}>{emoji}{names.length ? <b>{names.length}</b> : null}</button>})}</div>
                       <section className="news-article-comments">
@@ -5501,7 +5585,7 @@ export default function RUMS() {
 
                       <aside className="news-home-rail">
                         <section className="news-rail-block news-net-binnen">
-                          <div className="news-rail-title"><h2>Net binnen</h2><span>LIVE</span></div>
+                          <div className="news-rail-title"><h2>Just in</h2><span>LIVE</span></div>
                           <div>{visibleNews.slice(0,7).map((article)=><button key={article.id} onClick={()=>setNewsSelectedId(article.id)}><time>{new Date(article.timestamp).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</time><span>{article.title}</span></button>)}</div>
                         </section>
                         <section className="news-rail-block news-most-discussed">
