@@ -63,8 +63,8 @@ function loadSpotifyIframeApi() {
   return window.__rumsSpotifyIframeApiPromise;
 }
 
-const TUTORIAL_VERSION = 16;
-const JAMIE_TUTORIAL_VERSION = 16;
+const TUTORIAL_VERSION = 17;
+const JAMIE_TUTORIAL_VERSION = 17;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -5355,22 +5355,24 @@ export default function RUMS() {
           <span className="site-update-kicker">RUMS PLAZA</span>
           <h1>Updating the website</h1>
           <p>Loading the latest version. You’ll be back in a moment.</p>
-          <button
-            type="button"
+          <div
             className={`site-update-now-playing ${updateMusicState === 'playing' ? 'is-playing' : ''} ${updateMusicState === 'blocked' || updateMusicState === 'paused' ? 'needs-tap' : ''}`}
-            onClick={startUpdateMusic}
-            aria-label={`${updateMusicState === 'playing' ? 'Now playing' : 'Start'} ${updateTrack.title} by ${updateTrack.artist}`}
+            aria-label={`Now playing ${updateTrack.title} by ${updateTrack.artist}`}
           >
             <div className="site-update-now-icon" aria-hidden="true">
               <span/><span/><span/><span/>
             </div>
             <div className="site-update-now-copy">
-              <small>{updateMusicState === 'playing' ? 'NOW PLAYING' : updateMusicState === 'blocked' || updateMusicState === 'paused' ? 'TAP TO START' : 'STARTING MUSIC'}</small>
+              <small>NOW PLAYING</small>
               <strong>{updateTrack.title}</strong>
               <span>{updateTrack.artist}</span>
             </div>
-            <div className="site-update-spotify-badge" aria-hidden="true">♫</div>
-          </button>
+            {updateMusicState === 'blocked' || updateMusicState === 'paused' ? (
+              <button type="button" className="site-update-play-fallback" onClick={startUpdateMusic} aria-label={`Play ${updateTrack.title}`} title="Play update soundtrack">▶</button>
+            ) : (
+              <div className="site-update-spotify-badge" aria-hidden="true">♫</div>
+            )}
+          </div>
           <div className="site-update-loader" aria-hidden="true"><span /></div>
         </div>
       </div>}
