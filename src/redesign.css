@@ -4753,8 +4753,11 @@ button,input,textarea { font:inherit; }
 .news-editor-fields{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:0;border-bottom:1px solid var(--theme-border,#dfe6ee)}
 .news-editor-field{position:relative;display:grid;gap:7px;padding:15px 17px;border-right:1px solid var(--theme-border,#dfe6ee);border-bottom:1px solid var(--theme-border,#dfe6ee);background:var(--theme-surface,#fff)}
 .news-editor-field>span{color:var(--theme-muted,#6c7a8b);font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.news-editor-field>small{position:absolute;right:12px;bottom:8px;color:var(--theme-muted,#8a96a5);font-size:8px}
-.news-editor-field input,.news-editor-field select,.news-editor-field textarea,.news-media-url-grid input{width:100%;margin:0;padding:10px 0;border:0!important;border-radius:0!important;outline:none;background:transparent!important;color:var(--theme-text,#1e2d3d)!important;box-shadow:none!important;font:inherit}
-.news-editor-field input:focus,.news-editor-field select:focus,.news-editor-field textarea:focus,.news-media-url-grid input:focus{box-shadow:inset 0 -2px var(--theme-accent,#3478f6)!important}
+/* News editor fields deliberately reuse Plaza's normal form controls. */
+.news-editor-field .aero-input,.news-editor-field .caption-area,.news-media-url-grid .aero-input{
+  width:100%!important;min-width:0!important;margin:0!important;
+}
+.news-editor-field select.aero-input{appearance:auto;-webkit-appearance:auto;}
 .news-editor-title input{padding:2px 0 10px;font-size:23px;font-weight:850;letter-spacing:-.035em}.news-editor-category{border-right:0}.news-editor-category select{font-size:13px;font-weight:750}.news-editor-summary{grid-column:1/3;border-right:0}.news-editor-summary textarea{resize:vertical;min-height:64px;font-size:15px;font-weight:600;line-height:1.45}.news-editor-body{grid-column:1/3;border-right:0;border-bottom:0}.news-editor-body textarea{resize:vertical;min-height:270px;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.72}
 .news-media-editor{padding:16px 17px;border-bottom:1px solid var(--theme-border,#dfe6ee);background:var(--theme-surface-2,#fafbfc)}.news-media-editor-head b,.news-media-editor-head small{display:block}.news-media-editor-head b{font-size:13px}.news-media-editor-head small{margin-top:2px;color:var(--theme-muted,#748295);font-size:10px}.news-media-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.news-media-upload{display:flex;align-items:center;gap:10px;min-height:58px;padding:10px 12px;border:1px dashed var(--theme-border,#cfd9e4);border-radius:7px;background:var(--theme-surface,#fff);color:var(--theme-text,#26384a);cursor:pointer;transition:border-color .18s,background .18s}.news-media-upload:hover{border-color:var(--theme-accent,#3478f6);background:var(--theme-accent-soft,#eef5ff)}.news-media-upload>svg{color:var(--theme-accent,#3478f6)}.news-media-upload span{display:block}.news-media-upload b,.news-media-upload small{display:block}.news-media-upload b{font-size:11px}.news-media-upload small{margin-top:2px;color:var(--theme-muted,#7c8997);font-size:9px}.news-media-url-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}.news-media-url-grid label{display:grid;gap:4px;padding:9px 11px;border:1px solid var(--theme-border,#d9e2ea);border-radius:7px;background:var(--theme-surface,#fff)}.news-media-url-grid label>span{display:flex;align-items:center;gap:5px;color:var(--theme-muted,#6f7f90);font-size:9px;font-weight:800}.news-media-url-grid input{padding:2px 0 4px!important;font-size:11px!important}
 .news-media-preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.news-media-preview{position:relative;overflow:hidden;border:1px solid var(--theme-border,#d9e2ea);border-radius:8px;background:#111}.news-media-preview-label{position:absolute;z-index:3;left:8px;top:8px;padding:4px 6px;border-radius:4px;background:#0b1520c9;color:#fff;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}.news-media-preview>img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}.news-media-preview>button{position:absolute;z-index:4;right:8px;top:8px;display:grid;place-items:center;width:27px;height:27px;border:0;border-radius:50%;background:#0b1520d9;color:#fff;cursor:pointer}.news-video-preview .news-video-frame{border-radius:0}.news-video-frame{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:8px;background:#090d12}.news-video-frame iframe,.news-video-frame video{display:block;width:100%;height:100%;border:0;object-fit:contain;background:#000}
@@ -4844,8 +4847,8 @@ button,input,textarea { font:inherit; }
   border-color:color-mix(in srgb,var(--theme-accent,#3478f6) 55%,#fff)!important;
   box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-accent,#3478f6) 15%,transparent),inset 0 1px #fff!important;
 }
-.news-editor-title input{font-size:17px!important;font-weight:750!important;letter-spacing:-.02em}
-.news-editor-summary textarea{min-height:88px!important;resize:vertical}.news-editor-body textarea{min-height:250px!important;resize:vertical;line-height:1.6}
+.news-editor-title .aero-input{font-size:inherit!important;font-weight:inherit!important;letter-spacing:inherit!important}
+.news-editor-summary .caption-area{min-height:112px!important;resize:vertical}.news-editor-body .caption-area{min-height:250px!important;resize:vertical;line-height:1.6}
 .news-media-editor{
   padding:14px!important;border:1px solid var(--theme-border,#e4e9f0)!important;border-radius:16px!important;
   background:var(--theme-surface-2,rgba(248,250,253,.86))!important;
@@ -4878,8 +4881,7 @@ button,input,textarea { font:inherit; }
   .news-editor-title,.news-editor-summary,.news-editor-body{grid-column:1/-1!important}
   .news-editor-category{grid-column:1!important}.news-editor-source{grid-column:2!important}
   .news-editor-field{padding:10px!important;border-radius:13px!important}
-  .news-editor-title input{font-size:16px!important}
-  .news-editor-body textarea{min-height:220px!important;font-size:13px!important}
+  .news-editor-body .caption-area{min-height:220px!important}
   .news-media-editor{padding:11px!important;border-radius:14px!important}
   .news-media-controls,.news-media-url-grid,.news-media-preview-grid{grid-template-columns:1fr!important}
   .news-editor-footer{gap:10px!important}.news-editor-options{justify-content:flex-start!important;flex-wrap:wrap!important}
