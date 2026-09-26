@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import './legacy.css';
 import './redesign.css';
 import {
@@ -27,7 +27,7 @@ const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
-const FORCE_UPDATE_REVISION = 'one-cycle-keepalive-43';
+const FORCE_UPDATE_REVISION = 'always-visible-one-cycle-44';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -38,8 +38,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 43;
-const JAMIE_TUTORIAL_VERSION = 43;
+const TUTORIAL_VERSION = 44;
+const JAMIE_TUTORIAL_VERSION = 44;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -581,7 +581,6 @@ export default function RUMS() {
   const pendingUpdateRef = useRef(null);
   const updateCycleRef = useRef({ id: '', forced: false, phase: 'idle' });
   const updateStartInFlightRef = useRef(false);
-  const swallowNextClickRef = useRef(false);
 
   const [updateMusicState, setUpdateMusicState] = useState('ready');
   const [updateOutroActive, setUpdateOutroActive] = useState(false);
@@ -741,10 +740,11 @@ export default function RUMS() {
     return true;
   };
 
-  useEffect(() => {
-    // Queue the one-time forced test ONLY when this document was opened directly.
-    // If we just arrived from a genuine update reload, that real update was the
-    // test already — running FORCE again is exactly what caused the double screen.
+  useLayoutEffect(() => {
+    // Forced testing is now visual-first and audio-independent:
+    // establish exactly one updater cycle before the first browser paint.
+    // A genuine update handoff suppresses this forced test so the sequence
+    // cannot run twice across a deployment reload.
     if (!import.meta.env.PROD) return;
 
     let handoffUntil = 0;
@@ -758,10 +758,17 @@ export default function RUMS() {
       if (localStorage.getItem(FORCE_UPDATE_KEY) === FORCE_UPDATE_REVISION) return;
     } catch {}
 
-    pendingUpdateRef.current = {
-      version: `forced:${FORCE_UPDATE_REVISION}`,
-      forced: true,
-    };
+    const forcedVersion = `forced:${FORCE_UPDATE_REVISION}`;
+
+    if (updateCycleRef.current.phase !== 'idle') return;
+
+    beginUpdateCycle(forcedVersion, true);
+
+    // Mark it only after beginUpdateCycle has synchronously established the
+    // active cycle refs/state. StrictMode/remounts therefore cannot queue it twice.
+    try {
+      localStorage.setItem(FORCE_UPDATE_KEY, FORCE_UPDATE_REVISION);
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -771,24 +778,6 @@ export default function RUMS() {
 
     const arm = async (event) => {
       if (arming) return;
-
-      const pendingForced =
-        pendingUpdateRef.current?.forced &&
-        updateCycleRef.current.phase === 'idle';
-
-      // A direct-load forced test uses the first ordinary Plaza interaction only
-      // to authorize sound. Swallow the corresponding click so the user does not
-      // accidentally enter a version behind the updater at the same time.
-      if (pendingForced) {
-        if (event.type === 'pointerdown') {
-          swallowNextClickRef.current = true;
-        } else {
-          try {
-            event.preventDefault();
-            event.stopPropagation();
-          } catch {}
-        }
-      }
 
       arming = true;
       const context = await ensureUpdateAudioReady({ resume: true });
@@ -815,30 +804,27 @@ export default function RUMS() {
       }
 
       setUpdateMusicState('ready');
-      await tryStartPendingUpdate();
-      arming = false;
-    };
 
-    const swallowClick = (event) => {
-      if (!swallowNextClickRef.current) return;
-      swallowNextClickRef.current = false;
-      try {
-        event.preventDefault();
-        event.stopPropagation();
-        if (typeof event.stopImmediatePropagation === 'function') {
-          event.stopImmediatePropagation();
-        }
-      } catch {}
+      if (
+        updateCycleRef.current.phase === 'updating' &&
+        updateMusicState !== 'playing'
+      ) {
+        // The forced updater may already be visible. The first ordinary
+        // interaction anywhere on it unlocks the soundtrack immediately.
+        await startUpdateMusic();
+      } else {
+        await tryStartPendingUpdate();
+      }
+
+      arming = false;
     };
 
     document.addEventListener('pointerdown', arm, { capture: true, passive: true });
     document.addEventListener('keydown', arm, true);
-    document.addEventListener('click', swallowClick, true);
 
     return () => {
       document.removeEventListener('pointerdown', arm, true);
       document.removeEventListener('keydown', arm, true);
-      document.removeEventListener('click', swallowClick, true);
     };
   }, [updateTrack.src]);
 
@@ -5693,11 +5679,7 @@ export default function RUMS() {
               <strong>{updateTrack.title}</strong>
               <span>{updateTrack.artist}</span>
             </div>
-            {updateMusicState === 'blocked' || updateMusicState === 'paused' ? (
-              <button type="button" className="site-update-play-fallback" onClick={startUpdateMusic} aria-label={`Play ${updateTrack.title}`} title="Play update soundtrack">▶</button>
-            ) : (
-              <div className="site-update-music-badge" aria-hidden="true">♫</div>
-            )}
+            <div className="site-update-music-badge" aria-hidden="true">♫</div>
           </div>
           <div className="site-update-loader" aria-hidden="true"><span /></div>
         </div>
