@@ -5269,3 +5269,34 @@ button,input,textarea { font:inherit; }
     line-height:1.48!important;
   }
 }
+
+/* Plaza News: hero media flows directly into article content */
+.plaza-news-site .news-lead-image,
+.plaza-news-site .news-lead-image img,
+.plaza-news-site .news-article-hero,
+.plaza-news-site .news-article-hero img,
+.plaza-news-site .news-article-video .news-video-frame {
+  border-bottom-left-radius:0 !important;
+  border-bottom-right-radius:0 !important;
+}
+
+/* Keep only the outer/top corners rounded. */
+.plaza-news-site .news-lead-image,
+.plaza-news-site .news-lead-image img {
+  border-top-left-radius:inherit;
+  border-top-right-radius:inherit;
+}
+.plaza-news-site .news-article-hero,
+.plaza-news-site .news-article-hero img,
+.plaza-news-site .news-article-video .news-video-frame {
+  border-top-left-radius:17px !important;
+  border-top-right-radius:17px !important;
+}
+@media(max-width:760px){
+  .plaza-news-site .news-article-hero,
+  .plaza-news-site .news-article-hero img,
+  .plaza-news-site .news-article-video .news-video-frame {
+    border-top-left-radius:13px !important;
+    border-top-right-radius:13px !important;
+  }
+}
