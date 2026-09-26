@@ -8170,3 +8170,74 @@ button,input,textarea { font:inherit; }
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* COMPACT MUSIC CONTROLS — SMALLER 67                                        */
+/* Same controls, slightly less visual weight inside the smallest island.      */
+/* -------------------------------------------------------------------------- */
+
+@media(min-width:761px){
+  .aero-root .header-center-music-row .dynamic-music-compact{
+    grid-template-columns:29px minmax(0,1fr) 82px 12px!important;
+    gap:5px!important;
+  }
+
+  .aero-root .dynamic-music-compact-controls{
+    grid-template-columns:24px 28px 24px!important;
+    gap:3px!important;
+    width:82px!important;
+    min-width:82px!important;
+    height:30px!important;
+  }
+
+  .aero-root .dynamic-music-compact-control{
+    width:24px!important;
+    height:24px!important;
+    border-radius:8px!important;
+  }
+
+  .aero-root .dynamic-music-compact-control svg{
+    width:11px!important;
+    height:11px!important;
+  }
+
+  .aero-root .dynamic-music-compact-play{
+    width:28px!important;
+    height:28px!important;
+    border-radius:9px!important;
+  }
+
+  .aero-root .dynamic-music-compact-play svg{
+    width:13px!important;
+    height:13px!important;
+  }
+
+  .aero-root .dynamic-music-compact-expand{
+    width:12px!important;
+    height:24px!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-progress-line{
+    right:103px!important;
+  }
+
+  @media(max-width:1050px){
+    .aero-root .header-center-music-row .dynamic-music-compact{
+      grid-template-columns:minmax(0,1fr) 82px 11px!important;
+    }
+
+    .aero-root .header-center-music-row .dynamic-music-progress-line{
+      right:99px!important;
+    }
+  }
+
+  @media(max-width:880px){
+    .aero-root .header-center-music-row .dynamic-music-compact{
+      grid-template-columns:82px 11px!important;
+    }
+
+    .aero-root .header-center-music-row .dynamic-music-progress-line{
+      right:99px!important;
+    }
+  }
+}
+

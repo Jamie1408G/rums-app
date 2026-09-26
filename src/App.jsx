@@ -31,6 +31,9 @@ const UPDATE_FADE_MS = 2400;
 const VERSION_COLOR_FADE_MS = 1150;
 const STARTUP_BUILD_MS = 2250;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
+const HARD_REFRESH_KEY = 'rums-plaza-hard-refresh-revision';
+const HARD_REFRESH_SIGNAL_KEY = 'rums-plaza-hard-refresh-signal';
+const HARD_REFRESH_CHANNEL = 'rums-plaza-hard-refresh';
 const MUSIC_PLAYER_KEY = 'rums-plaza-music-player';
 const UI_SFX = {
   click2: { src: '/audio/ui-click2.wav', volume: 0.30 },
@@ -39,7 +42,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'compact-music-controls-66';
+const FORCE_UPDATE_REVISION = 'smaller-controls-hard-refresh-67';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -50,8 +53,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 66;
-const JAMIE_TUTORIAL_VERSION = 66;
+const TUTORIAL_VERSION = 67;
+const JAMIE_TUTORIAL_VERSION = 67;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -598,6 +601,8 @@ export default function RUMS() {
   const startupEntryRevealTimerRef = useRef(0);
 
   const pendingUpdateRef = useRef(null);
+  const hardRefreshInFlightRef = useRef(false);
+  const hardRefreshChannelRef = useRef(null);
   const updateCycleRef = useRef({ id: '', forced: false, phase: 'idle' });
   const updateStartInFlightRef = useRef(false);
 
@@ -922,6 +927,53 @@ export default function RUMS() {
     }
   };
 
+  const hardRefreshPlaza = async (revision = FORCE_UPDATE_REVISION, { broadcast = true } = {}) => {
+    if (hardRefreshInFlightRef.current) return;
+    hardRefreshInFlightRef.current = true;
+
+    const refreshToken = `${revision}:${Date.now()}`;
+
+    try {
+      sessionStorage.setItem(HARD_REFRESH_KEY, revision);
+      localStorage.setItem(HARD_REFRESH_SIGNAL_KEY, refreshToken);
+    } catch {}
+
+    if (broadcast) {
+      try {
+        hardRefreshChannelRef.current?.postMessage({
+          type: 'hard-refresh',
+          revision,
+          token: refreshToken,
+        });
+      } catch {}
+    }
+
+    // Remove app CacheStorage entries without unregistering the worker, so
+    // notification/push capabilities are not deliberately destroyed.
+    try {
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.allSettled(names.map((name) => caches.delete(name)));
+      }
+    } catch {}
+
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.allSettled(
+          registrations.map((registration) => registration.update()),
+        );
+      }
+    } catch {}
+
+    const url = new URL(window.location.href);
+    url.searchParams.set('plaza_refresh', revision);
+    url.searchParams.set('plaza_refresh_t', String(Date.now()));
+
+    // replace() avoids leaving the stale document as a Back-history entry.
+    window.location.replace(url.toString());
+  };
+
   const beginUpdateCycle = (version, forced) => {
     if (updateCycleRef.current.phase !== 'idle') return false;
 
@@ -971,6 +1023,54 @@ export default function RUMS() {
     updateStartInFlightRef.current = false;
     return true;
   };
+
+  useEffect(() => {
+    if (!import.meta.env.PROD) return undefined;
+
+    const handleRefreshSignal = (revision) => {
+      if (!revision || hardRefreshInFlightRef.current) return;
+      void hardRefreshPlaza(String(revision), { broadcast: false });
+    };
+
+    let channel = null;
+    if ('BroadcastChannel' in window) {
+      try {
+        channel = new BroadcastChannel(HARD_REFRESH_CHANNEL);
+        hardRefreshChannelRef.current = channel;
+        channel.addEventListener('message', (event) => {
+          if (event?.data?.type !== 'hard-refresh') return;
+          handleRefreshSignal(event.data.revision);
+        });
+      } catch {}
+    }
+
+    const onStorage = (event) => {
+      if (event.key !== HARD_REFRESH_SIGNAL_KEY || !event.newValue) return;
+      const revision = String(event.newValue).split(':')[0];
+      handleRefreshSignal(revision);
+    };
+
+    window.addEventListener('storage', onStorage);
+
+    // Remove the cache-busting query once the new document has loaded so
+    // users do not keep a noisy URL.
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('plaza_refresh') || url.searchParams.has('plaza_refresh_t')) {
+        url.searchParams.delete('plaza_refresh');
+        url.searchParams.delete('plaza_refresh_t');
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+      }
+    } catch {}
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      try { channel?.close(); } catch {}
+      if (hardRefreshChannelRef.current === channel) {
+        hardRefreshChannelRef.current = null;
+      }
+    };
+  }, []);
 
   useLayoutEffect(() => {
     // Forced testing is now visual-first and audio-independent:
@@ -1105,10 +1205,16 @@ export default function RUMS() {
 
         pendingUpdateRef.current = { version, forced: false };
 
-        // If a normal interaction already unlocked the persistent context, this
-        // begins immediately with sound. Otherwise it waits for the next normal
-        // interaction rather than showing a silent updater.
-        void tryStartPendingUpdate();
+        // Begin the update on every active client immediately. If WebAudio has
+        // already been unlocked, the soundtrack starts first; otherwise the
+        // visual updater starts now and the next interaction can unlock music.
+        const context = updateAudioContextRef.current;
+        if (context?.state === 'running') {
+          void tryStartPendingUpdate();
+        } else {
+          pendingUpdateRef.current = null;
+          beginUpdateCycle(version, false);
+        }
       } catch {
         // Stay on the current build if the version check fails.
       } finally {
@@ -1230,19 +1336,15 @@ export default function RUMS() {
             setUpdateMusicState('ready');
             setUpdateHandoffPhase('idle');
 
-            if (forcedCycle) {
-              updateCycleRef.current = { id: '', forced: false, phase: 'idle' };
-              setUpdateUntil(0);
-              setUpdateTargetVersion('');
-              setUpdateOverlayLeaving(false);
-              setUpdateOutroActive(false);
-              setStartupRevealActive(false);
-              setStartupRevealPending(false);
-              return;
-            }
-
             updateCycleRef.current.phase = 'reloading';
-            window.location.reload();
+
+            // Forced revision updates hard-refresh too. FORCE_UPDATE_KEY was
+            // stored before this cycle began, so the refreshed build will not
+            // immediately start the same forced cycle again.
+            void hardRefreshPlaza(
+              forcedCycle ? FORCE_UPDATE_REVISION : cycleId,
+              { broadcast: true },
+            );
           }, 4300);
         }, VERSION_COLOR_FADE_MS);
       }, UPDATE_FADE_MS);
