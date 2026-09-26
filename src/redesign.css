@@ -5296,3 +5296,62 @@ button,input,textarea { font:inherit; }
   border-bottom-left-radius:0 !important;
   border-bottom-right-radius:0 !important;
 }
+
+
+/* Lumina feed: one coherent Plaza hierarchy instead of stacked duplicate cards. */
+.aero-root .content:has(.lumina-feed-posts) .community-hero {
+  min-height:118px;
+  margin-bottom:22px;
+  padding:22px 28px;
+  border-radius:20px;
+}
+.aero-root .content:has(.lumina-feed-posts) .community-hero .hero-copy h1 {
+  margin:6px 0 3px;
+  font-size:31px;
+}
+.aero-root .content:has(.lumina-feed-posts) .community-hero .hero-copy p {
+  max-width:460px;
+  font-size:12.5px;
+}
+.aero-root .content:has(.lumina-feed-posts) .community-hero .hero-create {
+  width:42px;
+  height:42px;
+}
+.aero-root .lumina-feed-posts > .section-heading {
+  align-items:center;
+  margin:0 3px 14px;
+}
+.aero-root .lumina-feed-posts .feed-heading-actions {
+  gap:7px;
+}
+.aero-root .lumina-about-pill {
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  color:var(--theme-accent,var(--site-accent,#3478f6));
+}
+.aero-root .lumina-feed-posts .post-card:first-of-type {
+  margin-top:0;
+}
+@media(max-width:600px) {
+  .aero-root .content:has(.lumina-feed-posts) .community-hero {
+    min-height:108px;
+    margin-bottom:18px;
+    padding:18px 18px;
+    border-radius:18px;
+  }
+  .aero-root .content:has(.lumina-feed-posts) .community-hero .hero-copy h1 {
+    font-size:27px;
+  }
+  .aero-root .lumina-feed-posts > .section-heading {
+    align-items:flex-start;
+    gap:9px;
+  }
+  .aero-root .lumina-feed-posts .feed-heading-actions {
+    justify-content:flex-end;
+    flex-wrap:wrap;
+  }
+  .aero-root .lumina-about-pill {
+    order:-1;
+  }
+}
