@@ -81,18 +81,7 @@ const DEFAULT_SITE_CONFIG = {
 };
 
 const PLAZA_OVERHAUL_WIDGET_ID = 'plaza-overhaul-2026';
-const PLAZA_OVERHAUL_MIGRATION = 'plaza-overhaul-announcement-v1';
-const PLAZA_OVERHAUL_WIDGET = {
-  id: PLAZA_OVERHAUL_WIDGET_ID,
-  placement: 'feed',
-  title: '✨ RUMS Plaza has been completely overhauled!',
-  body: 'A fresh new look, smoother interactions and loads of new features — while keeping the glossy, modern RUMS aesthetic. Explore RUMS 4, Creative and Projects, emoji reactions, custom emojis, the visual editor and more.',
-  image: '',
-  actionLabel: '',
-  actionUrl: '',
-  color: '#eaf4ff',
-  animation: 'none',
-};
+const PLAZA_OVERHAUL_REMOVAL_MIGRATION = 'plaza-overhaul-announcement-removed-v1';
 
 function requiredTutorialVersionForUser(user) {
   if (!user?.username) return TUTORIAL_VERSION;
@@ -101,7 +90,6 @@ function requiredTutorialVersionForUser(user) {
 
 function migratePlazaOverhaulAnnouncement(config) {
   const next = { ...DEFAULT_SITE_CONFIG, ...(config || {}), migrations: { ...(config?.migrations || {}) } };
-  if (next.migrations[PLAZA_OVERHAUL_MIGRATION]) return { config: next, changed: false };
   const isLegacyOverhaulBox = (widget) => {
     const text = `${widget?.title || ''} ${widget?.body || ''}`
       .toLowerCase()
@@ -109,18 +97,22 @@ function migratePlazaOverhaulAnnouncement(config) {
       .replace(/\s+/g, ' ')
       .trim();
     return widget?.id === PLAZA_OVERHAUL_WIDGET_ID
+      || text.includes('rums plaza has been completely overhauled')
       || text.includes("our site's gotten a new look")
       || text.includes("our site's gotten a complete overhaul")
       || (text.includes('complete overhaul') && text.includes('glossy') && text.includes('modern aesthetic'));
   };
-  const customWidgets = (next.customWidgets || []).filter((widget) => !isLegacyOverhaulBox(widget));
+  const before = Array.isArray(next.customWidgets) ? next.customWidgets : [];
+  const customWidgets = before.filter((widget) => !isLegacyOverhaulBox(widget));
+  const alreadyMarked = !!next.migrations[PLAZA_OVERHAUL_REMOVAL_MIGRATION];
+  const changed = customWidgets.length !== before.length || !alreadyMarked;
   return {
     config: {
       ...next,
-      customWidgets: [PLAZA_OVERHAUL_WIDGET, ...customWidgets],
-      migrations: { ...next.migrations, [PLAZA_OVERHAUL_MIGRATION]: true },
+      customWidgets,
+      migrations: { ...next.migrations, [PLAZA_OVERHAUL_REMOVAL_MIGRATION]: true },
     },
-    changed: true,
+    changed,
   };
 }
 
@@ -4695,7 +4687,7 @@ export default function RUMS() {
     return (
       <div className="custom-widget-stack" data-widget-stack={placement}>
         {widgets.map((widget) => (
-          <article data-position-id={widget.id} data-widget-placement={widget.placement} data-session-new-key={sessionNewKey(pageKeyForPlacement(widget.placement), 'widget', widget.id)} className={`custom-site-widget ${widget.id === PLAZA_OVERHAUL_WIDGET_ID ? 'plaza-overhaul-announcement' : ''} ${widget.image ? 'has-widget-image' : 'no-widget-image'} widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''} ${selectedBoxId === `widget:${widget.id}` ? 'is-editor-selected' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDownCapture={(event) => { if (editMode && isOwner && !(event.target instanceof Element && event.target.closest('.widget-edit-controls'))) setSelectedBoxId(`widget:${widget.id}`); }}>
+          <article data-position-id={widget.id} data-widget-placement={widget.placement} data-session-new-key={sessionNewKey(pageKeyForPlacement(widget.placement), 'widget', widget.id)} className={`custom-site-widget ${widget.image ? 'has-widget-image' : 'no-widget-image'} widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''} ${selectedBoxId === `widget:${widget.id}` ? 'is-editor-selected' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDownCapture={(event) => { if (editMode && isOwner && !(event.target instanceof Element && event.target.closest('.widget-edit-controls'))) setSelectedBoxId(`widget:${widget.id}`); }}>
             {newContentLabel(pageKeyForPlacement(widget.placement), 'widget', widget.id)}
             {editMode && isOwner && selectedBoxId === `widget:${widget.id}` && <div className="widget-edit-controls"><button type="button" className="widget-drag-handle" onPointerDown={(event) => startWidgetReorder(widget.id, event)} title="Hold and drag to move this box"><GripVertical size={15} /> Move box</button><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
             {widget.image && <img src={widget.image} alt="" />}
