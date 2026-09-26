@@ -39,7 +39,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'ui-sound-roles-60';
+const FORCE_UPDATE_REVISION = 'start-every-refresh-61';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -50,8 +50,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 60;
-const JAMIE_TUTORIAL_VERSION = 60;
+const TUTORIAL_VERSION = 61;
+const JAMIE_TUTORIAL_VERSION = 61;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -593,6 +593,8 @@ export default function RUMS() {
   const uiSfxPoolsRef = useRef({});
   const uiSfxBuffersRef = useRef({});
   const uiSfxBufferLoadsRef = useRef({});
+  const startupStartPlayedRef = useRef(false);
+  const startupStartPendingRef = useRef(false);
   const startupEntryRevealPlayedRef = useRef(false);
   const startupEntryRevealTimerRef = useRef(0);
 
@@ -708,6 +710,37 @@ export default function RUMS() {
     }
   };
 
+  const playRefreshStartSound = async () => {
+    // Exactly once per full document load. If autoplay is blocked, leave it
+    // armed so the first real pointer/key gesture can release it.
+    if (startupStartPlayedRef.current) return true;
+
+    const played = await playUiSfx('start');
+    if (played) {
+      startupStartPlayedRef.current = true;
+      startupStartPendingRef.current = false;
+      return true;
+    }
+
+    startupStartPendingRef.current = true;
+    return false;
+  };
+
+  const releasePendingRefreshStartSound = () => {
+    if (
+      startupStartPlayedRef.current ||
+      !startupStartPendingRef.current
+    ) return;
+
+    // Called synchronously from a genuine user gesture. Do not await before
+    // invoking play(), otherwise the browser can lose the autoplay gesture.
+    void playUiSfx('start').then((played) => {
+      if (!played) return;
+      startupStartPlayedRef.current = true;
+      startupStartPendingRef.current = false;
+    });
+  };
+
   const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
     if (typeof window === 'undefined') return null;
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
@@ -772,8 +805,18 @@ export default function RUMS() {
 
     uiSfxPoolsRef.current = pools;
 
+    // Ask the browser to have START ready before the version build begins.
+    pools.start?.pool?.forEach((audio) => {
+      try {
+        audio.preload = 'auto';
+        audio.load();
+      } catch {}
+    });
+
     const onPointerSfx = (event) => {
       if (event.button != null && event.button !== 0) return;
+
+      releasePendingRefreshStartSound();
 
       const target = event.target instanceof Element ? event.target : null;
       if (!target) {
@@ -841,10 +884,17 @@ export default function RUMS() {
       void playUiSfx('click2');
     };
 
+    const onKeySfxUnlock = (event) => {
+      if (event.repeat) return;
+      releasePendingRefreshStartSound();
+    };
+
     document.addEventListener('pointerdown', onPointerSfx, true);
+    document.addEventListener('keydown', onKeySfxUnlock, true);
 
     return () => {
       document.removeEventListener('pointerdown', onPointerSfx, true);
+      document.removeEventListener('keydown', onKeySfxUnlock, true);
       Object.values(uiSfxPoolsRef.current).forEach((entry) => {
         entry?.pool?.forEach((audio) => {
           try {
@@ -1197,7 +1247,7 @@ export default function RUMS() {
           startupEntryRevealPlayedRef.current = true;
           setUpdateHandoffPhase('idle');
 
-          void playUiSfx('start');
+          void playRefreshStartSound();
 
           window.requestAnimationFrame(() => {
             window.requestAnimationFrame(() => {
@@ -3791,7 +3841,7 @@ export default function RUMS() {
     let buildTimer = 0;
     const frame = window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        void playUiSfx('start');
+        void playRefreshStartSound();
         setStartupRevealPending(false);
         setStartupRevealActive(true);
 
