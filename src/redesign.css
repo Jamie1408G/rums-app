@@ -4632,7 +4632,7 @@ button,input,textarea { font:inherit; }
   background:rgba(21,31,48,.32);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
 }
 .aero-root .gif-picker-panel{
-  width:min(620px,calc(100vw - 36px));height:min(680px,calc(100vh - 70px));min-height:440px;
+  width:min(620px,calc(100% - 36px));max-width:calc(100% - 36px);height:min(680px,calc(100vh - 70px));min-height:440px;
   display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;overflow:hidden;
   border:1px solid rgba(255,255,255,.78);border-radius:24px;
   background:var(--theme-surface,rgba(255,255,255,.94));color:var(--theme-text,#314763);
@@ -4653,9 +4653,9 @@ button,input,textarea { font:inherit; }
 .aero-root .gif-picker-section-label{display:flex;align-items:center;justify-content:space-between;min-height:30px;padding:0 17px 7px;color:var(--theme-muted,#7c8ca1);font-size:10px}.aero-root .gif-picker-section-label strong{color:var(--theme-text,#314763);font-size:11px}
 .aero-root .gif-picker-body{min-width:0;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 14px 14px;scrollbar-width:thin;scrollbar-color:var(--theme-border,#dce8f5) transparent}
 .aero-root .gif-picker-grid,.aero-root .gif-picker-skeletons{
-  width:368px;max-width:100%;margin:0 auto;display:grid;grid-template-columns:repeat(2,180px);grid-auto-rows:112px;gap:8px;place-content:start center;
+  width:min(368px,100%);max-width:100%;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,180px));grid-auto-rows:112px;gap:8px;justify-content:center;align-content:start;
 }
-.aero-root .gif-picker-item,.aero-root .gif-picker-skeletons span{display:block;min-width:0;width:180px;height:112px;border-radius:12px;overflow:hidden}
+.aero-root .gif-picker-item,.aero-root .gif-picker-skeletons span{display:block;min-width:0;width:100%;max-width:180px;height:112px;border-radius:12px;overflow:hidden}
 .aero-root .gif-picker-item{position:relative;padding:0;border:1px solid var(--theme-border,#e0e7ef);background:var(--theme-surface-2,#eef2f7);cursor:pointer;box-shadow:none!important;transform:none!important;isolation:auto!important}
 .aero-root .gif-picker-item::before{display:none!important}
 .aero-root .gif-picker-item img{display:block;width:100%;height:100%;object-fit:cover;background:var(--theme-surface-2,#eef2f7)}
