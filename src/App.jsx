@@ -29,7 +29,7 @@ const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const MUSIC_PLAYER_KEY = 'rums-plaza-music-player';
-const FORCE_UPDATE_REVISION = 'in-site-music-player-47';
+const FORCE_UPDATE_REVISION = 'top-center-music-player-48';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -40,8 +40,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 47;
-const JAMIE_TUTORIAL_VERSION = 47;
+const TUTORIAL_VERSION = 48;
+const JAMIE_TUTORIAL_VERSION = 48;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -596,6 +596,8 @@ export default function RUMS() {
 
   const siteMusicAudioRef = useRef(null);
   const siteMusicTrackIndexRef = useRef(0);
+  const siteMusicVolumeRef = useRef(0.72);
+  const siteMusicShellRef = useRef(null);
   const [siteMusicOpen, setSiteMusicOpen] = useState(false);
   const [siteMusicPlaying, setSiteMusicPlaying] = useState(false);
   const [siteMusicTrackIndex, setSiteMusicTrackIndex] = useState(() => {
@@ -1071,52 +1073,55 @@ export default function RUMS() {
     return `${mins}:${String(secs).padStart(2, '0')}`;
   };
 
-  function persistSiteMusic(next = {}) {
+  function persistSiteMusic({ trackIndex, volume } = {}) {
     try {
-      const current = JSON.parse(localStorage.getItem(MUSIC_PLAYER_KEY) || '{}');
       localStorage.setItem(MUSIC_PLAYER_KEY, JSON.stringify({
-        ...current,
-        trackIndex: siteMusicTrackIndexRef.current,
-        volume: siteMusicVolume,
-        ...next,
+        trackIndex: Number.isInteger(trackIndex) ? trackIndex : siteMusicTrackIndexRef.current,
+        volume: Number.isFinite(volume) ? volume : siteMusicVolumeRef.current,
       }));
     } catch {}
   }
 
-  function setSiteMusicSource(index, { reset = true } = {}) {
+  function prepareSiteMusicTrack(index, { reset = false } = {}) {
     const audio = siteMusicAudioRef.current;
-    const track = UPDATE_AUDIO_TRACKS[index];
-    if (!audio || !track) return;
+    const safeIndex = ((Number(index) || 0) + UPDATE_AUDIO_TRACKS.length) % UPDATE_AUDIO_TRACKS.length;
+    const track = UPDATE_AUDIO_TRACKS[safeIndex];
+    if (!audio || !track) return safeIndex;
+
+    siteMusicTrackIndexRef.current = safeIndex;
+    setSiteMusicTrackIndex(safeIndex);
 
     const wanted = new URL(track.src, window.location.href).href;
     if (audio.src !== wanted) {
       audio.src = track.src;
       audio.preload = 'metadata';
       try { audio.load(); } catch {}
+      setSiteMusicProgress(0);
+      setSiteMusicDuration(0);
     } else if (reset) {
       try { audio.currentTime = 0; } catch {}
+      setSiteMusicProgress(0);
     }
+
+    persistSiteMusic({ trackIndex: safeIndex });
+    return safeIndex;
   }
 
-  async function playSiteMusicTrack(index = siteMusicTrackIndexRef.current, { reset = true } = {}) {
+  async function playSiteMusicTrack(index = siteMusicTrackIndexRef.current, { reset = false } = {}) {
     const audio = siteMusicAudioRef.current;
-    const safeIndex = ((Number(index) || 0) + UPDATE_AUDIO_TRACKS.length) % UPDATE_AUDIO_TRACKS.length;
     if (!audio) return false;
 
-    siteMusicTrackIndexRef.current = safeIndex;
-    setSiteMusicTrackIndex(safeIndex);
-    setSiteMusicSource(safeIndex, { reset });
+    prepareSiteMusicTrack(index, { reset });
     setSiteMusicError('');
 
     try {
-      audio.volume = siteMusicVolume;
+      audio.volume = siteMusicVolumeRef.current;
       await audio.play();
       setSiteMusicPlaying(true);
-      persistSiteMusic({ trackIndex: safeIndex });
       return true;
     } catch {
       setSiteMusicPlaying(false);
-      setSiteMusicError('Tap play to start music.');
+      setSiteMusicError('Playback was blocked. Tap play again.');
       return false;
     }
   }
@@ -1131,10 +1136,12 @@ export default function RUMS() {
   function toggleSiteMusic() {
     const audio = siteMusicAudioRef.current;
     if (!audio) return;
+
     if (!audio.paused && !audio.ended) {
       pauseSiteMusic();
       return;
     }
+
     void playSiteMusicTrack(siteMusicTrackIndexRef.current, { reset: audio.ended });
   }
 
@@ -1147,18 +1154,23 @@ export default function RUMS() {
     const audio = siteMusicAudioRef.current;
     const target = Number(value);
     if (!audio || !Number.isFinite(target)) return;
-    try {
-      audio.currentTime = target;
-      setSiteMusicProgress(target);
-    } catch {}
+
+    const duration = Number.isFinite(audio.duration) ? audio.duration : siteMusicDuration;
+    const clamped = Math.max(0, Math.min(target, Number.isFinite(duration) && duration > 0 ? duration : target));
+    try { audio.currentTime = clamped; } catch {}
+    setSiteMusicProgress(clamped);
   }
 
   function changeSiteMusicVolume(value) {
     const next = Math.max(0, Math.min(1, Number(value)));
+    siteMusicVolumeRef.current = next;
     setSiteMusicVolume(next);
-    if (siteMusicAudioRef.current) {
-      try { siteMusicAudioRef.current.volume = next; } catch {}
+
+    const audio = siteMusicAudioRef.current;
+    if (audio) {
+      try { audio.volume = next; } catch {}
     }
+
     persistSiteMusic({ volume: next });
   }
 
@@ -1168,15 +1180,34 @@ export default function RUMS() {
     audio.volume = siteMusicVolume;
     siteMusicAudioRef.current = audio;
     siteMusicTrackIndexRef.current = siteMusicTrackIndex;
-    setSiteMusicSource(siteMusicTrackIndex, { reset: false });
+    siteMusicVolumeRef.current = siteMusicVolume;
 
-    const onTime = () => setSiteMusicProgress(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
-    const onDuration = () => setSiteMusicDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
-    const onPlay = () => { setSiteMusicPlaying(true); setSiteMusicError(''); };
+    const initialTrack = UPDATE_AUDIO_TRACKS[siteMusicTrackIndex] || UPDATE_AUDIO_TRACKS[0];
+    if (initialTrack) {
+      audio.src = initialTrack.src;
+      try { audio.load(); } catch {}
+    }
+
+    const onTime = () => {
+      setSiteMusicProgress(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
+    };
+    const onDuration = () => {
+      setSiteMusicDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    };
+    const onPlay = () => {
+      setSiteMusicPlaying(true);
+      setSiteMusicError('');
+    };
     const onPause = () => setSiteMusicPlaying(false);
     const onEnded = () => {
       const next = (siteMusicTrackIndexRef.current + 1) % UPDATE_AUDIO_TRACKS.length;
-      void playSiteMusicTrack(next, { reset: true });
+      prepareSiteMusicTrack(next, { reset: true });
+      void audio.play().then(() => {
+        setSiteMusicPlaying(true);
+      }).catch(() => {
+        setSiteMusicPlaying(false);
+        setSiteMusicError('Tap play to continue the playlist.');
+      });
     };
     const onError = () => {
       setSiteMusicPlaying(false);
@@ -1210,24 +1241,144 @@ export default function RUMS() {
 
   useEffect(() => {
     siteMusicTrackIndexRef.current = siteMusicTrackIndex;
-    persistSiteMusic({ trackIndex: siteMusicTrackIndex });
   }, [siteMusicTrackIndex]);
 
   useEffect(() => {
-    if (siteMusicAudioRef.current) {
-      try { siteMusicAudioRef.current.volume = siteMusicVolume; } catch {}
+    siteMusicVolumeRef.current = siteMusicVolume;
+    const audio = siteMusicAudioRef.current;
+    if (audio) {
+      try { audio.volume = siteMusicVolume; } catch {}
     }
-    persistSiteMusic({ volume: siteMusicVolume });
   }, [siteMusicVolume]);
 
   useEffect(() => {
-    // Update music gets exclusive audio while the updater is active.
+    const onOutside = (event) => {
+      if (!siteMusicOpen) return;
+      if (siteMusicShellRef.current?.contains(event.target)) return;
+      setSiteMusicOpen(false);
+    };
+    document.addEventListener('pointerdown', onOutside, true);
+    return () => document.removeEventListener('pointerdown', onOutside, true);
+  }, [siteMusicOpen]);
+
+  useEffect(() => {
     if ((updateUntil > Date.now() || updateOverlayLeaving) && siteMusicAudioRef.current) {
       pauseSiteMusic();
+      setSiteMusicOpen(false);
     }
   }, [updateUntil, updateOverlayLeaving]);
 
   const siteMusicTrack = UPDATE_AUDIO_TRACKS[siteMusicTrackIndex] || UPDATE_AUDIO_TRACKS[0];
+
+  function renderHeaderMusicPlayer({ mobile = false } = {}) {
+    if (!currentUser || !rumsSpace || isProjectSpace) return null;
+
+    if (mobile) {
+      return (
+        <div className="mobile-menu-music">
+          <button type="button" className="mobile-menu-music-main" onClick={toggleSiteMusic}>
+            <span className={`mobile-menu-music-icon ${siteMusicPlaying ? 'is-playing' : ''}`}>
+              {siteMusicPlaying ? <span className="plaza-music-mini-eq" aria-hidden="true"><i/><i/><i/></span> : <Music2 size={16} />}
+            </span>
+            <span className="mobile-menu-music-copy">
+              <small>{siteMusicPlaying ? 'NOW PLAYING' : 'PLAZA MUSIC'}</small>
+              <strong>{siteMusicTrack.title}</strong>
+            </span>
+            {siteMusicPlaying ? <Pause size={16}/> : <Play size={16}/>}
+          </button>
+          <button type="button" className="mobile-menu-music-next" onClick={() => skipSiteMusic(1)} aria-label="Next track"><SkipForward size={16}/></button>
+        </div>
+      );
+    }
+
+    return (
+      <div ref={siteMusicShellRef} className={`header-music ${siteMusicOpen ? 'is-open' : ''} ${siteMusicPlaying ? 'is-playing' : ''}`}>
+        <div className="header-music-bar">
+          <button type="button" className="header-music-play" onClick={toggleSiteMusic} aria-label={siteMusicPlaying ? 'Pause music' : 'Play music'}>
+            {siteMusicPlaying ? <Pause size={15}/> : <Play size={15}/>}
+          </button>
+
+          <button type="button" className="header-music-track-button" onClick={() => setSiteMusicOpen((open) => !open)} aria-expanded={siteMusicOpen}>
+            <span className="header-music-eq" aria-hidden="true">
+              {siteMusicPlaying ? <span className="plaza-music-mini-eq"><i/><i/><i/></span> : <Music2 size={14}/>}
+            </span>
+            <span className="header-music-copy">
+              <small>PLAZA MUSIC</small>
+              <strong>{siteMusicTrack.title}</strong>
+            </span>
+            <ChevronDown size={14} className="header-music-chevron"/>
+          </button>
+
+          <button type="button" className="header-music-next" onClick={() => skipSiteMusic(1)} aria-label="Next track"><SkipForward size={15}/></button>
+        </div>
+
+        {siteMusicOpen && (
+          <div className="header-music-popover" role="dialog" aria-label="Plaza music player">
+            <div className="header-music-now">
+              <div className={`header-music-orb ${siteMusicPlaying ? 'is-playing' : ''}`}>
+                <Music2 size={18}/>
+              </div>
+              <div className="header-music-now-copy">
+                <small>{siteMusicPlaying ? 'NOW PLAYING' : 'SELECTED TRACK'}</small>
+                <strong>{siteMusicTrack.title}</strong>
+                <span>{siteMusicTrack.artist}</span>
+              </div>
+              <button type="button" onClick={() => setSiteMusicOpen(false)} aria-label="Close music player"><ChevronUp size={17}/></button>
+            </div>
+
+            <div className="header-music-seek">
+              <span>{formatMusicTime(siteMusicProgress)}</span>
+              <input
+                type="range"
+                min="0"
+                max={Math.max(siteMusicDuration, 1)}
+                step="0.1"
+                value={Math.min(siteMusicProgress, Math.max(siteMusicDuration, 1))}
+                onChange={(event) => seekSiteMusic(event.target.value)}
+                aria-label="Track position"
+              />
+              <span>{formatMusicTime(siteMusicDuration)}</span>
+            </div>
+
+            <div className="header-music-big-controls">
+              <button type="button" onClick={() => skipSiteMusic(-1)} aria-label="Previous track"><SkipBack size={18}/></button>
+              <button type="button" className="header-music-big-play" onClick={toggleSiteMusic} aria-label={siteMusicPlaying ? 'Pause' : 'Play'}>
+                {siteMusicPlaying ? <Pause size={21}/> : <Play size={21}/>}
+              </button>
+              <button type="button" onClick={() => skipSiteMusic(1)} aria-label="Next track"><SkipForward size={18}/></button>
+            </div>
+
+            <div className="header-music-volume">
+              {siteMusicVolume <= 0.01 ? <VolumeX size={15}/> : <Volume2 size={15}/>}
+              <input type="range" min="0" max="1" step="0.01" value={siteMusicVolume} onChange={(event) => changeSiteMusicVolume(event.target.value)} aria-label="Music volume"/>
+            </div>
+
+            <div className="header-music-playlist">
+              {UPDATE_AUDIO_TRACKS.map((track, index) => (
+                <button
+                  type="button"
+                  key={track.id}
+                  className={index === siteMusicTrackIndex ? 'active' : ''}
+                  onClick={() => void playSiteMusicTrack(index, { reset: true })}
+                >
+                  <span className="header-music-track-index">
+                    {index === siteMusicTrackIndex && siteMusicPlaying
+                      ? <span className="plaza-music-mini-eq" aria-hidden="true"><i/><i/><i/></span>
+                      : String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="header-music-playlist-copy"><strong>{track.title}</strong><small>{track.artist}</small></span>
+                  {index === siteMusicTrackIndex && <span className="header-music-current">NOW</span>}
+                </button>
+              ))}
+            </div>
+
+            {siteMusicError && <div className="header-music-error">{siteMusicError}</div>}
+          </div>
+        )}
+      </div>
+    );
+  }
+
 
   useEffect(() => {
     document.title = PLATFORM_NAME;
@@ -5884,87 +6035,7 @@ export default function RUMS() {
           <button type="button" className="site-announcement-close" onClick={dismissAnnouncement} aria-label="Dismiss announcement"><X size={18} /></button>
         </aside>
       )}
-      {currentUser && rumsSpace && screen !== 'spaceSelect' && screen !== 'projectsDirectory' && !(updateUntil > Date.now() || updateOverlayLeaving) && (
-        <aside className={`plaza-music-player ${siteMusicOpen ? 'is-open' : 'is-compact'} ${siteMusicPlaying ? 'is-playing' : ''}`} aria-label="Plaza music player">
-          {siteMusicOpen ? (
-            <div className="plaza-music-panel">
-              <div className="plaza-music-head">
-                <div className="plaza-music-disc" aria-hidden="true">
-                  <Music2 size={18} />
-                  <span className="plaza-music-disc-ring" />
-                </div>
-                <div className="plaza-music-heading">
-                  <small>PLAZA MUSIC</small>
-                  <strong>{siteMusicTrack.title}</strong>
-                  <span>{siteMusicTrack.artist}</span>
-                </div>
-                <button type="button" className="plaza-music-collapse" onClick={() => setSiteMusicOpen(false)} aria-label="Collapse music player"><ChevronDown size={18} /></button>
-              </div>
 
-              <div className="plaza-music-progress-row">
-                <span>{formatMusicTime(siteMusicProgress)}</span>
-                <input
-                  className="plaza-music-progress"
-                  type="range"
-                  min="0"
-                  max={Math.max(siteMusicDuration, 1)}
-                  step="0.1"
-                  value={Math.min(siteMusicProgress, Math.max(siteMusicDuration, 1))}
-                  onChange={(event) => seekSiteMusic(event.target.value)}
-                  aria-label="Track position"
-                />
-                <span>{formatMusicTime(siteMusicDuration)}</span>
-              </div>
-
-              <div className="plaza-music-controls">
-                <button type="button" onClick={() => skipSiteMusic(-1)} aria-label="Previous track"><SkipBack size={19} /></button>
-                <button type="button" className="plaza-music-play" onClick={toggleSiteMusic} aria-label={siteMusicPlaying ? 'Pause' : 'Play'}>
-                  {siteMusicPlaying ? <Pause size={22} /> : <Play size={22} />}
-                </button>
-                <button type="button" onClick={() => skipSiteMusic(1)} aria-label="Next track"><SkipForward size={19} /></button>
-              </div>
-
-              <div className="plaza-music-volume-row">
-                {siteMusicVolume <= 0.01 ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={siteMusicVolume}
-                  onChange={(event) => changeSiteMusicVolume(event.target.value)}
-                  aria-label="Music volume"
-                />
-              </div>
-
-              <div className="plaza-music-list-head"><ListMusic size={15} /><span>Playlist</span><b>{UPDATE_AUDIO_TRACKS.length}</b></div>
-              <div className="plaza-music-track-list">
-                {UPDATE_AUDIO_TRACKS.map((track, index) => (
-                  <button
-                    type="button"
-                    key={track.id}
-                    className={`plaza-music-track ${index === siteMusicTrackIndex ? 'active' : ''}`}
-                    onClick={() => void playSiteMusicTrack(index, { reset: true })}
-                  >
-                    <span className="plaza-music-track-number">{index === siteMusicTrackIndex && siteMusicPlaying ? <span className="plaza-music-mini-eq" aria-hidden="true"><i/><i/><i/></span> : String(index + 1).padStart(2, '0')}</span>
-                    <span className="plaza-music-track-copy"><strong>{track.title}</strong><small>{track.artist}</small></span>
-                    {index === siteMusicTrackIndex && <span className="plaza-music-current">NOW</span>}
-                  </button>
-                ))}
-              </div>
-              {siteMusicError && <div className="plaza-music-error">{siteMusicError}</div>}
-            </div>
-          ) : (
-            <button type="button" className="plaza-music-compact" onClick={() => setSiteMusicOpen(true)} aria-label={`Open music player. ${siteMusicTrack.title} by ${siteMusicTrack.artist}`}>
-              <span className="plaza-music-compact-icon" aria-hidden="true">
-                {siteMusicPlaying ? <span className="plaza-music-mini-eq"><i/><i/><i/></span> : <Music2 size={17} />}
-              </span>
-              <span className="plaza-music-compact-copy"><small>{siteMusicPlaying ? 'NOW PLAYING' : 'PLAZA MUSIC'}</small><strong>{siteMusicTrack.title}</strong></span>
-              <span className="plaza-music-compact-open"><ChevronUp size={17} /></span>
-            </button>
-          )}
-        </aside>
-      )}
 
       <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
         <defs>
@@ -6135,10 +6206,18 @@ export default function RUMS() {
               <div className="aero-brand aero-brand-version-switch">
                 {renderRumsVersionSwitcher()}
               </div>
-              {screen === 'feed' && !isProjectSpace && <div className="aero-header-center">{renderFeedTabs()}</div>}
+              {!isProjectSpace && (
+                <div className="aero-header-center">
+                  <div className={`header-center-island ${screen === 'feed' && hasLumina ? 'has-feed-switch' : 'music-only'}`}>
+                    {screen === 'feed' && hasLumina && renderFeedTabs()}
+                    {renderHeaderMusicPlayer()}
+                  </div>
+                </div>
+              )}
               <button className="mobile-header-menu-button" type="button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Open site menu" aria-expanded={mobileMenuOpen}><Menu size={21} />{notificationsForCurrentUser().length > 0 && <span className="mobile-header-menu-dot" />}</button>
               {mobileMenuOpen && <nav className="mobile-header-menu" aria-label="Site menu">
                 <div className="mobile-menu-heading"><span className="mobile-menu-mark">✦</span><span>RUMS PLAZA<small>Quick access</small></span></div>
+                {renderHeaderMusicPlayer({ mobile: true })}
                 {hasLumina && !isProjectSpace && <div className="mobile-menu-feed"><span className="mobile-menu-caption">COMMUNITY FEED</span><div className="mobile-menu-feed-options"><button type="button" className={feedFilter === 'all' && screen === 'feed' ? 'active' : ''} onClick={() => { setFeedFilter('all'); setScreen('feed'); setMobileMenuOpen(false); }}>All RUMS</button><button type="button" className={feedFilter === 'lumina' && screen === 'feed' ? 'active' : ''} onClick={() => { setFeedFilter('lumina'); setScreen('feed'); setMobileMenuOpen(false); }}><Droplet size={13} /> Lumina</button></div></div>}
                 <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('plazaPlus'); setPlusTab('notifications'); }}><span className="mobile-menu-icon"><Sparkles size={17} /></span> Plaza+ and notifications {notificationsForCurrentUser().length > 0 && <b>{notificationsForCurrentUser().length}</b>}</button>
                 {siteConfig.showDiscover && <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('search'); }}><span className="mobile-menu-icon"><Search size={17} /></span> Discover</button>}
