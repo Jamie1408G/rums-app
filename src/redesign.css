@@ -5119,3 +5119,91 @@ button,input,textarea { font:inherit; }
   .plaza-news-site .news-article-standfirst{font-size:16px}
   .plaza-news-site .news-article-body{font-size:16.5px}
 }
+
+/* =========================================================
+   Plaza News — final lead article treatment
+   The home lead must read as a news homepage headline, not a post card.
+   ========================================================= */
+@media(max-width:760px){
+  .plaza-news-site .news-top-grid{
+    display:block!important;
+    padding-bottom:18px!important;
+    border-bottom:1px solid var(--theme-border,#dfe6ee)!important;
+  }
+  .plaza-news-site .news-top-story{
+    display:block!important;
+    overflow:visible!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+  .plaza-news-site .news-top-image{
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    aspect-ratio:16/9!important;
+    overflow:hidden!important;
+    border-radius:12px!important;
+    background:var(--theme-surface-2,#eef3f8)!important;
+  }
+  .plaza-news-site .news-top-image img{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    min-height:0!important;
+    aspect-ratio:auto!important;
+    object-fit:cover!important;
+    border-radius:0!important;
+  }
+  .plaza-news-site .news-top-copy{
+    padding:13px 1px 0!important;
+  }
+  .plaza-news-site .news-top-copy>div{
+    gap:7px!important;
+    margin-bottom:8px!important;
+  }
+  .plaza-news-site .news-top-copy h1{
+    margin:0 0 9px!important;
+    max-width:none!important;
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Segoe UI',sans-serif!important;
+    font-size:clamp(27px,8vw,34px)!important;
+    line-height:1.04!important;
+    letter-spacing:-.045em!important;
+    font-weight:820!important;
+    text-wrap:pretty!important;
+  }
+  .plaza-news-site .news-top-copy p{
+    margin:0!important;
+    color:var(--theme-muted,#65778d)!important;
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif!important;
+    font-size:14px!important;
+    line-height:1.5!important;
+    font-weight:450!important;
+  }
+  .plaza-news-site .news-top-copy small{
+    margin-top:10px!important;
+    font-size:9px!important;
+  }
+  .plaza-news-site .news-top-secondary{
+    margin-top:18px!important;
+  }
+}
+
+@media(max-width:430px){
+  .plaza-news-site .news-top-image{
+    height:auto!important;
+    min-height:0!important;
+    aspect-ratio:16/9!important;
+  }
+  .plaza-news-site .news-top-image img{
+    height:100%!important;
+    min-height:0!important;
+  }
+  .plaza-news-site .news-top-copy h1{
+    font-size:29px!important;
+  }
+  .plaza-news-site .news-top-copy p{
+    font-size:13.5px!important;
+  }
+}
