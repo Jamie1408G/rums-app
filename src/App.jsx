@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 23;
-const JAMIE_TUTORIAL_VERSION = 23;
+const TUTORIAL_VERSION = 24;
+const JAMIE_TUTORIAL_VERSION = 24;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -617,30 +617,25 @@ export default function RUMS() {
   };
 
   useEffect(() => {
-    // Load + decode the selected soundtrack while Plaza is idle.
-    // Creating a suspended AudioContext and decoding audio does not need
-    // audible playback permission, so the expensive work is finished before
-    // the update screen ever appears.
-    let cancelled = false;
-    const preload = async () => {
-      const context = await ensureUpdateAudioReady({ resume: false });
-      if (!cancelled && context && updateAudioBufferRef.current) {
-        setUpdateMusicState((state) => state === 'playing' ? state : 'ready');
-      }
+    // Warm the normal browser media cache only. Do NOT decode or alter the
+    // Web Audio context here; the keep-alive playback path below is the
+    // version that proved reliable in-browser.
+    const preloadAudio = new Audio();
+    preloadAudio.preload = 'auto';
+    preloadAudio.src = updateTrack.src;
+    try { preloadAudio.load(); } catch { /* cache warming is best-effort */ }
+    return () => {
+      try {
+        preloadAudio.pause();
+        preloadAudio.removeAttribute('src');
+        preloadAudio.load();
+      } catch { /* ignore cleanup failures */ }
     };
-    void preload();
-    return () => { cancelled = true; };
   }, [updateTrack.src]);
 
   const startUpdateMusic = async () => {
     setUpdateMusicState('starting');
-    let context = updateAudioContextRef.current;
-    if (!context || !updateAudioBufferRef.current) {
-      context = await ensureUpdateAudioReady({ resume: false });
-    }
-    if (context?.state !== 'running') {
-      try { await context?.resume(); } catch { /* browser may still require a gesture */ }
-    }
+    const context = await ensureUpdateAudioReady({ resume: true });
     if (!context || context.state !== 'running' || !updateAudioBufferRef.current) {
       setUpdateMusicState('blocked');
       return false;
@@ -747,9 +742,13 @@ export default function RUMS() {
     if (!updateUntil || updateUntil <= Date.now()) return undefined;
     let cancelled = false;
     const launch = async () => {
-      const started = await startUpdateMusic();
+      const context = await ensureUpdateAudioReady({ resume: true });
       if (cancelled) return;
-      if (!started) setUpdateMusicState('blocked');
+      if (context?.state === 'running') {
+        await startUpdateMusic();
+      } else {
+        setUpdateMusicState('blocked');
+      }
     };
     void launch();
     return () => { cancelled = true; };
