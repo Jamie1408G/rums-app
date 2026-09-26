@@ -5327,8 +5327,27 @@ button,input,textarea { font:inherit; }
 .aero-root .lumina-about-pill {
   display:inline-flex;
   align-items:center;
-  gap:5px;
-  color:var(--theme-accent,var(--site-accent,#3478f6));
+  justify-content:center;
+  gap:7px;
+  min-height:34px;
+  padding:0 13px;
+  border:1px solid color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 34%,transparent)!important;
+  border-radius:12px!important;
+  background:var(--theme-accent-soft,#eaf3ff)!important;
+  color:var(--theme-accent,var(--site-accent,#3478f6))!important;
+  font-size:11px!important;
+  font-weight:800!important;
+  box-shadow:0 4px 12px color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 14%,transparent)!important;
+}
+.aero-root .lumina-about-pill:hover {
+  border-color:color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 55%,transparent)!important;
+  background:color-mix(in srgb,var(--theme-accent-soft,#eaf3ff) 82%,#fff)!important;
+  transform:translateY(-1px);
+}
+.aero-root .lumina-about-pill svg {
+  flex:0 0 auto;
+  width:14px;
+  height:14px;
 }
 .aero-root .lumina-feed-posts .post-card:first-of-type {
   margin-top:0;
@@ -5353,5 +5372,8 @@ button,input,textarea { font:inherit; }
   }
   .aero-root .lumina-about-pill {
     order:-1;
+    min-height:36px;
+    padding:0 14px;
+    font-size:11.5px!important;
   }
 }
