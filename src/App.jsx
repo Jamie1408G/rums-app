@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 19;
-const JAMIE_TUTORIAL_VERSION = 19;
+const TUTORIAL_VERSION = 20;
+const JAMIE_TUTORIAL_VERSION = 20;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -566,7 +566,7 @@ export default function RUMS() {
       const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
       const lastSeen = localStorage.getItem(UPDATE_SEEN_KEY);
       localStorage.setItem(UPDATE_SEEN_KEY, __RUMS_BUILD_ID__);
-      if (pending?.version === __RUMS_BUILD_ID__ && pending.until > Date.now()) return pending.until;
+      if (pending?.version === __RUMS_BUILD_ID__ && pending.until > Date.now() && lastSeen !== __RUMS_BUILD_ID__) return pending.until;
       // Include the first production visit: older builds never recorded a build ID.
       if (lastSeen !== __RUMS_BUILD_ID__) {
         const until = Date.now() + UPDATE_SCREEN_MS;
@@ -721,9 +721,26 @@ export default function RUMS() {
       let shouldReload = false;
       try {
         const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
-        shouldReload = Boolean(pending?.version && pending.version !== __RUMS_BUILD_ID__);
+        const incomingVersion = pending?.version || '';
+        shouldReload = Boolean(incomingVersion && incomingVersion !== __RUMS_BUILD_ID__);
+
+        // The update experience has already happened on this document.
+        // Mark the incoming build as seen BEFORE reloading so the newly loaded
+        // build does not start a second, silent update screen.
+        if (shouldReload) localStorage.setItem(UPDATE_SEEN_KEY, incomingVersion);
+
         sessionStorage.removeItem(UPDATE_SCREEN_KEY);
+        sessionStorage.removeItem(UPDATE_RELOAD_KEY);
       } catch { /* ignore */ }
+
+      const audio = updateAudioRef.current;
+      if (audio) {
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch { /* ignore */ }
+      }
+
       if (shouldReload) {
         window.location.reload();
         return;
