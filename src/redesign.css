@@ -5835,6 +5835,9 @@ button,input,textarea { font:inherit; }
     backdrop-filter .8s ease,
     -webkit-backdrop-filter .8s ease;
 }
+.aero-root .site-update-screen:not(.is-leaving){
+  opacity:1!important;
+}
 .aero-root .site-update-screen.is-leaving{
   opacity:0;
   pointer-events:none;
@@ -5861,6 +5864,12 @@ button,input,textarea { font:inherit; }
 .aero-root.startup-reveal-active .rums-space-chooser{
   visibility:visible!important;
   pointer-events:none;
+  opacity:0;
+  animation:plazaStartupChooserReveal .32s .04s cubic-bezier(.16,.88,.22,1.04) both;
+}
+@keyframes plazaStartupChooserReveal{
+  from{opacity:0}
+  to{opacity:1}
 }
 .aero-root.startup-reveal-active .rums-space-chooser::before{
   content:"";

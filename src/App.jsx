@@ -26,7 +26,7 @@ const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
-const FORCE_UPDATE_REVISION = 'startup-menu-reveal-32';
+const FORCE_UPDATE_REVISION = 'startup-menu-reveal-33';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -724,7 +724,17 @@ export default function RUMS() {
       setUpdateMusicState('ready');
       if (forcedUpdatePendingRef.current) {
         forcedUpdatePendingRef.current = false;
-        triggerForcedUpdate();
+        // Start the actual soundtrack while we are STILL inside the genuine
+        // user gesture that unlocked Web Audio. Only show the update screen
+        // once playback has been started on this authorized context.
+        const started = await startUpdateMusic();
+        if (started) triggerForcedUpdate();
+        else {
+          // If playback still fails, keep the forced update pending so another
+          // ordinary interaction can retry rather than showing a silent updater.
+          forcedUpdatePendingRef.current = true;
+          armed = false;
+        }
       }
     };
     document.addEventListener('pointerdown', arm, { capture: true, passive: true });
@@ -785,6 +795,9 @@ export default function RUMS() {
     if (!updateUntil || updateUntil <= Date.now()) return undefined;
     let cancelled = false;
     const launch = async () => {
+      // Forced updates may already have started the source synchronously from
+      // the unlocking gesture. Never stop/recreate that working source.
+      if (updateAudioSourceRef.current) return;
       const context = await ensureUpdateAudioReady({ resume: true });
       if (cancelled) return;
       if (context?.state === 'running') {
