@@ -39,7 +39,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'start-every-refresh-61';
+const FORCE_UPDATE_REVISION = 'version-menu-start-62';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -50,8 +50,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 61;
-const JAMIE_TUTORIAL_VERSION = 61;
+const TUTORIAL_VERSION = 62;
+const JAMIE_TUTORIAL_VERSION = 62;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -593,9 +593,6 @@ export default function RUMS() {
   const uiSfxPoolsRef = useRef({});
   const uiSfxBuffersRef = useRef({});
   const uiSfxBufferLoadsRef = useRef({});
-  const startupStartPlayedRef = useRef(false);
-  const startupStartPendingRef = useRef(false);
-  const startupEntryRevealPlayedRef = useRef(false);
   const startupEntryRevealTimerRef = useRef(0);
 
   const pendingUpdateRef = useRef(null);
@@ -710,37 +707,6 @@ export default function RUMS() {
     }
   };
 
-  const playRefreshStartSound = async () => {
-    // Exactly once per full document load. If autoplay is blocked, leave it
-    // armed so the first real pointer/key gesture can release it.
-    if (startupStartPlayedRef.current) return true;
-
-    const played = await playUiSfx('start');
-    if (played) {
-      startupStartPlayedRef.current = true;
-      startupStartPendingRef.current = false;
-      return true;
-    }
-
-    startupStartPendingRef.current = true;
-    return false;
-  };
-
-  const releasePendingRefreshStartSound = () => {
-    if (
-      startupStartPlayedRef.current ||
-      !startupStartPendingRef.current
-    ) return;
-
-    // Called synchronously from a genuine user gesture. Do not await before
-    // invoking play(), otherwise the browser can lose the autoplay gesture.
-    void playUiSfx('start').then((played) => {
-      if (!played) return;
-      startupStartPlayedRef.current = true;
-      startupStartPendingRef.current = false;
-    });
-  };
-
   const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
     if (typeof window === 'undefined') return null;
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
@@ -805,7 +771,7 @@ export default function RUMS() {
 
     uiSfxPoolsRef.current = pools;
 
-    // Ask the browser to have START ready before the version build begins.
+    // Keep START preloaded so version-menu entry can fire it immediately.
     pools.start?.pool?.forEach((audio) => {
       try {
         audio.preload = 'auto';
@@ -815,8 +781,6 @@ export default function RUMS() {
 
     const onPointerSfx = (event) => {
       if (event.button != null && event.button !== 0) return;
-
-      releasePendingRefreshStartSound();
 
       const target = event.target instanceof Element ? event.target : null;
       if (!target) {
@@ -884,17 +848,10 @@ export default function RUMS() {
       void playUiSfx('click2');
     };
 
-    const onKeySfxUnlock = (event) => {
-      if (event.repeat) return;
-      releasePendingRefreshStartSound();
-    };
-
     document.addEventListener('pointerdown', onPointerSfx, true);
-    document.addEventListener('keydown', onKeySfxUnlock, true);
 
     return () => {
       document.removeEventListener('pointerdown', onPointerSfx, true);
-      document.removeEventListener('keydown', onKeySfxUnlock, true);
       Object.values(uiSfxPoolsRef.current).forEach((entry) => {
         entry?.pool?.forEach((audio) => {
           try {
@@ -1247,7 +1204,7 @@ export default function RUMS() {
           startupEntryRevealPlayedRef.current = true;
           setUpdateHandoffPhase('idle');
 
-          void playRefreshStartSound();
+          void playUiSfx('start');
 
           window.requestAnimationFrame(() => {
             window.requestAnimationFrame(() => {
@@ -1824,6 +1781,7 @@ export default function RUMS() {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   }, []);
   const [screen, setScreen] = useState('spaceSelect');
+  const [versionMenuEntryKey, setVersionMenuEntryKey] = useState(1);
   const [entryAuth, setEntryAuth] = useState(false);
   const [entrySessionReady, setEntrySessionReady] = useState(false);
   const [rumsSpace, setRumsSpace] = useState(null);
@@ -3779,6 +3737,11 @@ export default function RUMS() {
     });
   }
 
+  function enterVersionMenu() {
+    setVersionMenuEntryKey((value) => value + 1);
+    setScreen('spaceSelect');
+  }
+
   async function chooseProject(project) {
     if (!project?.id) return;
     try {
@@ -3825,7 +3788,6 @@ export default function RUMS() {
 
   useEffect(() => {
     if (
-      startupEntryRevealPlayedRef.current ||
       !entrySessionReady ||
       screen !== 'spaceSelect' ||
       updateUntil > Date.now() ||
@@ -3834,14 +3796,19 @@ export default function RUMS() {
       updateCycleRef.current.phase !== 'idle'
     ) return undefined;
 
-    startupEntryRevealPlayedRef.current = true;
     setStartupRevealPending(true);
     setStartupRevealActive(false);
 
     let buildTimer = 0;
     const frame = window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        void playRefreshStartSound();
+        /*
+          START belongs to ENTERING the version menu.
+          It is deliberately not deferred to the first click, so selecting a
+          version can only produce OPEN and can never accidentally release START.
+        */
+        void playUiSfx('start');
+
         setStartupRevealPending(false);
         setStartupRevealActive(true);
 
@@ -3862,6 +3829,7 @@ export default function RUMS() {
     };
   }, [
     entrySessionReady,
+    versionMenuEntryKey,
     screen,
     updateUntil,
     updateOverlayLeaving,
@@ -3978,7 +3946,7 @@ export default function RUMS() {
     setTag('General');
     setNavStack([]);
     setEntryAuth(false);
-    setScreen('spaceSelect');
+    enterVersionMenu();
   }
 
   function openEntryLogin() {
@@ -3992,7 +3960,7 @@ export default function RUMS() {
   async function logoutFromEntrance() {
     await handleLogout();
     setEntryAuth(false);
-    setScreen('spaceSelect');
+    enterVersionMenu();
   }
 
   async function init(space = rumsSpace || 'rums4', requestId = spaceLoadTokenRef.current) {
@@ -4675,7 +4643,8 @@ export default function RUMS() {
         setCurrentUser(newUser);
         await loadLastSeen(newUser.username, rumsSpace || 'rums4');
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: uname }), false);
-        setScreen(entryAuth ? 'spaceSelect' : 'feed');
+        if (entryAuth) enterVersionMenu();
+        else setScreen('feed');
         setTutorialStep(0);
         setTutorialReturningUser(false);
         setTutorialActive(!entryAuth);
@@ -4691,7 +4660,8 @@ export default function RUMS() {
         setCurrentUser(found);
         await loadLastSeen(found.username, rumsSpace || 'rums4');
         await window.storage.set(SESSION_KEY, JSON.stringify({ username: found.username }), false);
-        setScreen(entryAuth ? 'spaceSelect' : 'feed');
+        if (entryAuth) enterVersionMenu();
+        else setScreen('feed');
         if (Number(found.tutorialVersion || 0) < requiredTutorialVersionForUser(found)) {
           setTutorialStep(0);
           setTutorialReturningUser(true);
