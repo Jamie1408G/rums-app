@@ -3675,7 +3675,7 @@ export default function RUMS() {
       const params = new URLSearchParams();
       if (query.trim()) params.set('q', query.trim());
       if (next) params.set('pos', next);
-      params.set('limit', '16');
+      params.set('limit', '8');
       const response = await fetch(`/api/klipy?${params.toString()}`);
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error || 'Could not load GIFs.');
@@ -5195,7 +5195,7 @@ export default function RUMS() {
 
                           <div className="gif-picker-body">
                             {gifError ? <div className="gif-picker-state"><span>Couldn’t load GIFs.</span><button type="button" onClick={() => void loadKlipyGifs({ query: gifQuery, next: '', append: false })}>Try again</button></div> : <>
-                              {gifLoading && gifResults.length === 0 ? <div className="gif-picker-skeletons">{Array.from({ length: 16 }).map((_, index) => <span key={index} />)}</div> : <div className="gif-picker-grid">
+                              {gifLoading && gifResults.length === 0 ? <div className="gif-picker-skeletons">{Array.from({ length: 8 }).map((_, index) => <span key={index} />)}</div> : <div className="gif-picker-grid">
                                 {gifResults.map((gif) => <button key={gif.id} type="button" className="gif-picker-item" onClick={() => { void selectKlipyGif(gif); }} title={gif.title || 'Send GIF'}>
                                   <img src={gif.preview || gif.url} alt={gif.title || 'GIF'} loading="lazy" decoding="async" referrerPolicy="no-referrer" />
                                 </button>)}
