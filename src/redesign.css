@@ -7981,3 +7981,192 @@ button,input,textarea { font:inherit; }
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* COMPACT MUSIC TRANSPORT CONTROLS — 66                                      */
+/* Previous / play-pause / next are always available in the collapsed island. */
+/* -------------------------------------------------------------------------- */
+
+@media(min-width:761px){
+  .aero-root .header-center-music-row .dynamic-music-compact{
+    grid-template-columns:30px minmax(0,1fr) 96px 14px!important;
+    gap:6px!important;
+    padding-left:5px!important;
+    padding-right:6px!important;
+  }
+
+  .aero-root .dynamic-music-compact-art{
+    width:29px!important;
+    height:29px!important;
+    border-radius:9px!important;
+    display:grid!important;
+    place-items:center!important;
+    pointer-events:none!important;
+  }
+
+  .aero-root .dynamic-music-compact-art .plaza-music-mini-eq{
+    color:#fff;
+  }
+
+  .aero-root .dynamic-music-compact-controls{
+    position:relative;
+    z-index:8;
+    display:grid;
+    grid-template-columns:28px 32px 28px;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    width:96px;
+    min-width:96px;
+    height:34px;
+  }
+
+  .aero-root .dynamic-music-compact-control{
+    position:relative;
+    width:28px;
+    height:28px;
+    display:grid;
+    place-items:center;
+    margin:0;
+    padding:0;
+    border:1px solid rgba(255,255,255,.86);
+    border-radius:10px;
+    color:#35546f;
+    background:
+      radial-gradient(circle at 31% 13%,rgba(255,255,255,.98),transparent 34%),
+      linear-gradient(145deg,rgba(255,255,255,.64),rgba(226,240,252,.54));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.92),
+      0 3px 8px rgba(49,85,126,.07);
+    cursor:pointer;
+    transition:
+      transform .14s cubic-bezier(.16,1.4,.3,1),
+      background .14s ease,
+      box-shadow .14s ease;
+  }
+
+  .aero-root .dynamic-music-compact-control:hover{
+    transform:scale(1.08);
+    background:
+      radial-gradient(circle at 31% 13%,#fff,transparent 34%),
+      linear-gradient(145deg,rgba(255,255,255,.82),rgba(226,241,255,.68));
+    box-shadow:
+      inset 0 1px 0 #fff,
+      0 4px 10px rgba(49,85,126,.1);
+  }
+
+  .aero-root .dynamic-music-compact-control:active{
+    transform:scale(.94);
+  }
+
+  .aero-root .dynamic-music-compact-play{
+    width:32px;
+    height:32px;
+    border-radius:11px;
+    color:#2d659f;
+    background:
+      radial-gradient(circle at 30% 14%,#fff,transparent 31%),
+      radial-gradient(circle at 78% 92%,rgba(88,178,255,.13),transparent 43%),
+      linear-gradient(145deg,rgba(255,255,255,.84),rgba(224,240,255,.69));
+    box-shadow:
+      inset 1px 1px 0 #fff,
+      inset -1px -1px 3px rgba(74,115,160,.06),
+      0 4px 11px rgba(46,89,137,.11);
+  }
+
+  .aero-root .dynamic-music-compact-expand{
+    position:relative;
+    z-index:5;
+    width:14px;
+    height:28px;
+    display:grid;
+    place-items:center;
+    color:var(--theme-muted,#70839a);
+    pointer-events:none;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-progress-line{
+    left:42px!important;
+    right:119px!important;
+    bottom:2px!important;
+  }
+
+  /*
+    The controls are the last thing allowed to disappear.
+    On smaller desktop widths, sacrifice artwork/text first.
+  */
+  @media(max-width:1050px){
+    .aero-root .header-center-music-row .dynamic-music-compact{
+      grid-template-columns:minmax(0,1fr) 96px 12px!important;
+      gap:4px!important;
+    }
+
+    .aero-root .dynamic-music-compact-art{
+      display:none!important;
+    }
+
+    .aero-root .header-center-music-row .dynamic-music-progress-line{
+      left:7px!important;
+      right:115px!important;
+    }
+
+    .aero-root .dynamic-music-compact-copy small{
+      display:none!important;
+    }
+
+    .aero-root .dynamic-music-compact-copy strong{
+      margin-top:0!important;
+      font-size:9px!important;
+    }
+  }
+
+  @media(max-width:880px){
+    .aero-root .header-center-music-row .dynamic-music-compact{
+      grid-template-columns:96px 12px!important;
+      justify-content:end!important;
+    }
+
+    .aero-root .dynamic-music-compact-copy{
+      display:none!important;
+    }
+
+    .aero-root .header-center-music-row .dynamic-music-progress-line{
+      left:7px!important;
+      right:115px!important;
+      opacity:.5;
+    }
+  }
+}
+
+/* Dark Plaza keeps the same glass controls rather than turning them opaque. */
+.aero-root[data-theme="dark"] .dynamic-music-compact-control{
+  color:#e5f1ff;
+  border-color:rgba(255,255,255,.12);
+  background:
+    radial-gradient(circle at 31% 13%,rgba(255,255,255,.1),transparent 34%),
+    linear-gradient(145deg,rgba(57,68,84,.76),rgba(36,46,60,.68));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.09),
+    0 3px 8px rgba(0,0,0,.12);
+}
+
+.aero-root[data-theme="dark"] .dynamic-music-compact-play{
+  color:#79c9ff;
+  background:
+    radial-gradient(circle at 30% 14%,rgba(255,255,255,.13),transparent 31%),
+    radial-gradient(circle at 78% 92%,rgba(76,163,255,.13),transparent 43%),
+    linear-gradient(145deg,rgba(60,72,90,.82),rgba(38,49,64,.74));
+}
+
+/* The three transport buttons are one staged piece in the Wii-style header build. */
+.aero-root.version-build-active .dynamic-music-compact-controls{
+  animation:wiiPieceControl .38s 1.12s cubic-bezier(.14,1.5,.28,1) both;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .dynamic-music-compact-control,
+  .aero-root.version-build-active .dynamic-music-compact-controls{
+    animation:none!important;
+    transition:none!important;
+  }
+}
+

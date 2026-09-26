@@ -39,7 +39,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'account-gate-bubbly-65';
+const FORCE_UPDATE_REVISION = 'compact-music-controls-66';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -50,8 +50,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 65;
-const JAMIE_TUTORIAL_VERSION = 65;
+const TUTORIAL_VERSION = 66;
+const JAMIE_TUTORIAL_VERSION = 66;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -1610,30 +1610,57 @@ export default function RUMS() {
             }
           }}
         >
-          <button
-            type="button"
-            className={`dynamic-music-art track-${siteMusicTrackIndex}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              toggleSiteMusic();
-            }}
-            aria-label={siteMusicPlaying ? 'Pause music' : 'Play music'}
+          <span
+            className={`dynamic-music-art dynamic-music-compact-art track-${siteMusicTrackIndex}`}
+            aria-hidden="true"
           >
-            {siteMusicPlaying ? <Pause size={13}/> : <Play size={13}/>}
-          </button>
+            {siteMusicPlaying
+              ? <span className="plaza-music-mini-eq"><i/><i/><i/></span>
+              : <Music2 size={13}/>}
+          </span>
 
           <span key={siteMusicTrack.id} className="dynamic-music-compact-copy">
             <small>{siteMusicPlaying ? 'NOW PLAYING' : 'PLAZA MUSIC'}</small>
             <strong>{siteMusicTrack.title}</strong>
           </span>
 
-          <span className="dynamic-music-island-status" aria-hidden="true">
-            <span className="dynamic-music-wave">
-              {siteMusicPlaying
-                ? <span className="dynamic-island-wave"><i/><i/><i/><i/><i/></span>
-                : <Music2 size={14}/>}
-            </span>
-            {siteMusicOpen ? <ChevronUp size={13}/> : <ChevronDown size={13}/>}
+          <span
+            className="dynamic-music-compact-controls"
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerMove={(event) => event.stopPropagation()}
+            onPointerUp={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="dynamic-music-compact-control"
+              onClick={() => skipSiteMusic(-1)}
+              aria-label="Previous track"
+            >
+              <SkipBack size={13}/>
+            </button>
+
+            <button
+              type="button"
+              className="dynamic-music-compact-control dynamic-music-compact-play"
+              onClick={toggleSiteMusic}
+              aria-label={siteMusicPlaying ? 'Pause music' : 'Play music'}
+            >
+              {siteMusicPlaying ? <Pause size={14}/> : <Play size={14}/>}
+            </button>
+
+            <button
+              type="button"
+              className="dynamic-music-compact-control"
+              onClick={() => skipSiteMusic(1)}
+              aria-label="Next track"
+            >
+              <SkipForward size={13}/>
+            </button>
+          </span>
+
+          <span className="dynamic-music-compact-expand" aria-hidden="true">
+            {siteMusicOpen ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
           </span>
 
           <span className="dynamic-music-progress-line" aria-hidden="true" />
