@@ -24,9 +24,10 @@ const THEME_STORAGE_KEY = 'rums-plaza-theme';
 const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
+const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
-const FORCE_UPDATE_REVISION = 'startup-menu-reveal-33';
+const FORCE_UPDATE_REVISION = 'startup-menu-reveal-34';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -37,8 +38,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 31;
-const JAMIE_TUTORIAL_VERSION = 31;
+const TUTORIAL_VERSION = 34;
+const JAMIE_TUTORIAL_VERSION = 34;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -641,6 +642,21 @@ export default function RUMS() {
     };
   }, [updateTrack.src]);
 
+  useEffect(() => {
+    // Decode the chosen track ahead of time while the AudioContext may remain
+    // suspended. Playback is NOT started here; this only removes fetch/decode
+    // work from the later user-gesture unlock path.
+    let cancelled = false;
+    const prepare = async () => {
+      const context = await ensureUpdateAudioReady({ resume: false });
+      if (!cancelled && context && updateAudioBufferRef.current && updateMusicState !== 'playing') {
+        setUpdateMusicState('ready');
+      }
+    };
+    void prepare();
+    return () => { cancelled = true; };
+  }, [updateTrack.src]);
+
   const triggerForcedUpdate = () => {
     try {
       if (localStorage.getItem(FORCE_UPDATE_KEY) === FORCE_UPDATE_REVISION) return;
@@ -762,7 +778,13 @@ export default function RUMS() {
     let stopped = false;
     let checking = false;
     const checkForUpdate = async () => {
-      if (stopped || checking || !navigator.onLine || updateUntil > Date.now() || updateOutroActive) return;
+      let handoffUntil = 0;
+      try { handoffUntil = Number(sessionStorage.getItem(UPDATE_HANDOFF_KEY) || 0); } catch { /* ignore */ }
+      if (handoffUntil && handoffUntil <= Date.now()) {
+        try { sessionStorage.removeItem(UPDATE_HANDOFF_KEY); } catch { /* ignore */ }
+        handoffUntil = 0;
+      }
+      if (stopped || checking || !navigator.onLine || updateUntil > Date.now() || updateOutroActive || handoffUntil > Date.now()) return;
       checking = true;
       try {
         const response = await fetch(`/version.json?check=${Date.now()}`, { cache: 'no-store' });
@@ -851,6 +873,10 @@ export default function RUMS() {
             localStorage.setItem(UPDATE_SEEN_KEY, updateTargetVersion);
             sessionStorage.removeItem(UPDATE_SCREEN_KEY);
             sessionStorage.removeItem(UPDATE_RELOAD_KEY);
+            // Prevent the freshly loaded document from interpreting the same
+            // deployment handoff as another update. The lock is intentionally
+            // short-lived; later genuine deployments still trigger normally.
+            sessionStorage.setItem(UPDATE_HANDOFF_KEY, String(Date.now() + 30000));
           } catch { /* ignore */ }
           window.location.reload();
         }, 5150);
