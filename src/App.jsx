@@ -25,46 +25,18 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const UPDATE_SPOTIFY_TRACKS = [
-  { id: '1KBFCXmzqxMBpc4RBJo3r3', title: 'xscape', artist: '13 Miles' },
-  { id: '0Ubp7kMZ6MWZIL8qkloYub', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
-  { id: '46DQgCLYUqsrfLmvN5Ymre', title: 'URL 湖', artist: 'Webinar™' },
-  { id: '7zGzS7L6LnI5qQqMm8wTPB', title: 'New Look - Wii U Mii Maker Lofi Mix', artist: 'Secret Potion, Lofi Beats To Chill Study Sleep, Nostalgiacore' },
+const UPDATE_AUDIO_TRACKS = [
+  { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
+  { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
+  { id: 'new-look', src: '/audio/update-new-look.mp3', title: 'New Look - Wii U Mii Maker Lofi Mix', artist: 'Secret Potion' },
+  { id: 'lotus-waters', src: '/audio/update-lotus-waters.mp3', title: 'lotus waters (nightcore sped up)', artist: 'yume 2kki' },
+  { id: 'xscape', src: '/audio/update-xscape.mp3', title: 'xscape', artist: '13 Miles' },
 ];
-const UPDATE_SPOTIFY_TRACK_IDS = UPDATE_SPOTIFY_TRACKS.map((track) => track.id);
-const pickUpdateSpotifyTrack = () => UPDATE_SPOTIFY_TRACK_IDS[Math.floor(Math.random() * UPDATE_SPOTIFY_TRACK_IDS.length)];
+const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
+const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-function loadSpotifyIframeApi() {
-  if (typeof window === 'undefined') return Promise.reject(new Error('Spotify player is browser-only'));
-  if (window.__rumsSpotifyIframeApi) return Promise.resolve(window.__rumsSpotifyIframeApi);
-  if (window.__rumsSpotifyIframeApiPromise) return window.__rumsSpotifyIframeApiPromise;
-
-  window.__rumsSpotifyIframeApiPromise = new Promise((resolve, reject) => {
-    const previousReady = window.onSpotifyIframeApiReady;
-    window.onSpotifyIframeApiReady = (IFrameAPI) => {
-      window.__rumsSpotifyIframeApi = IFrameAPI;
-      if (typeof previousReady === 'function') {
-        try { previousReady(IFrameAPI); } catch { /* another Spotify embed must not break update audio */ }
-      }
-      resolve(IFrameAPI);
-    };
-
-    let script = document.querySelector('script[data-rums-spotify-iframe-api]');
-    if (!script) {
-      script = document.createElement('script');
-      script.src = 'https://open.spotify.com/embed/iframe-api/v1';
-      script.async = true;
-      script.dataset.rumsSpotifyIframeApi = 'true';
-      script.onerror = () => reject(new Error('Could not load Spotify player'));
-      document.body.appendChild(script);
-    }
-  });
-
-  return window.__rumsSpotifyIframeApiPromise;
-}
-
-const TUTORIAL_VERSION = 17;
-const JAMIE_TUTORIAL_VERSION = 17;
+const TUTORIAL_VERSION = 18;
+const JAMIE_TUTORIAL_VERSION = 18;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -598,7 +570,7 @@ export default function RUMS() {
       // Include the first production visit: older builds never recorded a build ID.
       if (lastSeen !== __RUMS_BUILD_ID__) {
         const until = Date.now() + UPDATE_SCREEN_MS;
-        const trackId = pickUpdateSpotifyTrack();
+        const trackId = pickUpdateAudioTrack();
         sessionStorage.setItem(UPDATE_SCREEN_KEY, JSON.stringify({ version: __RUMS_BUILD_ID__, until, trackId }));
         return until;
       }
@@ -609,9 +581,9 @@ export default function RUMS() {
   const [updateTrackId] = useState(() => {
     try {
       const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
-      if (pending?.trackId && UPDATE_SPOTIFY_TRACK_IDS.includes(pending.trackId)) return pending.trackId;
+      if (pending?.trackId && UPDATE_AUDIO_TRACK_IDS.includes(pending.trackId)) return pending.trackId;
     } catch { /* use a random fallback */ }
-    return pickUpdateSpotifyTrack();
+    return pickUpdateAudioTrack();
   });
 
   useEffect(() => {
@@ -629,7 +601,7 @@ export default function RUMS() {
         if (attempts >= 2) return;
         const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
         const until = pending?.version === version && pending.until > Date.now() ? pending.until : Date.now() + UPDATE_SCREEN_MS;
-        const trackId = pending?.version === version && UPDATE_SPOTIFY_TRACK_IDS.includes(pending?.trackId) ? pending.trackId : updateTrackId;
+        const trackId = pending?.version === version && UPDATE_AUDIO_TRACK_IDS.includes(pending?.trackId) ? pending.trackId : updateTrackId;
         sessionStorage.setItem(UPDATE_SCREEN_KEY, JSON.stringify({ version, until, trackId }));
         sessionStorage.setItem(UPDATE_RELOAD_KEY, JSON.stringify({ version, count: attempts + 1, at: Date.now() }));
         setUpdateUntil(until);
@@ -642,107 +614,101 @@ export default function RUMS() {
     return () => { stopped = true; window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
   }, [updateTrackId]);
 
-  const updateTrack = UPDATE_SPOTIFY_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_SPOTIFY_TRACKS[0];
-  const updateSpotifyHostRef = useRef(null);
-  const updateSpotifyControllerRef = useRef(null);
-  const [updateMusicState, setUpdateMusicState] = useState('loading');
+  const updateTrack = UPDATE_AUDIO_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_AUDIO_TRACKS[0];
+  const updateAudioRef = useRef(null);
+  const [updateMusicState, setUpdateMusicState] = useState('ready');
 
   const startUpdateMusic = () => {
-    const controller = updateSpotifyControllerRef.current;
-    if (!controller) return;
+    const audio = updateAudioRef.current;
+    if (!audio) return;
     setUpdateMusicState('starting');
-    try { controller.play(); } catch { setUpdateMusicState('blocked'); }
+    audio.volume = 0.72;
+    const playPromise = audio.play();
+    if (playPromise?.catch) playPromise.catch(() => setUpdateMusicState('blocked'));
   };
 
   useEffect(() => {
-    let disposed = false;
-    let fallbackTimer = 0;
-    let primeTimer = 0;
-    let primed = false;
+    // Preload every local soundtrack file while Plaza is being used so the
+    // selected song is already cached when an update appears.
+    const preloaders = UPDATE_AUDIO_TRACKS.map((track) => {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.src = track.src;
+      audio.load();
+      return audio;
+    });
+    return () => preloaders.forEach((audio) => { audio.src = ''; });
+  }, []);
 
-    const tryPrimePlayer = () => {
-      if (primed || disposed || updateUntil > Date.now()) return;
-      const controller = updateSpotifyControllerRef.current;
-      if (!controller) return;
+  useEffect(() => {
+    const audio = updateAudioRef.current;
+    if (!audio) return undefined;
+    audio.src = updateTrack.src;
+    audio.preload = 'auto';
+    audio.volume = 0.72;
+    audio.load();
+
+    const onPlaying = () => setUpdateMusicState('playing');
+    const onWaiting = () => setUpdateMusicState('starting');
+    const onPause = () => {
+      if (updateUntil > Date.now() && audio.currentTime > 0) setUpdateMusicState('paused');
+    };
+    const onError = () => setUpdateMusicState('blocked');
+    audio.addEventListener('playing', onPlaying);
+    audio.addEventListener('waiting', onWaiting);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('error', onError);
+
+    // Prime the same native audio element on the first genuine interaction.
+    // Browsers that remember the interaction can then allow the update track
+    // to start immediately later in the session.
+    let primed = false;
+    const prime = () => {
+      if (primed || updateUntil > Date.now()) return;
       primed = true;
-      try {
-        // Run play from a genuine user gesture so the same hidden Spotify
-        // controller is much more likely to be allowed to autoplay later.
-        controller.play();
-        primeTimer = window.setTimeout(() => {
-          try { controller.pause(); } catch {}
-          try { controller.seek(0); } catch {}
-        }, 90);
-      } catch {
-        primed = false;
+      const oldVolume = audio.volume;
+      audio.volume = 0;
+      const promise = audio.play();
+      if (promise?.then) {
+        promise.then(() => {
+          window.setTimeout(() => {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.volume = oldVolume;
+          }, 40);
+        }).catch(() => {
+          primed = false;
+          audio.volume = oldVolume;
+        });
       }
     };
-
-    const gestureOptions = { capture: true, passive: true };
-    document.addEventListener('pointerdown', tryPrimePlayer, gestureOptions);
-    document.addEventListener('keydown', tryPrimePlayer, true);
-
-    loadSpotifyIframeApi().then((IFrameAPI) => {
-      if (disposed || !updateSpotifyHostRef.current) return;
-      IFrameAPI.createController(
-        updateSpotifyHostRef.current,
-        { width: 1, height: 1, uri: `spotify:track:${updateTrackId}` },
-        (controller) => {
-          if (disposed) {
-            try { controller.destroy(); } catch {}
-            return;
-          }
-          updateSpotifyControllerRef.current = controller;
-          controller.addListener('ready', () => {
-            if (disposed) return;
-            if (updateUntil > Date.now()) {
-              setUpdateMusicState('starting');
-              try { controller.play(); } catch { setUpdateMusicState('blocked'); }
-            } else {
-              setUpdateMusicState('ready');
-            }
-          });
-          controller.addListener('playback_started', () => {
-            if (!disposed && updateUntil > Date.now()) setUpdateMusicState('playing');
-          });
-          controller.addListener('playback_update', (event) => {
-            if (disposed || updateUntil <= Date.now()) return;
-            if (event?.data?.isBuffering) setUpdateMusicState('starting');
-            else if (event?.data?.isPaused === false) setUpdateMusicState('playing');
-            else if (event?.data?.position > 0) setUpdateMusicState('paused');
-          });
-        }
-      );
-    }).catch(() => {
-      if (!disposed && updateUntil > Date.now()) setUpdateMusicState('blocked');
-    });
+    document.addEventListener('pointerdown', prime, { capture: true, passive: true });
+    document.addEventListener('keydown', prime, true);
 
     return () => {
-      disposed = true;
-      window.clearTimeout(fallbackTimer);
-      window.clearTimeout(primeTimer);
-      document.removeEventListener('pointerdown', tryPrimePlayer, true);
-      document.removeEventListener('keydown', tryPrimePlayer, true);
-      const controller = updateSpotifyControllerRef.current;
-      updateSpotifyControllerRef.current = null;
-      if (controller) {
-        try { controller.destroy(); } catch {}
-      }
+      document.removeEventListener('pointerdown', prime, true);
+      document.removeEventListener('keydown', prime, true);
+      audio.removeEventListener('playing', onPlaying);
+      audio.removeEventListener('waiting', onWaiting);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('error', onError);
     };
-  }, [updateTrackId]);
+  }, [updateTrack.src]);
 
   useEffect(() => {
     if (!updateUntil || updateUntil <= Date.now()) return undefined;
+    const audio = updateAudioRef.current;
+    if (!audio) return undefined;
+    audio.currentTime = 0;
+    audio.volume = 0.72;
     setUpdateMusicState('starting');
-    const controller = updateSpotifyControllerRef.current;
-    if (controller) {
-      try { controller.play(); } catch { setUpdateMusicState('blocked'); }
-    }
+    const playPromise = audio.play();
+    if (playPromise?.catch) playPromise.catch(() => setUpdateMusicState('blocked'));
     const fallbackTimer = window.setTimeout(() => {
       setUpdateMusicState((state) => state === 'playing' ? state : 'blocked');
-    }, 1800);
+    }, 1200);
     return () => window.clearTimeout(fallbackTimer);
-  }, [updateUntil]);
+  }, [updateUntil, updateTrack.src]);
 
   useEffect(() => {
     if (!updateUntil) return undefined;
@@ -5349,7 +5315,7 @@ export default function RUMS() {
   return (
     <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite">
-        <div ref={updateSpotifyHostRef} className="site-update-background-player" aria-hidden="true" />
+        <audio ref={updateAudioRef} className="site-update-background-player" preload="auto" src={updateTrack.src} aria-hidden="true" />
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
           <span className="site-update-kicker">RUMS PLAZA</span>
@@ -5370,7 +5336,7 @@ export default function RUMS() {
             {updateMusicState === 'blocked' || updateMusicState === 'paused' ? (
               <button type="button" className="site-update-play-fallback" onClick={startUpdateMusic} aria-label={`Play ${updateTrack.title}`} title="Play update soundtrack">▶</button>
             ) : (
-              <div className="site-update-spotify-badge" aria-hidden="true">♫</div>
+              <div className="site-update-music-badge" aria-hidden="true">♫</div>
             )}
           </div>
           <div className="site-update-loader" aria-hidden="true"><span /></div>
