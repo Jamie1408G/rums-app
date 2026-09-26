@@ -42,7 +42,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'version-select-sound-timing-70';
+const FORCE_UPDATE_REVISION = 'stable-top-island-71';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -53,8 +53,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 70;
-const JAMIE_TUTORIAL_VERSION = 70;
+const TUTORIAL_VERSION = 71;
+const JAMIE_TUTORIAL_VERSION = 71;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -6874,7 +6874,7 @@ export default function RUMS() {
                 <span className="space-choice-number">✦</span>
                 <span className="space-choice-copy"><strong>Creative</strong></span>
               </button>
-              <button type="button" className="space-choice-card projects-choice" onClick={() => { void playUiSfx('open'); void openProjectsDirectory(); }}>
+              <button type="button" className="space-choice-card projects-choice" onClick={() => void chooseProjectsFromVersionMenu()}>
                 <span className="space-choice-number">PR</span>
                 <span className="space-choice-copy"><strong>Projects</strong></span>
               </button>
@@ -7021,23 +7021,24 @@ export default function RUMS() {
               <div className="aero-brand aero-brand-version-switch mobile-version-switcher">
                 {renderRumsVersionSwitcher()}
               </div>
-              {!isProjectSpace && (
-                <div className="aero-header-center">
-                  <div className="header-center-control-stack">
-                    <div className="header-center-version-switcher">
-                      {renderRumsVersionSwitcher()}
-                    </div>
-                    {screen === 'feed' && hasLumina && (
-                      <div className="header-center-feed-switcher">
-                        {renderFeedTabs()}
-                      </div>
-                    )}
-                    <div className="header-center-music-row">
-                      {renderHeaderMusicPlayer()}
-                    </div>
+              <div className="aero-header-center">
+                <div className="header-center-control-stack">
+                  <div className="header-center-version-switcher">
+                    {renderRumsVersionSwitcher()}
+                  </div>
+                  <div
+                    className={`header-center-feed-switcher ${
+                      !isProjectSpace && screen === 'feed' && hasLumina ? '' : 'is-placeholder'
+                    }`}
+                    aria-hidden={isProjectSpace || screen !== 'feed' || !hasLumina}
+                  >
+                    {!isProjectSpace && screen === 'feed' && hasLumina ? renderFeedTabs() : null}
+                  </div>
+                  <div className="header-center-music-row">
+                    {renderHeaderMusicPlayer()}
                   </div>
                 </div>
-              )}
+              </div>
               <button className="mobile-header-menu-button" type="button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Open site menu" aria-expanded={mobileMenuOpen}><Menu size={21} />{notificationsForCurrentUser().length > 0 && <span className="mobile-header-menu-dot" />}</button>
               {mobileMenuOpen && <nav className="mobile-header-menu" aria-label="Site menu">
                 <div className="mobile-menu-heading"><span className="mobile-menu-mark">✦</span><span>RUMS PLAZA<small>Quick access</small></span></div>
