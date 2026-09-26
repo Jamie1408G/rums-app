@@ -42,7 +42,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'macbook-f7-f9-music-72';
+const FORCE_UPDATE_REVISION = 'media-keys-clean-account-gate-73';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -53,8 +53,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 72;
-const JAMIE_TUTORIAL_VERSION = 72;
+const TUTORIAL_VERSION = 73;
+const JAMIE_TUTORIAL_VERSION = 73;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -1245,7 +1245,6 @@ export default function RUMS() {
     let fadeTimer = 0;
     let colourTimer = 0;
     let revealTimer = 0;
-    let finishTimer = 0;
 
     const updateEndTimer = window.setTimeout(() => {
       if (
@@ -1290,14 +1289,12 @@ export default function RUMS() {
 
         /*
           Stage 2
-          The screen is now genuinely empty. Put the account gate underneath,
-          then fade the blank layer into the Plaza entry colour.
+          Keep the destination completely hidden behind the handoff layer.
+          Previously the account gate mounted here and spent ~4.3 seconds
+          animating before the hard refresh, which created a fake/half-finished
+          signed-in screen followed by a second, correct one.
         */
         updateCycleRef.current.phase = 'colour';
-        setScreen('accountGate');
-        setRumsSpace(null);
-        setStartupRevealPending(true);
-        setStartupRevealActive(false);
         setUpdateOverlayLeaving(false);
         setUpdateOutroActive(false);
         setUpdateHandoffPhase('version');
@@ -1305,48 +1302,34 @@ export default function RUMS() {
         colourTimer = window.setTimeout(() => {
           if (updateCycleRef.current.id !== cycleId) return;
 
+          const forcedCycle = updateCycleRef.current.forced;
+
+          try {
+            localStorage.setItem(UPDATE_SEEN_KEY, cycleId);
+            sessionStorage.removeItem(UPDATE_SCREEN_KEY);
+            sessionStorage.removeItem(UPDATE_RELOAD_KEY);
+
+            if (!forcedCycle) {
+              sessionStorage.setItem(
+                UPDATE_HANDOFF_KEY,
+                String(Date.now() + 30000),
+              );
+            }
+          } catch {}
+
+          setUpdateMusicState('ready');
+
           /*
-            Stage 3
-            The Plaza account gate is now visible. No automatic sound is played:
-            START waits for Continue with <account>, where browser audio is
-            guaranteed to be tied to a real user gesture.
+            Hard-refresh while the transition layer is STILL covering the old
+            document. The refreshed document mounts accountGate for the first
+            time, so its full bubbly animation starts from frame zero exactly once.
           */
-          updateCycleRef.current.phase = 'revealing';
-          setUpdateHandoffPhase('idle');
-          setStartupRevealPending(false);
-          setStartupRevealActive(false);
+          updateCycleRef.current.phase = 'reloading';
 
-          finishTimer = window.setTimeout(() => {
-            if (updateCycleRef.current.id !== cycleId) return;
-
-            const forcedCycle = updateCycleRef.current.forced;
-
-            try {
-              localStorage.setItem(UPDATE_SEEN_KEY, cycleId);
-              sessionStorage.removeItem(UPDATE_SCREEN_KEY);
-              sessionStorage.removeItem(UPDATE_RELOAD_KEY);
-
-              if (!forcedCycle) {
-                sessionStorage.setItem(
-                  UPDATE_HANDOFF_KEY,
-                  String(Date.now() + 30000),
-                );
-              }
-            } catch {}
-
-            setUpdateMusicState('ready');
-            setUpdateHandoffPhase('idle');
-
-            updateCycleRef.current.phase = 'reloading';
-
-            // Forced revision updates hard-refresh too. FORCE_UPDATE_KEY was
-            // stored before this cycle began, so the refreshed build will not
-            // immediately start the same forced cycle again.
-            void hardRefreshPlaza(
-              forcedCycle ? FORCE_UPDATE_REVISION : cycleId,
-              { broadcast: true },
-            );
-          }, 4300);
+          void hardRefreshPlaza(
+            forcedCycle ? FORCE_UPDATE_REVISION : cycleId,
+            { broadcast: true },
+          );
         }, VERSION_COLOR_FADE_MS);
       }, UPDATE_FADE_MS);
     }, Math.max(0, updateUntil - Date.now()));
@@ -1355,7 +1338,6 @@ export default function RUMS() {
       window.clearTimeout(updateEndTimer);
       if (fadeTimer) window.clearTimeout(fadeTimer);
       if (colourTimer) window.clearTimeout(colourTimer);
-      if (finishTimer) window.clearTimeout(finishTimer);
     };
   }, [updateUntil, updateTargetVersion]);
 
@@ -1406,6 +1388,43 @@ export default function RUMS() {
     } catch {}
   }
 
+  function syncSiteMusicMediaSession(index = siteMusicTrackIndexRef.current) {
+    if (!('mediaSession' in navigator)) return;
+
+    const safeIndex = ((Number(index) || 0) + UPDATE_AUDIO_TRACKS.length) % UPDATE_AUDIO_TRACKS.length;
+    const track = UPDATE_AUDIO_TRACKS[safeIndex];
+    if (!track) return;
+
+    try {
+      if (typeof MediaMetadata !== 'undefined') {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: track.title,
+          artist: track.artist,
+          album: 'RUMS Plaza',
+        });
+      }
+    } catch {}
+  }
+
+  function syncSiteMusicPositionState(audio = siteMusicAudioRef.current) {
+    if (!audio || !('mediaSession' in navigator)) return;
+    if (typeof navigator.mediaSession.setPositionState !== 'function') return;
+
+    const duration = Number(audio.duration);
+    const position = Number(audio.currentTime);
+    if (!Number.isFinite(duration) || duration <= 0 || !Number.isFinite(position)) return;
+
+    try {
+      navigator.mediaSession.setPositionState({
+        duration,
+        playbackRate: Number.isFinite(audio.playbackRate) && audio.playbackRate > 0
+          ? audio.playbackRate
+          : 1,
+        position: Math.max(0, Math.min(position, duration)),
+      });
+    } catch {}
+  }
+
   function prepareSiteMusicTrack(index, { reset = false } = {}) {
     const audio = siteMusicAudioRef.current;
     const safeIndex = ((Number(index) || 0) + UPDATE_AUDIO_TRACKS.length) % UPDATE_AUDIO_TRACKS.length;
@@ -1428,6 +1447,7 @@ export default function RUMS() {
     }
 
     persistSiteMusic({ trackIndex: safeIndex });
+    syncSiteMusicMediaSession(safeIndex);
     return safeIndex;
   }
 
@@ -1510,22 +1530,34 @@ export default function RUMS() {
     if (initialTrack) {
       audio.src = initialTrack.src;
       try { audio.load(); } catch {}
+      syncSiteMusicMediaSession(siteMusicTrackIndex);
     }
 
     const onTime = () => {
       setSiteMusicProgress(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
+      syncSiteMusicPositionState(audio);
     };
     const onDuration = () => {
       setSiteMusicDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+      syncSiteMusicPositionState(audio);
     };
     const onPlay = () => {
       setSiteMusicPlaying(true);
       setSiteMusicError('');
+      if ('mediaSession' in navigator) {
+        try { navigator.mediaSession.playbackState = 'playing'; } catch {}
+      }
     };
-    const onPause = () => setSiteMusicPlaying(false);
+    const onPause = () => {
+      setSiteMusicPlaying(false);
+      if ('mediaSession' in navigator) {
+        try { navigator.mediaSession.playbackState = 'paused'; } catch {}
+      }
+    };
     const onEnded = () => {
       const next = (siteMusicTrackIndexRef.current + 1) % UPDATE_AUDIO_TRACKS.length;
       prepareSiteMusicTrack(next, { reset: true });
+      syncSiteMusicMediaSession(next);
       void audio.play().then(() => {
         setSiteMusicPlaying(true);
       }).catch(() => {
@@ -1574,6 +1606,41 @@ export default function RUMS() {
       try { audio.volume = siteMusicVolume; } catch {}
     }
   }, [siteMusicVolume]);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return undefined;
+
+    const handlers = {
+      play: () => {
+        void playSiteMusicTrack(siteMusicTrackIndexRef.current);
+      },
+      pause: () => {
+        pauseSiteMusic();
+      },
+      previoustrack: () => {
+        skipSiteMusic(-1);
+      },
+      nexttrack: () => {
+        skipSiteMusic(1);
+      },
+    };
+
+    Object.entries(handlers).forEach(([action, handler]) => {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch {}
+    });
+
+    syncSiteMusicMediaSession(siteMusicTrackIndexRef.current);
+
+    return () => {
+      Object.keys(handlers).forEach((action) => {
+        try {
+          navigator.mediaSession.setActionHandler(action, null);
+        } catch {}
+      });
+    };
+  }, []);
 
   useEffect(() => {
     const isTypingTarget = (target) => {
