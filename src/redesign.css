@@ -7089,3 +7089,234 @@ button,input,textarea { font:inherit; }
   to{opacity:1;transform:none}
 }
 
+/* -------------------------------------------------------------------------- */
+/* MUSIC ISLAND 51 — no-overlap layout + Plaza-native controls                */
+/* -------------------------------------------------------------------------- */
+
+/*
+  The expanded player is now centered below the entire header rather than
+  absolutely growing leftward from the little music capsule. This keeps it
+  clear of All RUMS / Lumina and the header action buttons.
+*/
+@media(min-width:901px){
+  .aero-root .dynamic-music-expanded{
+    position:fixed;
+    top:76px;
+    left:min(calc(50vw + 124px),844px);
+    right:auto;
+    width:402px;
+    max-width:calc(100vw - 282px);
+    transform:translateX(-50%);
+    transform-origin:50% 0;
+    z-index:10000;
+    animation:dynamicMusicExpandNoOverlap .4s cubic-bezier(.16,1.2,.28,1) both;
+  }
+
+  .aero-root.music-queue-open .dynamic-music-expanded{
+    width:418px;
+  }
+
+  /*
+    Reserve actual vertical space in the scrolling page. The old version was
+    transparent glass laid directly over posts/text, which caused the overlap
+    visible in the screenshot.
+  */
+  .aero-root .content{
+    transition:padding-top .38s cubic-bezier(.16,1,.3,1);
+  }
+  .aero-root.music-island-open .content{
+    padding-top:300px!important;
+  }
+  .aero-root.music-island-open.music-queue-open .content{
+    padding-top:510px!important;
+  }
+}
+
+/* Header center gets enough breathing room; neither control is allowed to crush the other. */
+@media(min-width:1181px){
+  .aero-root .aero-header-center{
+    width:min(610px,52vw);
+    min-width:440px;
+  }
+  .aero-root .header-center-island{
+    gap:12px;
+  }
+  .aero-root .header-center-island.has-feed-switch .feed-tabs{
+    flex:0 0 246px;
+    width:246px;
+  }
+  .aero-root .dynamic-music-island{
+    width:220px;
+  }
+}
+
+/* Make the expanded glass readable without losing the glossy Plaza material. */
+.aero-root .dynamic-music-expanded{
+  padding:18px 19px 17px;
+  border-color:rgba(255,255,255,.96);
+  background:
+    linear-gradient(112deg,transparent 0 34%,rgba(255,255,255,.5) 43%,transparent 52%),
+    radial-gradient(circle at 12% -8%,rgba(255,255,255,1),transparent 34%),
+    radial-gradient(circle at 93% 112%,color-mix(in srgb,var(--theme-accent,#3478f6) 12%,transparent),transparent 43%),
+    linear-gradient(145deg,rgba(255,255,255,.97),rgba(237,247,255,.955) 62%,rgba(239,250,246,.95));
+  box-shadow:
+    inset 1px 1px 0 #fff,
+    inset -1px -2px 5px rgba(79,116,155,.08),
+    0 26px 64px rgba(35,71,116,.22);
+  backdrop-filter:blur(34px) saturate(1.42);
+  -webkit-backdrop-filter:blur(34px) saturate(1.42);
+}
+
+/* More vertical rhythm: every group has its own space instead of becoming one dense slab. */
+.aero-root .dynamic-music-now{
+  gap:15px;
+}
+.aero-root .dynamic-music-seek{
+  margin-top:20px;
+}
+.aero-root .dynamic-music-controls{
+  gap:24px;
+  margin:15px 0 16px;
+}
+.aero-root .dynamic-music-volume{
+  min-height:38px;
+  padding:7px 10px;
+  border-radius:16px;
+}
+.aero-root .dynamic-music-queue{
+  max-height:170px;
+  margin-top:16px;
+  padding:9px;
+  gap:6px;
+}
+.aero-root .dynamic-music-swipe-hint{
+  margin-top:12px;
+}
+
+/*
+  The primary play/pause control now uses Plaza's liquid-glass button language.
+  Keep a blue accent in the icon/ring, but remove the saturated blue-purple disc.
+*/
+.aero-root .dynamic-music-controls .dynamic-music-main-control{
+  position:relative;
+  width:58px;
+  height:58px;
+  overflow:hidden;
+  color:var(--theme-accent,#3478f6);
+  border:1px solid rgba(255,255,255,.98);
+  background:
+    radial-gradient(circle at 32% 18%,rgba(255,255,255,.98),transparent 30%),
+    radial-gradient(circle at 72% 86%,color-mix(in srgb,var(--theme-accent,#3478f6) 12%,transparent),transparent 48%),
+    linear-gradient(145deg,rgba(255,255,255,.84),rgba(224,240,255,.72));
+  box-shadow:
+    inset 1px 1px 1px #fff,
+    inset -1px -2px 4px rgba(70,114,161,.1),
+    0 8px 20px rgba(48,96,151,.14);
+}
+.aero-root .dynamic-music-controls .dynamic-music-main-control::before{
+  content:"";
+  position:absolute;
+  left:9px;
+  right:12px;
+  top:5px;
+  height:21px;
+  border-radius:999px;
+  background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(255,255,255,0));
+  pointer-events:none;
+}
+.aero-root .dynamic-music-controls .dynamic-music-main-control::after{
+  content:"";
+  position:absolute;
+  inset:4px;
+  border:1px solid color-mix(in srgb,var(--theme-accent,#3478f6) 16%,transparent);
+  border-radius:50%;
+  pointer-events:none;
+}
+.aero-root .dynamic-music-controls .dynamic-music-main-control:hover{
+  color:var(--theme-accent,#3478f6);
+  background:
+    radial-gradient(circle at 32% 18%,#fff,transparent 30%),
+    radial-gradient(circle at 72% 86%,color-mix(in srgb,var(--theme-accent,#3478f6) 16%,transparent),transparent 48%),
+    linear-gradient(145deg,rgba(255,255,255,.94),rgba(226,242,255,.84));
+  transform:scale(1.055);
+}
+
+/* Previous / next are the same family, just quieter. */
+.aero-root .dynamic-music-controls > button:not(.dynamic-music-main-control){
+  color:#29415d;
+  border-color:rgba(255,255,255,.9);
+  background:
+    radial-gradient(circle at 34% 18%,rgba(255,255,255,.92),transparent 32%),
+    linear-gradient(145deg,rgba(255,255,255,.7),rgba(231,242,253,.58));
+  box-shadow:
+    inset 1px 1px 1px #fff,
+    0 6px 16px rgba(46,82,124,.1);
+}
+
+/* Keep the queue from visually bleeding into the page underneath. */
+.aero-root .dynamic-music-queue{
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.68),rgba(235,245,255,.56));
+  border-color:rgba(255,255,255,.92);
+  box-shadow:
+    inset 1px 1px 1px rgba(255,255,255,.9),
+    0 7px 20px rgba(40,76,120,.08);
+}
+
+/* Dark theme gets the same structure without reverting to a literal black island. */
+.aero-root[data-theme="dark"] .dynamic-music-controls .dynamic-music-main-control{
+  color:#79c9ff;
+  border-color:rgba(255,255,255,.14);
+  background:
+    radial-gradient(circle at 30% 15%,rgba(255,255,255,.13),transparent 30%),
+    radial-gradient(circle at 72% 86%,rgba(64,153,255,.13),transparent 48%),
+    linear-gradient(145deg,rgba(49,59,75,.94),rgba(31,40,54,.9));
+  box-shadow:inset 1px 1px 0 rgba(255,255,255,.12),0 8px 20px rgba(0,0,0,.18);
+}
+.aero-root[data-theme="dark"] .dynamic-music-controls > button:not(.dynamic-music-main-control){
+  color:#e8f2ff;
+  border-color:rgba(255,255,255,.12);
+  background:linear-gradient(145deg,rgba(56,66,82,.9),rgba(37,46,60,.82));
+}
+
+/* Tablet fallback: still open below the header, centered to the available page. */
+@media(max-width:900px) and (min-width:761px){
+  .aero-root .dynamic-music-expanded{
+    position:fixed;
+    top:72px;
+    left:50%;
+    right:auto;
+    width:min(390px,calc(100vw - 28px));
+    max-width:none;
+    transform:translateX(-50%);
+    animation:dynamicMusicExpandNoOverlap .4s cubic-bezier(.16,1.2,.28,1) both;
+  }
+  .aero-root.music-island-open .content{
+    padding-top:300px!important;
+  }
+  .aero-root.music-island-open.music-queue-open .content{
+    padding-top:505px!important;
+  }
+}
+
+@keyframes dynamicMusicExpandNoOverlap{
+  0%{
+    opacity:0;
+    transform:translateX(-50%) translateY(-8px) scale(.84);
+    border-radius:20px;
+  }
+  66%{
+    opacity:1;
+    transform:translateX(-50%) translateY(2px) scale(1.01);
+    border-radius:29px;
+  }
+  84%{
+    transform:translateX(-50%) translateY(-1px) scale(.996);
+  }
+  100%{
+    opacity:1;
+    transform:translateX(-50%) translateY(0) scale(1);
+    border-radius:28px;
+  }
+}
+

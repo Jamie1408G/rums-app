@@ -29,7 +29,7 @@ const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const MUSIC_PLAYER_KEY = 'rums-plaza-music-player';
-const FORCE_UPDATE_REVISION = 'glossy-dynamic-music-50';
+const FORCE_UPDATE_REVISION = 'music-no-overlap-glass-51';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -40,8 +40,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 50;
-const JAMIE_TUTORIAL_VERSION = 50;
+const TUTORIAL_VERSION = 51;
+const JAMIE_TUTORIAL_VERSION = 51;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -6150,7 +6150,7 @@ export default function RUMS() {
   })();
 
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${siteMusicQueueOpen ? 'music-queue-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
