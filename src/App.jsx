@@ -29,7 +29,7 @@ const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const MUSIC_PLAYER_KEY = 'rums-plaza-music-player';
-const FORCE_UPDATE_REVISION = 'music-centered-glass-52';
+const FORCE_UPDATE_REVISION = 'music-player-overhaul-53';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -40,8 +40,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 52;
-const JAMIE_TUTORIAL_VERSION = 52;
+const TUTORIAL_VERSION = 53;
+const JAMIE_TUTORIAL_VERSION = 53;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -603,7 +603,6 @@ export default function RUMS() {
   const siteMusicLongPressRef = useRef(false);
   const siteMusicSwipeStartYRef = useRef(null);
   const [siteMusicOpen, setSiteMusicOpen] = useState(false);
-  const [siteMusicQueueOpen, setSiteMusicQueueOpen] = useState(false);
   const [siteMusicPlaying, setSiteMusicPlaying] = useState(false);
   const [siteMusicTrackIndex, setSiteMusicTrackIndex] = useState(() => {
     try {
@@ -1293,7 +1292,6 @@ export default function RUMS() {
   function closeSiteMusicIsland() {
     clearSiteMusicPressTimer();
     siteMusicSwipeStartYRef.current = null;
-    setSiteMusicQueueOpen(false);
     setSiteMusicOpen(false);
   }
 
@@ -1333,7 +1331,7 @@ export default function RUMS() {
       event?.preventDefault?.();
       return;
     }
-    setSiteMusicOpen(true);
+    setSiteMusicOpen((open) => !open);
   }
 
   function beginExpandedMusicSwipe(event) {
@@ -1373,73 +1371,75 @@ export default function RUMS() {
     return (
       <div
         ref={siteMusicShellRef}
-        className={`header-music dynamic-music-island ${siteMusicOpen ? 'is-open' : ''} ${siteMusicPlaying ? 'is-playing' : 'is-paused'} ${siteMusicQueueOpen ? 'queue-open' : ''}`}
+        className={`header-music dynamic-music-island ${siteMusicOpen ? 'is-open' : ''} ${siteMusicPlaying ? 'is-playing' : 'is-paused'}`}
         style={{ '--music-progress': `${siteMusicProgressPercent}%` }}
       >
-        {!siteMusicOpen && (
-          <div
-            className="dynamic-music-compact"
-            role="button"
-            tabIndex={0}
-            aria-label={`${siteMusicTrack.title} by ${siteMusicTrack.artist}. Hold to expand music controls.`}
-            onPointerDown={beginSiteMusicIslandPress}
-            onPointerMove={moveSiteMusicIslandPress}
-            onPointerUp={endSiteMusicIslandPress}
-            onPointerCancel={endSiteMusicIslandPress}
-            onClick={activateSiteMusicIsland}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                setSiteMusicOpen(true);
-              }
+        <div
+          className="dynamic-music-compact"
+          role="button"
+          tabIndex={0}
+          aria-expanded={siteMusicOpen}
+          aria-label={`${siteMusicTrack.title} by ${siteMusicTrack.artist}. ${siteMusicOpen ? 'Collapse' : 'Expand'} music player.`}
+          onPointerDown={beginSiteMusicIslandPress}
+          onPointerMove={moveSiteMusicIslandPress}
+          onPointerUp={endSiteMusicIslandPress}
+          onPointerCancel={endSiteMusicIslandPress}
+          onClick={activateSiteMusicIsland}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              setSiteMusicOpen((open) => !open);
+            }
+          }}
+        >
+          <button
+            type="button"
+            className={`dynamic-music-art track-${siteMusicTrackIndex}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleSiteMusic();
             }}
+            aria-label={siteMusicPlaying ? 'Pause music' : 'Play music'}
           >
-            <button
-              type="button"
-              className={`dynamic-music-art track-${siteMusicTrackIndex}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                toggleSiteMusic();
-              }}
-              aria-label={siteMusicPlaying ? 'Pause music' : 'Play music'}
-            >
-              {siteMusicPlaying ? <Pause size={13}/> : <Play size={13}/>}
-            </button>
+            {siteMusicPlaying ? <Pause size={13}/> : <Play size={13}/>}
+          </button>
 
-            <span key={siteMusicTrack.id} className="dynamic-music-compact-copy">
-              <small>{siteMusicPlaying ? 'NOW PLAYING' : 'PLAZA MUSIC'}</small>
-              <strong>{siteMusicTrack.title}</strong>
-            </span>
+          <span key={siteMusicTrack.id} className="dynamic-music-compact-copy">
+            <small>{siteMusicPlaying ? 'NOW PLAYING' : 'PLAZA MUSIC'}</small>
+            <strong>{siteMusicTrack.title}</strong>
+          </span>
 
-            <span className="dynamic-music-wave" aria-hidden="true">
+          <span className="dynamic-music-island-status" aria-hidden="true">
+            <span className="dynamic-music-wave">
               {siteMusicPlaying
                 ? <span className="dynamic-island-wave"><i/><i/><i/><i/><i/></span>
-                : <Music2 size={15}/>}
+                : <Music2 size={14}/>}
             </span>
+            {siteMusicOpen ? <ChevronUp size={13}/> : <ChevronDown size={13}/>}
+          </span>
 
-            <span className="dynamic-music-progress-line" aria-hidden="true" />
-          </div>
-        )}
+          <span className="dynamic-music-progress-line" aria-hidden="true" />
+        </div>
 
         {siteMusicOpen && (
           <div
-            className="dynamic-music-expanded"
+            className="dynamic-music-drawer"
             role="dialog"
-            aria-label="Plaza music controls"
+            aria-label="Plaza music player"
             onPointerDown={beginExpandedMusicSwipe}
             onPointerUp={endExpandedMusicSwipe}
             onPointerCancel={() => { siteMusicSwipeStartYRef.current = null; }}
           >
-            <div className="dynamic-music-grabber" aria-hidden="true" />
+            <div className="dynamic-music-drawer-bridge" aria-hidden="true" />
 
-            <div className="dynamic-music-now">
+            <section className="dynamic-music-now-card">
               <button
                 type="button"
                 className={`dynamic-music-expanded-art track-${siteMusicTrackIndex} ${siteMusicPlaying ? 'is-playing' : ''}`}
                 onClick={toggleSiteMusic}
                 aria-label={siteMusicPlaying ? 'Pause music' : 'Play music'}
               >
-                {siteMusicPlaying ? <Pause size={18}/> : <Play size={18}/>}
+                {siteMusicPlaying ? <Pause size={19}/> : <Play size={19}/>}
               </button>
 
               <div key={siteMusicTrack.id} className="dynamic-music-now-copy">
@@ -1450,79 +1450,92 @@ export default function RUMS() {
 
               <button
                 type="button"
-                className="dynamic-music-queue-toggle"
-                onClick={() => setSiteMusicQueueOpen((open) => !open)}
-                aria-label={siteMusicQueueOpen ? 'Hide playlist' : 'Show playlist'}
-                aria-expanded={siteMusicQueueOpen}
+                className="dynamic-music-collapse-button"
+                onClick={closeSiteMusicIsland}
+                aria-label="Collapse music player"
               >
-                <ListMusic size={17}/>
+                <ChevronUp size={18}/>
               </button>
-            </div>
+            </section>
 
-            <div className="dynamic-music-seek">
-              <input
-                type="range"
-                min="0"
-                max={Math.max(siteMusicDuration, 1)}
-                step="0.1"
-                value={Math.min(siteMusicProgress, Math.max(siteMusicDuration, 1))}
-                onChange={(event) => seekSiteMusic(event.target.value)}
-                aria-label="Track position"
-              />
-              <div className="dynamic-music-times">
-                <span>{formatMusicTime(siteMusicProgress)}</span>
-                <span>-{formatMusicTime(Math.max(0, siteMusicDuration - siteMusicProgress))}</span>
+            <section className="dynamic-music-transport-card">
+              <div className="dynamic-music-seek">
+                <input
+                  type="range"
+                  min="0"
+                  max={Math.max(siteMusicDuration, 1)}
+                  step="0.1"
+                  value={Math.min(siteMusicProgress, Math.max(siteMusicDuration, 1))}
+                  onChange={(event) => seekSiteMusic(event.target.value)}
+                  aria-label="Track position"
+                />
+                <div className="dynamic-music-times">
+                  <span>{formatMusicTime(siteMusicProgress)}</span>
+                  <span>-{formatMusicTime(Math.max(0, siteMusicDuration - siteMusicProgress))}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="dynamic-music-controls">
-              <button type="button" onClick={() => skipSiteMusic(-1)} aria-label="Previous track"><SkipBack size={21}/></button>
-              <button type="button" className="dynamic-music-main-control" onClick={toggleSiteMusic} aria-label={siteMusicPlaying ? 'Pause' : 'Play'}>
-                {siteMusicPlaying ? <Pause size={25}/> : <Play size={25}/>}
-              </button>
-              <button type="button" onClick={() => skipSiteMusic(1)} aria-label="Next track"><SkipForward size={21}/></button>
-            </div>
+              <div className="dynamic-music-controls">
+                <button type="button" onClick={() => skipSiteMusic(-1)} aria-label="Previous track"><SkipBack size={21}/></button>
+                <button type="button" className="dynamic-music-main-control" onClick={toggleSiteMusic} aria-label={siteMusicPlaying ? 'Pause' : 'Play'}>
+                  {siteMusicPlaying ? <Pause size={25}/> : <Play size={25}/>}
+                </button>
+                <button type="button" onClick={() => skipSiteMusic(1)} aria-label="Next track"><SkipForward size={21}/></button>
+              </div>
 
-            <div className="dynamic-music-volume">
-              <VolumeX size={13}/>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={siteMusicVolume}
-                onChange={(event) => changeSiteMusicVolume(event.target.value)}
-                aria-label="Music volume"
-              />
-              <Volume2 size={14}/>
-            </div>
+              <div className="dynamic-music-volume">
+                <VolumeX size={14}/>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={siteMusicVolume}
+                  onChange={(event) => changeSiteMusicVolume(event.target.value)}
+                  aria-label="Music volume"
+                />
+                <Volume2 size={15}/>
+              </div>
+            </section>
 
-            {siteMusicQueueOpen && (
-              <div className="dynamic-music-queue">
+            <section className="dynamic-music-library-card">
+              <div className="dynamic-music-library-heading">
+                <div>
+                  <small>PLAZA PLAYLIST</small>
+                  <strong>Music library</strong>
+                </div>
+                <span>{UPDATE_AUDIO_TRACKS.length} tracks</span>
+              </div>
+
+              <div className="dynamic-music-library-list">
                 {UPDATE_AUDIO_TRACKS.map((track, index) => (
                   <button
                     type="button"
                     key={track.id}
-                    className={index === siteMusicTrackIndex ? 'active' : ''}
+                    className={`dynamic-music-library-row ${index === siteMusicTrackIndex ? 'active' : ''}`}
                     onClick={() => void playSiteMusicTrack(index, { reset: true })}
                   >
                     <span className={`dynamic-music-queue-art track-${index}`}>
                       {index === siteMusicTrackIndex && siteMusicPlaying
                         ? <span className="plaza-music-mini-eq" aria-hidden="true"><i/><i/><i/></span>
-                        : String(index + 1)}
+                        : <span>{String(index + 1).padStart(2, '0')}</span>}
                     </span>
-                    <span className="dynamic-music-queue-copy">
+
+                    <span className="dynamic-music-library-copy">
                       <strong>{track.title}</strong>
                       <small>{track.artist}</small>
                     </span>
-                    {index === siteMusicTrackIndex && <span className="dynamic-music-current">NOW</span>}
+
+                    <span className="dynamic-music-library-state">
+                      {index === siteMusicTrackIndex ? (siteMusicPlaying ? 'PLAYING' : 'SELECTED') : <Play size={14}/>}
+                    </span>
                   </button>
                 ))}
               </div>
-            )}
+            </section>
 
             {siteMusicError && <div className="dynamic-music-error">{siteMusicError}</div>}
-            <div className="dynamic-music-swipe-hint">Swipe up to collapse</div>
+            <div className="dynamic-music-swipe-hint">Swipe up or tap the island to collapse</div>
           </div>
         )}
       </div>
@@ -6150,7 +6163,7 @@ export default function RUMS() {
   })();
 
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${siteMusicQueueOpen ? 'music-queue-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
