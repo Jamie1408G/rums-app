@@ -8682,3 +8682,66 @@ button,input,textarea { font:inherit; }
   pointer-events:none;
 }
 
+/* -------------------------------------------------------------------------- */
+/* VISIBLE HARDWARE-KEY MUSIC PRESS — 76                                      */
+/* F7/F8/F9 + media keys visibly press/grow the exact matching control.        */
+/* -------------------------------------------------------------------------- */
+
+@keyframes plazaMusicHardwarePress76{
+  0%{
+    transform:scale(1)!important;
+    filter:brightness(1);
+  }
+  24%{
+    transform:scale(.90)!important;
+    filter:brightness(.96);
+  }
+  58%{
+    transform:scale(1.22)!important;
+    filter:brightness(1.08);
+  }
+  78%{
+    transform:scale(1.08)!important;
+    filter:brightness(1.04);
+  }
+  100%{
+    transform:scale(1)!important;
+    filter:brightness(1);
+  }
+}
+
+.aero-root [data-music-control].music-key-press-active{
+  position:relative!important;
+  z-index:30!important;
+  transform-origin:50% 50%!important;
+  animation:plazaMusicHardwarePress76 .30s cubic-bezier(.16,1.35,.3,1) both!important;
+}
+
+/* Make the compact island feedback extra obvious without changing layout. */
+.aero-root .dynamic-music-compact-control.music-key-press-active{
+  box-shadow:
+    inset 1px 1px 1px rgba(255,255,255,.98),
+    0 7px 17px rgba(42,94,151,.20)!important;
+}
+
+.aero-root .dynamic-music-compact-play.music-key-press-active{
+  box-shadow:
+    inset 1px 1px 1px #fff,
+    inset -1px -1px 3px rgba(74,115,160,.05),
+    0 8px 20px rgba(42,103,167,.24)!important;
+}
+
+/* Expanded transport buttons receive the same hardware-key pulse. */
+.aero-root .dynamic-music-controls [data-music-control].music-key-press-active{
+  box-shadow:
+    inset 1px 1px 1px rgba(255,255,255,.98),
+    0 10px 24px rgba(42,94,151,.20)!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .aero-root [data-music-control].music-key-press-active{
+    animation:none!important;
+    transform:none!important;
+  }
+}
+

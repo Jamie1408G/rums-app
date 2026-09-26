@@ -42,7 +42,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'key-press-music-animation-75';
+const FORCE_UPDATE_REVISION = 'visible-key-music-press-76';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -53,8 +53,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 75;
-const JAMIE_TUTORIAL_VERSION = 75;
+const TUTORIAL_VERSION = 76;
+const JAMIE_TUTORIAL_VERSION = 76;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -1503,29 +1503,17 @@ export default function RUMS() {
 
     const nodes = document.querySelectorAll(`[data-music-control="${control}"]`);
     nodes.forEach((node) => {
-      if (!(node instanceof HTMLElement) || typeof node.animate !== 'function') return;
+      if (!(node instanceof HTMLElement)) return;
 
-      try {
-        node.getAnimations().forEach((animation) => {
-          if (animation?.id === 'plaza-music-key-press') animation.cancel();
-        });
-      } catch {}
+      // Remove/reflow/re-add so every hardware key press restarts the pulse,
+      // even when the same key is pressed several times in quick succession.
+      node.classList.remove('music-key-press-active');
+      void node.offsetWidth;
+      node.classList.add('music-key-press-active');
 
-      const animation = node.animate(
-        [
-          { transform: 'scale(1)', offset: 0 },
-          { transform: 'scale(.94)', offset: 0.34 },
-          { transform: 'scale(1.065)', offset: 0.68 },
-          { transform: 'scale(1)', offset: 1 },
-        ],
-        {
-          duration: 190,
-          easing: 'cubic-bezier(.16,1.35,.3,1)',
-          fill: 'none',
-        },
-      );
-
-      try { animation.id = 'plaza-music-key-press'; } catch {}
+      window.setTimeout(() => {
+        node.classList.remove('music-key-press-active');
+      }, 320);
     });
   }
 
