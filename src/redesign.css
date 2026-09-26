@@ -5289,3 +5289,10 @@ button,input,textarea { font:inherit; }
     border-radius:13px !important;
   }
 }
+
+/* FINAL: homepage lead image connects flush into its article preview. */
+.plaza-news-site .news-top-story .news-top-image,
+.plaza-news-site .news-top-story .news-top-image img {
+  border-bottom-left-radius:0 !important;
+  border-bottom-right-radius:0 !important;
+}
