@@ -6911,24 +6911,21 @@ button,input,textarea { font:inherit; }
 }
 
 /* -------------------------------------------------------------------------- */
-/* UNIFIED TOP-CENTER PLAZA MODULE 55                                         */
-/* Version + feed on row 1, music island full-width on row 2.                  */
+/* ONE-ROW TOP PLAZA BAR 56                                                   */
+/* Version + feed + music all live in the same top row.                       */
 /* -------------------------------------------------------------------------- */
 
 @media(min-width:761px){
-  /*
-    Give the header enough real height for the two-row center module.
-    Because the header is a grid row, page content naturally starts below it.
-  */
+  /* Return the header to a normal single-row height. */
   .aero-root .aero-header{
-    height:112px!important;
-    min-height:112px!important;
-    padding-top:10px!important;
-    padding-bottom:10px!important;
+    height:68px!important;
+    min-height:68px!important;
+    padding-top:8px!important;
+    padding-bottom:8px!important;
     overflow:visible!important;
   }
 
-  /* Desktop version switch lives in the center module, not at the far left. */
+  /* Desktop uses the unified center controls; keep the duplicate left copy hidden. */
   .aero-root .mobile-version-switcher{
     visibility:hidden!important;
     pointer-events:none!important;
@@ -6938,97 +6935,99 @@ button,input,textarea { font:inherit; }
     overflow:hidden!important;
   }
 
+  /*
+    One long Plaza glass bar. It is intentionally wide enough to hold ALL THREE
+    controls without stacking them.
+  */
   .aero-root .aero-header-center{
     position:absolute!important;
     left:50%!important;
     top:8px!important;
     transform:translateX(-50%)!important;
-    width:468px!important;
-    min-width:468px!important;
-    max-width:468px!important;
-    height:auto!important;
+    width:780px!important;
+    min-width:780px!important;
+    max-width:780px!important;
+    height:52px!important;
     display:block!important;
     z-index:12!important;
     pointer-events:auto!important;
   }
 
-  /*
-    One shared glass housing. This is the "top center menu" — both switches
-    and the music island are physically inside the same Plaza object.
-  */
   .aero-root .header-center-control-stack{
     position:relative;
-    width:468px;
-    padding:7px;
-    border:1px solid rgba(255,255,255,.9);
-    border-radius:25px;
+    display:grid!important;
+    grid-template-columns:214px 152px minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:8px!important;
+    width:780px!important;
+    height:52px!important;
+    padding:6px!important;
+
+    border:1px solid rgba(255,255,255,.9)!important;
+    border-radius:23px!important;
     background:
-      radial-gradient(circle at 12% -22%,rgba(255,255,255,.98),transparent 39%),
-      radial-gradient(circle at 90% 115%,rgba(103,204,171,.09),transparent 39%),
-      linear-gradient(145deg,rgba(255,255,255,.72),rgba(232,244,255,.61));
+      radial-gradient(circle at 10% -35%,rgba(255,255,255,.98),transparent 40%),
+      radial-gradient(circle at 91% 130%,rgba(105,205,174,.09),transparent 39%),
+      linear-gradient(145deg,rgba(255,255,255,.73),rgba(232,244,255,.62))!important;
     box-shadow:
       inset 1px 1px 1px rgba(255,255,255,.96),
       inset -1px -2px 5px rgba(72,112,155,.06),
-      0 8px 24px rgba(43,80,123,.11);
-    backdrop-filter:blur(25px) saturate(1.42);
-    -webkit-backdrop-filter:blur(25px) saturate(1.42);
+      0 8px 23px rgba(43,80,123,.11)!important;
+    backdrop-filter:blur(25px) saturate(1.42)!important;
+    -webkit-backdrop-filter:blur(25px) saturate(1.42)!important;
   }
 
   .aero-root .header-center-control-stack::before{
     content:"";
     position:absolute;
-    left:9%;
-    right:18%;
+    left:5%;
+    right:13%;
     top:2px;
-    height:34px;
+    height:22px;
     border-radius:999px;
-    background:linear-gradient(180deg,rgba(255,255,255,.62),transparent);
+    background:linear-gradient(180deg,rgba(255,255,255,.66),transparent);
     pointer-events:none;
   }
 
-  .aero-root .header-center-top-controls{
+  .aero-root .header-center-version-switcher,
+  .aero-root .header-center-feed-switcher,
+  .aero-root .header-center-music-row{
     position:relative;
     z-index:2;
-    display:grid;
-    grid-template-columns:260px 184px;
-    gap:10px;
-    width:454px;
-    min-height:37px;
-  }
-
-  .aero-root .header-center-version-switcher,
-  .aero-root .header-center-feed-switcher{
     min-width:0;
+    height:40px;
   }
 
-  /* Version selector fills its half of row 1. */
+  /* Version selector ----------------------------------------------------- */
   .aero-root .header-center-version-switcher .universal-rums-switcher{
-    width:260px!important;
-    min-width:260px!important;
-    max-width:260px!important;
-    height:37px!important;
+    width:214px!important;
+    min-width:214px!important;
+    max-width:214px!important;
+    height:40px!important;
     margin:0!important;
     padding:3px!important;
   }
 
   .aero-root .header-center-version-switcher .universal-rums-switcher button{
     min-width:0!important;
-    min-height:31px!important;
-    height:31px!important;
-    padding:0 8px!important;
+    min-height:34px!important;
+    height:34px!important;
+    padding:0 6px!important;
+    font-size:9px!important;
   }
 
-  /* Feed selector is genuinely inside the same menu, directly beside version. */
+  /* All RUMS / Lumina ---------------------------------------------------- */
   .aero-root .header-center-feed-switcher .feed-tabs{
     position:relative!important;
     inset:auto!important;
-    width:184px!important;
-    min-width:184px!important;
-    max-width:184px!important;
-    min-height:37px!important;
-    height:37px!important;
+    width:152px!important;
+    min-width:152px!important;
+    max-width:152px!important;
+    min-height:40px!important;
+    height:40px!important;
     margin:0!important;
     padding:3px!important;
+
     border:1px solid rgba(255,255,255,.84)!important;
     border-radius:14px!important;
     background:
@@ -7051,16 +7050,17 @@ button,input,textarea { font:inherit; }
 
   .aero-root .header-center-feed-switcher .feed-tabs .tab-btn,
   .aero-root .header-center-feed-switcher .feed-tabs .tab-btn.active{
-    min-height:29px!important;
-    padding:0 7px!important;
-    gap:4px!important;
-    font-size:10px!important;
-    letter-spacing:-.01em!important;
+    min-height:34px!important;
+    height:34px!important;
+    padding:0 4px!important;
+    gap:3px!important;
+    font-size:9px!important;
+    letter-spacing:-.015em!important;
   }
 
   .aero-root .header-center-feed-switcher .feed-tabs .tab-btn svg{
-    width:11px!important;
-    height:11px!important;
+    width:10px!important;
+    height:10px!important;
   }
 
   .aero-root .header-center-feed-switcher .feed-tabs.is-dragging::before{
@@ -7076,195 +7076,242 @@ button,input,textarea { font:inherit; }
     border-radius:11px!important;
   }
 
-  /* Music occupies the full second row of the SAME outer glass module. */
-  .aero-root .header-center-music-row{
-    position:relative;
-    z-index:2;
-    width:454px;
-    margin-top:7px;
+  /* Music island -------------------------------------------------------- */
+  /*
+    780 - outer padding(12) - gaps(16) - version(214) - feed(152) = 386.
+    The compact island and expanded drawer are both exactly 386px wide.
+  */
+  .aero-root .header-center-music-row,
+  .aero-root .header-center-music-row .dynamic-music-island,
+  .aero-root .header-center-music-row .dynamic-music-compact{
+    width:386px!important;
+    max-width:386px!important;
+    min-width:386px!important;
   }
 
   .aero-root .header-center-music-row .dynamic-music-island{
-    width:454px!important;
-    height:46px!important;
+    height:40px!important;
   }
 
   .aero-root .header-center-music-row .dynamic-music-compact{
-    width:454px!important;
+    height:40px!important;
+    grid-template-columns:30px minmax(0,1fr) 59px!important;
+    gap:7px!important;
+    padding:4px 7px 4px 5px!important;
+    border-radius:15px!important;
   }
 
-  /*
-    Expanded drawer has the exact same 454px footprint as the collapsed island.
-    It grows straight down from the second row; no detached menu.
-  */
-  .aero-root .header-center-music-row .dynamic-music-drawer{
-    left:0!important;
-    top:calc(100% - 5px)!important;
-    width:454px!important;
-    max-width:454px!important;
-    transform:none!important;
-    transform-origin:50% 0!important;
-    animation:music55DrawerIn .42s cubic-bezier(.16,1.2,.28,1) both!important;
+  .aero-root .header-center-music-row .dynamic-music-art{
+    width:29px!important;
+    height:29px!important;
+    border-radius:9px!important;
   }
 
-  .aero-root .header-center-music-row .dynamic-music-drawer::before{
-    width:434px!important;
-  }
-
-  .aero-root .header-center-music-row .dynamic-music-drawer-bridge{
-    width:424px!important;
-  }
-
-  /* Use the new width instead of leaving dead room in the compact row. */
-  .aero-root .header-center-music-row .dynamic-music-compact{
-    grid-template-columns:35px minmax(0,1fr) 70px!important;
-    gap:10px!important;
-    padding-left:7px!important;
-    padding-right:9px!important;
-  }
-
-  .aero-root .header-center-music-row .dynamic-music-progress-line{
-    left:52px!important;
-    right:84px!important;
+  .aero-root .header-center-music-row .dynamic-music-compact-copy small{
+    font-size:6.7px!important;
   }
 
   .aero-root .header-center-music-row .dynamic-music-compact-copy strong{
-    font-size:11px!important;
+    font-size:10px!important;
   }
 
-  .aero-root .header-center-music-row .dynamic-music-island-status{
-    gap:7px!important;
+  .aero-root .header-center-music-row .dynamic-music-wave{
+    width:27px!important;
+    height:27px!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-progress-line{
+    left:42px!important;
+    right:70px!important;
+    bottom:2px!important;
   }
 
   /*
-    The expanded player is attached to a taller header now, so 550px is
-    sufficient real document space without leaving an excessive blank canyon.
+    Drawer stays attached to this top-row island. Same width — it only grows
+    DOWNWARD, while the compact island never leaves the top bar.
   */
-  .aero-root.music-island-open .content{
-    padding-top:550px!important;
+  .aero-root .header-center-music-row .dynamic-music-drawer{
+    left:0!important;
+    top:calc(100% - 4px)!important;
+    width:386px!important;
+    min-width:386px!important;
+    max-width:386px!important;
+    transform:none!important;
+    transform-origin:50% 0!important;
+    padding:25px 15px 14px!important;
+    animation:music56DrawerIn .4s cubic-bezier(.16,1.2,.28,1) both!important;
   }
 
-  /* Header action buttons stay vertically aligned with row 1, away from music. */
+  .aero-root .header-center-music-row .dynamic-music-drawer::before{
+    width:370px!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-drawer-bridge{
+    width:360px!important;
+  }
+
+  /* Playlist rows remain spacious even with the slightly narrower island. */
+  .aero-root .dynamic-music-library-card{
+    padding:10px!important;
+  }
+
+  .aero-root .dynamic-music-library-list{
+    gap:5px!important;
+  }
+
+  .aero-root .dynamic-music-library-row{
+    grid-template-columns:40px minmax(0,1fr) 60px!important;
+    min-height:52px!important;
+    gap:9px!important;
+    padding:5px 7px!important;
+  }
+
+  .aero-root .dynamic-music-library-copy strong{
+    font-size:10.5px!important;
+  }
+
+  .aero-root .dynamic-music-library-copy small{
+    font-size:8.5px!important;
+  }
+
+  /*
+    The drawer is still a real part of the page flow visually; reserve room so
+    feed cards do not sit underneath it.
+  */
+  .aero-root.music-island-open .content{
+    padding-top:560px!important;
+  }
+
+  /* Right-side profile/actions remain on the same horizontal header line. */
   .aero-root .aero-header-actions{
-    align-self:flex-start!important;
-    margin-top:4px!important;
+    align-self:center!important;
+    margin-top:0!important;
   }
 }
 
-/* Medium desktop: same two-row architecture, proportionally smaller. */
-@media(max-width:1180px) and (min-width:901px){
-  .aero-root .aero-header-center{
-    width:428px!important;
-    min-width:428px!important;
-    max-width:428px!important;
+/* Slightly smaller laptops: compress the bar while retaining ONE row. */
+@media(max-width:1280px) and (min-width:1051px){
+  .aero-root .aero-header-center,
+  .aero-root .header-center-control-stack{
+    width:716px!important;
+    min-width:716px!important;
+    max-width:716px!important;
   }
 
   .aero-root .header-center-control-stack{
-    width:428px!important;
-  }
-
-  .aero-root .header-center-top-controls{
-    width:414px!important;
-    grid-template-columns:236px 170px!important;
-    gap:8px!important;
+    grid-template-columns:196px 140px minmax(0,1fr)!important;
+    gap:7px!important;
   }
 
   .aero-root .header-center-version-switcher .universal-rums-switcher{
-    width:236px!important;
-    min-width:236px!important;
-    max-width:236px!important;
-  }
-
-  .aero-root .header-center-version-switcher .universal-rums-switcher button{
-    padding-left:5px!important;
-    padding-right:5px!important;
+    width:196px!important;
+    min-width:196px!important;
+    max-width:196px!important;
   }
 
   .aero-root .header-center-feed-switcher .feed-tabs{
-    width:170px!important;
-    min-width:170px!important;
-    max-width:170px!important;
+    width:140px!important;
+    min-width:140px!important;
+    max-width:140px!important;
   }
 
   .aero-root .header-center-music-row,
   .aero-root .header-center-music-row .dynamic-music-island,
   .aero-root .header-center-music-row .dynamic-music-compact,
   .aero-root .header-center-music-row .dynamic-music-drawer{
-    width:414px!important;
-    max-width:414px!important;
+    width:359px!important;
+    min-width:359px!important;
+    max-width:359px!important;
   }
 
   .aero-root .header-center-music-row .dynamic-music-drawer::before{
-    width:394px!important;
+    width:343px!important;
   }
 
   .aero-root .header-center-music-row .dynamic-music-drawer-bridge{
-    width:384px!important;
+    width:333px!important;
   }
 }
 
-/* Tablet: still one module, but hide text from the feed switch before cramming it. */
-@media(max-width:900px) and (min-width:761px){
-  .aero-root .aero-header{
-    height:108px!important;
-    min-height:108px!important;
-  }
-
-  .aero-root .aero-header-center{
-    width:390px!important;
-    min-width:390px!important;
-    max-width:390px!important;
+/* At tablet-ish desktop widths, use a slightly tighter single row — never stack it. */
+@media(max-width:1050px) and (min-width:761px){
+  .aero-root .aero-header-center,
+  .aero-root .header-center-control-stack{
+    width:642px!important;
+    min-width:642px!important;
+    max-width:642px!important;
   }
 
   .aero-root .header-center-control-stack{
-    width:390px!important;
-  }
-
-  .aero-root .header-center-top-controls{
-    width:376px!important;
-    grid-template-columns:218px 150px!important;
-    gap:8px!important;
+    grid-template-columns:178px 126px minmax(0,1fr)!important;
+    gap:6px!important;
   }
 
   .aero-root .header-center-version-switcher .universal-rums-switcher{
-    width:218px!important;
-    min-width:218px!important;
-    max-width:218px!important;
+    width:178px!important;
+    min-width:178px!important;
+    max-width:178px!important;
+  }
+
+  .aero-root .header-center-version-switcher .universal-rums-switcher button{
+    font-size:8px!important;
+    padding-left:3px!important;
+    padding-right:3px!important;
   }
 
   .aero-root .header-center-feed-switcher .feed-tabs{
-    width:150px!important;
-    min-width:150px!important;
-    max-width:150px!important;
+    width:126px!important;
+    min-width:126px!important;
+    max-width:126px!important;
   }
 
   .aero-root .header-center-feed-switcher .feed-tabs .tab-btn,
   .aero-root .header-center-feed-switcher .feed-tabs .tab-btn.active{
-    font-size:9px!important;
-    padding:0 4px!important;
+    font-size:8px!important;
+    padding-left:2px!important;
+    padding-right:2px!important;
+  }
+
+  .aero-root .header-center-feed-switcher .feed-tabs .tab-btn svg{
+    display:none!important;
   }
 
   .aero-root .header-center-music-row,
   .aero-root .header-center-music-row .dynamic-music-island,
   .aero-root .header-center-music-row .dynamic-music-compact,
   .aero-root .header-center-music-row .dynamic-music-drawer{
-    width:376px!important;
-    max-width:376px!important;
+    width:314px!important;
+    min-width:314px!important;
+    max-width:314px!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-wave{
+    display:none!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-compact{
+    grid-template-columns:29px minmax(0,1fr) 18px!important;
+  }
+
+  .aero-root .header-center-music-row .dynamic-music-progress-line{
+    right:27px!important;
   }
 
   .aero-root .header-center-music-row .dynamic-music-drawer::before{
-    width:356px!important;
+    width:300px!important;
   }
 
   .aero-root .header-center-music-row .dynamic-music-drawer-bridge{
-    width:346px!important;
+    width:290px!important;
+  }
+
+  .aero-root .dynamic-music-library-row{
+    grid-template-columns:38px minmax(0,1fr) 52px!important;
+    gap:7px!important;
   }
 }
 
-/*
-  Phone layout remains the existing compact header/quick menu.
-  Show its original version selector again and keep the desktop center module hidden.
-*/
+/* Phone retains the already-working compact header / quick-menu version. */
 @media(max-width:760px){
   .aero-root .mobile-version-switcher{
     visibility:visible!important;
@@ -7280,18 +7327,18 @@ button,input,textarea { font:inherit; }
   }
 }
 
-/* Wii construction: top row pieces, then full-width music row. */
+/* Wii construction: all three controls build across the SAME horizontal row. */
 .aero-root.version-build-active .header-center-control-stack{
   animation:wiiPieceBubble .5s .69s cubic-bezier(.14,1.5,.28,1) both;
 }
 .aero-root.version-build-active .header-center-version-switcher{
-  animation:wiiPieceControl .46s .78s cubic-bezier(.14,1.5,.28,1) both;
+  animation:wiiPieceControl .44s .77s cubic-bezier(.14,1.5,.28,1) both;
 }
 .aero-root.version-build-active .header-center-feed-switcher{
-  animation:wiiPieceControl .46s .87s cubic-bezier(.14,1.5,.28,1) both;
+  animation:wiiPieceControl .44s .85s cubic-bezier(.14,1.5,.28,1) both;
 }
 .aero-root.version-build-active .header-center-music-row{
-  animation:wiiPieceControl .48s .99s cubic-bezier(.14,1.5,.28,1) both;
+  animation:wiiPieceControl .46s .93s cubic-bezier(.14,1.5,.28,1) both;
 }
 .aero-root.version-build-active .header-center-version-switcher .universal-rums-switcher,
 .aero-root.version-build-active .header-center-feed-switcher .feed-tabs,
@@ -7303,21 +7350,10 @@ button,input,textarea { font:inherit; }
   filter:none!important;
 }
 
-@keyframes music55DrawerIn{
-  0%{
-    opacity:0;
-    transform:translateY(-11px) scale(.9);
-  }
-  64%{
-    opacity:1;
-    transform:translateY(2px) scale(1.008);
-  }
-  82%{
-    transform:translateY(-1px) scale(.997);
-  }
-  100%{
-    opacity:1;
-    transform:none;
-  }
+@keyframes music56DrawerIn{
+  0%{opacity:0;transform:translateY(-10px) scale(.91)}
+  64%{opacity:1;transform:translateY(2px) scale(1.008)}
+  82%{transform:translateY(-1px) scale(.997)}
+  100%{opacity:1;transform:none}
 }
 
