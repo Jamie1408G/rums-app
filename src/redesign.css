@@ -5828,144 +5828,63 @@ button,input,textarea { font:inherit; }
   .site-update-play-fallback{animation:none!important}
 }
 
-
-/* Five-second soundtrack outro while Plaza rebuilds after the update overlay */
-.site-update-outro-pill{
-  position:fixed;
-  left:50%;
-  bottom:24px;
-  z-index:99990;
-  display:flex;
-  align-items:center;
-  gap:9px;
-  max-width:min(360px,calc(100vw - 28px));
-  padding:8px 11px;
-  border:1px solid color-mix(in srgb,var(--theme-border,#d8e7f5) 78%,white);
-  border-radius:14px;
-  background:color-mix(in srgb,var(--theme-surface,#fff) 90%,transparent);
-  color:var(--theme-text,#2d4258);
-  box-shadow:0 9px 24px rgba(37,69,105,.16),inset 0 1px rgba(255,255,255,.92);
-  backdrop-filter:blur(20px) saturate(1.15);
-  -webkit-backdrop-filter:blur(20px) saturate(1.15);
-  transform:translateX(-50%);
-  animation:plazaUpdateOutroIn .2s ease both,plazaUpdateOutroFade 5s linear both;
-  pointer-events:none;
-}
-.site-update-outro-pill>div:last-child{
-  display:grid;
-  min-width:0;
-  gap:1px;
-}
-.site-update-outro-pill small{
-  color:var(--theme-accent,var(--site-accent,#3478f6));
-  font-size:6.5px;
-  font-weight:950;
-  letter-spacing:.12em;
-}
-.site-update-outro-pill strong{
-  overflow:hidden;
-  font-size:10px;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-}
-.site-update-outro-eq{
-  display:flex;
-  align-items:flex-end;
-  gap:2px;
-  width:24px;
-  height:24px;
-  padding:5px;
-  border-radius:8px;
-  background:var(--theme-accent-soft,#eaf4ff);
-}
-.site-update-outro-eq span{
-  display:block;
-  width:3px;
-  height:12px;
-  border-radius:999px;
-  background:var(--theme-accent,var(--site-accent,#3478f6));
-  transform-origin:center bottom;
-  animation:plazaUpdateEq .55s ease-in-out infinite alternate;
-}
-.site-update-outro-eq span:nth-child(2){height:8px;animation-delay:-.2s}
-.site-update-outro-eq span:nth-child(3){height:14px;animation-delay:-.38s}
-@keyframes plazaUpdateOutroIn{
-  from{opacity:0;transform:translate(-50%,8px) scale(.97)}
-  to{opacity:1;transform:translate(-50%,0) scale(1)}
-}
-@keyframes plazaUpdateOutroFade{
-  0%,72%{opacity:1}
-  100%{opacity:0}
-}
-@media(max-width:760px){
-  .site-update-outro-pill{bottom:88px}
-}
-@media(prefers-reduced-motion:reduce){
-  .site-update-outro-pill{animation:plazaUpdateOutroFade 5s linear both!important}
-  .site-update-outro-eq span{animation:none!important}
-}
-
-
-/* Cinematic Plaza reveal after an update */
+/* Cinematic update reveal layered on top of the proven update trigger. */
 .aero-root .site-update-screen{
-  transition:opacity .8s cubic-bezier(.22,.8,.22,1),backdrop-filter .8s ease,-webkit-backdrop-filter .8s ease;
+  transition:opacity .82s cubic-bezier(.22,.8,.22,1),backdrop-filter .82s ease,-webkit-backdrop-filter .82s ease;
 }
 .aero-root .site-update-screen.is-leaving{
   opacity:0;
   pointer-events:none;
-  backdrop-filter:blur(4px) saturate(1);
-  -webkit-backdrop-filter:blur(4px) saturate(1);
+  backdrop-filter:blur(3px) saturate(1);
+  -webkit-backdrop-filter:blur(3px) saturate(1);
 }
 .aero-root .site-update-screen.is-leaving .site-update-card{
-  animation:plazaUpdateCardLeave .68s cubic-bezier(.22,.8,.22,1) both;
+  animation:plazaUpdateCardLeave .72s cubic-bezier(.22,.8,.22,1) both;
 }
 @keyframes plazaUpdateCardLeave{
   from{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
-  to{opacity:0;transform:translateY(-12px) scale(.975);filter:blur(5px)}
+  to{opacity:0;transform:translateY(-13px) scale(.975);filter:blur(5px)}
 }
-
-/* Build Plaza back in layers: shell -> surfaces -> content -> details. */
 .aero-root.update-reveal-active :is(.desktop-rail,.aero-header,.bottom-nav){
-  animation:plazaRevealShell .72s .18s cubic-bezier(.16,.88,.22,1.08) both!important;
+  animation:plazaRevealShell .68s .12s cubic-bezier(.16,.88,.22,1.08) both!important;
 }
 .aero-root.update-reveal-active :is(.community-hero,.post-card,.suggestion-card,.update-card,.custom-site-widget,.profile-section,.chat-sidebar,.chat-conversation,.plaza-plus-panel,.news-site-top,.news-top-story,.news-latest-section,.news-home-rail,.lumina-project-hero,.lumina-overview-card,.lumina-metro-panel,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty){
   animation:plazaRevealSurface .72s cubic-bezier(.16,.88,.22,1.08) both!important;
 }
-.aero-root.update-reveal-active :is(.community-hero,.news-site-top,.lumina-project-hero,.upload-wrap,.search-wrap,.profile-wrap){animation-delay:.46s!important}
-.aero-root.update-reveal-active :is(.post-card,.news-top-story,.chat-conversation,.plaza-plus-panel,.lumina-overview-card,.lumina-metro-panel){animation-delay:.72s!important}
-.aero-root.update-reveal-active :is(.suggestion-card,.update-card,.custom-site-widget,.news-latest-section,.news-home-rail,.chat-sidebar,.profile-section,.admin-wrap,.feed-empty){animation-delay:.94s!important}
+.aero-root.update-reveal-active :is(.community-hero,.news-site-top,.lumina-project-hero,.upload-wrap,.search-wrap,.profile-wrap){animation-delay:.38s!important}
+.aero-root.update-reveal-active :is(.post-card,.news-top-story,.chat-conversation,.plaza-plus-panel,.lumina-overview-card,.lumina-metro-panel){animation-delay:.62s!important}
+.aero-root.update-reveal-active :is(.suggestion-card,.update-card,.custom-site-widget,.news-latest-section,.news-home-rail,.chat-sidebar,.profile-section,.admin-wrap,.feed-empty){animation-delay:.84s!important}
 .aero-root.update-reveal-active :is(.post-card,.suggestion-card,.update-card,.community-hero,.news-top-story,.plaza-plus-panel,.chat-conversation,.lumina-project-hero) :is(h1,h2,h3,p,small,strong,button,.pill,.tag,.post-meta,.post-actions,.news-story-meta,.news-card-kicker){
-  animation:plazaRevealDetail .62s 1.16s cubic-bezier(.16,.88,.22,1.05) both!important;
+  animation:plazaRevealDetail .62s 1.08s cubic-bezier(.16,.88,.22,1.05) both!important;
 }
 .aero-root.update-reveal-active :is(.post-image,.news-top-image,.news-top-image img,.chat-message-image,.profile-avatar,.avatar,.lumina-project-hero img){
-  animation:plazaRevealMedia .72s 1.02s cubic-bezier(.16,.88,.22,1.04) both!important;
+  animation:plazaRevealMedia .7s .92s cubic-bezier(.16,.88,.22,1.04) both!important;
 }
-@keyframes plazaRevealShell{
-  from{opacity:0;transform:translateY(-9px) scale(.985);filter:blur(7px)}
-  to{opacity:1;transform:none;filter:none}
+@keyframes plazaRevealShell{from{opacity:0;transform:translateY(-9px) scale(.985);filter:blur(7px)}to{opacity:1;transform:none;filter:none}}
+@keyframes plazaRevealSurface{from{opacity:0;transform:translateY(18px) scale(.972);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+@keyframes plazaRevealDetail{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes plazaRevealMedia{from{opacity:0;transform:scale(.965);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+
+.site-update-outro-pill{
+  position:fixed;left:50%;bottom:24px;z-index:99990;display:flex;align-items:center;gap:9px;
+  max-width:min(360px,calc(100vw - 28px));padding:8px 11px;border:1px solid color-mix(in srgb,var(--theme-border,#d8e7f5) 78%,white);
+  border-radius:14px;background:color-mix(in srgb,var(--theme-surface,#fff) 90%,transparent);color:var(--theme-text,#2d4258);
+  box-shadow:0 9px 24px rgba(37,69,105,.16),inset 0 1px rgba(255,255,255,.92);backdrop-filter:blur(20px) saturate(1.15);
+  -webkit-backdrop-filter:blur(20px) saturate(1.15);transform:translateX(-50%);pointer-events:none;
+  animation:plazaUpdateOutroIn .2s ease both,plazaUpdateOutroFade 5s linear both;
 }
-@keyframes plazaRevealSurface{
-  from{opacity:0;transform:translateY(18px) scale(.972);filter:blur(8px)}
-  68%{opacity:1;transform:translateY(-2px) scale(1.006);filter:blur(0)}
-  to{opacity:1;transform:none;filter:none}
-}
-@keyframes plazaRevealDetail{
-  from{opacity:0;transform:translateY(8px) scale(.985);filter:blur(4px)}
-  to{opacity:1;transform:none;filter:none}
-}
-@keyframes plazaRevealMedia{
-  from{opacity:0;transform:scale(.965);filter:blur(7px)}
-  to{opacity:1;transform:none;filter:none}
-}
-@media(max-width:760px){
-  .aero-root.update-reveal-active :is(.post-card,.news-top-story,.chat-conversation,.plaza-plus-panel){animation-delay:.62s!important}
-}
+.site-update-outro-pill>div:last-child{display:grid;min-width:0;gap:1px}
+.site-update-outro-pill small{color:var(--theme-accent,var(--site-accent,#3478f6));font-size:6.5px;font-weight:950;letter-spacing:.12em}
+.site-update-outro-pill strong{overflow:hidden;font-size:10px;white-space:nowrap;text-overflow:ellipsis}
+.site-update-outro-eq{display:flex;align-items:flex-end;gap:2px;width:24px;height:24px;padding:5px;border-radius:8px;background:var(--theme-accent-soft,#eaf4ff)}
+.site-update-outro-eq span{display:block;width:3px;height:12px;border-radius:999px;background:var(--theme-accent,var(--site-accent,#3478f6));transform-origin:center bottom;animation:plazaUpdateEq .55s ease-in-out infinite alternate}
+.site-update-outro-eq span:nth-child(2){height:8px;animation-delay:-.2s}.site-update-outro-eq span:nth-child(3){height:14px;animation-delay:-.38s}
+@keyframes plazaUpdateOutroIn{from{opacity:0;transform:translate(-50%,8px) scale(.97)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
+@keyframes plazaUpdateOutroFade{0%,58%{opacity:1}100%{opacity:0}}
+@media(max-width:760px){.site-update-outro-pill{bottom:88px}}
 @media(prefers-reduced-motion:reduce){
   .aero-root .site-update-screen.is-leaving{transition:opacity .25s ease!important}
   .aero-root .site-update-screen.is-leaving .site-update-card,
-  .aero-root.update-reveal-active :is(.desktop-rail,.aero-header,.bottom-nav,.community-hero,.post-card,.suggestion-card,.update-card,.custom-site-widget,.profile-section,.chat-sidebar,.chat-conversation,.plaza-plus-panel,.news-site-top,.news-top-story,.news-latest-section,.news-home-rail,.lumina-project-hero,.lumina-overview-card,.lumina-metro-panel,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty),
-  .aero-root.update-reveal-active :is(.post-card,.suggestion-card,.update-card,.community-hero,.news-top-story,.plaza-plus-panel,.chat-conversation,.lumina-project-hero) :is(h1,h2,h3,p,small,strong,button,.pill,.tag,.post-meta,.post-actions,.news-story-meta,.news-card-kicker),
-  .aero-root.update-reveal-active :is(.post-image,.news-top-image,.news-top-image img,.chat-message-image,.profile-avatar,.avatar,.lumina-project-hero img){
-    animation:none!important;
-  }
+  .aero-root.update-reveal-active :is(.desktop-rail,.aero-header,.bottom-nav,.community-hero,.post-card,.suggestion-card,.update-card,.custom-site-widget,.profile-section,.chat-sidebar,.chat-conversation,.plaza-plus-panel,.news-site-top,.news-top-story,.news-latest-section,.news-home-rail,.lumina-project-hero,.lumina-overview-card,.lumina-metro-panel,.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.feed-empty){animation:none!important}
+  .site-update-outro-eq span{animation:none!important}
 }

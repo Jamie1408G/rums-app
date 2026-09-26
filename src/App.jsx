@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 27;
-const JAMIE_TUTORIAL_VERSION = 27;
+const TUTORIAL_VERSION = 28;
+const JAMIE_TUTORIAL_VERSION = 28;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -574,6 +574,7 @@ export default function RUMS() {
   const updateStartedForVersionRef = useRef('');
   const [updateMusicState, setUpdateMusicState] = useState('ready');
   const [updateOutroActive, setUpdateOutroActive] = useState(false);
+  const [updateOverlayLeaving, setUpdateOverlayLeaving] = useState(false);
 
   const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
     if (typeof window === 'undefined') return null;
@@ -758,10 +759,10 @@ export default function RUMS() {
   useEffect(() => {
     if (!updateUntil || !updateTargetVersion) return undefined;
     let reloadTimer = 0;
-
     const finishTimer = window.setTimeout(() => {
-      // First reveal the normal Plaza interface again while the SAME source
-      // keeps playing. Then fade it out for five seconds before reloading.
+      // Keep the proven update trigger untouched. Only after the update screen
+      // has completed do we enter the visual/audio outro.
+      setUpdateOverlayLeaving(true);
       setUpdateOutroActive(true);
 
       const context = updateAudioContextRef.current;
@@ -772,7 +773,7 @@ export default function RUMS() {
           gain.gain.cancelScheduledValues(now);
           gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value || 0.72), now);
           gain.gain.linearRampToValueAtTime(0.0001, now + 5);
-        } catch { /* keep playing at current volume if ramping fails */ }
+        } catch { /* keep playing if fading is unavailable */ }
       }
 
       reloadTimer = window.setTimeout(() => {
@@ -781,10 +782,6 @@ export default function RUMS() {
           try { updateAudioSourceRef.current.disconnect(); } catch {}
           updateAudioSourceRef.current = null;
         }
-        if (updateAudioGainRef.current) {
-          try { updateAudioGainRef.current.gain.value = 0.72; } catch {}
-        }
-        setUpdateOutroActive(false);
         try {
           localStorage.setItem(UPDATE_SEEN_KEY, updateTargetVersion);
           sessionStorage.removeItem(UPDATE_SCREEN_KEY);
@@ -793,7 +790,6 @@ export default function RUMS() {
         window.location.reload();
       }, 5150);
     }, Math.max(0, updateUntil - Date.now()));
-
     return () => {
       window.clearTimeout(finishTimer);
       if (reloadTimer) window.clearTimeout(reloadTimer);
@@ -5409,7 +5405,7 @@ export default function RUMS() {
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
       </div>}
-      {(updateUntil > Date.now() || updateOutroActive) && <div className={`site-update-screen ${updateOutroActive ? 'is-leaving' : ''}`} role="status" aria-live="polite">
+      {(updateUntil > Date.now() || updateOverlayLeaving) && <div className={`site-update-screen ${updateOverlayLeaving ? 'is-leaving' : ''}`} role="status" aria-live="polite">
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
           <span className="site-update-kicker">RUMS PLAZA</span>
