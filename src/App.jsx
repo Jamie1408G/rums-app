@@ -25,10 +25,14 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const UPDATE_SPOTIFY_TRACKS = ['5ByNaNLNThAHXjQanON9eB', '3iBcwCAJOl4EZq62WbNyai'];
-const pickUpdateSpotifyTrack = () => UPDATE_SPOTIFY_TRACKS[Math.floor(Math.random() * UPDATE_SPOTIFY_TRACKS.length)];
-const TUTORIAL_VERSION = 13;
-const JAMIE_TUTORIAL_VERSION = 13;
+const UPDATE_SPOTIFY_TRACKS = [
+  { id: '5ByNaNLNThAHXjQanON9eB', title: 'Rafflesia Online', artist: 'Xploshi' },
+  { id: '3iBcwCAJOl4EZq62WbNyai', title: 'リサフランク420 / 現代のコンピュー', artist: 'Macintosh Plus' },
+];
+const UPDATE_SPOTIFY_TRACK_IDS = UPDATE_SPOTIFY_TRACKS.map((track) => track.id);
+const pickUpdateSpotifyTrack = () => UPDATE_SPOTIFY_TRACK_IDS[Math.floor(Math.random() * UPDATE_SPOTIFY_TRACK_IDS.length)];
+const TUTORIAL_VERSION = 14;
+const JAMIE_TUTORIAL_VERSION = 14;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -585,7 +589,7 @@ export default function RUMS() {
         if (attempts >= 2) return;
         const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
         const until = pending?.version === version && pending.until > Date.now() ? pending.until : Date.now() + UPDATE_SCREEN_MS;
-        const trackId = pending?.version === version && UPDATE_SPOTIFY_TRACKS.includes(pending?.trackId) ? pending.trackId : pickUpdateSpotifyTrack();
+        const trackId = pending?.version === version && UPDATE_SPOTIFY_TRACK_IDS.includes(pending?.trackId) ? pending.trackId : pickUpdateSpotifyTrack();
         sessionStorage.setItem(UPDATE_SCREEN_KEY, JSON.stringify({ version, until, trackId }));
         sessionStorage.setItem(UPDATE_RELOAD_KEY, JSON.stringify({ version, count: attempts + 1, at: Date.now() }));
         setUpdateUntil(until);
@@ -602,10 +606,12 @@ export default function RUMS() {
   const [updateTrackId] = useState(() => {
     try {
       const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
-      if (pending?.trackId && UPDATE_SPOTIFY_TRACKS.includes(pending.trackId)) return pending.trackId;
+      if (pending?.trackId && UPDATE_SPOTIFY_TRACK_IDS.includes(pending.trackId)) return pending.trackId;
     } catch { /* use a random fallback */ }
     return pickUpdateSpotifyTrack();
   });
+
+  const updateTrack = UPDATE_SPOTIFY_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_SPOTIFY_TRACKS[0];
 
   useEffect(() => {
     if (!updateUntil) return undefined;
@@ -5202,7 +5208,38 @@ export default function RUMS() {
 
   return (
     <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
-      {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite"><div className="site-update-card"><div className="site-update-mark" aria-hidden="true">R</div><span className="site-update-kicker">RUMS PLAZA</span><h1>Updating the website</h1><p>Loading the latest version. You’ll be back in a moment.</p><div className="site-update-music"><span>UPDATE SOUNDTRACK</span><iframe title="Plaza update soundtrack" src={`https://open.spotify.com/embed/track/${updateTrackId}?utm_source=generator&theme=0&autoplay=1`} width="100%" height="80" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="eager" /></div><div className="site-update-loader" aria-hidden="true"><span /></div></div></div>}
+      {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite">
+        <iframe
+          className="site-update-background-player"
+          title="Plaza update soundtrack"
+          src={`https://open.spotify.com/embed/track/${updateTrackId}?utm_source=generator&theme=0&autoplay=1`}
+          width="1"
+          height="1"
+          frameBorder="0"
+          allow="autoplay; encrypted-media"
+          loading="eager"
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+        <div className="site-update-card">
+          <div className="site-update-mark" aria-hidden="true">R</div>
+          <span className="site-update-kicker">RUMS PLAZA</span>
+          <h1>Updating the website</h1>
+          <p>Loading the latest version. You’ll be back in a moment.</p>
+          <div className="site-update-now-playing" aria-label={`Now playing ${updateTrack.title} by ${updateTrack.artist}`}>
+            <div className="site-update-now-icon" aria-hidden="true">
+              <span/><span/><span/><span/>
+            </div>
+            <div className="site-update-now-copy">
+              <small>NOW PLAYING</small>
+              <strong>{updateTrack.title}</strong>
+              <span>{updateTrack.artist}</span>
+            </div>
+            <div className="site-update-spotify-badge" aria-hidden="true">♫</div>
+          </div>
+          <div className="site-update-loader" aria-hidden="true"><span /></div>
+        </div>
+      </div>}
       {siteAnnouncement && !(dismissedAnnouncement.username === (currentUser?.username || 'guest') && dismissedAnnouncement.id === siteAnnouncement.id) && (
         <aside className="site-announcement" role="status" aria-live="polite">
           <span className="site-announcement-icon"><Megaphone size={19} /></span>

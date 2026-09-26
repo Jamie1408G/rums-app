@@ -4321,9 +4321,6 @@ button,input,textarea { font:inherit; }
 .site-update-kicker {font-size:12px;letter-spacing:.14em;font-weight:800;color:var(--theme-muted,#788ba3);}
 .site-update-card h1 {margin:9px 0;font-size:clamp(25px,5vw,32px);line-height:1.17;letter-spacing:-.035em;}
 .site-update-card p {margin:0;color:var(--theme-muted,#667085);font-size:15px;line-height:1.55;}
-.site-update-music {margin:22px 0 0;padding:10px;border:1px solid color-mix(in srgb,var(--theme-border,#d8e7f5) 78%,white);border-radius:17px;background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(239,247,255,.54));box-shadow:inset 0 1px rgba(255,255,255,.9),0 8px 22px rgba(45,77,128,.08);overflow:hidden;}
-.site-update-music>span {display:block;margin:0 0 7px 3px;text-align:left;color:var(--theme-muted,#788ba3);font-size:8px;font-weight:900;letter-spacing:.14em;}
-.site-update-music iframe {display:block;border:0;border-radius:12px;background:transparent;}
 .site-update-loader {height:6px;margin:20px auto 0;overflow:hidden;border-radius:999px;background:var(--theme-accent-soft,#dceaff);}
 .site-update-loader span {display:block;width:32%;height:100%;border-radius:inherit;background:var(--theme-accent,#3478f6);animation:rums-update-loading 1.8s ease-in-out infinite alternate;}
 @keyframes rums-update-loading {from{transform:translateX(0)}to{transform:translateX(215%)}}
@@ -5665,4 +5662,125 @@ button,input,textarea { font:inherit; }
     animation:none!important;
     transition:none!important;
   }
+}
+
+
+/* Plaza update soundtrack: background playback + custom Now Playing UI */
+.site-update-background-player{
+  position:fixed!important;
+  width:1px!important;
+  height:1px!important;
+  left:-20px!important;
+  top:-20px!important;
+  opacity:.001!important;
+  pointer-events:none!important;
+  border:0!important;
+}
+.site-update-now-playing{
+  position:relative;
+  display:grid;
+  grid-template-columns:38px minmax(0,1fr) 30px;
+  gap:11px;
+  align-items:center;
+  margin:20px 0 2px;
+  padding:10px 11px;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--theme-border,#d8e7f5) 76%,white);
+  border-radius:15px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.78),rgba(236,245,255,.52));
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.92),
+    0 8px 20px rgba(45,77,128,.08);
+  text-align:left;
+  backdrop-filter:blur(18px) saturate(1.16);
+  -webkit-backdrop-filter:blur(18px) saturate(1.16);
+}
+.site-update-now-playing::before{
+  content:"";
+  position:absolute;
+  left:10px;
+  right:10px;
+  top:3px;
+  height:42%;
+  border-radius:12px 12px 50% 50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.58),rgba(255,255,255,0));
+  pointer-events:none;
+}
+.site-update-now-icon{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  gap:3px;
+  width:38px;
+  height:38px;
+  padding:9px 8px;
+  border:1px solid color-mix(in srgb,var(--theme-accent,var(--site-accent,#3478f6)) 24%,white);
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(255,255,255,.9),var(--theme-accent-soft,#eaf4ff));
+  box-shadow:inset 0 1px #fff,0 4px 11px rgba(45,77,128,.09);
+}
+.site-update-now-icon span{
+  display:block;
+  width:3px;
+  min-height:7px;
+  border-radius:999px;
+  background:var(--theme-accent,var(--site-accent,#3478f6));
+  transform-origin:center bottom;
+  animation:plazaUpdateEq .82s ease-in-out infinite alternate;
+}
+.site-update-now-icon span:nth-child(2){height:15px;animation-delay:-.42s}
+.site-update-now-icon span:nth-child(3){height:11px;animation-delay:-.17s}
+.site-update-now-icon span:nth-child(4){height:18px;animation-delay:-.61s}
+.site-update-now-copy{
+  position:relative;
+  z-index:1;
+  display:grid;
+  min-width:0;
+  gap:1px;
+}
+.site-update-now-copy small{
+  color:var(--theme-accent,var(--site-accent,#3478f6));
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.13em;
+}
+.site-update-now-copy strong{
+  overflow:hidden;
+  color:var(--theme-text,#2c4258);
+  font-size:11px;
+  line-height:1.3;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.site-update-now-copy span{
+  overflow:hidden;
+  color:var(--theme-muted,#7b8ba0);
+  font-size:9px;
+  line-height:1.25;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.site-update-spotify-badge{
+  position:relative;
+  z-index:1;
+  display:grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  background:linear-gradient(180deg,#2fd66e,#1db954);
+  color:#fff;
+  font-size:14px;
+  font-weight:900;
+  box-shadow:inset 0 1px rgba(255,255,255,.46),0 4px 10px rgba(29,185,84,.18);
+}
+@keyframes plazaUpdateEq{
+  from{transform:scaleY(.42)}
+  to{transform:scaleY(1)}
+}
+@media(prefers-reduced-motion:reduce){
+  .site-update-now-icon span{animation:none!important;transform:none!important}
 }
