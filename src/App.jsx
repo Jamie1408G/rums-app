@@ -35,8 +35,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 20;
-const JAMIE_TUTORIAL_VERSION = 20;
+const TUTORIAL_VERSION = 21;
+const JAMIE_TUTORIAL_VERSION = 21;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -560,195 +560,182 @@ function resizeEmojiImage(file, size = 96) {
 }
 
 export default function RUMS() {
-  const [updateUntil, setUpdateUntil] = useState(() => {
-    if (!import.meta.env.PROD) return 0;
-    try {
-      const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
-      const lastSeen = localStorage.getItem(UPDATE_SEEN_KEY);
-      localStorage.setItem(UPDATE_SEEN_KEY, __RUMS_BUILD_ID__);
-      if (pending?.version === __RUMS_BUILD_ID__ && pending.until > Date.now() && lastSeen !== __RUMS_BUILD_ID__) return pending.until;
-      // Include the first production visit: older builds never recorded a build ID.
-      if (lastSeen !== __RUMS_BUILD_ID__) {
-        const until = Date.now() + UPDATE_SCREEN_MS;
-        const trackId = pickUpdateAudioTrack();
-        sessionStorage.setItem(UPDATE_SCREEN_KEY, JSON.stringify({ version: __RUMS_BUILD_ID__, until, trackId }));
-        return until;
-      }
-    } catch { /* storage may be unavailable; the app can still start */ }
-    return 0;
-  });
+  const [updateUntil, setUpdateUntil] = useState(0);
+  const [updateTargetVersion, setUpdateTargetVersion] = useState('');
+  const [updateTrackId] = useState(() => pickUpdateAudioTrack());
+  const updateTrack = UPDATE_AUDIO_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_AUDIO_TRACKS[0];
+  const updateAudioContextRef = useRef(null);
+  const updateAudioBufferRef = useRef(null);
+  const updateAudioSourceRef = useRef(null);
+  const updateAudioGainRef = useRef(null);
+  const updateAudioLoadingRef = useRef(null);
+  const updateStartedForVersionRef = useRef('');
+  const [updateMusicState, setUpdateMusicState] = useState('ready');
 
-  const [updateTrackId] = useState(() => {
+  const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
+    if (typeof window === 'undefined') return null;
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextCtor) return null;
+
+    if (!updateAudioContextRef.current) {
+      const context = new AudioContextCtor();
+      const gain = context.createGain();
+      gain.gain.value = 0.72;
+      gain.connect(context.destination);
+      updateAudioContextRef.current = context;
+      updateAudioGainRef.current = gain;
+    }
+
+    const context = updateAudioContextRef.current;
+    if (resume && context.state !== 'running') {
+      try { await context.resume(); } catch { /* browser may require another gesture */ }
+    }
+
+    if (!updateAudioBufferRef.current) {
+      if (!updateAudioLoadingRef.current) {
+        updateAudioLoadingRef.current = fetch(updateTrack.src, { cache: 'force-cache' })
+          .then((response) => {
+            if (!response.ok) throw new Error('Could not load update soundtrack');
+            return response.arrayBuffer();
+          })
+          .then((bytes) => context.decodeAudioData(bytes.slice(0)))
+          .then((buffer) => {
+            updateAudioBufferRef.current = buffer;
+            return buffer;
+          })
+          .catch((error) => {
+            updateAudioLoadingRef.current = null;
+            throw error;
+          });
+      }
+      try { await updateAudioLoadingRef.current; } catch { return null; }
+    }
+
+    return context;
+  };
+
+  const startUpdateMusic = async () => {
+    setUpdateMusicState('starting');
+    const context = await ensureUpdateAudioReady({ resume: true });
+    if (!context || context.state !== 'running' || !updateAudioBufferRef.current) {
+      setUpdateMusicState('blocked');
+      return false;
+    }
+
     try {
-      const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
-      if (pending?.trackId && UPDATE_AUDIO_TRACK_IDS.includes(pending.trackId)) return pending.trackId;
-    } catch { /* use a random fallback */ }
-    return pickUpdateAudioTrack();
-  });
+      if (updateAudioSourceRef.current) {
+        try { updateAudioSourceRef.current.stop(); } catch {}
+        updateAudioSourceRef.current.disconnect();
+      }
+      const source = context.createBufferSource();
+      source.buffer = updateAudioBufferRef.current;
+      source.connect(updateAudioGainRef.current);
+      source.addEventListener('ended', () => {
+        if (updateUntil > Date.now()) setUpdateMusicState('paused');
+      }, { once: true });
+      updateAudioSourceRef.current = source;
+      source.start(0);
+      setUpdateMusicState('playing');
+      return true;
+    } catch {
+      setUpdateMusicState('blocked');
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    // Unlock one persistent Web Audio context from the user's first ordinary
+    // Plaza interaction. Once running, this context can start the local update
+    // soundtrack later without creating a fresh media element at update time.
+    let armed = false;
+    const arm = async () => {
+      if (armed) return;
+      armed = true;
+      const context = await ensureUpdateAudioReady({ resume: true });
+      if (!context || context.state !== 'running') armed = false;
+      else setUpdateMusicState('ready');
+    };
+    document.addEventListener('pointerdown', arm, { capture: true, passive: true });
+    document.addEventListener('keydown', arm, true);
+    return () => {
+      document.removeEventListener('pointerdown', arm, true);
+      document.removeEventListener('keydown', arm, true);
+    };
+  }, [updateTrack.src]);
 
   useEffect(() => {
     if (!import.meta.env.PROD) return undefined;
     let stopped = false;
+    let checking = false;
     const checkForUpdate = async () => {
-      if (stopped || !navigator.onLine) return;
+      if (stopped || checking || !navigator.onLine || updateUntil > Date.now()) return;
+      checking = true;
       try {
         const response = await fetch(`/version.json?check=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) return;
         const { version } = await response.json();
         if (stopped || !version || version === __RUMS_BUILD_ID__) return;
-        const previous = JSON.parse(sessionStorage.getItem(UPDATE_RELOAD_KEY) || 'null');
-        const attempts = previous?.version === version && Date.now() - previous.at < 60000 ? previous.count : 0;
-        if (attempts >= 2) return;
-        const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
-        const until = pending?.version === version && pending.until > Date.now() ? pending.until : Date.now() + UPDATE_SCREEN_MS;
-        const trackId = pending?.version === version && UPDATE_AUDIO_TRACK_IDS.includes(pending?.trackId) ? pending.trackId : updateTrackId;
-        sessionStorage.setItem(UPDATE_SCREEN_KEY, JSON.stringify({ version, until, trackId }));
-        sessionStorage.setItem(UPDATE_RELOAD_KEY, JSON.stringify({ version, count: attempts + 1, at: Date.now() }));
-        setUpdateUntil(until);
-      } catch { /* stay on the current site when offline or the check fails */ }
+        if (updateStartedForVersionRef.current === version) return;
+        updateStartedForVersionRef.current = version;
+        setUpdateTargetVersion(version);
+        setUpdateUntil(Date.now() + UPDATE_SCREEN_MS);
+      } catch { /* stay on current build when offline/check fails */ }
+      finally { checking = false; }
     };
     void checkForUpdate();
     const timer = window.setInterval(checkForUpdate, 15000);
     const onVisible = () => { if (!document.hidden) void checkForUpdate(); };
     document.addEventListener('visibilitychange', onVisible);
-    return () => { stopped = true; window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
-  }, [updateTrackId]);
-
-  const updateTrack = UPDATE_AUDIO_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_AUDIO_TRACKS[0];
-  const updateAudioRef = useRef(null);
-  const [updateMusicState, setUpdateMusicState] = useState('ready');
-
-  const startUpdateMusic = () => {
-    const audio = updateAudioRef.current;
-    if (!audio) return;
-    setUpdateMusicState('starting');
-    audio.volume = 0.72;
-    const playPromise = audio.play();
-    if (playPromise?.catch) playPromise.catch(() => setUpdateMusicState('blocked'));
-  };
-
-  useEffect(() => {
-    // Preload every local soundtrack file while Plaza is being used so the
-    // selected song is already cached when an update appears.
-    const preloaders = UPDATE_AUDIO_TRACKS.map((track) => {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audio.src = track.src;
-      audio.load();
-      return audio;
-    });
-    return () => preloaders.forEach((audio) => { audio.src = ''; });
-  }, []);
-
-  useEffect(() => {
-    const audio = updateAudioRef.current;
-    if (!audio) return undefined;
-    audio.src = updateTrack.src;
-    audio.preload = 'auto';
-    audio.volume = 0.72;
-    audio.load();
-
-    const onPlaying = () => setUpdateMusicState('playing');
-    const onWaiting = () => setUpdateMusicState('starting');
-    const onPause = () => {
-      if (updateUntil > Date.now() && audio.currentTime > 0) setUpdateMusicState('paused');
-    };
-    const onError = () => setUpdateMusicState('blocked');
-    audio.addEventListener('playing', onPlaying);
-    audio.addEventListener('waiting', onWaiting);
-    audio.addEventListener('pause', onPause);
-    audio.addEventListener('error', onError);
-
-    // Prime the same native audio element on the first genuine interaction.
-    // Browsers that remember the interaction can then allow the update track
-    // to start immediately later in the session.
-    let primed = false;
-    const prime = () => {
-      if (primed || updateUntil > Date.now()) return;
-      primed = true;
-      const oldVolume = audio.volume;
-      // Reuse this exact media element later for the update soundtrack.
-      // A tiny, near-silent playback is initiated inside the user's genuine
-      // gesture, then paused immediately after the browser accepts it.
-      audio.volume = 0.001;
-      audio.currentTime = 0;
-      const promise = audio.play();
-      if (promise?.then) {
-        promise.then(() => {
-          window.setTimeout(() => {
-            audio.pause();
-            audio.currentTime = 0;
-            audio.volume = oldVolume;
-            setUpdateMusicState('ready');
-          }, 55);
-        }).catch(() => {
-          primed = false;
-          audio.volume = oldVolume;
-        });
-      }
-    };
-    document.addEventListener('pointerdown', prime, { capture: true, passive: true });
-    document.addEventListener('keydown', prime, true);
-
     return () => {
-      document.removeEventListener('pointerdown', prime, true);
-      document.removeEventListener('keydown', prime, true);
-      audio.removeEventListener('playing', onPlaying);
-      audio.removeEventListener('waiting', onWaiting);
-      audio.removeEventListener('pause', onPause);
-      audio.removeEventListener('error', onError);
+      stopped = true;
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [updateTrack.src, updateUntil]);
+  }, [updateUntil]);
 
   useEffect(() => {
     if (!updateUntil || updateUntil <= Date.now()) return undefined;
-    const audio = updateAudioRef.current;
-    if (!audio) return undefined;
-    audio.currentTime = 0;
-    audio.volume = 0.72;
-    setUpdateMusicState('starting');
-    const playPromise = audio.play();
-    if (playPromise?.catch) playPromise.catch(() => setUpdateMusicState('blocked'));
-    const fallbackTimer = window.setTimeout(() => {
-      setUpdateMusicState((state) => state === 'playing' ? state : 'blocked');
-    }, 1200);
-    return () => window.clearTimeout(fallbackTimer);
+    let cancelled = false;
+    const launch = async () => {
+      const context = await ensureUpdateAudioReady({ resume: false });
+      if (cancelled) return;
+      if (context?.state === 'running') {
+        await startUpdateMusic();
+      } else {
+        setUpdateMusicState('blocked');
+      }
+    };
+    void launch();
+    return () => { cancelled = true; };
   }, [updateUntil, updateTrack.src]);
 
   useEffect(() => {
-    if (!updateUntil) return undefined;
+    if (!updateUntil || !updateTargetVersion) return undefined;
     const timer = window.setTimeout(() => {
-      let shouldReload = false;
+      if (updateAudioSourceRef.current) {
+        try { updateAudioSourceRef.current.stop(); } catch {}
+        try { updateAudioSourceRef.current.disconnect(); } catch {}
+        updateAudioSourceRef.current = null;
+      }
       try {
-        const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
-        const incomingVersion = pending?.version || '';
-        shouldReload = Boolean(incomingVersion && incomingVersion !== __RUMS_BUILD_ID__);
-
-        // The update experience has already happened on this document.
-        // Mark the incoming build as seen BEFORE reloading so the newly loaded
-        // build does not start a second, silent update screen.
-        if (shouldReload) localStorage.setItem(UPDATE_SEEN_KEY, incomingVersion);
-
+        localStorage.setItem(UPDATE_SEEN_KEY, updateTargetVersion);
         sessionStorage.removeItem(UPDATE_SCREEN_KEY);
         sessionStorage.removeItem(UPDATE_RELOAD_KEY);
       } catch { /* ignore */ }
-
-      const audio = updateAudioRef.current;
-      if (audio) {
-        try {
-          audio.pause();
-          audio.currentTime = 0;
-        } catch { /* ignore */ }
-      }
-
-      if (shouldReload) {
-        window.location.reload();
-        return;
-      }
-      setUpdateUntil(0);
+      window.location.reload();
     }, Math.max(0, updateUntil - Date.now()));
     return () => window.clearTimeout(timer);
-  }, [updateUntil]);
+  }, [updateUntil, updateTargetVersion]);
+
+  useEffect(() => () => {
+    if (updateAudioSourceRef.current) {
+      try { updateAudioSourceRef.current.stop(); } catch {}
+      try { updateAudioSourceRef.current.disconnect(); } catch {}
+    }
+    if (updateAudioContextRef.current) {
+      try { updateAudioContextRef.current.close(); } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     document.title = PLATFORM_NAME;
@@ -5336,14 +5323,6 @@ export default function RUMS() {
 
   return (
     <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
-      <audio
-        ref={updateAudioRef}
-        className="site-update-background-player"
-        preload="auto"
-        src={updateTrack.src}
-        playsInline
-        aria-hidden="true"
-      />
       {updateUntil > Date.now() && <div className="site-update-screen" role="status" aria-live="polite">
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
