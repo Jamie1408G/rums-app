@@ -63,8 +63,8 @@ function loadSpotifyIframeApi() {
   return window.__rumsSpotifyIframeApiPromise;
 }
 
-const TUTORIAL_VERSION = 15;
-const JAMIE_TUTORIAL_VERSION = 15;
+const TUTORIAL_VERSION = 16;
+const JAMIE_TUTORIAL_VERSION = 16;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -606,6 +606,14 @@ export default function RUMS() {
     return 0;
   });
 
+  const [updateTrackId] = useState(() => {
+    try {
+      const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
+      if (pending?.trackId && UPDATE_SPOTIFY_TRACK_IDS.includes(pending.trackId)) return pending.trackId;
+    } catch { /* use a random fallback */ }
+    return pickUpdateSpotifyTrack();
+  });
+
   useEffect(() => {
     if (!import.meta.env.PROD) return undefined;
     let stopped = false;
@@ -621,11 +629,10 @@ export default function RUMS() {
         if (attempts >= 2) return;
         const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
         const until = pending?.version === version && pending.until > Date.now() ? pending.until : Date.now() + UPDATE_SCREEN_MS;
-        const trackId = pending?.version === version && UPDATE_SPOTIFY_TRACK_IDS.includes(pending?.trackId) ? pending.trackId : pickUpdateSpotifyTrack();
+        const trackId = pending?.version === version && UPDATE_SPOTIFY_TRACK_IDS.includes(pending?.trackId) ? pending.trackId : updateTrackId;
         sessionStorage.setItem(UPDATE_SCREEN_KEY, JSON.stringify({ version, until, trackId }));
         sessionStorage.setItem(UPDATE_RELOAD_KEY, JSON.stringify({ version, count: attempts + 1, at: Date.now() }));
         setUpdateUntil(until);
-        window.location.reload();
       } catch { /* stay on the current site when offline or the check fails */ }
     };
     void checkForUpdate();
@@ -633,15 +640,7 @@ export default function RUMS() {
     const onVisible = () => { if (!document.hidden) void checkForUpdate(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => { stopped = true; window.clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
-  }, []);
-
-  const [updateTrackId] = useState(() => {
-    try {
-      const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
-      if (pending?.trackId && UPDATE_SPOTIFY_TRACK_IDS.includes(pending.trackId)) return pending.trackId;
-    } catch { /* use a random fallback */ }
-    return pickUpdateSpotifyTrack();
-  });
+  }, [updateTrackId]);
 
   const updateTrack = UPDATE_SPOTIFY_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_SPOTIFY_TRACKS[0];
   const updateSpotifyHostRef = useRef(null);
@@ -656,10 +655,32 @@ export default function RUMS() {
   };
 
   useEffect(() => {
-    if (!updateUntil || updateUntil <= Date.now()) return undefined;
     let disposed = false;
     let fallbackTimer = 0;
-    setUpdateMusicState('loading');
+    let primeTimer = 0;
+    let primed = false;
+
+    const tryPrimePlayer = () => {
+      if (primed || disposed || updateUntil > Date.now()) return;
+      const controller = updateSpotifyControllerRef.current;
+      if (!controller) return;
+      primed = true;
+      try {
+        // Run play from a genuine user gesture so the same hidden Spotify
+        // controller is much more likely to be allowed to autoplay later.
+        controller.play();
+        primeTimer = window.setTimeout(() => {
+          try { controller.pause(); } catch {}
+          try { controller.seek(0); } catch {}
+        }, 90);
+      } catch {
+        primed = false;
+      }
+    };
+
+    const gestureOptions = { capture: true, passive: true };
+    document.addEventListener('pointerdown', tryPrimePlayer, gestureOptions);
+    document.addEventListener('keydown', tryPrimePlayer, true);
 
     loadSpotifyIframeApi().then((IFrameAPI) => {
       if (disposed || !updateSpotifyHostRef.current) return;
@@ -674,44 +695,69 @@ export default function RUMS() {
           updateSpotifyControllerRef.current = controller;
           controller.addListener('ready', () => {
             if (disposed) return;
-            setUpdateMusicState('starting');
-            try { controller.play(); } catch { setUpdateMusicState('blocked'); }
+            if (updateUntil > Date.now()) {
+              setUpdateMusicState('starting');
+              try { controller.play(); } catch { setUpdateMusicState('blocked'); }
+            } else {
+              setUpdateMusicState('ready');
+            }
           });
           controller.addListener('playback_started', () => {
-            if (!disposed) setUpdateMusicState('playing');
+            if (!disposed && updateUntil > Date.now()) setUpdateMusicState('playing');
           });
           controller.addListener('playback_update', (event) => {
-            if (disposed) return;
+            if (disposed || updateUntil <= Date.now()) return;
             if (event?.data?.isBuffering) setUpdateMusicState('starting');
             else if (event?.data?.isPaused === false) setUpdateMusicState('playing');
             else if (event?.data?.position > 0) setUpdateMusicState('paused');
           });
-          fallbackTimer = window.setTimeout(() => {
-            if (!disposed) setUpdateMusicState((state) => (state === 'playing' ? state : 'blocked'));
-          }, 1800);
         }
       );
     }).catch(() => {
-      if (!disposed) setUpdateMusicState('blocked');
+      if (!disposed && updateUntil > Date.now()) setUpdateMusicState('blocked');
     });
 
     return () => {
       disposed = true;
       window.clearTimeout(fallbackTimer);
+      window.clearTimeout(primeTimer);
+      document.removeEventListener('pointerdown', tryPrimePlayer, true);
+      document.removeEventListener('keydown', tryPrimePlayer, true);
       const controller = updateSpotifyControllerRef.current;
       updateSpotifyControllerRef.current = null;
       if (controller) {
         try { controller.destroy(); } catch {}
       }
     };
-  }, [updateUntil, updateTrackId]);
+  }, [updateTrackId]);
 
+  useEffect(() => {
+    if (!updateUntil || updateUntil <= Date.now()) return undefined;
+    setUpdateMusicState('starting');
+    const controller = updateSpotifyControllerRef.current;
+    if (controller) {
+      try { controller.play(); } catch { setUpdateMusicState('blocked'); }
+    }
+    const fallbackTimer = window.setTimeout(() => {
+      setUpdateMusicState((state) => state === 'playing' ? state : 'blocked');
+    }, 1800);
+    return () => window.clearTimeout(fallbackTimer);
+  }, [updateUntil]);
 
   useEffect(() => {
     if (!updateUntil) return undefined;
     const timer = window.setTimeout(() => {
+      let shouldReload = false;
+      try {
+        const pending = JSON.parse(sessionStorage.getItem(UPDATE_SCREEN_KEY) || 'null');
+        shouldReload = Boolean(pending?.version && pending.version !== __RUMS_BUILD_ID__);
+        sessionStorage.removeItem(UPDATE_SCREEN_KEY);
+      } catch { /* ignore */ }
+      if (shouldReload) {
+        window.location.reload();
+        return;
+      }
       setUpdateUntil(0);
-      try { sessionStorage.removeItem(UPDATE_SCREEN_KEY); } catch { /* ignore */ }
     }, Math.max(0, updateUntil - Date.now()));
     return () => window.clearTimeout(timer);
   }, [updateUntil]);
