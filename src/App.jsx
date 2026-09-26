@@ -39,7 +39,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'version-menu-start-fix-63';
+const FORCE_UPDATE_REVISION = 'account-gate-64';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -50,8 +50,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 63;
-const JAMIE_TUTORIAL_VERSION = 63;
+const TUTORIAL_VERSION = 64;
+const JAMIE_TUTORIAL_VERSION = 64;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -795,6 +795,7 @@ export default function RUMS() {
         the default click so one interaction never produces two UI sounds.
       */
       if (target.closest('.rums-space-chooser .space-choice-card')) return;
+      if (target.closest('.plaza-account-continue')) return;
       if (target.closest('.header-center-version-switcher .universal-rums-switcher')) return;
       if (target.closest('.mobile-version-switcher .universal-rums-switcher')) return;
 
@@ -1182,11 +1183,11 @@ export default function RUMS() {
 
         /*
           Stage 2
-          The screen is now genuinely empty. Put the chooser underneath but
-          keep it hidden, then fade the blank layer to the chooser colour.
+          The screen is now genuinely empty. Put the account gate underneath,
+          then fade the blank layer into the Plaza entry colour.
         */
         updateCycleRef.current.phase = 'colour';
-        setScreen('spaceSelect');
+        setScreen('accountGate');
         setRumsSpace(null);
         setStartupRevealPending(true);
         setStartupRevealActive(false);
@@ -1199,28 +1200,14 @@ export default function RUMS() {
 
           /*
             Stage 3
-            Version colour is fully present. Remove the transition layer,
-            play START, then construct the chooser.
+            The Plaza account gate is now visible. No automatic sound is played:
+            START waits for Continue with <account>, where browser audio is
+            guaranteed to be tied to a real user gesture.
           */
           updateCycleRef.current.phase = 'revealing';
-          versionMenuStartHandledKeyRef.current = versionMenuEntryKeyRef.current;
           setUpdateHandoffPhase('idle');
-
-          void playUiSfx('start');
-
-          window.requestAnimationFrame(() => {
-            window.requestAnimationFrame(() => {
-              if (updateCycleRef.current.id !== cycleId) return;
-              setStartupRevealPending(false);
-              setStartupRevealActive(true);
-            });
-          });
-
-          revealTimer = window.setTimeout(() => {
-            if (updateCycleRef.current.id !== cycleId) return;
-            setStartupRevealActive(false);
-            setStartupRevealPending(false);
-          }, STARTUP_BUILD_MS);
+          setStartupRevealPending(false);
+          setStartupRevealActive(false);
 
           finishTimer = window.setTimeout(() => {
             if (updateCycleRef.current.id !== cycleId) return;
@@ -1265,7 +1252,6 @@ export default function RUMS() {
       window.clearTimeout(updateEndTimer);
       if (fadeTimer) window.clearTimeout(fadeTimer);
       if (colourTimer) window.clearTimeout(colourTimer);
-      if (revealTimer) window.clearTimeout(revealTimer);
       if (finishTimer) window.clearTimeout(finishTimer);
     };
   }, [updateUntil, updateTargetVersion]);
@@ -1782,7 +1768,7 @@ export default function RUMS() {
     if (!manifest) { manifest = document.createElement('link'); manifest.rel = 'manifest'; manifest.href = '/manifest.webmanifest'; document.head.appendChild(manifest); }
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   }, []);
-  const [screen, setScreen] = useState('spaceSelect');
+  const [screen, setScreen] = useState('accountGate');
   const [versionMenuEntryKey, setVersionMenuEntryKey] = useState(1);
   const [entryAuth, setEntryAuth] = useState(false);
   const [entrySessionReady, setEntrySessionReady] = useState(false);
@@ -3812,14 +3798,11 @@ export default function RUMS() {
     const frame = window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         /*
-          On a cold website entry, attempt START automatically.
-          For every in-app return to Welcome to RUMS Plaza, enterVersionMenu()
-          already fired START synchronously inside the user's click/tap.
+          START is deliberately NOT fired here. It belongs to the actual
+          user action that enters the version menu, so it is never blocked by
+          cold-load autoplay rules and never collides with OPEN.
         */
-        if (versionMenuStartHandledKeyRef.current !== versionMenuEntryKey) {
-          versionMenuStartHandledKeyRef.current = versionMenuEntryKey;
-          void playUiSfx('start');
-        }
+        versionMenuStartHandledKeyRef.current = versionMenuEntryKey;
 
         setStartupRevealPending(false);
         setStartupRevealActive(true);
@@ -3961,7 +3944,28 @@ export default function RUMS() {
     enterVersionMenu();
   }
 
+  function openAccountGate() {
+    setEntryAuth(false);
+    setError('');
+    setAuthForm({ username: '', password: '' });
+    setScreen('accountGate');
+  }
+
   function openEntryLogin() {
+    setEntryAuth(true);
+    setAuthMode('login');
+    setAuthForm({ username: '', password: '' });
+    setError('');
+    setScreen('login');
+  }
+
+  function continueFromAccountGate() {
+    // This is the intentional user gesture that unlocks START reliably.
+    enterVersionMenu();
+  }
+
+  async function logoutFromAccountGate() {
+    await handleLogout();
     setEntryAuth(true);
     setAuthMode('login');
     setAuthForm({ username: '', password: '' });
@@ -3971,8 +3975,11 @@ export default function RUMS() {
 
   async function logoutFromEntrance() {
     await handleLogout();
-    setEntryAuth(false);
-    enterVersionMenu();
+    setEntryAuth(true);
+    setAuthMode('login');
+    setAuthForm({ username: '', password: '' });
+    setError('');
+    setScreen('login');
   }
 
   async function init(space = rumsSpace || 'rums4', requestId = spaceLoadTokenRef.current) {
@@ -6530,6 +6537,70 @@ export default function RUMS() {
         </defs>
       </svg>
       <div className="aero-frame">
+        {screen === 'accountGate' && (
+          <section className="plaza-account-gate" aria-labelledby="plaza-account-gate-title">
+            <div className="plaza-account-gate-card">
+              <div className="space-chooser-mark" aria-hidden="true">R</div>
+              <span className="space-chooser-kicker">RUMS PLAZA</span>
+              <h1 id="plaza-account-gate-title">RUMS Plaza</h1>
+              <p className="plaza-account-gate-intro">
+                {entrySessionReady
+                  ? currentUser
+                    ? 'Choose how you want to enter Plaza.'
+                    : 'Sign in to choose a Plaza version.'
+                  : 'Checking your Plaza account…'}
+              </p>
+
+              {!entrySessionReady ? (
+                <div className="plaza-account-gate-loading">
+                  <Loader2 size={18} className="spin" />
+                  <span>Checking account…</span>
+                </div>
+              ) : currentUser ? (
+                <>
+                  <div className="plaza-account-gate-profile">
+                    {avatarNode(currentUser.username, 54, 18)}
+                    <div>
+                      <small>SIGNED IN AS</small>
+                      <strong>{currentUser.username}</strong>
+                    </div>
+                  </div>
+
+                  <div className="plaza-account-gate-actions">
+                    <button
+                      type="button"
+                      className="plaza-account-continue"
+                      onClick={continueFromAccountGate}
+                    >
+                      Continue with {currentUser.username}
+                      <span aria-hidden="true">→</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="plaza-account-logout"
+                      onClick={() => void logoutFromAccountGate()}
+                    >
+                      Log out
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="plaza-account-gate-actions single">
+                  <button
+                    type="button"
+                    className="plaza-account-continue"
+                    onClick={openEntryLogin}
+                  >
+                    Log in to RUMS Plaza
+                    <span aria-hidden="true">→</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {screen === 'spaceSelect' && (
           <section className="rums-space-chooser" aria-labelledby="rums-space-title">
             <div className="entrance-account" aria-label="Account">
@@ -6619,9 +6690,15 @@ export default function RUMS() {
         {(screen === 'login' || screen === 'signup') && (
           <div className="auth-wrap">
             <div className="auth-logo">R</div>
-            <h1 className="auth-title">{activeSpace?.label || 'RUMS'}</h1>
+            <h1 className="auth-title">{entryAuth ? 'RUMS Plaza' : (activeSpace?.label || 'RUMS')}</h1>
             <p className="auth-sub">{entryAuth ? 'Your account works across RUMS 4, Creative, and Projects.' : isProjectSpace ? `${activeProject?.name || 'This project'} is its own RUMS-style community space.` : isRums5 ? 'The new RUMS era — a fresh community feed with the same social features.' : "The server's photo feed — including the full Project Lumina archive and older posts."}</p>
-            <button type="button" className="auth-space-switch" onClick={openRumsChooser}>← Choose a Plaza space</button>
+            <button
+              type="button"
+              className="auth-space-switch"
+              onClick={entryAuth ? openAccountGate : openRumsChooser}
+            >
+              {entryAuth ? '← Back to RUMS Plaza' : '← Choose a Plaza space'}
+            </button>
             <form className="auth-form" onSubmit={handleAuth}>
               {error && <div className="error-pill">{error}</div>}
               <input
@@ -6661,7 +6738,7 @@ export default function RUMS() {
           </div>
         )}
 
-        {screen !== 'spaceSelect' && screen !== 'projectsDirectory' && screen !== 'loading' && screen !== 'login' && screen !== 'signup' && currentUser && (
+        {screen !== 'accountGate' && screen !== 'spaceSelect' && screen !== 'projectsDirectory' && screen !== 'loading' && screen !== 'login' && screen !== 'signup' && currentUser && (
           <>
             <aside className="desktop-rail">
               <div className="rail-brand"><span className="rail-orb">{siteConfig.brandName.slice(0,1).toUpperCase()}</span><span>{siteConfig.brandName}<small>{siteConfig.brandTagline}</small></span></div>
