@@ -25,6 +25,8 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
+const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
+const FORCE_UPDATE_REVISION = 'startup-menu-reveal-31';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -35,8 +37,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 30;
-const JAMIE_TUTORIAL_VERSION = 30;
+const TUTORIAL_VERSION = 31;
+const JAMIE_TUTORIAL_VERSION = 31;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -710,6 +712,21 @@ export default function RUMS() {
       document.removeEventListener('keydown', arm, true);
     };
   }, [updateTrack.src]);
+
+  useEffect(() => {
+    if (!import.meta.env.PROD) return;
+    try {
+      if (localStorage.getItem(FORCE_UPDATE_KEY) === FORCE_UPDATE_REVISION) return;
+      // Mark first so the final reload cannot start the forced sequence again.
+      localStorage.setItem(FORCE_UPDATE_KEY, FORCE_UPDATE_REVISION);
+      updateStartedForVersionRef.current = `forced:${FORCE_UPDATE_REVISION}`;
+      setUpdateTargetVersion(`forced:${FORCE_UPDATE_REVISION}`);
+      setUpdateOverlayLeaving(false);
+      setUpdateOutroActive(false);
+      setStartupRevealActive(false);
+      setUpdateUntil(Date.now() + UPDATE_SCREEN_MS);
+    } catch { /* normal live-update detection still works if storage is unavailable */ }
+  }, []);
 
   useEffect(() => {
     if (!import.meta.env.PROD) return undefined;
