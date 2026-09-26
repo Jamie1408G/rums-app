@@ -25,8 +25,8 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const TUTORIAL_VERSION = 7;
-const JAMIE_TUTORIAL_VERSION = 7;
+const TUTORIAL_VERSION = 8;
+const JAMIE_TUTORIAL_VERSION = 8;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -671,6 +671,9 @@ export default function RUMS() {
   const [profileEdit, setProfileEdit] = useState({ bio: '', status: 'Online', accent: '#3478f6', banner: '' });
   const [profileSectionDraft, setProfileSectionDraft] = useState({ title: '', body: '' });
   const [collectionDraft, setCollectionDraft] = useState('');
+  const [activeCollectionId, setActiveCollectionId] = useState(null);
+  const [collectionRenameDraft, setCollectionRenameDraft] = useState('');
+  const [collectionEditing, setCollectionEditing] = useState(false);
   const [eventDraft, setEventDraft] = useState({ title: '', when: '', location: '', description: '' });
   const [groupDraft, setGroupDraft] = useState({ name: '', description: '' });
   const [projectDraft, setProjectDraft] = useState({ name: '', description: '', category: 'rums4' });
@@ -1041,6 +1044,53 @@ export default function RUMS() {
   async function addPostToCollection(postId, collectionId) {
     if (!currentUser || !collectionId) return;
     await commitPlazaPlus((data) => ({ ...data, collections: { ...data.collections, [currentUser.username]: (data.collections?.[currentUser.username] || []).map((collection) => collection.id === collectionId ? { ...collection, postIds: [...new Set([...(collection.postIds || []), postId])] } : collection) } }));
+  }
+
+  async function removePostFromCollection(postId, collectionId) {
+    if (!currentUser || !collectionId) return;
+    await commitPlazaPlus((data) => ({
+      ...data,
+      collections: {
+        ...data.collections,
+        [currentUser.username]: (data.collections?.[currentUser.username] || []).map((collection) =>
+          collection.id === collectionId
+            ? { ...collection, postIds: (collection.postIds || []).filter((id) => id !== postId) }
+            : collection
+        ),
+      },
+    }));
+  }
+
+  async function renameCollection(collectionId) {
+    const name = collectionRenameDraft.trim().slice(0, 40);
+    if (!currentUser || !collectionId || !name) return;
+    await commitPlazaPlus((data) => ({
+      ...data,
+      collections: {
+        ...data.collections,
+        [currentUser.username]: (data.collections?.[currentUser.username] || []).map((collection) =>
+          collection.id === collectionId ? { ...collection, name } : collection
+        ),
+      },
+    }));
+    setCollectionEditing(false);
+    setCollectionRenameDraft('');
+  }
+
+  async function deleteCollection(collectionId) {
+    if (!currentUser || !collectionId) return;
+    const collection = (plazaPlus.collections?.[currentUser.username] || []).find((item) => item.id === collectionId);
+    if (!window.confirm(`Delete "${collection?.name || 'this collection'}"? Saved posts themselves will stay saved.`)) return;
+    await commitPlazaPlus((data) => ({
+      ...data,
+      collections: {
+        ...data.collections,
+        [currentUser.username]: (data.collections?.[currentUser.username] || []).filter((collection) => collection.id !== collectionId),
+      },
+    }));
+    setActiveCollectionId(null);
+    setCollectionEditing(false);
+    setCollectionRenameDraft('');
   }
 
   async function togglePinnedPost(postId) {
@@ -5894,7 +5944,81 @@ export default function RUMS() {
 
                   {plusTab === 'notifications' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Notifications</h2><p>Mentions, follows, likes, comments and community activity.</p></div><button className="pill pill-btn" onClick={() => void markNotificationsRead()} disabled={notificationsForCurrentUser().length === 0}>Mark all read</button></div><div className="plus-list">{notificationsForCurrentUser().slice(0,60).map((a)=><button key={a.id} className="plus-row" onClick={()=>{void markNotificationsRead(Number(a.timestamp) || Date.now());if(a.postId){setViewingPostId(a.postId);setScreen('postDetail');}}}><span className="plus-row-icon">{a.type==='follow'?'👤':a.type==='mention'?'@':a.type==='like'?'♥':'●'}</span><span><b>{a.text}</b><small>{timeAgo(a.timestamp)}</small></span></button>)}{notificationsForCurrentUser().length === 0 && <div className="plus-empty">You're all caught up.</div>}</div></section>}
 
-                  {plusTab === 'saved' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Saved posts & collections</h2><p>Keep builds, ideas and inspiration for later.</p></div></div><div className="plus-inline-form"><input className="aero-input" value={collectionDraft} onChange={(e)=>setCollectionDraft(e.target.value)} placeholder="New collection name"/><button className="aero-btn" onClick={createCollection}>Create collection</button></div><div className="saved-post-grid">{posts.filter((p)=>bookmarkedPosts().includes(p.id)).map((p)=><div className="saved-post-wrap" key={`saved-${p.id}`}>{renderPost(p)}{(plazaPlus.collections?.[currentUser.username]||[]).length>0&&<select className="aero-input" defaultValue="" onChange={(e)=>{if(e.target.value){void addPostToCollection(p.id,e.target.value);e.currentTarget.value='';}}}><option value="">Add to collection…</option>{(plazaPlus.collections?.[currentUser.username]||[]).map((collection)=><option key={collection.id} value={collection.id}>{collection.name}</option>)}</select>}</div>)}{bookmarkedPosts().length===0&&<div className="plus-empty">Save a post with ☆ and it will appear here.</div>}</div><div className="collection-grid">{(plazaPlus.collections?.[currentUser.username]||[]).map((collection)=><article key={collection.id} className="collection-card"><h3>{collection.name}</h3><p>{collection.postIds?.length||0} posts</p></article>)}</div></section>}
+                  {plusTab === 'saved' && (() => {
+                    const myCollections = plazaPlus.collections?.[currentUser.username] || [];
+                    const activeCollection = myCollections.find((collection) => collection.id === activeCollectionId) || null;
+                    const allSavedIds = bookmarkedPosts();
+                    const savedPosts = posts.filter((post) => allSavedIds.includes(post.id));
+                    const collectionPosts = activeCollection ? posts.filter((post) => (activeCollection.postIds || []).includes(post.id)) : [];
+                    return <section className="plaza-plus-panel saved-library-panel">
+                      {!activeCollection ? <>
+                        <div className="plus-section-head saved-library-head">
+                          <div><h2>Saved posts & collections</h2><p>Keep builds, ideas and inspiration organised in your own Plaza library.</p></div>
+                          <div className="saved-library-total"><Star size={15}/><b>{savedPosts.length}</b><span>saved</span></div>
+                        </div>
+
+                        <div className="saved-create-row">
+                          <div><strong>Create a collection</strong><small>Group saved posts by project, district, build style or anything else.</small></div>
+                          <div className="plus-inline-form">
+                            <input className="aero-input" value={collectionDraft} onChange={(e)=>setCollectionDraft(e.target.value)} placeholder="Collection name" maxLength={40}/>
+                            <button className="aero-btn" onClick={createCollection} disabled={!collectionDraft.trim()}>Create</button>
+                          </div>
+                        </div>
+
+                        <div className="plus-subheading saved-subheading">Collections</div>
+                        {myCollections.length ? <div className="collection-grid collection-library-grid">
+                          {myCollections.map((collection) => {
+                            const items = posts.filter((post) => (collection.postIds || []).includes(post.id));
+                            const preview = items.filter((post) => post.image).slice(0,3);
+                            return <button type="button" key={collection.id} className="collection-card collection-library-card" onClick={() => { setActiveCollectionId(collection.id); setCollectionEditing(false); }}>
+                              <div className={`collection-preview collection-preview-${Math.min(preview.length,3)}`}>
+                                {preview.length ? preview.map((post) => <img key={post.id} src={post.image} alt=""/>) : <span><Star size={20}/></span>}
+                              </div>
+                              <div className="collection-card-copy">
+                                <h3>{collection.name}</h3>
+                                <p>{items.length} {items.length === 1 ? 'post' : 'posts'}</p>
+                              </div>
+                              <span className="collection-open-arrow">→</span>
+                            </button>
+                          })}
+                        </div> : <div className="plus-empty saved-library-empty">No collections yet. Create one above, then add saved posts to it.</div>}
+
+                        <div className="plus-subheading saved-subheading">All saved posts</div>
+                        {savedPosts.length ? <div className="saved-post-grid">
+                          {savedPosts.map((post)=><div className="saved-post-wrap" key={`saved-${post.id}`}>
+                            {renderPost(post)}
+                            {myCollections.length>0&&<select className="aero-input saved-collection-select" defaultValue="" onChange={(e)=>{if(e.target.value){void addPostToCollection(post.id,e.target.value);e.currentTarget.value='';}}}>
+                              <option value="">Add to collection…</option>
+                              {myCollections.map((collection)=><option key={collection.id} value={collection.id}>{collection.name}</option>)}
+                            </select>}
+                          </div>)}
+                        </div> : <div className="plus-empty saved-library-empty">Save a post with ☆ and it will appear here.</div>}
+                      </> : <>
+                        <div className="collection-detail-head">
+                          <button type="button" className="pill pill-btn collection-back" onClick={() => { setActiveCollectionId(null); setCollectionEditing(false); }}><ArrowLeft size={14}/> All collections</button>
+                          <div className="collection-detail-title">
+                            {collectionEditing ? <div className="collection-rename-row">
+                              <input className="aero-input" autoFocus maxLength={40} value={collectionRenameDraft} onChange={(e)=>setCollectionRenameDraft(e.target.value)} onKeyDown={(e)=>{if(e.key==='Enter'){e.preventDefault();void renameCollection(activeCollection.id);}if(e.key==='Escape'){setCollectionEditing(false);}}}/>
+                              <button className="aero-btn" onClick={()=>void renameCollection(activeCollection.id)} disabled={!collectionRenameDraft.trim()}>Save</button>
+                              <button className="pill pill-btn" onClick={()=>setCollectionEditing(false)}>Cancel</button>
+                            </div> : <>
+                              <div><span className="eyebrow">SAVED COLLECTION</span><h2>{activeCollection.name}</h2><p>{collectionPosts.length} {collectionPosts.length === 1 ? 'saved post' : 'saved posts'}</p></div>
+                              <div className="collection-detail-actions">
+                                <button className="pill pill-btn" onClick={()=>{setCollectionRenameDraft(activeCollection.name);setCollectionEditing(true);}}><Pencil size={13}/> Rename</button>
+                                <button className="pill pill-btn collection-delete" onClick={()=>void deleteCollection(activeCollection.id)}><Trash2 size={13}/> Delete</button>
+                              </div>
+                            </>}
+                          </div>
+                        </div>
+                        {collectionPosts.length ? <div className="saved-post-grid collection-detail-grid">
+                          {collectionPosts.map((post)=><div className="saved-post-wrap collection-post-wrap" key={`collection-${activeCollection.id}-${post.id}`}>
+                            {renderPost(post)}
+                            <button type="button" className="pill pill-btn remove-from-collection" onClick={()=>void removePostFromCollection(post.id,activeCollection.id)}><X size={13}/> Remove from collection</button>
+                          </div>)}
+                        </div> : <div className="plus-empty collection-detail-empty"><Star size={22}/><strong>This collection is empty</strong><span>Go back to All saved posts and add something to {activeCollection.name}.</span></div>}
+                      </>}
+                    </section>;
+                  })()}
 
                   {plusTab === 'activity' && <section className="plaza-plus-panel"><div className="plus-section-head"><div><h2>Activity & discovery</h2><p>Follow people, see what is trending and keep up with the community.</p></div><button className={`pill pill-btn ${followingOnly?'active':''}`} onClick={()=>setFollowingOnly((v)=>!v)}>{followingOnly?'Following feed':'Show following feed'}</button></div><div className="plus-stats-strip"><span><b>{followedUsers().length}</b> following</span><span><b>{levelFor(currentUser.username)}</b> level</span><span><b>{xpFor(currentUser.username)}</b> XP</span><span><b>{badgesFor(currentUser.username).length}</b> badges</span></div><div className="plus-subheading">Trending posts</div><div className="saved-post-grid">{trendingPosts().filter((p)=>!followingOnly||followedUsers().includes(p.username)).slice(0,6).map((p)=>renderPost(p))}</div><div className="plus-subheading">Recent activity</div><div className="plus-list">{(plazaPlus.activities||[]).slice(0,30).map((a)=><div key={a.id} className="plus-row static"><span className="plus-row-icon">◎</span><span><b>{a.text}</b><small>{timeAgo(a.timestamp)}</small></span></div>)}</div></section>}
 
