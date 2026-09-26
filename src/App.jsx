@@ -25,8 +25,8 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const TUTORIAL_VERSION = 2;
-const JAMIE_TUTORIAL_VERSION = 3;
+const TUTORIAL_VERSION = 4;
+const JAMIE_TUTORIAL_VERSION = 4;
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
   { id: 'roblox2010', name: 'Roblox 2010', year: '2010', description: 'Sky-blue classic site with framed dashboard modules, blue tabs and bevelled buttons', swatches: ['#dcecf9', '#4e86b8', '#f6c33d'] },
@@ -81,7 +81,18 @@ const DEFAULT_SITE_CONFIG = {
 };
 
 const PLAZA_OVERHAUL_WIDGET_ID = 'plaza-overhaul-2026';
-const PLAZA_OVERHAUL_REMOVAL_MIGRATION = 'plaza-overhaul-announcement-removed-v1';
+const PLAZA_OVERHAUL_MIGRATION = 'plaza-overhaul-announcement-v1';
+const PLAZA_OVERHAUL_WIDGET = {
+  id: PLAZA_OVERHAUL_WIDGET_ID,
+  placement: 'feed',
+  title: '✨ RUMS Plaza has been completely overhauled!',
+  body: 'A fresh new look, smoother interactions and loads of new features — while keeping the glossy, modern RUMS aesthetic. Explore RUMS 4, Creative and Projects, emoji reactions, custom emojis, the visual editor and more.',
+  image: '',
+  actionLabel: '',
+  actionUrl: '',
+  color: '#eaf4ff',
+  animation: 'none',
+};
 
 function requiredTutorialVersionForUser(user) {
   if (!user?.username) return TUTORIAL_VERSION;
@@ -90,6 +101,7 @@ function requiredTutorialVersionForUser(user) {
 
 function migratePlazaOverhaulAnnouncement(config) {
   const next = { ...DEFAULT_SITE_CONFIG, ...(config || {}), migrations: { ...(config?.migrations || {}) } };
+  if (next.migrations[PLAZA_OVERHAUL_MIGRATION]) return { config: next, changed: false };
   const isLegacyOverhaulBox = (widget) => {
     const text = `${widget?.title || ''} ${widget?.body || ''}`
       .toLowerCase()
@@ -97,22 +109,18 @@ function migratePlazaOverhaulAnnouncement(config) {
       .replace(/\s+/g, ' ')
       .trim();
     return widget?.id === PLAZA_OVERHAUL_WIDGET_ID
-      || text.includes('rums plaza has been completely overhauled')
       || text.includes("our site's gotten a new look")
       || text.includes("our site's gotten a complete overhaul")
       || (text.includes('complete overhaul') && text.includes('glossy') && text.includes('modern aesthetic'));
   };
-  const before = Array.isArray(next.customWidgets) ? next.customWidgets : [];
-  const customWidgets = before.filter((widget) => !isLegacyOverhaulBox(widget));
-  const alreadyMarked = !!next.migrations[PLAZA_OVERHAUL_REMOVAL_MIGRATION];
-  const changed = customWidgets.length !== before.length || !alreadyMarked;
+  const customWidgets = (next.customWidgets || []).filter((widget) => !isLegacyOverhaulBox(widget));
   return {
     config: {
       ...next,
-      customWidgets,
-      migrations: { ...next.migrations, [PLAZA_OVERHAUL_REMOVAL_MIGRATION]: true },
+      customWidgets: [PLAZA_OVERHAUL_WIDGET, ...customWidgets],
+      migrations: { ...next.migrations, [PLAZA_OVERHAUL_MIGRATION]: true },
     },
-    changed,
+    changed: true,
   };
 }
 
@@ -1345,45 +1353,47 @@ export default function RUMS() {
     return [
       {
         id: 'welcome',
-        title: `Welcome to ${PLATFORM_NAME}`,
-        body: tutorialReturningUser ? 'You’ve been here before — this one-time refresher is just to make sure you know your way around after all the recent changes to RUMS Plaza.' : 'Here’s a quick guided tour. I’ll take you through the parts of RUMS Plaza people use most, one step at a time.',
+        title: `What’s new in ${PLATFORM_NAME}`,
+        body: tutorialReturningUser
+          ? 'Plaza has changed a lot. This one-time update tour covers the new News, richer Chat, Plaza+, Lumina improvements and the expanded community tools.'
+          : 'Here’s the complete Plaza tour: spaces, feeds, News, Chat, Plaza+, Lumina, publishing, discovery and personalization.',
         screen: 'feed',
       },
       {
         id: 'versions',
         title: 'RUMS 4, Creative and Projects',
-        body: 'Use this switch to move between RUMS 4 and Creative, or open Projects. Projects is a directory: choose a project there and it opens as its own complete Plaza space.',
+        body: 'Use the top switcher to move between RUMS 4 and Creative or enter Projects. Project spaces can have their own home, forum, updates and board.',
         screen: 'feed',
         target: '[data-tutorial="version-switch"]',
       },
       hasLumina && siteConfig.showLumina ? {
         id: 'feed-filter',
         title: 'All RUMS or Lumina',
-        body: 'On RUMS 4, this slider switches the feed between everything and posts from Lumina. It also shows unread counts when something new appears.',
+        body: 'RUMS 4 has a dedicated Lumina feed. Switch here to see only Lumina posts; unread counters tell you when something new has arrived.',
         screen: 'feed',
         target: '[data-tutorial="feed-tabs"]',
         navTarget: '[data-tutorial-nav="feed"]',
       } : null,
       {
         id: 'feed',
-        title: 'Your community feed',
-        body: 'This is the main timeline. New posts and widgets get a NEW label, and page icons show a number until you actually scroll the new item into view.',
+        title: 'The community feed',
+        body: 'Posts, announcements and community widgets live here. NEW markers and navigation counters stay visible until you actually view the new content.',
         screen: 'feed',
         target: '[data-tutorial="feed-layout"]',
         navTarget: '[data-tutorial-nav="feed"]',
       },
       posts.length > 0 ? {
         id: 'post-actions',
-        title: 'Interact with posts',
-        body: 'Posts support likes, comments, sharing and emoji reactions. Tap a username or avatar to open that person’s profile.',
+        title: 'Posts are more social now',
+        body: 'Like, comment, reply, react with emoji, save posts and open profiles from a post. Saved posts can later be organised into collections in Plaza+.',
         screen: 'feed',
         target: '[data-tutorial="post-card"]',
         navTarget: '[data-tutorial-nav="feed"]',
       } : null,
       hasLumina && siteConfig.showLumina ? {
         id: 'project-lumina',
-        title: 'Project Lumina',
-        body: 'Project Lumina has its own dedicated space with the city overview, metro districts and community gallery. Reactions stay in the Lumina feed, not inside the project pages themselves.',
+        title: 'Lumina has its own home',
+        body: 'Project Lumina now has a cleaner dedicated page plus an About Lumina action. Posts made from Lumina automatically start with Lumina selected as their location.',
         screen: 'lumina',
         target: '[data-tutorial="lumina-page"]',
         navTarget: '[data-tutorial-nav="lumina"]',
@@ -1391,63 +1401,95 @@ export default function RUMS() {
       {
         id: 'share',
         title: 'Share a build',
-        body: 'Choose a screenshot, pick where it was taken, add a caption and post it to the community. On RUMS 4 you can post to General or Lumina.',
+        body: 'Upload a screenshot, choose where it was taken and add a caption. On RUMS 4, posts can be General or Lumina; opening the composer from Lumina preselects Lumina.',
         screen: 'upload',
         target: '[data-tutorial="upload-page"]',
         navTarget: '[data-tutorial-nav="upload"]',
       },
       {
+        id: 'news',
+        title: 'Plaza News',
+        body: 'News is now a full editorial section. The newest article leads the page, breaking articles can temporarily take over, and articles carry RUMS 4, Lumina or Creative source labels.',
+        screen: 'news',
+        target: '[data-tutorial="news-page"]',
+        navTarget: '[data-tutorial-nav="news"]',
+      },
+      {
         id: 'chat',
-        title: 'Plaza Chat and DMs',
-        body: 'Chat includes a public Plaza room and direct messages. You can send text or images, and unread counts appear on the Chat icon until you open the conversation.',
+        title: 'Chat got a major upgrade',
+        body: 'Plaza Chat supports public chat, DMs and group chats plus replies, emoji reactions, images, searchable GIFs and playable Spotify embeds pasted from Spotify share links.',
         screen: 'chat',
         target: '[data-tutorial="chat-page"]',
         navTarget: '[data-tutorial-nav="chat"]',
       },
+      {
+        id: 'plaza-plus',
+        title: 'Plaza+ is your social hub',
+        body: 'Plaza+ brings notifications, following, saved-post collections, trending activity, events, communities and group chats, Projects, wiki/build tools, creator tools and accessibility settings together.',
+        screen: 'plazaPlus',
+        target: '[data-tutorial="plaza-plus-page"]',
+        navTarget: '[data-tutorial-nav="plazaPlus"]',
+      },
+      {
+        id: 'notifications',
+        title: 'Notifications can follow you',
+        body: 'Plaza+ tracks mentions, follows, likes, comments and other activity. In Plaza+ Settings you can also enable device notifications for important activity while the site is closed.',
+        screen: 'plazaPlus',
+        target: '[data-tutorial="plaza-plus-page"]',
+        navTarget: '[data-tutorial-nav="plazaPlus"]',
+      },
+      siteConfig.showDiscover ? {
+        id: 'discover',
+        title: 'Discover',
+        body: 'Search members and posts in the Plaza space you are currently using, then jump directly to a profile or post.',
+        screen: 'search',
+        target: '[data-tutorial="discover-page"]',
+        navTarget: '[data-tutorial-nav="search"]',
+      } : null,
       siteConfig.showSuggestions ? {
         id: 'suggestions',
         title: 'Suggestions',
-        body: 'Share ideas for RUMS here. Other members can upvote and react with emoji, so popular ideas are easy to spot.',
+        body: 'Suggestions is still the place for community ideas. Members can vote and react so useful ideas rise quickly.',
         screen: 'suggestions',
         target: '[data-tutorial="suggestions-page"]',
         navTarget: '[data-tutorial-nav="suggestions"]',
       } : null,
       siteConfig.showUpdates ? {
         id: 'updates',
-        title: 'Server Updates',
-        body: 'Official server news and changes live here. When a new update is posted, the navigation badge tells you there’s something you haven’t seen yet.',
+        title: 'Server updates',
+        body: 'Official server changes live here. Unread indicators remain until you have actually viewed the new update.',
         screen: 'updates',
         target: '[data-tutorial="updates-page"]',
         navTarget: '[data-tutorial-nav="updates"]',
       } : null,
-      siteConfig.showDiscover ? {
-        id: 'discover',
-        title: 'Discover',
-        body: 'Search across members and posts from the RUMS space you’re currently in. Open any result to jump straight to the person or post.',
-        screen: 'search',
-        target: '[data-tutorial="discover-page"]',
-        navTarget: '[data-tutorial-nav="search"]',
-      } : null,
       {
         id: 'profile',
-        title: 'Your profile',
-        body: 'Your profile is where you change your avatar or username and see everything you’ve posted.',
+        title: 'Profiles, follows and identity',
+        body: 'Open profiles from posts or chat. Your own profile lets you manage your avatar and identity, while Plaza+ adds following, status, XP and badges around the social side of Plaza.',
         screen: 'profile',
         target: '[data-tutorial="profile-page"]',
         navTarget: '[data-tutorial-nav="profile"]',
       },
       {
         id: 'appearance',
-        title: 'Make Plaza look yours',
-        body: 'Appearance lets you adjust glass strength and switch between Light, Dark, Roblox eras, Frutiger families and the other themes. These settings are personal to your device.',
+        title: 'Make Plaza yours',
+        body: 'Appearance includes glass strength and the full theme library: Light, Dark, Roblox eras, Frutiger styles, Liquid Glass, Solarpunk, Cyberpunk and more.',
         screen: 'profile',
         target: '[data-tutorial="appearance"]',
         navTarget: '[data-tutorial-nav="profile"]',
       },
       {
+        id: 'shortcuts',
+        title: 'One more shortcut',
+        body: 'Use ⌘K or Ctrl+K to open the command palette and jump quickly to Feed, Chat, News, Plaza+, Projects, saved posts, settings and other major areas.',
+        screen: 'plazaPlus',
+        target: '[data-tutorial="plaza-plus-page"]',
+        navTarget: '[data-tutorial-nav="plazaPlus"]',
+      },
+      {
         id: 'done',
-        title: 'You’re ready',
-        body: 'That’s the essentials. You can replay this tour anytime from your Profile → Appearance section.',
+        title: 'You’re up to date',
+        body: 'That’s the refreshed Plaza. This update tour only appears once; you can replay it anytime from your Profile → Appearance section.',
         screen: 'feed',
       },
     ].filter(Boolean);
@@ -4687,7 +4729,7 @@ export default function RUMS() {
     return (
       <div className="custom-widget-stack" data-widget-stack={placement}>
         {widgets.map((widget) => (
-          <article data-position-id={widget.id} data-widget-placement={widget.placement} data-session-new-key={sessionNewKey(pageKeyForPlacement(widget.placement), 'widget', widget.id)} className={`custom-site-widget ${widget.image ? 'has-widget-image' : 'no-widget-image'} widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''} ${selectedBoxId === `widget:${widget.id}` ? 'is-editor-selected' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDownCapture={(event) => { if (editMode && isOwner && !(event.target instanceof Element && event.target.closest('.widget-edit-controls'))) setSelectedBoxId(`widget:${widget.id}`); }}>
+          <article data-position-id={widget.id} data-widget-placement={widget.placement} data-session-new-key={sessionNewKey(pageKeyForPlacement(widget.placement), 'widget', widget.id)} className={`custom-site-widget ${widget.id === PLAZA_OVERHAUL_WIDGET_ID ? 'plaza-overhaul-announcement' : ''} ${widget.image ? 'has-widget-image' : 'no-widget-image'} widget-animation-${widget.animation || 'none'} ${editMode && isOwner ? 'is-editing' : ''} ${selectedBoxId === `widget:${widget.id}` ? 'is-editor-selected' : ''}`} key={widget.id} style={{ '--widget-color': widget.color || '#ffffff' }} onPointerDownCapture={(event) => { if (editMode && isOwner && !(event.target instanceof Element && event.target.closest('.widget-edit-controls'))) setSelectedBoxId(`widget:${widget.id}`); }}>
             {newContentLabel(pageKeyForPlacement(widget.placement), 'widget', widget.id)}
             {editMode && isOwner && selectedBoxId === `widget:${widget.id}` && <div className="widget-edit-controls"><button type="button" className="widget-drag-handle" onPointerDown={(event) => startWidgetReorder(widget.id, event)} title="Hold and drag to move this box"><GripVertical size={15} /> Move box</button><button onClick={() => moveCustomWidget(widget.id, -1)} title="Move up"><ChevronUp size={14} /></button><button onClick={() => moveCustomWidget(widget.id, 1)} title="Move down"><ChevronDown size={14} /></button><label title="Box colour"><Palette size={14} /><input type="color" value={widget.color || '#ffffff'} onChange={(e) => updateCustomWidget(widget.id, { color: e.target.value })} /></label><label title="Image"><ImagePlus size={14} /><input type="file" accept="image/*" onChange={(e) => handleInlineWidgetImage(widget.id, e)} /></label><label title="Animation"><Sparkles size={14} /><select value={widget.animation || 'none'} onChange={(e) => updateCustomWidget(widget.id, { animation: e.target.value })}><option value="none">Still</option><option value="float">Float</option><option value="pulse">Breathe</option><option value="shimmer">Shimmer</option></select></label><button className="danger" onClick={() => removeCustomWidget(widget.id)} title="Delete"><Trash2 size={14} /></button></div>}
             {widget.image && <img src={widget.image} alt="" />}
@@ -5127,12 +5169,12 @@ export default function RUMS() {
               {isProjectSpace && <><button className={`rail-link ${screen === 'feed' && projectTab === 'forum' ? 'selected' : ''}`} onClick={() => { setProjectTab('forum'); setScreen('feed'); }}><MessageCircle size={19}/> Forum</button><button className={`rail-link ${screen === 'feed' && projectTab === 'updates' ? 'selected' : ''}`} onClick={() => { setProjectTab('updates'); setScreen('feed'); }}><Megaphone size={19}/> Project updates</button><button className={`rail-link ${screen === 'feed' && projectTab === 'board' ? 'selected' : ''}`} onClick={() => { setProjectTab('board'); setScreen('feed'); }}><GripVertical size={19}/> Board</button></>}
               {!isProjectSpace && <>
               {siteConfig.showDiscover && <button data-tutorial-nav="search" className={`rail-link ${screen === 'search' ? 'selected' : ''}`} onClick={() => setScreen('search')}>{navIconWithNew(<Search size={19} />, 'search')} Discover</button>}
-              <button className={`rail-link ${screen === 'plazaPlus' ? 'selected' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }}><Sparkles size={19} /> Plaza+ {notificationsForCurrentUser().length > 0 && <span className="rail-mini-count">{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</button>
+              <button data-tutorial-nav="plazaPlus" className={`rail-link ${screen === 'plazaPlus' ? 'selected' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }}><Sparkles size={19} /> Plaza+ {notificationsForCurrentUser().length > 0 && <span className="rail-mini-count">{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</button>
               
               {hasLumina && siteConfig.showLumina && <button data-tutorial-nav="lumina" className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
               </>}
               <div className="rail-label">COMMUNITY</div>
-              <button className={`rail-link ${screen === 'news' ? 'selected' : ''}`} onClick={() => setScreen('news')}>{navIconWithNew(<Newspaper size={19} />, 'news')} Plaza News</button>
+              <button data-tutorial-nav="news" className={`rail-link ${screen === 'news' ? 'selected' : ''}`} onClick={() => setScreen('news')}>{navIconWithNew(<Newspaper size={19} />, 'news')} Plaza News</button>
               <button data-tutorial-nav="chat" className={`rail-link ${screen === 'chat' ? 'selected' : ''}`} onClick={() => setScreen('chat')}>{chatNavIcon(19)} Chat</button>
               {!isProjectSpace && siteConfig.showUpdates && <button data-tutorial-nav="updates" className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
               {!isProjectSpace && siteConfig.showSuggestions && <button data-tutorial-nav="suggestions" className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
@@ -5547,7 +5589,7 @@ export default function RUMS() {
               )}
 
               {screen === 'news' && (
-                <div className="plaza-news-site">
+                <div className="plaza-news-site" data-tutorial="news-page">
                   <header className="news-site-top">
                     <div className="news-site-brand-row">
                       <button className="news-site-logo" type="button" onClick={()=>{setNewsFilter('All');setNewsSelectedId(null);}} aria-label="Plaza News home">
@@ -5733,7 +5775,7 @@ export default function RUMS() {
 
 
               {screen === 'plazaPlus' && (
-                <div className="plaza-plus-page">
+                <div className="plaza-plus-page" data-tutorial="plaza-plus-page">
                   <div className="plaza-plus-hero">
                     <div><span className="eyebrow">RUMS PLAZA</span><h1>Plaza+</h1><p>Your social hub for notifications, saved posts, events, groups, projects, wiki, customization and community tools.</p></div>
                     <button className="pill pill-btn" onClick={() => setCommandOpen(true)}>⌘K Command palette</button>
@@ -6280,10 +6322,10 @@ export default function RUMS() {
               <button data-tutorial-nav="upload" className="nav-upload" onClick={() => openPostComposer()}>
                 {navIconWithNew(<Plus size={24} />, 'upload')}
               </button>
-              <button className={`nav-btn ${screen === 'plazaPlus' ? 'active' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }} aria-label="Plaza+ and notifications">
+              <button data-tutorial-nav="plazaPlus" className={`nav-btn ${screen === 'plazaPlus' ? 'active' : ''}`} onClick={() => { setScreen('plazaPlus'); setPlusTab('notifications'); }} aria-label="Plaza+ and notifications">
                 <span className="nav-icon-wrap"><span className="page-nav-icon"><Sparkles size={19} />{notificationsForCurrentUser().length > 0 && <span className="page-new-indicator page-new-count" aria-label={`${notificationsForCurrentUser().length} notifications`}>{notificationsForCurrentUser().length > 99 ? '99+' : notificationsForCurrentUser().length}</span>}</span></span><span className="nav-label">Plaza+</span>
               </button>
-              <button className={`nav-btn ${screen === 'news' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('news'); }}>
+              <button data-tutorial-nav="news" className={`nav-btn ${screen === 'news' ? 'active' : ''}`} onClick={() => { setError(''); setScreen('news'); }}>
                 <span className="nav-icon-wrap">{navIconWithNew(<Newspaper size={19} />, 'news')}</span><span className="nav-label">News</span>
               </button>
             </div>
