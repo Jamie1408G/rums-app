@@ -7320,3 +7320,251 @@ button,input,textarea { font:inherit; }
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* MUSIC ISLAND 52 — centered top UI + definitive Plaza glass controls        */
+/* -------------------------------------------------------------------------- */
+
+@media(min-width:761px){
+  /*
+    While expanded, remove the music capsule as the absolute-positioning
+    containing block. The expanded panel now anchors to .header-center-island,
+    i.e. the combined All RUMS/Lumina + Music top-center UI.
+  */
+  .aero-root.music-island-open .dynamic-music-island{
+    position:static!important;
+  }
+
+  .aero-root .header-center-island{
+    position:relative!important;
+  }
+
+  .aero-root .dynamic-music-expanded{
+    position:absolute!important;
+    top:calc(100% + 14px)!important;
+    left:50%!important;
+    right:auto!important;
+
+    width:410px!important;
+    max-width:min(410px,calc(100vw - 320px))!important;
+
+    transform:translateX(-50%)!important;
+    transform-origin:50% 0!important;
+
+    z-index:10000!important;
+    animation:dynamicMusicExpandCentered52 .4s cubic-bezier(.16,1.2,.28,1) both!important;
+  }
+
+  .aero-root.music-queue-open .dynamic-music-expanded{
+    width:424px!important;
+    max-width:min(424px,calc(100vw - 300px))!important;
+  }
+
+  /*
+    Reserve enough real feed space for the full player. The previous 300px
+    reservation ended almost exactly at the card edge, which is why the hero
+    still sat underneath the glass panel in the screenshot.
+  */
+  .aero-root.music-island-open .content{
+    padding-top:390px!important;
+  }
+
+  .aero-root.music-island-open.music-queue-open .content{
+    padding-top:610px!important;
+  }
+}
+
+/* Roomier proportions throughout the expanded player. */
+.aero-root .dynamic-music-expanded{
+  padding:20px 21px 18px!important;
+}
+
+.aero-root .dynamic-music-now{
+  grid-template-columns:68px minmax(0,1fr) 40px!important;
+  gap:16px!important;
+}
+
+.aero-root .dynamic-music-expanded-art{
+  width:68px!important;
+  height:68px!important;
+  border-radius:20px!important;
+}
+
+.aero-root .dynamic-music-seek{
+  margin-top:21px!important;
+}
+
+.aero-root .dynamic-music-controls{
+  gap:27px!important;
+  margin:16px 0 17px!important;
+}
+
+.aero-root .dynamic-music-volume{
+  min-height:40px!important;
+  padding:8px 11px!important;
+}
+
+.aero-root .dynamic-music-queue{
+  margin-top:17px!important;
+  max-height:190px!important;
+}
+
+/*
+  DEFINITIVE main playback control.
+  !important is intentional here: earlier Dynamic-Island styling used a
+  saturated accent gradient and was still winning in the browser cascade.
+*/
+.aero-root .dynamic-music-controls .dynamic-music-main-control,
+.aero-root .dynamic-music-controls .dynamic-music-main-control:hover,
+.aero-root .dynamic-music-controls .dynamic-music-main-control:active{
+  position:relative!important;
+  width:60px!important;
+  height:60px!important;
+
+  color:#285f9f!important;
+
+  border:1px solid rgba(255,255,255,.98)!important;
+  border-radius:50%!important;
+
+  background:
+    radial-gradient(circle at 30% 17%,rgba(255,255,255,1) 0 10%,rgba(255,255,255,.56) 25%,transparent 39%),
+    radial-gradient(circle at 74% 83%,rgba(104,190,255,.11),transparent 48%),
+    linear-gradient(145deg,rgba(255,255,255,.92),rgba(232,244,255,.8))!important;
+
+  box-shadow:
+    inset 1px 1px 1px #fff,
+    inset -1px -2px 5px rgba(69,109,154,.09),
+    0 8px 20px rgba(45,86,132,.13)!important;
+
+  transform:none;
+}
+
+.aero-root .dynamic-music-controls .dynamic-music-main-control:hover{
+  transform:scale(1.055)!important;
+  color:var(--site-accent,#3478f6)!important;
+}
+
+.aero-root .dynamic-music-controls .dynamic-music-main-control:active{
+  transform:scale(.97)!important;
+}
+
+/* Remove any saturated inherited pseudo-element styling too. */
+.aero-root .dynamic-music-controls .dynamic-music-main-control::before{
+  content:""!important;
+  position:absolute!important;
+  left:11px!important;
+  right:15px!important;
+  top:6px!important;
+  height:23px!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(255,255,255,0))!important;
+  pointer-events:none!important;
+}
+
+.aero-root .dynamic-music-controls .dynamic-music-main-control::after{
+  content:""!important;
+  position:absolute!important;
+  inset:5px!important;
+  border:1px solid rgba(83,151,215,.13)!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  pointer-events:none!important;
+}
+
+/* Previous / next: same Plaza liquid material, no opaque white discs. */
+.aero-root .dynamic-music-controls > button:not(.dynamic-music-main-control),
+.aero-root .dynamic-music-controls > button:not(.dynamic-music-main-control):hover{
+  color:#29415d!important;
+  border:1px solid rgba(255,255,255,.9)!important;
+  background:
+    radial-gradient(circle at 32% 16%,rgba(255,255,255,.98),transparent 30%),
+    linear-gradient(145deg,rgba(255,255,255,.72),rgba(232,242,252,.62))!important;
+  box-shadow:
+    inset 1px 1px 1px rgba(255,255,255,.98),
+    inset -1px -1px 3px rgba(70,110,154,.06),
+    0 6px 16px rgba(46,82,124,.09)!important;
+}
+
+/* Make the glass panel visually match the rest of Plaza more closely. */
+.aero-root .dynamic-music-expanded{
+  border-color:rgba(255,255,255,.98)!important;
+  background:
+    radial-gradient(circle at 10% -10%,rgba(255,255,255,1),transparent 32%),
+    radial-gradient(circle at 93% 108%,rgba(107,210,174,.1),transparent 39%),
+    radial-gradient(circle at 75% -8%,rgba(102,169,255,.1),transparent 34%),
+    linear-gradient(145deg,rgba(255,255,255,.965),rgba(237,247,255,.945) 65%,rgba(239,249,246,.94))!important;
+
+  box-shadow:
+    inset 1px 1px 1px #fff,
+    inset -1px -2px 6px rgba(73,114,158,.07),
+    0 26px 62px rgba(35,71,116,.19)!important;
+}
+
+/* Keep the top-center row comfortably spaced. */
+@media(min-width:1181px){
+  .aero-root .aero-header-center{
+    width:min(630px,54vw)!important;
+    min-width:465px!important;
+  }
+
+  .aero-root .header-center-island{
+    gap:14px!important;
+  }
+
+  .aero-root .header-center-island.has-feed-switch .feed-tabs{
+    flex:0 0 248px!important;
+    width:248px!important;
+  }
+
+  .aero-root .dynamic-music-island{
+    width:222px!important;
+  }
+}
+
+/* Slightly narrower screens: stay centered rather than jumping to the side. */
+@media(max-width:1180px) and (min-width:901px){
+  .aero-root .dynamic-music-expanded{
+    width:390px!important;
+    max-width:calc(100vw - 48px)!important;
+  }
+
+  .aero-root.music-queue-open .dynamic-music-expanded{
+    width:404px!important;
+  }
+}
+
+@media(max-width:900px) and (min-width:761px){
+  .aero-root .dynamic-music-expanded{
+    width:min(380px,calc(100vw - 30px))!important;
+    max-width:calc(100vw - 30px)!important;
+  }
+
+  .aero-root.music-island-open .content{
+    padding-top:385px!important;
+  }
+
+  .aero-root.music-island-open.music-queue-open .content{
+    padding-top:595px!important;
+  }
+}
+
+@keyframes dynamicMusicExpandCentered52{
+  0%{
+    opacity:0;
+    transform:translateX(-50%) translateY(-9px) scale(.84);
+    border-radius:20px;
+  }
+  66%{
+    opacity:1;
+    transform:translateX(-50%) translateY(2px) scale(1.012);
+    border-radius:29px;
+  }
+  84%{
+    transform:translateX(-50%) translateY(-1px) scale(.996);
+  }
+  100%{
+    opacity:1;
+    transform:translateX(-50%) translateY(0) scale(1);
+    border-radius:28px;
+  }
+}
+
