@@ -6,6 +6,7 @@ import {
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
   Lightbulb, Megaphone, Newspaper, Pencil, Video, Link2,
   GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff, Undo2, Redo2, RotateCcw,
+  Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music2, ListMusic,
 } from 'lucide-react';
 
 const USERS_KEY = 'rums-users';
@@ -27,7 +28,8 @@ const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
-const FORCE_UPDATE_REVISION = 'wii-piecewise-build-fast-46';
+const MUSIC_PLAYER_KEY = 'rums-plaza-music-player';
+const FORCE_UPDATE_REVISION = 'in-site-music-player-47';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -38,8 +40,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 46;
-const JAMIE_TUTORIAL_VERSION = 46;
+const TUTORIAL_VERSION = 47;
+const JAMIE_TUTORIAL_VERSION = 47;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -592,6 +594,32 @@ export default function RUMS() {
   const versionBuildTimerRef = useRef(0);
   const versionBuildRequestRef = useRef(0);
 
+  const siteMusicAudioRef = useRef(null);
+  const siteMusicTrackIndexRef = useRef(0);
+  const [siteMusicOpen, setSiteMusicOpen] = useState(false);
+  const [siteMusicPlaying, setSiteMusicPlaying] = useState(false);
+  const [siteMusicTrackIndex, setSiteMusicTrackIndex] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(MUSIC_PLAYER_KEY) || '{}');
+      const index = Number(saved.trackIndex);
+      return Number.isInteger(index) && index >= 0 && index < UPDATE_AUDIO_TRACKS.length ? index : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [siteMusicVolume, setSiteMusicVolume] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(MUSIC_PLAYER_KEY) || '{}');
+      const volume = Number(saved.volume);
+      return Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 0.72;
+    } catch {
+      return 0.72;
+    }
+  });
+  const [siteMusicProgress, setSiteMusicProgress] = useState(0);
+  const [siteMusicDuration, setSiteMusicDuration] = useState(0);
+  const [siteMusicError, setSiteMusicError] = useState('');
+
   const ensureUpdateAudioReady = async ({ resume = false } = {}) => {
     if (typeof window === 'undefined') return null;
     const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
@@ -1035,6 +1063,171 @@ export default function RUMS() {
       updateAudioContextRef.current = null;
     }
   }, []);
+
+  const formatMusicTime = (seconds) => {
+    const value = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+    const mins = Math.floor(value / 60);
+    const secs = Math.floor(value % 60);
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+  };
+
+  function persistSiteMusic(next = {}) {
+    try {
+      const current = JSON.parse(localStorage.getItem(MUSIC_PLAYER_KEY) || '{}');
+      localStorage.setItem(MUSIC_PLAYER_KEY, JSON.stringify({
+        ...current,
+        trackIndex: siteMusicTrackIndexRef.current,
+        volume: siteMusicVolume,
+        ...next,
+      }));
+    } catch {}
+  }
+
+  function setSiteMusicSource(index, { reset = true } = {}) {
+    const audio = siteMusicAudioRef.current;
+    const track = UPDATE_AUDIO_TRACKS[index];
+    if (!audio || !track) return;
+
+    const wanted = new URL(track.src, window.location.href).href;
+    if (audio.src !== wanted) {
+      audio.src = track.src;
+      audio.preload = 'metadata';
+      try { audio.load(); } catch {}
+    } else if (reset) {
+      try { audio.currentTime = 0; } catch {}
+    }
+  }
+
+  async function playSiteMusicTrack(index = siteMusicTrackIndexRef.current, { reset = true } = {}) {
+    const audio = siteMusicAudioRef.current;
+    const safeIndex = ((Number(index) || 0) + UPDATE_AUDIO_TRACKS.length) % UPDATE_AUDIO_TRACKS.length;
+    if (!audio) return false;
+
+    siteMusicTrackIndexRef.current = safeIndex;
+    setSiteMusicTrackIndex(safeIndex);
+    setSiteMusicSource(safeIndex, { reset });
+    setSiteMusicError('');
+
+    try {
+      audio.volume = siteMusicVolume;
+      await audio.play();
+      setSiteMusicPlaying(true);
+      persistSiteMusic({ trackIndex: safeIndex });
+      return true;
+    } catch {
+      setSiteMusicPlaying(false);
+      setSiteMusicError('Tap play to start music.');
+      return false;
+    }
+  }
+
+  function pauseSiteMusic() {
+    const audio = siteMusicAudioRef.current;
+    if (!audio) return;
+    try { audio.pause(); } catch {}
+    setSiteMusicPlaying(false);
+  }
+
+  function toggleSiteMusic() {
+    const audio = siteMusicAudioRef.current;
+    if (!audio) return;
+    if (!audio.paused && !audio.ended) {
+      pauseSiteMusic();
+      return;
+    }
+    void playSiteMusicTrack(siteMusicTrackIndexRef.current, { reset: audio.ended });
+  }
+
+  function skipSiteMusic(direction) {
+    const next = (siteMusicTrackIndexRef.current + direction + UPDATE_AUDIO_TRACKS.length) % UPDATE_AUDIO_TRACKS.length;
+    void playSiteMusicTrack(next, { reset: true });
+  }
+
+  function seekSiteMusic(value) {
+    const audio = siteMusicAudioRef.current;
+    const target = Number(value);
+    if (!audio || !Number.isFinite(target)) return;
+    try {
+      audio.currentTime = target;
+      setSiteMusicProgress(target);
+    } catch {}
+  }
+
+  function changeSiteMusicVolume(value) {
+    const next = Math.max(0, Math.min(1, Number(value)));
+    setSiteMusicVolume(next);
+    if (siteMusicAudioRef.current) {
+      try { siteMusicAudioRef.current.volume = next; } catch {}
+    }
+    persistSiteMusic({ volume: next });
+  }
+
+  useEffect(() => {
+    const audio = new Audio();
+    audio.preload = 'metadata';
+    audio.volume = siteMusicVolume;
+    siteMusicAudioRef.current = audio;
+    siteMusicTrackIndexRef.current = siteMusicTrackIndex;
+    setSiteMusicSource(siteMusicTrackIndex, { reset: false });
+
+    const onTime = () => setSiteMusicProgress(Number.isFinite(audio.currentTime) ? audio.currentTime : 0);
+    const onDuration = () => setSiteMusicDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+    const onPlay = () => { setSiteMusicPlaying(true); setSiteMusicError(''); };
+    const onPause = () => setSiteMusicPlaying(false);
+    const onEnded = () => {
+      const next = (siteMusicTrackIndexRef.current + 1) % UPDATE_AUDIO_TRACKS.length;
+      void playSiteMusicTrack(next, { reset: true });
+    };
+    const onError = () => {
+      setSiteMusicPlaying(false);
+      setSiteMusicError('This track could not be loaded.');
+    };
+
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('loadedmetadata', onDuration);
+    audio.addEventListener('durationchange', onDuration);
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('ended', onEnded);
+    audio.addEventListener('error', onError);
+
+    return () => {
+      try { audio.pause(); } catch {}
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('loadedmetadata', onDuration);
+      audio.removeEventListener('durationchange', onDuration);
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('error', onError);
+      try {
+        audio.removeAttribute('src');
+        audio.load();
+      } catch {}
+      siteMusicAudioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    siteMusicTrackIndexRef.current = siteMusicTrackIndex;
+    persistSiteMusic({ trackIndex: siteMusicTrackIndex });
+  }, [siteMusicTrackIndex]);
+
+  useEffect(() => {
+    if (siteMusicAudioRef.current) {
+      try { siteMusicAudioRef.current.volume = siteMusicVolume; } catch {}
+    }
+    persistSiteMusic({ volume: siteMusicVolume });
+  }, [siteMusicVolume]);
+
+  useEffect(() => {
+    // Update music gets exclusive audio while the updater is active.
+    if ((updateUntil > Date.now() || updateOverlayLeaving) && siteMusicAudioRef.current) {
+      pauseSiteMusic();
+    }
+  }, [updateUntil, updateOverlayLeaving]);
+
+  const siteMusicTrack = UPDATE_AUDIO_TRACKS[siteMusicTrackIndex] || UPDATE_AUDIO_TRACKS[0];
 
   useEffect(() => {
     document.title = PLATFORM_NAME;
@@ -5691,6 +5884,88 @@ export default function RUMS() {
           <button type="button" className="site-announcement-close" onClick={dismissAnnouncement} aria-label="Dismiss announcement"><X size={18} /></button>
         </aside>
       )}
+      {currentUser && rumsSpace && screen !== 'spaceSelect' && screen !== 'projectsDirectory' && !(updateUntil > Date.now() || updateOverlayLeaving) && (
+        <aside className={`plaza-music-player ${siteMusicOpen ? 'is-open' : 'is-compact'} ${siteMusicPlaying ? 'is-playing' : ''}`} aria-label="Plaza music player">
+          {siteMusicOpen ? (
+            <div className="plaza-music-panel">
+              <div className="plaza-music-head">
+                <div className="plaza-music-disc" aria-hidden="true">
+                  <Music2 size={18} />
+                  <span className="plaza-music-disc-ring" />
+                </div>
+                <div className="plaza-music-heading">
+                  <small>PLAZA MUSIC</small>
+                  <strong>{siteMusicTrack.title}</strong>
+                  <span>{siteMusicTrack.artist}</span>
+                </div>
+                <button type="button" className="plaza-music-collapse" onClick={() => setSiteMusicOpen(false)} aria-label="Collapse music player"><ChevronDown size={18} /></button>
+              </div>
+
+              <div className="plaza-music-progress-row">
+                <span>{formatMusicTime(siteMusicProgress)}</span>
+                <input
+                  className="plaza-music-progress"
+                  type="range"
+                  min="0"
+                  max={Math.max(siteMusicDuration, 1)}
+                  step="0.1"
+                  value={Math.min(siteMusicProgress, Math.max(siteMusicDuration, 1))}
+                  onChange={(event) => seekSiteMusic(event.target.value)}
+                  aria-label="Track position"
+                />
+                <span>{formatMusicTime(siteMusicDuration)}</span>
+              </div>
+
+              <div className="plaza-music-controls">
+                <button type="button" onClick={() => skipSiteMusic(-1)} aria-label="Previous track"><SkipBack size={19} /></button>
+                <button type="button" className="plaza-music-play" onClick={toggleSiteMusic} aria-label={siteMusicPlaying ? 'Pause' : 'Play'}>
+                  {siteMusicPlaying ? <Pause size={22} /> : <Play size={22} />}
+                </button>
+                <button type="button" onClick={() => skipSiteMusic(1)} aria-label="Next track"><SkipForward size={19} /></button>
+              </div>
+
+              <div className="plaza-music-volume-row">
+                {siteMusicVolume <= 0.01 ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={siteMusicVolume}
+                  onChange={(event) => changeSiteMusicVolume(event.target.value)}
+                  aria-label="Music volume"
+                />
+              </div>
+
+              <div className="plaza-music-list-head"><ListMusic size={15} /><span>Playlist</span><b>{UPDATE_AUDIO_TRACKS.length}</b></div>
+              <div className="plaza-music-track-list">
+                {UPDATE_AUDIO_TRACKS.map((track, index) => (
+                  <button
+                    type="button"
+                    key={track.id}
+                    className={`plaza-music-track ${index === siteMusicTrackIndex ? 'active' : ''}`}
+                    onClick={() => void playSiteMusicTrack(index, { reset: true })}
+                  >
+                    <span className="plaza-music-track-number">{index === siteMusicTrackIndex && siteMusicPlaying ? <span className="plaza-music-mini-eq" aria-hidden="true"><i/><i/><i/></span> : String(index + 1).padStart(2, '0')}</span>
+                    <span className="plaza-music-track-copy"><strong>{track.title}</strong><small>{track.artist}</small></span>
+                    {index === siteMusicTrackIndex && <span className="plaza-music-current">NOW</span>}
+                  </button>
+                ))}
+              </div>
+              {siteMusicError && <div className="plaza-music-error">{siteMusicError}</div>}
+            </div>
+          ) : (
+            <button type="button" className="plaza-music-compact" onClick={() => setSiteMusicOpen(true)} aria-label={`Open music player. ${siteMusicTrack.title} by ${siteMusicTrack.artist}`}>
+              <span className="plaza-music-compact-icon" aria-hidden="true">
+                {siteMusicPlaying ? <span className="plaza-music-mini-eq"><i/><i/><i/></span> : <Music2 size={17} />}
+              </span>
+              <span className="plaza-music-compact-copy"><small>{siteMusicPlaying ? 'NOW PLAYING' : 'PLAZA MUSIC'}</small><strong>{siteMusicTrack.title}</strong></span>
+              <span className="plaza-music-compact-open"><ChevronUp size={17} /></span>
+            </button>
+          )}
+        </aside>
+      )}
+
       <svg className="liquid-glass-filters" aria-hidden="true" focusable="false">
         <defs>
           <filter id="liquid-glass-refraction" x="-20%" y="-35%" width="140%" height="170%" colorInterpolationFilters="sRGB">
