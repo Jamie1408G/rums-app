@@ -25,8 +25,8 @@ const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_SCREEN_MS = 10000;
-const TUTORIAL_VERSION = 6;
-const JAMIE_TUTORIAL_VERSION = 6;
+const TUTORIAL_VERSION = 7;
+const JAMIE_TUTORIAL_VERSION = 7;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -1373,7 +1373,6 @@ export default function RUMS() {
         title: 'Try the Lumina feed',
         body: 'Tap Lumina now. The feed below will switch to only posts from Project Lumina.',
         screen: 'feed',
-        feedFilter: 'all',
         target: '[data-tutorial-action="lumina-tab"]',
         interaction: { selector: '[data-tutorial-action="lumina-tab"]', label: 'Tap Lumina to continue' },
       } : null,
@@ -1389,7 +1388,6 @@ export default function RUMS() {
         id: 'open-lumina',
         title: 'Open Project Lumina',
         body: 'Tap About Lumina so you can see the dedicated project experience.',
-        screen: 'feed',
         feedFilter: 'lumina',
         target: '[data-tutorial-action="about-lumina"]',
         interaction: { selector: '[data-tutorial-action="about-lumina"]', label: 'Open About Lumina to continue' },
@@ -1609,7 +1607,6 @@ export default function RUMS() {
     let cancelled = false;
     let timer = 0;
     let retryCount = 0;
-    let actionTimer = 0;
     const contentScroller = document.querySelector('.content');
 
     const findVisible = (selector) => {
@@ -1649,12 +1646,9 @@ export default function RUMS() {
         setTutorialActionPulse((value) => value + 1);
         return;
       }
-      // Advance independently of this effect's lifecycle. Required actions often
-      // change the current feed/screen, which tears this effect down immediately.
-      // A zero-delay task lets the actual button click finish first, then advances.
-      actionTimer = window.setTimeout(() => {
-        moveTutorial(1);
-      }, 0);
+      // The required control is allowed to perform its normal action. A separate
+      // state-driven effect advances only after Plaza confirms the requested state.
+      return;
     };
 
     timer = window.setTimeout(() => measure(true), 120);
@@ -1676,6 +1670,30 @@ export default function RUMS() {
       if (step.interaction?.selector) document.removeEventListener('click', blockWrongInteraction, true);
     };
   }, [tutorialActive, tutorialStep, screen, feedFilter, rumsSpace]);
+
+  // Interactive tutorial steps advance from the RESULTING app state, not from
+  // click timing. This survives React rerenders/navigation and also verifies that
+  // the requested action actually happened.
+  useEffect(() => {
+    if (!tutorialActive) return;
+    const steps = buildTutorialSteps();
+    const step = steps[Math.min(tutorialStep, Math.max(0, steps.length - 1))];
+    if (!step?.interaction) return;
+
+    let completed = false;
+    if (step.id === 'try-lumina-filter') completed = screen === 'feed' && feedFilter === 'lumina';
+    else if (step.id === 'open-lumina') completed = screen === 'lumina';
+    else if (step.id === 'open-share') completed = screen === 'upload';
+    else if (step.id === 'open-news') completed = screen === 'news';
+    else if (step.id === 'open-chat') completed = screen === 'chat';
+    else if (step.id === 'try-gif') completed = screen === 'chat' && gifPickerOpen;
+    else if (step.id === 'close-gif') completed = screen === 'chat' && !gifPickerOpen;
+    else if (step.id === 'open-plus') completed = screen === 'plazaPlus';
+
+    if (!completed) return;
+    const id = window.setTimeout(() => moveTutorial(1), 80);
+    return () => window.clearTimeout(id);
+  }, [tutorialActive, tutorialStep, screen, feedFilter, gifPickerOpen]);
 
   useEffect(() => {
     siteConfigRef.current = siteConfig;
