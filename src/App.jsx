@@ -31,7 +31,7 @@ const UPDATE_FADE_MS = 2400;
 const VERSION_COLOR_FADE_MS = 1150;
 const STARTUP_BUILD_MS = 2250;
 const ENTRY_SCREEN_MS = 3200;
-const ENTRY_FADE_MS = 650;
+const ENTRY_FADE_MS = 800;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const HARD_REFRESH_KEY = 'rums-plaza-hard-refresh-revision';
 const HARD_REFRESH_SIGNAL_KEY = 'rums-plaza-hard-refresh-signal';
@@ -47,7 +47,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'community-tab-hover-94';
+const FORCE_UPDATE_REVISION = 'slightly-longer-music-fades-95';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -58,8 +58,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 94;
-const JAMIE_TUTORIAL_VERSION = 94;
+const TUTORIAL_VERSION = 95;
+const JAMIE_TUTORIAL_VERSION = 95;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -1505,7 +1505,7 @@ export default function RUMS() {
     }
   }
 
-  function fadeOutSiteMusic(duration = 350) {
+  function fadeOutSiteMusic(duration = 450) {
     const audio = siteMusicAudioRef.current;
     if (!audio) return;
 
@@ -4105,7 +4105,7 @@ export default function RUMS() {
   }
 
   async function chooseProjectsFromVersionMenu() {
-    fadeOutSiteMusic(350);
+    fadeOutSiteMusic(450);
     void playUiSfx('select');
     await openProjectsDirectory();
     scheduleVersionOpenSound();
@@ -4220,7 +4220,7 @@ export default function RUMS() {
     if (versionMenuSelection) {
       // URL 湖 is version-menu-only music. Stop it the instant a version
       // is chosen so it cannot bleed into the destination opening.
-      fadeOutSiteMusic(350);
+      fadeOutSiteMusic(450);
       void playUiSfx('select');
     }
 
