@@ -47,7 +47,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'mobile-full-music-drawer-100';
+const FORCE_UPDATE_REVISION = 'version-menu-backdrop-101';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -58,8 +58,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 100;
-const JAMIE_TUTORIAL_VERSION = 100;
+const TUTORIAL_VERSION = 101;
+const JAMIE_TUTORIAL_VERSION = 101;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -7735,6 +7735,30 @@ export default function RUMS() {
 
         {screen === 'spaceSelect' && (
           <section className="rums-space-chooser" aria-labelledby="rums-space-title">
+            <div className="space-chooser-backdrop" aria-hidden="true">
+              <div className="space-chooser-aurora"/>
+              <div className="space-chooser-gridwash"/>
+              <span className="space-chooser-orb orb-one"/>
+              <span className="space-chooser-orb orb-two"/>
+              <span className="space-chooser-orb orb-three"/>
+              <span className="space-chooser-orb orb-four"/>
+              <span className="space-chooser-ring ring-one"/>
+              <span className="space-chooser-ring ring-two"/>
+              <div className="space-chooser-floaters">
+                <span className="space-chooser-floater floater-rums4"><b>04</b><small>RUMS 4</small></span>
+                <span className="space-chooser-floater floater-rums5"><b>✦</b><small>Creative</small></span>
+                <span className="space-chooser-floater floater-projects"><b>PR</b><small>Projects</small></span>
+                <span className="space-chooser-floater floater-plaza"><b>R</b><small>Plaza</small></span>
+              </div>
+              <div className="space-chooser-sparkles">
+                <i className="sparkle sparkle-a"/>
+                <i className="sparkle sparkle-b"/>
+                <i className="sparkle sparkle-c"/>
+                <i className="sparkle sparkle-d"/>
+                <i className="sparkle sparkle-e"/>
+              </div>
+            </div>
+
             <div className="entrance-account" aria-label="Account">
               {!entrySessionReady ? <span className="entrance-account-loading">Checking account…</span> : currentUser ? <><span className="entrance-account-user">{avatarNode(currentUser.username, 26, 10)}<span>{currentUser.username}</span></span><button type="button" className="entrance-account-button" onClick={() => void logoutFromEntrance()}>Log out</button></> : <button type="button" className="entrance-account-button primary" onClick={openEntryLogin}>Log in</button>}
             </div>
