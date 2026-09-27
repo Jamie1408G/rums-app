@@ -14058,3 +14058,154 @@ button,input,textarea { font:inherit; }
     max-width:100%!important;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* MOBILE HEADER ROW + CARD LABEL ALIGNMENT — 152                              */
+/* Put the Plaza logo beside the welcome card on phones, and keep each version */
+/* label immediately aligned with its icon instead of drifting toward center.   */
+/* -------------------------------------------------------------------------- */
+
+@media(max-width:700px){
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+    width:100%!important;
+    max-width:520px!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0 auto 24px!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:10px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark{
+    flex:0 0 78px!important;
+    width:78px!important;
+    min-width:78px!important;
+    max-width:78px!important;
+    height:78px!important;
+    min-height:78px!important;
+    max-height:78px!important;
+    border-radius:20px!important;
+    font-size:43px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-title-card{
+    flex:1 1 auto!important;
+    width:auto!important;
+    min-width:0!important;
+    height:auto!important;
+    min-height:112px!important;
+    max-height:none!important;
+    padding:12px 13px 13px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    overflow:visible!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-chooser-title-card .space-chooser-kicker{
+    margin-bottom:3px!important;
+    font-size:8.5px!important;
+    line-height:1!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-chooser-title-card h1{
+    font-size:clamp(21px,5.8vw,27px)!important;
+    line-height:1.02!important;
+    letter-spacing:-.045em!important;
+    white-space:normal!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-chooser-title-card .space-chooser-intro{
+    margin-top:6px!important;
+    font-size:10.5px!important;
+    line-height:1.27!important;
+    max-width:none!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-card{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:14px!important;
+    padding-left:12px!important;
+    padding-right:16px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-number{
+    flex:0 0 52px!important;
+    width:52px!important;
+    min-width:52px!important;
+    height:52px!important;
+    margin:0!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy{
+    position:static!important;
+    inset:auto!important;
+    flex:0 1 auto!important;
+    width:auto!important;
+    height:auto!important;
+    min-width:0!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:left!important;
+    pointer-events:auto!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums4-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums5-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .projects-choice .space-choice-copy strong{
+    width:auto!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:0!important;
+    text-align:left!important;
+    line-height:1!important;
+  }
+}
+
+@media(max-width:430px){
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+    gap:9px!important;
+    margin-bottom:22px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark{
+    flex-basis:72px!important;
+    width:72px!important;
+    min-width:72px!important;
+    max-width:72px!important;
+    height:72px!important;
+    min-height:72px!important;
+    max-height:72px!important;
+    border-radius:19px!important;
+    font-size:40px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-title-card{
+    min-height:108px!important;
+    padding:10px 11px 11px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-chooser-title-card h1{
+    font-size:clamp(20px,5.6vw,24px)!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-chooser-title-card .space-chooser-intro{
+    font-size:10px!important;
+    line-height:1.24!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-card{
+    gap:12px!important;
+  }
+}
