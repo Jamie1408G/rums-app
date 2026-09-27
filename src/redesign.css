@@ -12743,3 +12743,83 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/* FULL BROWSER-FRAME VERSION BACKGROUND — 135                               */
+/* Background is now viewport-fixed, independent from chooser/container size.  */
+/* -------------------------------------------------------------------------- */
+
+.aero-frame > .rums-space-chooser{
+  width:100vw!important;
+  max-width:none!important;
+  min-width:100vw!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+  margin:0!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+}
+
+/* True full-frame image layer. */
+.aero-frame > .rums-space-chooser::before{
+  position:fixed!important;
+  top:0!important;
+  right:0!important;
+  bottom:0!important;
+  left:0!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-width:100vw!important;
+  min-height:100dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0!important;
+  transform-origin:center center!important;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.04),
+      rgba(255,255,255,.02) 42%,
+      rgba(255,255,255,.04)
+    ),
+    url('/images/plaza-version-frutiger-aero.png') center center / cover no-repeat!important;
+  background-attachment:fixed!important;
+}
+
+/* Ensure any parent framing/background cannot peek through around the edges. */
+.aero-frame:has(> .rums-space-chooser){
+  width:100vw!important;
+  max-width:none!important;
+  min-height:100dvh!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  background:transparent!important;
+}
+
+.aero-root:has(.rums-space-chooser){
+  min-height:100dvh!important;
+  background:transparent!important;
+}
+
+/* Mobile uses the same full viewport fill with a more useful crop. */
+@media(max-width:820px){
+  .aero-frame > .rums-space-chooser::before{
+    width:100vw!important;
+    height:100dvh!important;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.03)),
+      url('/images/plaza-version-frutiger-aero.png') 62% center / cover no-repeat!important;
+  }
+}
+
+@media(max-width:480px){
+  .aero-frame > .rums-space-chooser::before{
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.04)),
+      url('/images/plaza-version-frutiger-aero.png') 60% center / cover no-repeat!important;
+  }
+}
+
