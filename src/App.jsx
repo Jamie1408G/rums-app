@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'directional-name-highlight-122';
+const FORCE_UPDATE_REVISION = 'true-square-logo-directional-hover-123';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -59,8 +59,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 122;
-const JAMIE_TUTORIAL_VERSION = 122;
+const TUTORIAL_VERSION = 123;
+const JAMIE_TUTORIAL_VERSION = 123;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -607,6 +607,9 @@ export default function RUMS() {
   const uiSfxContextRef = useRef(null);
   const versionMenuEntryKeyRef = useRef(1);
   const versionMenuStartHandledKeyRef = useRef(0);
+  const versionTitleCardRef = useRef(null);
+  const versionLogoRef = useRef(null);
+  const lastHoveredVersionIndexRef = useRef(null);
   const accountGateEntrySeqRef = useRef(1);
   const accountGateOpenSoundEntryRef = useRef(0);
   const accountGateOpenPlayedRef = useRef(false);
@@ -2144,6 +2147,40 @@ export default function RUMS() {
     const delta = siteMusicSwipeStartYRef.current - Number(event.clientY || 0);
     siteMusicSwipeStartYRef.current = null;
     if (delta > 34) closeSiteMusicIsland();
+  }
+
+  useEffect(() => {
+    const titleCard = versionTitleCardRef.current;
+    const logo = versionLogoRef.current;
+    if (!titleCard || !logo || screen !== 'spaceSelect') return undefined;
+
+    const syncLogoSquare = () => {
+      const height = Math.round(titleCard.getBoundingClientRect().height);
+      if (!height) return;
+      logo.style.width = `${height}px`;
+      logo.style.height = `${height}px`;
+      logo.style.minWidth = `${height}px`;
+      logo.style.flexBasis = `${height}px`;
+    };
+
+    syncLogoSquare();
+
+    const observer = new ResizeObserver(syncLogoSquare);
+    observer.observe(titleCard);
+    window.addEventListener('resize', syncLogoSquare);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', syncLogoSquare);
+    };
+  }, [screen]);
+
+  function handleVersionCardHover(event, index) {
+    const previousIndex = lastHoveredVersionIndexRef.current;
+    const direction = previousIndex !== null && index < previousIndex ? 'reverse' : 'forward';
+    event.currentTarget.dataset.highlightDirection = direction;
+    lastHoveredVersionIndexRef.current = index;
+    playHoverSound();
   }
 
   function renderMobileHeaderMusicIsland() {
@@ -7784,23 +7821,23 @@ export default function RUMS() {
               {!entrySessionReady ? <span className="entrance-account-loading">Checking account…</span> : currentUser ? <><span className="entrance-account-user">{avatarNode(currentUser.username, 26, 10)}<span>{currentUser.username}</span></span><button type="button" className="entrance-account-button" onClick={() => void logoutFromEntrance()}>Log out</button></> : <button type="button" className="entrance-account-button primary" onClick={openEntryLogin}>Log in</button>}
             </div>
             <div className="space-chooser-title-cluster">
-              <div className="space-chooser-mark">R</div>
-              <div className="space-chooser-title-card">
+              <div ref={versionLogoRef} className="space-chooser-mark">R</div>
+              <div ref={versionTitleCardRef} className="space-chooser-title-card">
                 <span className="space-chooser-kicker">RUMS PLAZA</span>
                 <h1 id="rums-space-title">Welcome to RUMS Plaza</h1>
                 <p className="space-chooser-intro">Choose where you want to enter. Projects opens a directory of community-made spaces inside RUMS 4, Creative and outside RUMS.</p>
               </div>
             </div>
             <div className="space-choice-grid">
-              <button type="button" className="space-choice-card rums4-choice" onMouseEnter={playHoverSound} onClick={() => chooseRumsSpace('rums4', { versionMenuSelection: true })}>
+              <button type="button" className="space-choice-card rums4-choice" data-highlight-direction="forward" onMouseEnter={(event) => handleVersionCardHover(event, 0)} onClick={() => chooseRumsSpace('rums4', { versionMenuSelection: true })}>
                 <span className="space-choice-number">04</span>
                 <span className="space-choice-copy"><strong>RUMS 4</strong></span>
               </button>
-              <button type="button" className="space-choice-card rums5-choice" onMouseEnter={playHoverSound} onClick={() => chooseRumsSpace('rums5', { versionMenuSelection: true })}>
+              <button type="button" className="space-choice-card rums5-choice" data-highlight-direction="forward" onMouseEnter={(event) => handleVersionCardHover(event, 1)} onClick={() => chooseRumsSpace('rums5', { versionMenuSelection: true })}>
                 <span className="space-choice-number">✦</span>
                 <span className="space-choice-copy"><strong>Creative</strong></span>
               </button>
-              <button type="button" className="space-choice-card projects-choice" onMouseEnter={playHoverSound} onClick={() => void chooseProjectsFromVersionMenu()}>
+              <button type="button" className="space-choice-card projects-choice" data-highlight-direction="forward" onMouseEnter={(event) => handleVersionCardHover(event, 2)} onClick={() => void chooseProjectsFromVersionMenu()}>
                 <span className="space-choice-number">PR</span>
                 <span className="space-choice-copy"><strong>Projects</strong></span>
               </button>

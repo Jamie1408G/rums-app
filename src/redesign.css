@@ -12148,3 +12148,66 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/* TRUE SQUARE LOGO + DIRECTION-AWARE VERSION HIGHLIGHT — 123                 */
+/* -------------------------------------------------------------------------- */
+
+/*
+  JS now measures the actual Welcome card height and writes that exact pixel
+  value to both logo width and height. These rules only stop old flex/aspect
+  rules from fighting the measured dimensions.
+*/
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark{
+  aspect-ratio:auto!important;
+  align-self:flex-start!important;
+  max-width:none!important;
+  max-height:none!important;
+  flex-grow:0!important;
+  flex-shrink:0!important;
+}
+
+/*
+  FORWARD:
+    hover enters from LEFT -> RIGHT
+    mouse leaves out toward the RIGHT
+*/
+.aero-frame > .rums-space-chooser .space-choice-card[data-highlight-direction="forward"] .space-choice-copy strong::before{
+  transform:scaleX(0)!important;
+  transform-origin:right center!important;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-card[data-highlight-direction="forward"]:hover .space-choice-copy strong::before,
+.aero-frame > .rums-space-chooser .space-choice-card[data-highlight-direction="forward"]:focus-visible .space-choice-copy strong::before{
+  transform:scaleX(1)!important;
+  transform-origin:left center!important;
+}
+
+/*
+  REVERSE:
+    hover enters from RIGHT -> LEFT
+    mouse leaves out toward the LEFT
+*/
+.aero-frame > .rums-space-chooser .space-choice-card[data-highlight-direction="reverse"] .space-choice-copy strong::before{
+  transform:scaleX(0)!important;
+  transform-origin:left center!important;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-card[data-highlight-direction="reverse"]:hover .space-choice-copy strong::before,
+.aero-frame > .rums-space-chooser .space-choice-card[data-highlight-direction="reverse"]:focus-visible .space-choice-copy strong::before{
+  transform:scaleX(1)!important;
+  transform-origin:right center!important;
+}
+
+/* Same smooth timing in either direction. */
+.aero-frame > .rums-space-chooser .space-choice-copy strong::before{
+  transition:transform .46s cubic-bezier(.20,.72,.18,1)!important;
+}
+
+@media(hover:none){
+  .aero-frame > .rums-space-chooser .space-choice-card[data-highlight-direction] .space-choice-copy strong::before{
+    transform:scaleX(0)!important;
+  }
+}
+
