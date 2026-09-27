@@ -47,7 +47,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'mobile-audio-island-fix-97';
+const FORCE_UPDATE_REVISION = 'mobile-icon-switcher-music-island-98';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -58,8 +58,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 97;
-const JAMIE_TUTORIAL_VERSION = 97;
+const TUTORIAL_VERSION = 98;
+const JAMIE_TUTORIAL_VERSION = 98;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -2132,20 +2132,51 @@ export default function RUMS() {
     if (!currentUser || !rumsSpace) return null;
 
     return (
-      <button
-        type="button"
+      <div
         className={`mobile-header-music-island track-${siteMusicTrackIndex} ${siteMusicPlaying ? 'is-playing' : 'is-paused'}`}
-        data-music-control="toggle"
-        onClick={toggleSiteMusic}
-        aria-label={siteMusicPlaying ? `Pause ${siteMusicTrack.title}` : `Play ${siteMusicTrack.title}`}
-        title={`${siteMusicTrack.title} · ${siteMusicTrack.artist}`}
+        aria-label={`${siteMusicTrack.title} by ${siteMusicTrack.artist}`}
       >
-        <span className="mobile-header-music-orb" aria-hidden="true">
+        <span className="mobile-header-music-art" aria-hidden="true">
           {siteMusicPlaying
             ? <span className="plaza-music-mini-eq"><i/><i/><i/></span>
-            : <Music2 size={16}/>}
+            : <Music2 size={14}/>}
         </span>
-      </button>
+
+        <span className="mobile-header-music-copy">
+          <small>{siteMusicPlaying ? 'NOW PLAYING' : 'PLAZA MUSIC'}</small>
+          <strong>{siteMusicTrack.title}</strong>
+        </span>
+
+        <span className="mobile-header-music-controls">
+          <button
+            type="button"
+            data-music-control="previous"
+            onClick={() => skipSiteMusic(-1)}
+            aria-label="Previous track"
+          >
+            <SkipBack size={11}/>
+          </button>
+
+          <button
+            type="button"
+            className="mobile-header-music-play"
+            data-music-control="toggle"
+            onClick={toggleSiteMusic}
+            aria-label={siteMusicPlaying ? 'Pause music' : 'Play music'}
+          >
+            {siteMusicPlaying ? <Pause size={12}/> : <Play size={12}/>}
+          </button>
+
+          <button
+            type="button"
+            data-music-control="next"
+            onClick={() => skipSiteMusic(1)}
+            aria-label="Next track"
+          >
+            <SkipForward size={11}/>
+          </button>
+        </span>
+      </div>
     );
   }
 
@@ -7155,6 +7186,39 @@ export default function RUMS() {
     );
   }
 
+  function renderMobileVersionIcons() {
+    const visualVersion = spaceSwitchBusy || (isProjectSpace ? 'projects' : rumsSpace);
+    const options = [
+      ['rums4', '04', 'RUMS 4'],
+      ['rums5', '✦', 'Creative'],
+      ['projects', 'PR', 'Projects'],
+    ];
+
+    return (
+      <div className="mobile-version-icons" role="group" aria-label="Switch Plaza version">
+        {options.map(([id, glyph, label]) => (
+          <button
+            key={id}
+            type="button"
+            className={`mobile-version-icon mobile-version-icon-${id} ${visualVersion === id ? 'active' : ''}`}
+            aria-label={`Open ${label}`}
+            aria-pressed={visualVersion === id}
+            disabled={Boolean(spaceSwitchBusy)}
+            onClick={() => {
+              if (!spaceSwitchBusy && (id === 'projects' || rumsSpace !== id)) {
+                void switchRumsSpace(id);
+              }
+            }}
+          >
+            {spaceSwitchBusy === id
+              ? <Loader2 size={13} className="spin" />
+              : <span aria-hidden="true">{glyph}</span>}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   function renderVisualEditToolbar() {
     return (
       <div className="visual-edit-toolbar">
@@ -7682,7 +7746,7 @@ export default function RUMS() {
             </aside>
             <div className="aero-header">
               <div className="aero-brand aero-brand-version-switch mobile-version-switcher">
-                {renderRumsVersionSwitcher()}
+                {renderMobileVersionIcons()}
               </div>
               <div className="aero-header-center">
                 <div className="header-center-control-stack">

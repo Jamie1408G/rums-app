@@ -9020,3 +9020,358 @@ button,input,textarea { font:inherit; }
     linear-gradient(145deg,rgba(55,67,84,.86),rgba(34,45,59,.8));
 }
 
+/* -------------------------------------------------------------------------- */
+/* MOBILE ICON VERSION SWITCHER + FULL MINI MUSIC ISLAND — 98                 */
+/* -------------------------------------------------------------------------- */
+
+@media(max-width:760px){
+  /*
+    Header layout:
+      04 / ✦ / PR icons  |  flexible desktop-style music island  |  menu
+  */
+  .aero-root .aero-header{
+    grid-template-columns:102px minmax(0,1fr) 40px!important;
+    grid-template-rows:auto!important;
+    align-items:center!important;
+    gap:6px!important;
+    padding:7px 8px!important;
+  }
+
+  .aero-root .aero-brand-version-switch{
+    grid-column:1!important;
+    grid-row:1!important;
+    width:102px!important;
+    min-width:102px!important;
+    max-width:102px!important;
+    overflow:visible!important;
+  }
+
+  /*
+    Mobile version control no longer uses the desktop text/drag slider.
+    These identifiers are the exact visual marks from the Welcome cards.
+  */
+  .aero-root .mobile-version-icons{
+    width:102px;
+    height:42px;
+    display:grid;
+    grid-template-columns:repeat(3,32px);
+    align-items:center;
+    gap:3px;
+    padding:3px;
+    border:1px solid rgba(255,255,255,.82);
+    border-radius:14px;
+    background:
+      radial-gradient(circle at 22% -20%,rgba(255,255,255,.98),transparent 43%),
+      linear-gradient(145deg,rgba(255,255,255,.72),rgba(228,241,252,.62));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.92),
+      0 5px 13px rgba(43,80,123,.09);
+    backdrop-filter:blur(18px) saturate(1.32);
+    -webkit-backdrop-filter:blur(18px) saturate(1.32);
+  }
+
+  .aero-root .mobile-version-icon{
+    width:32px;
+    height:34px;
+    display:grid;
+    place-items:center;
+    padding:0;
+    border:1px solid transparent;
+    border-radius:10px;
+    color:var(--theme-muted,#687a8f);
+    background:transparent;
+    font:inherit;
+    cursor:pointer;
+    transition:
+      transform .14s cubic-bezier(.16,1.35,.3,1),
+      color .14s ease,
+      background .14s ease,
+      box-shadow .14s ease;
+  }
+
+  .aero-root .mobile-version-icon > span{
+    display:block;
+    line-height:1;
+    font-size:10px;
+    font-weight:950;
+    letter-spacing:-.035em;
+  }
+
+  .aero-root .mobile-version-icon-rums5 > span{
+    font-size:14px;
+  }
+
+  .aero-root .mobile-version-icon.active{
+    color:#245d98;
+    border-color:rgba(255,255,255,.94);
+    background:
+      radial-gradient(circle at 30% 8%,#fff,transparent 38%),
+      linear-gradient(145deg,rgba(255,255,255,.92),rgba(216,237,255,.76));
+    box-shadow:
+      inset 0 1px 0 #fff,
+      0 3px 8px rgba(48,91,139,.11);
+  }
+
+  .aero-root .mobile-version-icon:active{
+    transform:scale(.91);
+  }
+
+  .aero-root .mobile-version-icon:disabled{
+    opacity:.68;
+  }
+
+  /* Flexible center music column. */
+  .aero-root .mobile-header-music-slot{
+    grid-column:2!important;
+    grid-row:1!important;
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    height:42px!important;
+  }
+
+  .aero-root .mobile-header-menu-button{
+    grid-column:3!important;
+    grid-row:1!important;
+    width:40px!important;
+    min-width:40px!important;
+  }
+
+  .aero-root .mobile-header-music-island{
+    position:relative;
+    display:grid!important;
+    grid-template-columns:28px minmax(0,1fr) 79px;
+    align-items:center;
+    gap:5px;
+    width:100%!important;
+    min-width:0!important;
+    height:42px!important;
+    padding:4px 5px!important;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.84);
+    border-radius:14px;
+    color:var(--theme-text,#29415d);
+    background:
+      radial-gradient(circle at 18% -18%,rgba(255,255,255,.98),transparent 42%),
+      linear-gradient(145deg,rgba(255,255,255,.8),rgba(226,240,253,.68));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.92),
+      inset -1px -2px 4px rgba(68,104,145,.06),
+      0 5px 13px rgba(43,80,123,.11);
+    backdrop-filter:blur(18px) saturate(1.35);
+    -webkit-backdrop-filter:blur(18px) saturate(1.35);
+  }
+
+  .aero-root .mobile-header-music-art{
+    width:28px;
+    height:28px;
+    display:grid;
+    place-items:center;
+    border:1px solid rgba(255,255,255,.72);
+    border-radius:9px;
+    color:#fff;
+    background:linear-gradient(145deg,#4f9eff,#72d7ff 58%,#8e80ff);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.56),
+      0 3px 8px rgba(54,99,150,.15);
+  }
+
+  .aero-root .mobile-header-music-island.track-1 .mobile-header-music-art{background:linear-gradient(145deg,#ff8880,#ffc77c 58%,#ffe39b)}
+  .aero-root .mobile-header-music-island.track-2 .mobile-header-music-art{background:linear-gradient(145deg,#74dfba,#72d6ef 54%,#87a8ff)}
+  .aero-root .mobile-header-music-island.track-3 .mobile-header-music-art{background:linear-gradient(145deg,#bd8cff,#ff90c9 55%,#ffc08b)}
+  .aero-root .mobile-header-music-island.track-4 .mobile-header-music-art{background:linear-gradient(145deg,#72e1ff,#6699ff 52%,#8c78ff)}
+
+  .aero-root .mobile-header-music-copy{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    overflow:hidden;
+    line-height:1;
+  }
+
+  .aero-root .mobile-header-music-copy small{
+    margin-bottom:3px;
+    overflow:hidden;
+    color:var(--theme-muted,#70839a);
+    font-size:6.5px;
+    font-weight:950;
+    letter-spacing:.07em;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+  }
+
+  .aero-root .mobile-header-music-copy strong{
+    overflow:hidden;
+    color:var(--theme-text,#29415d);
+    font-size:9px;
+    font-weight:900;
+    line-height:1.05;
+    white-space:nowrap;
+    text-overflow:ellipsis;
+  }
+
+  .aero-root .mobile-header-music-controls{
+    display:grid;
+    grid-template-columns:23px 27px 23px;
+    align-items:center;
+    gap:3px;
+    width:79px;
+    min-width:79px;
+  }
+
+  .aero-root .mobile-header-music-controls button{
+    width:23px;
+    height:23px;
+    display:grid;
+    place-items:center;
+    padding:0;
+    border:1px solid rgba(255,255,255,.82);
+    border-radius:8px;
+    color:#365c7d;
+    background:
+      radial-gradient(circle at 28% 10%,rgba(255,255,255,.98),transparent 38%),
+      linear-gradient(145deg,rgba(255,255,255,.72),rgba(225,239,252,.58));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.9),
+      0 2px 6px rgba(42,79,119,.07);
+    cursor:pointer;
+    transition:transform .13s cubic-bezier(.16,1.35,.3,1);
+  }
+
+  .aero-root .mobile-header-music-controls .mobile-header-music-play{
+    width:27px;
+    height:27px;
+    border-radius:9px;
+    color:#2f6ba6;
+  }
+
+  .aero-root .mobile-header-music-controls button:active{
+    transform:scale(.90);
+  }
+
+  .aero-root.version-build-active .mobile-version-icons{
+    animation:wiiPieceControl .40s .76s cubic-bezier(.14,1.5,.28,1) both;
+  }
+
+  .aero-root.version-build-active .mobile-header-music-slot{
+    animation:wiiPieceControl .40s .88s cubic-bezier(.14,1.5,.28,1) both;
+  }
+
+  .aero-root.screen-chat .aero-header{
+    grid-template-columns:102px minmax(0,1fr) 40px!important;
+    grid-template-rows:auto!important;
+  }
+}
+
+/* Narrow phones: protect the transport controls first, sacrifice title copy. */
+@media(max-width:365px){
+  .aero-root .aero-header{
+    grid-template-columns:96px minmax(0,1fr) 38px!important;
+    gap:5px!important;
+    padding-left:6px!important;
+    padding-right:6px!important;
+  }
+
+  .aero-root .aero-brand-version-switch{
+    width:96px!important;
+    min-width:96px!important;
+    max-width:96px!important;
+  }
+
+  .aero-root .mobile-version-icons{
+    width:96px!important;
+    grid-template-columns:repeat(3,30px)!important;
+    gap:1px!important;
+  }
+
+  .aero-root .mobile-version-icon{
+    width:30px!important;
+  }
+
+  .aero-root .mobile-header-menu-button{
+    width:38px!important;
+    min-width:38px!important;
+  }
+
+  .aero-root .mobile-header-music-island{
+    grid-template-columns:26px minmax(0,1fr) 73px!important;
+    gap:3px!important;
+    padding-left:4px!important;
+    padding-right:4px!important;
+  }
+
+  .aero-root .mobile-header-music-art{
+    width:26px!important;
+    height:26px!important;
+  }
+
+  .aero-root .mobile-header-music-controls{
+    grid-template-columns:21px 25px 21px!important;
+    gap:3px!important;
+    width:73px!important;
+    min-width:73px!important;
+  }
+
+  .aero-root .mobile-header-music-controls button{
+    width:21px!important;
+    height:21px!important;
+  }
+
+  .aero-root .mobile-header-music-controls .mobile-header-music-play{
+    width:25px!important;
+    height:25px!important;
+  }
+
+  .aero-root .mobile-header-music-copy small{
+    display:none!important;
+  }
+
+  .aero-root .mobile-header-music-copy strong{
+    font-size:8px!important;
+  }
+}
+
+@media(max-width:335px){
+  .aero-root .mobile-header-music-copy{
+    display:none!important;
+  }
+
+  .aero-root .mobile-header-music-island{
+    grid-template-columns:26px 73px!important;
+    justify-content:space-between!important;
+  }
+}
+
+.aero-root[data-theme="dark"] .mobile-version-icons,
+.aero-root[data-theme="dark"] .mobile-header-music-island{
+  border-color:rgba(255,255,255,.12);
+  background:
+    radial-gradient(circle at 22% -15%,rgba(255,255,255,.1),transparent 42%),
+    linear-gradient(145deg,rgba(55,67,84,.86),rgba(34,45,59,.8));
+}
+
+.aero-root[data-theme="dark"] .mobile-version-icon{
+  color:#98aabd;
+}
+
+.aero-root[data-theme="dark"] .mobile-version-icon.active{
+  color:#9bd0ff;
+  border-color:rgba(255,255,255,.12);
+  background:
+    radial-gradient(circle at 30% 8%,rgba(255,255,255,.12),transparent 38%),
+    linear-gradient(145deg,rgba(61,73,91,.9),rgba(41,53,68,.82));
+}
+
+.aero-root[data-theme="dark"] .mobile-header-music-copy strong{
+  color:#eef5ff;
+}
+
+.aero-root[data-theme="dark"] .mobile-header-music-controls button{
+  color:#e6f2ff;
+  border-color:rgba(255,255,255,.12);
+  background:
+    radial-gradient(circle at 28% 10%,rgba(255,255,255,.1),transparent 38%),
+    linear-gradient(145deg,rgba(61,73,91,.86),rgba(40,51,65,.8));
+}
+
