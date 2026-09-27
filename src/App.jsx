@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'normal-loading-10s-synced-indicator-144';
+const FORCE_UPDATE_REVISION = 'normal-loading-full-bar-145';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -7715,8 +7715,7 @@ export default function RUMS() {
 
               <div className="site-entry-progress" aria-hidden="true">
                 <div className="site-entry-progress-track">
-                  <span className="site-entry-progress-fill" />
-                  <span className="site-entry-progress-orb" />
+                  <span className="site-entry-progress-fill"><span className="site-entry-progress-orb" /></span>
                 </div>
                 <div className="site-entry-progress-labels">
                   <span>Account</span>
