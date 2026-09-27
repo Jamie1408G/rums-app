@@ -13428,3 +13428,47 @@ button,input,textarea { font:inherit; }
     font-size:17.5px!important;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* DESKTOP VERSION CARD CONTENT CENTERING — 141                              */
+/* Keep the mobile composition untouched; center each badge + label as a unit. */
+/* -------------------------------------------------------------------------- */
+
+@media(min-width:821px){
+  .aero-frame > .rums-space-chooser .space-choice-card{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:18px!important;
+    text-align:center!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-number{
+    flex:0 0 58px!important;
+    width:58px!important;
+    min-width:58px!important;
+    height:58px!important;
+    margin:0!important;
+    align-self:center!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy{
+    width:auto!important;
+    min-width:0!important;
+    min-height:0!important;
+    margin:0!important;
+    align-self:center!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums4-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums5-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .projects-choice .space-choice-copy strong{
+    margin:0!important;
+    text-align:center!important;
+  }
+}
