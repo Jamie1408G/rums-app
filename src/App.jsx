@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'full-frame-background-135';
+const FORCE_UPDATE_REVISION = 'background-hover-blur-136';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -59,8 +59,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 135;
-const JAMIE_TUTORIAL_VERSION = 135;
+const TUTORIAL_VERSION = 136;
+const JAMIE_TUTORIAL_VERSION = 136;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -2149,12 +2149,15 @@ export default function RUMS() {
 
   function handleVersionCardHover(event, index) {
     const card = event.currentTarget;
+    const chooser = card.closest('.rums-space-chooser');
     const previousIndex = lastHoveredVersionIndexRef.current;
 
     if (card._highlightResetTimer) {
       window.clearTimeout(card._highlightResetTimer);
       card._highlightResetTimer = 0;
     }
+
+    chooser?.classList.add('version-card-hover-active');
 
     let direction = 'forward';
 
@@ -2179,6 +2182,9 @@ export default function RUMS() {
 
   function handleVersionCardLeave(event, index) {
     const card = event.currentTarget;
+    const chooser = card.closest('.rums-space-chooser');
+
+    chooser?.classList.remove('version-card-hover-active');
 
     if (card._highlightResetTimer) {
       window.clearTimeout(card._highlightResetTimer);

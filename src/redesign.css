@@ -12823,3 +12823,56 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/* SMOOTH FULL-BACKGROUND BLUR ON VERSION HOVER — 136                         */
+/* -------------------------------------------------------------------------- */
+
+/* Background layer gets a slow, soft blur transition. */
+.aero-frame > .rums-space-chooser::before{
+  transition:
+    filter .62s cubic-bezier(.20,.72,.18,1),
+    transform .62s cubic-bezier(.20,.72,.18,1),
+    opacity .62s ease!important;
+  will-change:filter,transform;
+}
+
+/* Hovering any version softly defocuses the scene behind the Plaza UI. */
+.aero-frame > .rums-space-chooser.version-card-hover-active::before{
+  filter:blur(8px)!important;
+  transform:scale(1.018)!important;
+}
+
+/* Keep all live UI perfectly sharp. */
+.aero-frame > .rums-space-chooser.version-card-hover-active > *{
+  filter:none!important;
+}
+
+/* Do not fight the opening blur->sharp reveal if hover happens mid-reveal. */
+.aero-root.version-background-reveal-active .rums-space-chooser.version-card-hover-active::before,
+.aero-root.startup-reveal-active .rums-space-chooser.version-card-hover-active::before{
+  animation:none!important;
+  opacity:1!important;
+  filter:blur(8px)!important;
+  transform:scale(1.018)!important;
+}
+
+@media(hover:none){
+  .aero-frame > .rums-space-chooser.version-card-hover-active::before{
+    filter:none!important;
+    transform:none!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .aero-frame > .rums-space-chooser::before{
+    transition:none!important;
+  }
+
+  .aero-frame > .rums-space-chooser.version-card-hover-active::before{
+    filter:blur(8px)!important;
+    transform:none!important;
+  }
+}
+
