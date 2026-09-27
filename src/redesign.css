@@ -12703,3 +12703,26 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/* LOWER WELCOME + PLAZA LOGO CLUSTER — 133                                  */
+/* Move the header cluster down without touching the bottom version cards.     */
+/* -------------------------------------------------------------------------- */
+
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+  transform:translateY(26px)!important;
+}
+
+@media(max-width:820px){
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+    transform:translateY(18px)!important;
+  }
+}
+
+@media(max-width:560px){
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+    transform:translateY(14px)!important;
+  }
+}
+
