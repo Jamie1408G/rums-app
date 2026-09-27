@@ -12261,3 +12261,63 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/* WELCOME HEADER OVERLAP FIX — 125                                           */
+/* Keep the square logo exactly as-is; only fix horizontal separation.        */
+/* -------------------------------------------------------------------------- */
+
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+  display:grid!important;
+  grid-template-columns:max-content minmax(0,1fr)!important;
+  column-gap:16px!important;
+  align-items:stretch!important;
+  justify-content:center!important;
+}
+
+/* Logo stays in its own dedicated grid column. */
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark{
+  grid-column:1!important;
+  grid-row:1!important;
+  position:relative!important;
+  z-index:2!important;
+  margin:0!important;
+}
+
+/* Welcome card is constrained to column two and may not slide underneath. */
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-title-card{
+  grid-column:2!important;
+  grid-row:1!important;
+  min-width:0!important;
+  width:auto!important;
+  max-width:680px!important;
+  margin:0!important;
+  position:relative!important;
+  z-index:1!important;
+  box-sizing:border-box!important;
+}
+
+/*
+  Older rules used width:min(...) on the title card/cluster.
+  Give the row enough room for both the square logo and card plus the gap.
+*/
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+  width:min(820px,calc(100% - 24px))!important;
+  max-width:820px!important;
+  box-sizing:border-box!important;
+}
+
+@media(max-width:820px){
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+    column-gap:12px!important;
+    width:min(560px,100%)!important;
+  }
+}
+
+@media(max-width:560px){
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+    column-gap:9px!important;
+  }
+}
+
