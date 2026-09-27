@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'welcome-fit-matched-logo-128';
+const FORCE_UPDATE_REVISION = 'first-hover-direction-129';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -59,8 +59,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 128;
-const JAMIE_TUTORIAL_VERSION = 128;
+const TUTORIAL_VERSION = 129;
+const JAMIE_TUTORIAL_VERSION = 129;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -2151,8 +2151,17 @@ export default function RUMS() {
     const previousIndex = lastHoveredVersionIndexRef.current;
 
     let direction = 'forward';
-    if (previousIndex !== null) {
-      direction = index > previousIndex ? 'forward' : index < previousIndex ? 'reverse' : event.currentTarget.dataset.highlightDirection || 'forward';
+
+    if (previousIndex === null) {
+      // First hovered card gets a fixed default based on its position.
+      // RUMS 4 = left -> right, Projects = right -> left.
+      direction = index === 2 ? 'reverse' : 'forward';
+    } else {
+      direction = index > previousIndex
+        ? 'forward'
+        : index < previousIndex
+          ? 'reverse'
+          : event.currentTarget.dataset.highlightDirection || 'forward';
     }
 
     event.currentTarget.dataset.highlightDirection = direction;
