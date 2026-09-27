@@ -30,9 +30,9 @@ const UPDATE_SCREEN_MS = 10000;
 const UPDATE_FADE_MS = 2400;
 const VERSION_COLOR_FADE_MS = 1150;
 const STARTUP_BUILD_MS = 2250;
-const ENTRY_SCREEN_MS = 3200;
+const ENTRY_SCREEN_MS = 14200;
 const ENTRY_FADE_MS = 800;
-const ENTRY_MUSIC_FADE_MS = 1150;
+const ENTRY_MUSIC_FADE_MS = 1250;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const HARD_REFRESH_KEY = 'rums-plaza-hard-refresh-revision';
 const HARD_REFRESH_SIGNAL_KEY = 'rums-plaza-hard-refresh-signal';
@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'normal-loading-overhaul-142';
+const FORCE_UPDATE_REVISION = 'normal-loading-duration-143';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },

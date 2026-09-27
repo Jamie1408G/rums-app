@@ -13741,7 +13741,7 @@ button,input,textarea { font:inherit; }
   border-radius:inherit;
   background:linear-gradient(90deg,#5bbdff,#3a88ff 64%,#65d5b4);
   box-shadow:0 0 16px rgba(60,145,245,.32);
-  animation:plazaEntryProgressFill142 2.8s cubic-bezier(.55,.02,.22,1) infinite;
+  animation:plazaEntryProgressFill142 14.2s cubic-bezier(.42,0,.18,1) 1 forwards;
 }
 .site-entry-progress-orb{
   position:absolute;
@@ -13754,7 +13754,7 @@ button,input,textarea { font:inherit; }
   border-radius:50%;
   background:#4ea7ff;
   box-shadow:0 3px 12px rgba(50,116,207,.28),inset 0 1px rgba(255,255,255,.85);
-  animation:plazaEntryProgressOrb142 2.8s cubic-bezier(.55,.02,.22,1) infinite;
+  animation:plazaEntryProgressOrb142 14.2s cubic-bezier(.42,0,.18,1) 1 forwards;
 }
 .site-entry-progress-labels{display:flex;justify-content:space-between;margin-top:9px;color:#8193a6;font-size:10px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;}
 
