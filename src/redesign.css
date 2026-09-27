@@ -10274,3 +10274,440 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+/* -------------------------------------------------------------------------- */
+/* VERSION MENU MATCHES REFERENCE IMAGE — 110                                 */
+/* Uses the generated Frutiger Aero skyline as the actual menu background and */
+/* rebuilds the live UI to follow the mockup much more closely.               */
+/* -------------------------------------------------------------------------- */
+
+.aero-frame > .rums-space-chooser{
+  position:relative!important;
+  isolation:isolate!important;
+  min-height:100dvh!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  padding:48px 28px 52px!important;
+  overflow:hidden!important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03) 36%, rgba(255,255,255,.04) 100%),
+    url('/images/plaza-version-frutiger-aero.png') center center / cover no-repeat!important;
+  color:#0a3c6a!important;
+}
+
+.aero-frame > .rums-space-chooser::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 16% 14%, rgba(255,255,255,.30) 0 2%, rgba(255,255,255,.12) 3% 7%, transparent 14%),
+    linear-gradient(180deg, rgba(255,255,255,.02) 0%, rgba(255,255,255,.06) 38%, rgba(228,255,237,.10) 100%);
+}
+
+.aero-frame > .rums-space-chooser > *{
+  position:relative;
+  z-index:2;
+}
+
+.aero-frame > .rums-space-chooser .entrance-account{
+  position:relative!important;
+  top:auto!important;
+  right:auto!important;
+  left:auto!important;
+  transform:none!important;
+  margin:0 0 34px!important;
+  min-height:auto!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:14px!important;
+  padding:10px 12px!important;
+  border-radius:999px!important;
+  border:1px solid rgba(255,255,255,.84)!important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.42), rgba(227,243,255,.22)),
+    rgba(255,255,255,.18)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.96),
+    0 14px 34px rgba(13,88,138,.14),
+    0 0 0 4px rgba(255,255,255,.10)!important;
+  backdrop-filter:blur(14px) saturate(1.18)!important;
+  -webkit-backdrop-filter:blur(14px) saturate(1.18)!important;
+}
+
+.aero-frame > .rums-space-chooser .entrance-account-user{
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  min-height:52px!important;
+  padding:7px 18px 7px 8px!important;
+  border-radius:999px!important;
+  border:1px solid rgba(255,255,255,.88)!important;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255,255,255,.94), transparent 38%),
+    linear-gradient(180deg, rgba(255,255,255,.62), rgba(212,237,250,.45))!important;
+  color:#123e75!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    0 8px 22px rgba(16,96,148,.11)!important;
+  font-size:18px!important;
+  font-weight:800!important;
+  max-width:none!important;
+}
+
+.aero-frame > .rums-space-chooser .entrance-account-user .avatar,
+.aero-frame > .rums-space-chooser .entrance-account-user > :first-child{
+  width:38px!important;
+  height:38px!important;
+  flex:0 0 38px!important;
+}
+
+.aero-frame > .rums-space-chooser .entrance-account-button{
+  min-height:52px!important;
+  padding:8px 22px!important;
+  border-radius:999px!important;
+  border:1px solid rgba(255,255,255,.88)!important;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(255,255,255,.92), transparent 40%),
+    linear-gradient(180deg, rgba(255,255,255,.66), rgba(217,236,251,.46))!important;
+  color:#123e75!important;
+  font-size:16px!important;
+  font-weight:800!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    0 8px 22px rgba(16,96,148,.11)!important;
+}
+
+.aero-frame > .rums-space-chooser .entrance-account-button::after{
+  content:"›";
+  display:inline-block;
+  margin-left:10px;
+  font-size:20px;
+  line-height:1;
+  transform:translateY(1px);
+  opacity:.92;
+}
+
+.aero-frame > .rums-space-chooser .space-chooser-mark{
+  width:146px!important;
+  height:146px!important;
+  margin:6px 0 16px!important;
+  border-radius:34px!important;
+  border:2px solid rgba(255,255,255,.94)!important;
+  background:
+    radial-gradient(circle at 28% 16%, rgba(255,255,255,.96) 0 7%, rgba(255,255,255,.38) 8% 20%, transparent 30%),
+    linear-gradient(145deg, #73dcff 0%, #2ca8ff 44%, #2a78ff 66%, #5ce0c2 100%)!important;
+  color:#ffffff!important;
+  font-size:88px!important;
+  font-weight:900!important;
+  box-shadow:
+    inset 0 2px 2px rgba(255,255,255,.98),
+    inset -4px -6px 12px rgba(19,86,151,.18),
+    0 22px 52px rgba(15,88,141,.25),
+    0 0 0 6px rgba(255,255,255,.12)!important;
+  text-shadow:0 2px 2px rgba(0,71,127,.16);
+}
+
+.aero-frame > .rums-space-chooser .space-chooser-mark::after{
+  content:"";
+  position:absolute;
+  width:156px;
+  height:88px;
+  right:-24px;
+  bottom:16px;
+  border:4px solid rgba(240,251,255,.76);
+  border-left-color:transparent;
+  border-top-color:transparent;
+  border-radius:50%;
+  transform:rotate(-10deg);
+  pointer-events:none;
+  box-shadow:0 0 18px rgba(255,255,255,.24);
+}
+
+.aero-frame > .rums-space-chooser .space-chooser-kicker{
+  margin:0 0 6px!important;
+  color:#1275a1!important;
+  font-size:15px!important;
+  font-weight:950!important;
+  letter-spacing:.23em!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.9), 0 0 12px rgba(255,255,255,.42)!important;
+}
+
+.aero-frame > .rums-space-chooser h1{
+  margin:0!important;
+  color:#113d86!important;
+  font-size:clamp(56px, 5.3vw, 74px)!important;
+  font-weight:950!important;
+  line-height:.98!important;
+  letter-spacing:-.075em!important;
+  text-align:center!important;
+  text-shadow:0 2px 0 rgba(255,255,255,.86), 0 12px 26px rgba(22,83,148,.12)!important;
+}
+
+.aero-frame > .rums-space-chooser .space-chooser-intro{
+  max-width:820px!important;
+  margin:14px auto 42px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:none!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  color:#29577f!important;
+  font-size:clamp(20px,1.7vw,24px)!important;
+  font-weight:500!important;
+  line-height:1.34!important;
+  text-align:center!important;
+  text-wrap:balance;
+  text-shadow:0 1px 0 rgba(255,255,255,.84)!important;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-grid{
+  width:min(1110px, 100%)!important;
+  display:grid!important;
+  grid-template-columns:repeat(3, minmax(0, 1fr))!important;
+  gap:28px!important;
+  margin-top:8px!important;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-card{
+  position:relative!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:18px!important;
+  min-height:274px!important;
+  padding:30px 28px 72px!important;
+  overflow:hidden!important;
+  border-radius:31px!important;
+  border:2px solid rgba(255,255,255,.90)!important;
+  background:
+    radial-gradient(circle at 17% 10%, rgba(255,255,255,.94) 0 5%, rgba(255,255,255,.36) 6% 16%, transparent 24%),
+    linear-gradient(180deg, rgba(255,255,255,.33), rgba(235,248,255,.20) 40%, rgba(193,241,210,.18) 100%)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -1px 0 rgba(255,255,255,.40),
+    0 24px 42px rgba(12,78,123,.16),
+    0 0 0 5px rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(10px) saturate(1.22)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(1.22)!important;
+  transform-style:preserve-3d;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-card::before{
+  left:10px!important;
+  right:10px!important;
+  top:8px!important;
+  height:48%!important;
+  border-radius:24px 24px 60% 60%!important;
+  background:linear-gradient(180deg, rgba(255,255,255,.56), rgba(255,255,255,.18) 56%, transparent)!important;
+  transform:none!important;
+  opacity:1!important;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-card::after{
+  content:"";
+  position:absolute;
+  left:-10%;
+  right:-10%;
+  bottom:40px;
+  height:96px;
+  border-bottom:3px solid rgba(242,251,255,.78);
+  border-radius:0 0 90% 90%;
+  background:none!important;
+  opacity:.92;
+  pointer-events:none;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-number{
+  width:92px!important;
+  height:92px!important;
+  margin-top:4px!important;
+  border-radius:24px!important;
+  border:2px solid rgba(255,255,255,.94)!important;
+  display:grid!important;
+  place-items:center!important;
+  font-size:34px!important;
+  font-weight:900!important;
+  letter-spacing:-.04em!important;
+  box-shadow:
+    inset 0 2px 2px rgba(255,255,255,.96),
+    inset -4px -6px 9px rgba(20,82,145,.14),
+    0 14px 28px rgba(17,88,141,.18),
+    0 0 0 4px rgba(255,255,255,.10)!important;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-copy{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  width:100%!important;
+  min-height:72px;
+  transform:none!important;
+}
+.aero-frame > .rums-space-chooser .space-choice-copy::before{
+  display:none!important;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-copy strong{
+  display:block;
+  width:100%;
+  color:#16367b!important;
+  font-size:28px!important;
+  font-weight:900!important;
+  line-height:1.04!important;
+  letter-spacing:-.05em!important;
+  text-align:center!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.88)!important;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-arrow{
+  position:absolute;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  width:58px;
+  height:58px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  border:2px solid rgba(255,255,255,.95);
+  background:
+    radial-gradient(circle at 28% 20%, rgba(255,255,255,.96), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,.84), rgba(214,239,249,.62));
+  color:#2062b7;
+  font-size:40px;
+  line-height:1;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    0 10px 22px rgba(22,85,139,.16);
+  pointer-events:none;
+  z-index:4;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-card:hover{
+  transform:perspective(900px) translateY(-8px) scale(1.02) rotateX(1deg)!important;
+  filter:saturate(1.06) brightness(1.02)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -1px 0 rgba(255,255,255,.46),
+    0 30px 54px rgba(12,78,123,.22),
+    0 0 0 6px rgba(255,255,255,.10),
+    0 0 34px rgba(123,228,255,.16)!important;
+}
+
+.aero-frame > .rums-space-chooser .space-choice-card:hover .space-choice-number{
+  transform:translateY(-2px) scale(1.06)!important;
+}
+.aero-frame > .rums-space-chooser .space-choice-card:hover .space-choice-arrow{
+  transform:translateX(-50%) translateY(-2px) scale(1.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    0 14px 26px rgba(22,85,139,.18),
+    0 0 18px rgba(141,227,255,.18);
+}
+.aero-frame > .rums-space-chooser .space-choice-card:active{
+  transform:perspective(900px) translateY(-2px) scale(.994)!important;
+}
+
+@media (max-width: 980px){
+  .aero-frame > .rums-space-chooser{
+    padding:34px 18px 34px!important;
+  }
+  .aero-frame > .rums-space-chooser .entrance-account{
+    margin-bottom:28px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-chooser-mark{
+    width:122px!important;
+    height:122px!important;
+    font-size:72px!important;
+  }
+  .aero-frame > .rums-space-chooser h1{
+    font-size:clamp(44px, 6.6vw, 60px)!important;
+  }
+  .aero-frame > .rums-space-chooser .space-chooser-intro{
+    font-size:18px!important;
+    max-width:680px!important;
+    margin-bottom:30px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-grid{
+    gap:18px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-card{
+    min-height:244px!important;
+    padding:24px 20px 66px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-number{
+    width:82px!important;
+    height:82px!important;
+    font-size:31px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-copy strong{
+    font-size:24px!important;
+  }
+}
+
+@media (max-width: 820px){
+  .aero-frame > .rums-space-chooser{
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03) 36%, rgba(255,255,255,.04) 100%),
+      url('/images/plaza-version-frutiger-aero.png') 62% center / cover no-repeat!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-grid{
+    grid-template-columns:1fr!important;
+    width:min(540px, 100%)!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-card{
+    min-height:210px!important;
+  }
+}
+
+@media (max-width: 640px){
+  .aero-frame > .rums-space-chooser .entrance-account{
+    flex-wrap:wrap!important;
+    gap:10px!important;
+    padding:10px!important;
+    width:min(94vw, 360px)!important;
+  }
+  .aero-frame > .rums-space-chooser .entrance-account-user,
+  .aero-frame > .rums-space-chooser .entrance-account-button{
+    width:100%!important;
+    justify-content:center!important;
+  }
+  .aero-frame > .rums-space-chooser .space-chooser-mark{
+    width:102px!important;
+    height:102px!important;
+    font-size:60px!important;
+    border-radius:28px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-chooser-intro{
+    font-size:17px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-card{
+    min-height:196px!important;
+    padding:22px 18px 62px!important;
+    border-radius:26px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-number{
+    width:74px!important;
+    height:74px!important;
+    border-radius:20px!important;
+    font-size:28px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-copy strong{
+    font-size:22px!important;
+  }
+  .aero-frame > .rums-space-chooser .space-choice-arrow{
+    width:52px;
+    height:52px;
+    font-size:36px;
+  }
+}
+
