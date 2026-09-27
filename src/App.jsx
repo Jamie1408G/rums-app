@@ -30,6 +30,8 @@ const UPDATE_SCREEN_MS = 10000;
 const UPDATE_FADE_MS = 2400;
 const VERSION_COLOR_FADE_MS = 1150;
 const STARTUP_BUILD_MS = 2250;
+const ENTRY_SCREEN_MS = 3200;
+const ENTRY_FADE_MS = 650;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const HARD_REFRESH_KEY = 'rums-plaza-hard-refresh-revision';
 const HARD_REFRESH_SIGNAL_KEY = 'rums-plaza-hard-refresh-signal';
@@ -44,7 +46,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'fix-continue-sound-86';
+const FORCE_UPDATE_REVISION = 'standard-entry-screen-87';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -55,8 +57,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 86;
-const JAMIE_TUTORIAL_VERSION = 86;
+const TUTORIAL_VERSION = 87;
+const JAMIE_TUTORIAL_VERSION = 87;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -618,6 +620,15 @@ export default function RUMS() {
   const [updateHandoffPhase, setUpdateHandoffPhase] = useState('idle');
   const [startupRevealActive, setStartupRevealActive] = useState(false);
   const [startupRevealPending, setStartupRevealPending] = useState(true);
+  const [entryIntroActive, setEntryIntroActive] = useState(() => {
+    try {
+      return !sessionStorage.getItem(HARD_REFRESH_KEY);
+    } catch {
+      return true;
+    }
+  });
+  const [entryIntroLeaving, setEntryIntroLeaving] = useState(false);
+  const entryIntroStartedAtRef = useRef(Date.now());
   const [versionBuildPending, setVersionBuildPending] = useState(false);
   const [versionBuildActive, setVersionBuildActive] = useState(false);
   const versionBuildTimerRef = useRef(0);
@@ -893,7 +904,7 @@ export default function RUMS() {
         preloadAudio.load();
       } catch {}
     };
-  }, [updateTrack.src]);
+  }, [updateTrack.src, entryIntroActive]);
 
   const startUpdateMusic = async () => {
     setUpdateMusicState('starting');
@@ -1144,11 +1155,11 @@ export default function RUMS() {
       setUpdateMusicState('ready');
 
       if (
-        updateCycleRef.current.phase === 'updating' &&
+        (updateCycleRef.current.phase === 'updating' || entryIntroActive) &&
         updateMusicState !== 'playing'
       ) {
-        // The forced updater may already be visible. The first ordinary
-        // interaction anywhere on it unlocks the soundtrack immediately.
+        // Forced updates and normal Plaza entry use the same soundtrack.
+        // The first ordinary interaction unlocks it when autoplay was denied.
         await startUpdateMusic();
       } else {
         await tryStartPendingUpdate();
@@ -4145,6 +4156,73 @@ export default function RUMS() {
   }
 
   useEffect(() => {
+    if (
+      !entryIntroActive ||
+      updateCycleRef.current.phase !== 'idle' ||
+      updateUntil > Date.now() ||
+      updateOverlayLeaving ||
+      updateHandoffPhase !== 'idle'
+    ) return undefined;
+
+    // Use exactly the same soundtrack/track selection as the forced updater.
+    void startUpdateMusic();
+
+    if (!entrySessionReady) return undefined;
+
+    let leaveTimer = 0;
+    let finishTimer = 0;
+    const elapsed = Date.now() - entryIntroStartedAtRef.current;
+    const remaining = Math.max(0, ENTRY_SCREEN_MS - elapsed);
+
+    leaveTimer = window.setTimeout(() => {
+      if (
+        updateCycleRef.current.phase !== 'idle' ||
+        updateUntil > Date.now()
+      ) return;
+
+      setEntryIntroLeaving(true);
+
+      const context = updateAudioContextRef.current;
+      const gain = updateAudioGainRef.current;
+      if (context && gain) {
+        try {
+          const now = context.currentTime;
+          const current = Math.max(0.0001, gain.gain.value || 0.72);
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(current, now);
+          gain.gain.linearRampToValueAtTime(
+            0.0001,
+            now + (ENTRY_FADE_MS / 1000),
+          );
+        } catch {}
+      }
+
+      finishTimer = window.setTimeout(() => {
+        if (updateAudioSourceRef.current) {
+          try { updateAudioSourceRef.current.stop(); } catch {}
+          try { updateAudioSourceRef.current.disconnect(); } catch {}
+          updateAudioSourceRef.current = null;
+        }
+
+        setUpdateMusicState('ready');
+        setEntryIntroActive(false);
+        setEntryIntroLeaving(false);
+      }, ENTRY_FADE_MS);
+    }, remaining);
+
+    return () => {
+      if (leaveTimer) window.clearTimeout(leaveTimer);
+      if (finishTimer) window.clearTimeout(finishTimer);
+    };
+  }, [
+    entryIntroActive,
+    entrySessionReady,
+    updateUntil,
+    updateOverlayLeaving,
+    updateHandoffPhase,
+  ]);
+
+  useEffect(() => {
     let cancelled = false;
     Promise.all([safeGet(USERS_KEY, true), safeGet(SESSION_KEY, false)])
       .then(([usersRecord, sessionRecord]) => {
@@ -4170,7 +4248,9 @@ export default function RUMS() {
       updateOverlayLeaving ||
       updateHandoffPhase !== 'idle' ||
       updateCycleRef.current.phase !== 'idle' ||
-      hardRefreshInFlightRef.current
+      hardRefreshInFlightRef.current ||
+      entryIntroActive ||
+      entryIntroLeaving
     ) return undefined;
 
     let secondFrame = 0;
@@ -4222,6 +4302,8 @@ export default function RUMS() {
     updateUntil,
     updateOverlayLeaving,
     updateHandoffPhase,
+    entryIntroActive,
+    entryIntroLeaving,
   ]);
 
   useEffect(() => {
@@ -7001,6 +7083,40 @@ export default function RUMS() {
           aria-hidden="true"
         />
       )}
+      {entryIntroActive &&
+        !(updateUntil > Date.now() || updateOverlayLeaving) &&
+        updateHandoffPhase === 'idle' && (
+        <div
+          className={`site-update-screen site-entry-screen ${entryIntroLeaving ? 'is-entry-leaving' : ''}`}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="site-update-card">
+            <div className="site-update-mark" aria-hidden="true">R</div>
+            <span className="site-update-kicker">RUMS PLAZA</span>
+            <h1>Opening RUMS Plaza</h1>
+            <p>Getting your account, spaces and Plaza ready.</p>
+            <div
+              className={`site-update-now-playing ${updateMusicState === 'playing' || updateMusicState === 'starting' ? 'is-playing' : ''} ${updateMusicState === 'blocked' || updateMusicState === 'paused' ? 'needs-tap' : ''}`}
+              aria-label={`Now playing ${updateTrack.title} by ${updateTrack.artist}`}
+            >
+              <div className="site-update-now-icon" aria-hidden="true">
+                <span/><span/><span/><span/>
+              </div>
+              <div className="site-update-now-copy">
+                <small>NOW PLAYING</small>
+                <strong>{updateTrack.title}</strong>
+                <span>{updateTrack.artist}</span>
+              </div>
+              <div className="site-update-music-badge" aria-hidden="true">♫</div>
+            </div>
+            <div className="site-entry-loader" aria-hidden="true">
+              <span/><span/><span/>
+            </div>
+          </div>
+        </div>
+      )}
+
       {(updateUntil > Date.now() || updateOverlayLeaving) && <div className={`site-update-screen ${updateOverlayLeaving ? 'is-leaving' : ''}`} role="status" aria-live="polite">
         <div className="site-update-card">
           <div className="site-update-mark" aria-hidden="true">R</div>
