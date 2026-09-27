@@ -32,6 +32,7 @@ const VERSION_COLOR_FADE_MS = 1150;
 const STARTUP_BUILD_MS = 2250;
 const ENTRY_SCREEN_MS = 3200;
 const ENTRY_FADE_MS = 800;
+const ENTRY_MUSIC_FADE_MS = 1150;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const HARD_REFRESH_KEY = 'rums-plaza-hard-refresh-revision';
 const HARD_REFRESH_SIGNAL_KEY = 'rums-plaza-hard-refresh-signal';
@@ -47,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'subtle-version-backdrop-102';
+const FORCE_UPDATE_REVISION = 'frutiger-version-polish-103';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -58,8 +59,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 102;
-const JAMIE_TUTORIAL_VERSION = 102;
+const TUTORIAL_VERSION = 103;
+const JAMIE_TUTORIAL_VERSION = 103;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -611,6 +612,7 @@ export default function RUMS() {
   const accountGateOpenPlayedRef = useRef(false);
   const startupEntryRevealTimerRef = useRef(0);
   const versionOpenSoundTimerRef = useRef(0);
+  const entryMusicTailTimerRef = useRef(0);
 
   const pendingUpdateRef = useRef(null);
   const hardRefreshInFlightRef = useRef(false);
@@ -1187,6 +1189,11 @@ export default function RUMS() {
 
   const beginUpdateCycle = (version, forced) => {
     if (updateCycleRef.current.phase !== 'idle') return false;
+
+    if (entryMusicTailTimerRef.current) {
+      window.clearTimeout(entryMusicTailTimerRef.current);
+      entryMusicTailTimerRef.current = 0;
+    }
 
     updateMusicAllowedRef.current = true;
 
@@ -4650,19 +4657,30 @@ export default function RUMS() {
           gain.gain.setValueAtTime(current, now);
           gain.gain.linearRampToValueAtTime(
             0.0001,
-            now + (ENTRY_FADE_MS / 1000),
+            now + (ENTRY_MUSIC_FADE_MS / 1000),
           );
         } catch {}
       }
 
       finishTimer = window.setTimeout(() => {
-        // The loading-screen track ends HERE. It cannot be resumed by a later
-        // click, keypress, focus change, or stale audio-unlock listener.
-        stopUpdateMusicCompletely();
-
+        // Let the UI disappear on the existing 800ms timing.
         setEntryIntroActive(false);
         setEntryIntroLeaving(false);
       }, ENTRY_FADE_MS);
+
+      if (entryMusicTailTimerRef.current) {
+        window.clearTimeout(entryMusicTailTimerRef.current);
+      }
+
+      entryMusicTailTimerRef.current = window.setTimeout(() => {
+        entryMusicTailTimerRef.current = 0;
+
+        // Only stop the old entry soundtrack if a real updater did not start
+        // during the short audio tail.
+        if (updateCycleRef.current.phase === 'idle') {
+          stopUpdateMusicCompletely();
+        }
+      }, ENTRY_MUSIC_FADE_MS);
     }, remaining);
 
     return () => {
@@ -4852,6 +4870,10 @@ export default function RUMS() {
   ]);
 
   useEffect(() => () => {
+    if (entryMusicTailTimerRef.current) {
+      window.clearTimeout(entryMusicTailTimerRef.current);
+      entryMusicTailTimerRef.current = 0;
+    }
     if (siteMusicFadeTimerRef.current) {
       window.clearInterval(siteMusicFadeTimerRef.current);
       siteMusicFadeTimerRef.current = 0;
