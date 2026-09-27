@@ -2254,6 +2254,39 @@ export default function RUMS() {
     }, 520);
   }
 
+  function renderSpotifyPlaylistCard() {
+    return (
+      <section className="dynamic-music-library-card spotify-playlist-card">
+        <div className="dynamic-music-library-heading spotify-playlist-heading">
+          <div>
+            <small>SPOTIFY</small>
+            <strong>User playlist</strong>
+          </div>
+          <button type="button" className="spotify-playlist-toggle" onClick={toggleSpotifyPlaylist}>
+            {spotifyPlaylistOpen ? 'Hide' : 'Open playlist'}
+          </button>
+        </div>
+
+        {spotifyPlaylistOpen && (
+          <div className="spotify-playlist-embed-wrap">
+            <iframe
+              title="Spotify playlist"
+              src={SPOTIFY_PLAYLIST_EMBED_URL}
+              width="100%"
+              height="352"
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+            />
+            <a className="spotify-playlist-external" href={SPOTIFY_PLAYLIST_URL} target="_blank" rel="noreferrer">
+              Open in Spotify
+            </a>
+          </div>
+        )}
+      </section>
+    );
+  }
+
   function renderMobileHeaderMusicIsland() {
     if (!currentUser || !rumsSpace) return null;
 
@@ -2446,63 +2479,11 @@ export default function RUMS() {
               </div>
             </section>
 
-            <section className="dynamic-music-library-card spotify-playlist-card">
-              <div className="dynamic-music-library-heading spotify-playlist-heading">
-                <div>
-                  <small>SPOTIFY</small>
-                  <strong>User playlist</strong>
-                </div>
-                <button type="button" className="spotify-playlist-toggle" onClick={toggleSpotifyPlaylist}>
-                  {spotifyPlaylistOpen ? 'Hide' : 'Open playlist'}
-                </button>
-              </div>
 
-              {spotifyPlaylistOpen && (
-                <div className="spotify-playlist-embed-wrap">
-                  <iframe
-                    title="Spotify playlist"
-                    src={SPOTIFY_PLAYLIST_EMBED_URL}
-                    width="100%"
-                    height="352"
-                    frameBorder="0"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                  />
-                  <a className="spotify-playlist-external" href={SPOTIFY_PLAYLIST_URL} target="_blank" rel="noreferrer">
-                    Open in Spotify
-                  </a>
-                </div>
-              )}
-            </section>
 
-            <section className="dynamic-music-library-card spotify-playlist-card">
-              <div className="dynamic-music-library-heading spotify-playlist-heading">
-                <div>
-                  <small>SPOTIFY</small>
-                  <strong>User playlist</strong>
-                </div>
-                <button type="button" className="spotify-playlist-toggle" onClick={toggleSpotifyPlaylist}>
-                  {spotifyPlaylistOpen ? 'Hide' : 'Open playlist'}
-                </button>
-              </div>
 
-              {spotifyPlaylistOpen && (
-                <div className="spotify-playlist-embed-wrap">
-                  <iframe
-                    title="Spotify playlist"
-                    src={SPOTIFY_PLAYLIST_EMBED_URL}
-                    width="100%"
-                    height="352"
-                    frameBorder="0"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                  />
-                  <a className="spotify-playlist-external" href={SPOTIFY_PLAYLIST_URL} target="_blank" rel="noreferrer">
-                    Open in Spotify
-                  </a>
-                </div>
-              )}
-            </section>
+
+            {renderSpotifyPlaylistCard()}
 
             {siteMusicError && <div className="dynamic-music-error">{siteMusicError}</div>}
             <div className="dynamic-music-swipe-hint">Swipe up or tap outside to collapse</div>
@@ -2732,6 +2713,8 @@ export default function RUMS() {
                 ))}
               </div>
             </section>
+
+            {renderSpotifyPlaylistCard()}
 
             {siteMusicError && <div className="dynamic-music-error">{siteMusicError}</div>}
             <div className="dynamic-music-swipe-hint">Swipe up or tap the island to collapse</div>
