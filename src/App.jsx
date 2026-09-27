@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'first-hover-direction-129';
+const FORCE_UPDATE_REVISION = 'hover-direction-reset-130';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -59,8 +59,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 129;
-const JAMIE_TUTORIAL_VERSION = 129;
+const TUTORIAL_VERSION = 130;
+const JAMIE_TUTORIAL_VERSION = 130;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -2148,25 +2148,48 @@ export default function RUMS() {
   }
 
   function handleVersionCardHover(event, index) {
+    const card = event.currentTarget;
     const previousIndex = lastHoveredVersionIndexRef.current;
+
+    if (card._highlightResetTimer) {
+      window.clearTimeout(card._highlightResetTimer);
+      card._highlightResetTimer = 0;
+    }
 
     let direction = 'forward';
 
     if (previousIndex === null) {
-      // First hovered card gets a fixed default based on its position.
-      // RUMS 4 = left -> right, Projects = right -> left.
+      // First hover defaults:
+      // RUMS 4 = left -> right
+      // Creative = left -> right
+      // Projects = right -> left
       direction = index === 2 ? 'reverse' : 'forward';
     } else {
       direction = index > previousIndex
         ? 'forward'
         : index < previousIndex
           ? 'reverse'
-          : event.currentTarget.dataset.highlightDirection || 'forward';
+          : card.dataset.highlightDirection || (index === 2 ? 'reverse' : 'forward');
     }
 
-    event.currentTarget.dataset.highlightDirection = direction;
+    card.dataset.highlightDirection = direction;
     lastHoveredVersionIndexRef.current = index;
     playHoverSound();
+  }
+
+  function handleVersionCardLeave(event, index) {
+    const card = event.currentTarget;
+
+    if (card._highlightResetTimer) {
+      window.clearTimeout(card._highlightResetTimer);
+    }
+
+    // Preserve the current direction while the exit wipe finishes.
+    // Then reset each card to its correct resting default.
+    card._highlightResetTimer = window.setTimeout(() => {
+      card.dataset.highlightDirection = index === 2 ? 'reverse' : 'forward';
+      card._highlightResetTimer = 0;
+    }, 520);
   }
 
   function renderMobileHeaderMusicIsland() {
@@ -7815,15 +7838,15 @@ export default function RUMS() {
               </div>
             </div>
             <div className="space-choice-grid">
-              <button type="button" className="space-choice-card rums4-choice" data-highlight-direction="forward" onMouseEnter={(event) => handleVersionCardHover(event, 0)} onClick={() => chooseRumsSpace('rums4', { versionMenuSelection: true })}>
+              <button type="button" className="space-choice-card rums4-choice" data-highlight-direction="forward" onMouseEnter={(event) => handleVersionCardHover(event, 0)} onMouseLeave={(event) => handleVersionCardLeave(event, 0)} onClick={() => chooseRumsSpace('rums4', { versionMenuSelection: true })}>
                 <span className="space-choice-number">04</span>
                 <span className="space-choice-copy"><strong>RUMS 4</strong></span>
               </button>
-              <button type="button" className="space-choice-card rums5-choice" data-highlight-direction="forward" onMouseEnter={(event) => handleVersionCardHover(event, 1)} onClick={() => chooseRumsSpace('rums5', { versionMenuSelection: true })}>
+              <button type="button" className="space-choice-card rums5-choice" data-highlight-direction="forward" onMouseEnter={(event) => handleVersionCardHover(event, 1)} onMouseLeave={(event) => handleVersionCardLeave(event, 1)} onClick={() => chooseRumsSpace('rums5', { versionMenuSelection: true })}>
                 <span className="space-choice-number">✦</span>
                 <span className="space-choice-copy"><strong>Creative</strong></span>
               </button>
-              <button type="button" className="space-choice-card projects-choice" data-highlight-direction="forward" onMouseEnter={(event) => handleVersionCardHover(event, 2)} onClick={() => void chooseProjectsFromVersionMenu()}>
+              <button type="button" className="space-choice-card projects-choice" data-highlight-direction="reverse" onMouseEnter={(event) => handleVersionCardHover(event, 2)} onMouseLeave={(event) => handleVersionCardLeave(event, 2)} onClick={() => void chooseProjectsFromVersionMenu()}>
                 <span className="space-choice-number">PR</span>
                 <span className="space-choice-copy"><strong>Projects</strong></span>
               </button>
