@@ -12900,3 +12900,27 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/* MINIMAL VERSION-HOVER BACKGROUND BLUR — 138                               */
+/* -------------------------------------------------------------------------- */
+
+.aero-frame > .rums-space-chooser.version-card-hover-active::before{
+  filter:blur(2px)!important;
+  transform:scale(1.004)!important;
+}
+
+.aero-root.version-background-reveal-active .rums-space-chooser.version-card-hover-active::before,
+.aero-root.startup-reveal-active .rums-space-chooser.version-card-hover-active::before{
+  filter:blur(2px)!important;
+  transform:scale(1.004)!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .aero-frame > .rums-space-chooser.version-card-hover-active::before{
+    filter:blur(2px)!important;
+    transform:none!important;
+  }
+}
+
