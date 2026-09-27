@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'desktop-version-card-centering-141';
+const FORCE_UPDATE_REVISION = 'normal-loading-overhaul-142';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -7689,27 +7689,61 @@ export default function RUMS() {
           role="status"
           aria-live="polite"
         >
-          <div className="site-update-card">
-            <div className="site-update-mark" aria-hidden="true">R</div>
-            <span className="site-update-kicker">RUMS PLAZA</span>
-            <h1>Opening RUMS Plaza</h1>
-            <p>Getting your account, spaces and Plaza ready.</p>
-            <div
-              className={`site-update-now-playing ${updateMusicState === 'playing' || updateMusicState === 'starting' ? 'is-playing' : ''} ${updateMusicState === 'blocked' || updateMusicState === 'paused' ? 'needs-tap' : ''}`}
-              aria-label={`Now playing ${updateTrack.title} by ${updateTrack.artist}`}
-            >
-              <div className="site-update-now-icon" aria-hidden="true">
-                <span/><span/><span/><span/>
+          <div className="site-update-card site-entry-card">
+            <div className="site-entry-visual" aria-hidden="true">
+              <div className="site-entry-orbit site-entry-orbit-one" />
+              <div className="site-entry-orbit site-entry-orbit-two" />
+              <div className="site-entry-brand-orb">
+                <span className="site-entry-brand-glint" />
+                <strong>R</strong>
               </div>
-              <div className="site-update-now-copy">
-                <small>NOW PLAYING</small>
-                <strong>{updateTrack.title}</strong>
-                <span>{updateTrack.artist}</span>
+              <div className="site-entry-brand-copy">
+                <span>RUMS</span>
+                <small>PLAZA</small>
               </div>
-              <div className="site-update-music-badge" aria-hidden="true">♫</div>
+              <div className="site-entry-stage-pills">
+                <span><i />Account</span>
+                <span><i />Spaces</span>
+                <span><i />Plaza</span>
+              </div>
             </div>
-            <div className="site-entry-loader" aria-hidden="true">
-              <span/><span/><span/>
+
+            <div className="site-entry-content">
+              <span className="site-update-kicker">RUMS PLAZA</span>
+              <h1>Opening your Plaza</h1>
+              <p>Bringing your account, spaces and community into one place.</p>
+
+              <div className="site-entry-progress" aria-hidden="true">
+                <div className="site-entry-progress-track">
+                  <span className="site-entry-progress-fill" />
+                  <span className="site-entry-progress-orb" />
+                </div>
+                <div className="site-entry-progress-labels">
+                  <span>Account</span>
+                  <span>Spaces</span>
+                  <span>Ready</span>
+                </div>
+              </div>
+
+              <div
+                className={`site-update-now-playing site-entry-now-playing ${updateMusicState === 'playing' || updateMusicState === 'starting' ? 'is-playing' : ''} ${updateMusicState === 'blocked' || updateMusicState === 'paused' ? 'needs-tap' : ''}`}
+                aria-label={`Now playing ${updateTrack.title} by ${updateTrack.artist}`}
+              >
+                <div className="site-update-now-icon" aria-hidden="true">
+                  <span/><span/><span/><span/>
+                </div>
+                <div className="site-update-now-copy">
+                  <small>NOW PLAYING</small>
+                  <strong>{updateTrack.title}</strong>
+                  <span>{updateTrack.artist}</span>
+                </div>
+                <div className="site-update-music-badge" aria-hidden="true">♫</div>
+              </div>
+
+              <div className="site-entry-footnote">
+                <span className="site-entry-pulse" aria-hidden="true" />
+                <span>Preparing RUMS Plaza</span>
+              </div>
             </div>
           </div>
         </div>
