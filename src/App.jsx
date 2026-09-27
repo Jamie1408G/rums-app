@@ -8072,7 +8072,7 @@ export default function RUMS() {
               {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
               {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setEditMode(true)}>{editMode ? <Check size={19} /> : <Eye size={19} />} {editMode ? 'Editing website' : 'Edit website'}</button>}
               {!isProjectSpace && <button data-tutorial-nav="upload" className="rail-create" onMouseEnter={playHoverSound} onClick={() => openPostComposer()}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>}
-              {!isStandaloneApp && <button type="button" className="rail-link plaza-install-link" onMouseEnter={playHoverSound} onClick={() => void installRumsPlaza()}><Download size={19} /> Install app</button>}
+              {!isStandaloneApp && <button type="button" className="rail-link plaza-install-link" onMouseEnter={playHoverSound} onClick={() => { void playUiSfx('select'); void installRumsPlaza(); }}><Download size={19} /> Install app</button>}
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS Plaza · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
@@ -8111,7 +8111,7 @@ export default function RUMS() {
                 <button type="button" onClick={() => { setMobileMenuOpen(false); openOwnProfile(); }}><span className="mobile-menu-icon"><UserIcon size={17} /></span> My profile</button>
                 {canEditSite && <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('admin'); }}><span className="mobile-menu-icon"><ShieldCheck size={17} /></span> Admin space</button>}
                 {isOwner && <button type="button" onClick={() => { setMobileMenuOpen(false); setEditMode((editing) => !editing); }}><span className="mobile-menu-icon"><Pencil size={17} /></span> {editMode ? 'Finish editing' : 'Edit website'}</button>}
-                {!isStandaloneApp && <button type="button" onClick={() => { setMobileMenuOpen(false); void installRumsPlaza(); }}><span className="mobile-menu-icon"><Download size={17} /></span> Install RUMS Plaza</button>}
+                {!isStandaloneApp && <button type="button" className="plaza-install-mobile" onClick={() => { void playUiSfx('select'); setMobileMenuOpen(false); void installRumsPlaza(); }}><span className="mobile-menu-icon"><Download size={17} /></span> Install RUMS Plaza</button>}
                 <button type="button" onClick={() => { setMobileMenuOpen(false); void handleLogout(); }}><span className="mobile-menu-icon"><LogOut size={17} /></span> Log out</button>
               </nav>}
               <div className="aero-header-actions">
