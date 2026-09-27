@@ -9375,3 +9375,64 @@ button,input,textarea { font:inherit; }
     linear-gradient(145deg,rgba(61,73,91,.86),rgba(40,51,65,.8));
 }
 
+/* -------------------------------------------------------------------------- */
+/* FIXED MOBILE BOTTOM BAR — 99                                               */
+/* Bar geometry never moves during the Wii/bubbly opening build.               */
+/* Only the individual buttons animate inside the already-positioned island.   */
+/* -------------------------------------------------------------------------- */
+
+@media(max-width:760px){
+  .aero-root .bottom-nav{
+    position:fixed!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:max(10px,env(safe-area-inset-bottom))!important;
+    width:min(430px,calc(100% - 18px))!important;
+    transform:translate3d(-50%,0,0)!important;
+    transform-origin:50% 50%!important;
+    z-index:80!important;
+    will-change:opacity!important;
+  }
+
+  /*
+    Older Wii build CSS animated the entire bar with translateY + scale,
+    temporarily replacing translateX(-50%) and making it jump around.
+    Keep the island itself at its final coordinates for every animation frame.
+  */
+  .aero-root.version-build-active .bottom-nav{
+    animation:mobileBottomBarFade99 .24s .42s ease-out both!important;
+    transform:translate3d(-50%,0,0)!important;
+    filter:none!important;
+  }
+
+  /* The buttons still get the bubbly one-by-one arrival. */
+  .aero-root.version-build-active .bottom-nav > *{
+    transform-origin:50% 50%!important;
+  }
+}
+
+@media(max-width:430px){
+  .aero-root .bottom-nav{
+    width:calc(100% - 12px)!important;
+    bottom:max(6px,env(safe-area-inset-bottom))!important;
+    transform:translate3d(-50%,0,0)!important;
+  }
+
+  .aero-root.version-build-active .bottom-nav{
+    transform:translate3d(-50%,0,0)!important;
+  }
+}
+
+@keyframes mobileBottomBarFade99{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .aero-root.version-build-active .bottom-nav{
+    animation:none!important;
+    opacity:1!important;
+    transform:translate3d(-50%,0,0)!important;
+  }
+}
+
