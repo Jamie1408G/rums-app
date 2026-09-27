@@ -12876,3 +12876,27 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/* SOFTER VERSION-HOVER BACKGROUND BLUR — 137                                */
+/* -------------------------------------------------------------------------- */
+
+.aero-frame > .rums-space-chooser.version-card-hover-active::before{
+  filter:blur(5px)!important;
+  transform:scale(1.010)!important;
+}
+
+.aero-root.version-background-reveal-active .rums-space-chooser.version-card-hover-active::before,
+.aero-root.startup-reveal-active .rums-space-chooser.version-card-hover-active::before{
+  filter:blur(5px)!important;
+  transform:scale(1.010)!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .aero-frame > .rums-space-chooser.version-card-hover-active::before{
+    filter:blur(5px)!important;
+    transform:none!important;
+  }
+}
+
