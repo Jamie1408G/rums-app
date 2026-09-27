@@ -12650,3 +12650,56 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/* VERSION CARDS AT SCREEN BOTTOM — 132                                       */
+/* Anchor the card row to the bottom of the version menu viewport.             */
+/* -------------------------------------------------------------------------- */
+
+.aero-frame > .rums-space-chooser{
+  position:relative!important;
+  min-height:100dvh!important;
+  height:100dvh!important;
+}
+
+/* Pull the cards out of normal vertical flow and pin them near the bottom. */
+.aero-frame > .rums-space-chooser .space-choice-grid{
+  position:absolute!important;
+  left:50%!important;
+  bottom:34px!important;
+  transform:translateX(-50%)!important;
+  width:min(930px,calc(100% - 40px))!important;
+  margin:0!important;
+  z-index:3!important;
+}
+
+/* Keep the header/Welcome block in normal flow at the top. */
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+  margin-bottom:0!important;
+}
+
+@media(max-width:820px){
+  .aero-frame > .rums-space-chooser{
+    height:auto!important;
+    min-height:100dvh!important;
+    padding-bottom:24px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-grid{
+    position:relative!important;
+    left:auto!important;
+    bottom:auto!important;
+    transform:none!important;
+    width:min(520px,100%)!important;
+    margin-top:auto!important;
+    padding-top:32px!important;
+  }
+}
+
+@media(max-width:560px){
+  .aero-frame > .rums-space-chooser .space-choice-grid{
+    padding-top:24px!important;
+  }
+}
+
