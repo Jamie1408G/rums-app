@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'fullscreen-longer-bg-fade-115';
+const FORCE_UPDATE_REVISION = 'continue-reveal-plaza-ui-116';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -59,8 +59,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 115;
-const JAMIE_TUTORIAL_VERSION = 115;
+const TUTORIAL_VERSION = 116;
+const JAMIE_TUTORIAL_VERSION = 116;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -612,6 +612,7 @@ export default function RUMS() {
   const accountGateOpenPlayedRef = useRef(false);
   const startupEntryRevealTimerRef = useRef(0);
   const versionOpenSoundTimerRef = useRef(0);
+  const versionBackgroundRevealTimerRef = useRef(0);
   const entryMusicTailTimerRef = useRef(0);
 
   const pendingUpdateRef = useRef(null);
@@ -626,6 +627,7 @@ export default function RUMS() {
   const [updateHandoffPhase, setUpdateHandoffPhase] = useState('idle');
   const [startupRevealActive, setStartupRevealActive] = useState(false);
   const [startupRevealPending, setStartupRevealPending] = useState(true);
+  const [versionBackgroundRevealActive, setVersionBackgroundRevealActive] = useState(false);
   const [entryIntroActive, setEntryIntroActive] = useState(() => {
     try {
       return !sessionStorage.getItem(HARD_REFRESH_KEY);
@@ -4550,10 +4552,24 @@ export default function RUMS() {
     });
   }
 
-  function enterVersionMenu() {
+  function enterVersionMenu({ revealBackground = false } = {}) {
     const nextEntryKey = versionMenuEntryKeyRef.current + 1;
     versionMenuEntryKeyRef.current = nextEntryKey;
     versionMenuStartHandledKeyRef.current = nextEntryKey;
+
+    if (versionBackgroundRevealTimerRef.current) {
+      window.clearTimeout(versionBackgroundRevealTimerRef.current);
+      versionBackgroundRevealTimerRef.current = 0;
+    }
+
+    setVersionBackgroundRevealActive(Boolean(revealBackground));
+
+    if (revealBackground) {
+      versionBackgroundRevealTimerRef.current = window.setTimeout(() => {
+        versionBackgroundRevealTimerRef.current = 0;
+        setVersionBackgroundRevealActive(false);
+      }, 2800);
+    }
 
     // The loading/update soundtrack is a separate audio system. Make sure it
     // is dead before the normal Plaza music player takes over.
@@ -4873,6 +4889,10 @@ export default function RUMS() {
   ]);
 
   useEffect(() => () => {
+    if (versionBackgroundRevealTimerRef.current) {
+      window.clearTimeout(versionBackgroundRevealTimerRef.current);
+      versionBackgroundRevealTimerRef.current = 0;
+    }
     if (entryMusicTailTimerRef.current) {
       window.clearTimeout(entryMusicTailTimerRef.current);
       entryMusicTailTimerRef.current = 0;
@@ -5034,7 +5054,7 @@ export default function RUMS() {
     // Logged in as page appearing, never to this button.
     void playUiSfx('select');
     window.setTimeout(() => {
-      enterVersionMenu();
+      enterVersionMenu({ revealBackground: true });
     }, 180);
   }
 
@@ -7598,7 +7618,7 @@ export default function RUMS() {
   })();
 
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBackgroundRevealActive ? 'version-background-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
