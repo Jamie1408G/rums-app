@@ -14292,3 +14292,19 @@ button,input,textarea { font:inherit; }
     font-size:17.5px!important;
   }
 }
+
+
+/* PWA install */
+.plaza-install-link { margin-top:10px; border-color:#dce6f8!important; background:linear-gradient(135deg,#ffffffc9,#eef5ff)!important; color:#2f6fd5!important; }
+.plaza-install-link:hover { background:linear-gradient(135deg,#fff,#e5f0ff)!important; }
+.plaza-install-overlay { z-index:9999; }
+.plaza-install-card { position:relative; width:min(420px,calc(100vw - 30px)); padding:31px 29px 27px!important; text-align:center; }
+.plaza-install-card h3 { margin:13px 0 8px; font-size:22px; }
+.plaza-install-copy { margin:0 auto 20px; max-width:340px; color:#6d788b; font-size:13px; line-height:1.55; }
+.plaza-install-icon { width:50px; height:50px; margin:0 auto; display:grid; place-items:center; border-radius:16px; background:linear-gradient(145deg,#8dbaff,#3478f6); color:#fff; box-shadow:0 8px 20px #3478f642,inset 0 1px 1px #fff8; }
+.plaza-install-close { position:absolute; right:14px; top:14px; width:34px; height:34px; display:grid; place-items:center; border:0; border-radius:50%; background:#eef1f6; color:#526075; cursor:pointer; }
+.plaza-install-steps { display:grid; grid-template-columns:28px 1fr; gap:10px 11px; align-items:center; margin:0 0 21px; padding:16px; text-align:left; border:1px solid #e5eaf3; border-radius:16px; background:#f7f9fd; }
+.plaza-install-steps span { width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:#3478f6; color:#fff; font-size:12px; font-weight:800; }
+.plaza-install-steps b { color:#435169; font-size:13px; }
+.plaza-install-done { width:100%; justify-content:center; }
+@media(max-width:600px){.plaza-install-card{padding:29px 21px 23px!important;}}
