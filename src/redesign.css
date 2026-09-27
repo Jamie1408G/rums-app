@@ -13889,18 +13889,26 @@ button,input,textarea { font:inherit; }
 }
 
 /* -------------------------------------------------------------------------- */
-/* VERSION SWITCH HOVER + PLAZA TITLE FLOAT — 146                            */
+/* PLAZA WELCOME FLOAT FIX — 147                                              */
 /* -------------------------------------------------------------------------- */
 
-/* The logo + Welcome panel float as one composition using the exact motion
-   curve from the normal loading-screen R orb. */
+/* Apply the loading-screen orb motion directly to both visible welcome
+   surfaces. This avoids the title card being visually pinned by layout
+   transforms on the parent cluster. The heading + description now move with
+   the panel itself, while the R mark uses the same timing so they stay in sync. */
 .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
-  animation:plazaEntryOrbFloat142 3.8s ease-in-out infinite;
+  animation:none!important;
+}
+
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark,
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-title-card{
+  animation:plazaEntryOrbFloat142 3.8s ease-in-out infinite!important;
   will-change:transform;
 }
 
 @media(prefers-reduced-motion:reduce){
-  .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark,
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-title-card{
     animation:none!important;
     transform:none!important;
   }
