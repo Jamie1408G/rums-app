@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'version-menu-match-reference-110';
+const FORCE_UPDATE_REVISION = 'version-menu-smaller-no-arrows-111';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -59,8 +59,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 110;
-const JAMIE_TUTORIAL_VERSION = 110;
+const TUTORIAL_VERSION = 111;
+const JAMIE_TUTORIAL_VERSION = 111;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -7764,17 +7764,14 @@ export default function RUMS() {
               <button type="button" className="space-choice-card rums4-choice" onMouseEnter={playHoverSound} onClick={() => chooseRumsSpace('rums4', { versionMenuSelection: true })}>
                 <span className="space-choice-number">04</span>
                 <span className="space-choice-copy"><strong>RUMS 4</strong></span>
-                <span className="space-choice-arrow" aria-hidden="true">›</span>
               </button>
               <button type="button" className="space-choice-card rums5-choice" onMouseEnter={playHoverSound} onClick={() => chooseRumsSpace('rums5', { versionMenuSelection: true })}>
                 <span className="space-choice-number">✦</span>
                 <span className="space-choice-copy"><strong>Creative</strong></span>
-                <span className="space-choice-arrow" aria-hidden="true">›</span>
               </button>
               <button type="button" className="space-choice-card projects-choice" onMouseEnter={playHoverSound} onClick={() => void chooseProjectsFromVersionMenu()}>
                 <span className="space-choice-number">PR</span>
                 <span className="space-choice-copy"><strong>Projects</strong></span>
-                <span className="space-choice-arrow" aria-hidden="true">›</span>
               </button>
             </div>
           </section>
