@@ -14406,3 +14406,56 @@ button,input,textarea { font:inherit; }
   .spotify-playlist-embed-wrap { padding:6px; }
   .spotify-playlist-embed-wrap iframe { min-height:352px; }
 }
+
+
+/* Scrollable expanded music drawers */
+@media(min-width:761px){
+  .aero-root .header-center-music-row .dynamic-music-drawer,
+  .aero-root .dynamic-music-drawer{
+    max-height:calc(100dvh - 92px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y!important;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(74,112,153,.28) transparent;
+    padding-bottom:18px!important;
+  }
+
+  .aero-root .dynamic-music-drawer::-webkit-scrollbar{
+    width:7px;
+  }
+
+  .aero-root .dynamic-music-drawer::-webkit-scrollbar-track{
+    background:transparent;
+  }
+
+  .aero-root .dynamic-music-drawer::-webkit-scrollbar-thumb{
+    border-radius:999px;
+    background:rgba(74,112,153,.24);
+    border:2px solid transparent;
+    background-clip:padding-box;
+  }
+
+  .aero-root .dynamic-music-drawer::-webkit-scrollbar-thumb:hover{
+    background:rgba(74,112,153,.38);
+    border:2px solid transparent;
+    background-clip:padding-box;
+  }
+
+  .aero-root.music-island-open .content{
+    padding-top:120px!important;
+  }
+}
+
+@media(max-width:760px){
+  .aero-root .mobile-music-drawer{
+    touch-action:pan-y!important;
+    padding-bottom:18px!important;
+  }
+
+  .aero-root .mobile-music-drawer .spotify-playlist-card{
+    margin-bottom:8px;
+  }
+}
