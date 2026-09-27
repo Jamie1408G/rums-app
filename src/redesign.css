@@ -13741,20 +13741,20 @@ button,input,textarea { font:inherit; }
   border-radius:inherit;
   background:linear-gradient(90deg,#5bbdff,#3a88ff 64%,#65d5b4);
   box-shadow:0 0 16px rgba(60,145,245,.32);
-  animation:plazaEntryProgressFill142 14.2s cubic-bezier(.42,0,.18,1) 1 forwards;
+  animation:plazaEntryProgressFill144 9.2s cubic-bezier(.42,0,.18,1) 1 forwards;
 }
 .site-entry-progress-orb{
   position:absolute;
   top:50%;
-  left:0;
+  left:16%;
   width:16px;
   height:16px;
-  margin-top:-8px;
+  transform:translate(-50%,-50%);
   border:2px solid rgba(255,255,255,.95);
   border-radius:50%;
   background:#4ea7ff;
   box-shadow:0 3px 12px rgba(50,116,207,.28),inset 0 1px rgba(255,255,255,.85);
-  animation:plazaEntryProgressOrb142 14.2s cubic-bezier(.42,0,.18,1) 1 forwards;
+  animation:plazaEntryProgressOrb144 9.2s cubic-bezier(.42,0,.18,1) 1 forwards;
 }
 .site-entry-progress-labels{display:flex;justify-content:space-between;margin-top:9px;color:#8193a6;font-size:10px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;}
 
@@ -13789,8 +13789,8 @@ button,input,textarea { font:inherit; }
 @keyframes plazaEntryOrbit142{from{transform:translateX(-50%) rotate(-16deg)}to{transform:translateX(-50%) rotate(344deg)}}
 @keyframes plazaEntryOrbitReverse142{from{transform:translateX(-50%) rotate(22deg)}to{transform:translateX(-50%) rotate(-338deg)}}
 @keyframes plazaEntryStagePulse142{0%,100%{opacity:.35;transform:scale(.78)}50%{opacity:1;transform:scale(1)}}
-@keyframes plazaEntryProgressFill142{0%{width:16%;opacity:.72}48%{width:72%;opacity:1}100%{width:96%;opacity:.86}}
-@keyframes plazaEntryProgressOrb142{0%{left:2%}48%{left:70%}100%{left:94%}}
+@keyframes plazaEntryProgressFill144{0%{width:16%;opacity:.72}48%{width:72%;opacity:1}100%{width:96%;opacity:.86}}
+@keyframes plazaEntryProgressOrb144{0%{left:16%}48%{left:72%}100%{left:96%}}
 @keyframes plazaEntryStatusPulse142{0%{box-shadow:0 0 0 0 rgba(73,186,255,.38)}70%{box-shadow:0 0 0 7px rgba(73,186,255,0)}100%{box-shadow:0 0 0 0 rgba(73,186,255,0)}}
 
 .aero-root[data-theme="dark"] .site-entry-screen{
@@ -13886,5 +13886,5 @@ button,input,textarea { font:inherit; }
   .site-entry-progress-orb,
   .site-entry-pulse{animation:none!important;}
   .site-entry-progress-fill{width:72%;}
-  .site-entry-progress-orb{left:70%;}
+  .site-entry-progress-orb{left:72%;}
 }
