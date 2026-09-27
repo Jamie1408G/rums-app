@@ -44,7 +44,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'account-open-only-83';
+const FORCE_UPDATE_REVISION = 'refresh-open-retry-84';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -55,8 +55,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 83;
-const JAMIE_TUTORIAL_VERSION = 83;
+const TUTORIAL_VERSION = 84;
+const JAMIE_TUTORIAL_VERSION = 84;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -603,6 +603,8 @@ export default function RUMS() {
   const accountGateEntrySeqRef = useRef(1);
   const accountGateOpenSoundEntryRef = useRef(0);
   const accountGateOpenPlayedRef = useRef(false);
+  const accountGateOpenPendingRef = useRef(false);
+  const accountGateOpenDirectAudioRef = useRef(null);
   const startupEntryRevealTimerRef = useRef(0);
   const versionOpenSoundTimerRef = useRef(0);
 
@@ -763,6 +765,55 @@ export default function RUMS() {
     }
 
     return context;
+  };
+
+  const playAccountGateOpenAggressively = async () => {
+    if (accountGateOpenPlayedRef.current) {
+      accountGateOpenPendingRef.current = false;
+      return true;
+    }
+
+    if (await playUiSfx('open')) {
+      accountGateOpenPlayedRef.current = true;
+      accountGateOpenPendingRef.current = false;
+      return true;
+    }
+
+    try {
+      let audio = accountGateOpenDirectAudioRef.current;
+      if (!audio) {
+        audio = new Audio('/audio/ui-open.wav');
+        audio.preload = 'auto';
+        audio.playsInline = true;
+        audio.volume = UI_SFX.open.volume;
+        accountGateOpenDirectAudioRef.current = audio;
+        try { audio.load(); } catch {}
+      }
+
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+      audio.volume = UI_SFX.open.volume;
+
+      const attempt = audio.play();
+      if (attempt?.then) await attempt;
+
+      accountGateOpenPlayedRef.current = true;
+      accountGateOpenPendingRef.current = false;
+      return true;
+    } catch {}
+
+    try {
+      const context = await ensureUpdateAudioReady({ resume: true });
+      if (context?.state === 'running' && await playUiSfx('open')) {
+        accountGateOpenPlayedRef.current = true;
+        accountGateOpenPendingRef.current = false;
+        return true;
+      }
+    } catch {}
+
+    accountGateOpenPendingRef.current = true;
+    return false;
   };
 
   useEffect(() => {
@@ -1634,6 +1685,31 @@ export default function RUMS() {
       try { audio.volume = siteMusicVolume; } catch {}
     }
   }, [siteMusicVolume]);
+
+  useEffect(() => {
+    if (screen !== 'accountGate') return undefined;
+
+    const releaseOpen = (event) => {
+      if (
+        !accountGateOpenPendingRef.current ||
+        accountGateOpenPlayedRef.current ||
+        (event.type === 'keydown' && event.repeat)
+      ) return;
+
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest?.('.plaza-account-continue')) return;
+
+      void playAccountGateOpenAggressively();
+    };
+
+    window.addEventListener('pointerdown', releaseOpen, true);
+    window.addEventListener('keydown', releaseOpen, true);
+
+    return () => {
+      window.removeEventListener('pointerdown', releaseOpen, true);
+      window.removeEventListener('keydown', releaseOpen, true);
+    };
+  }, [screen]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return undefined;
@@ -4197,9 +4273,7 @@ export default function RUMS() {
         }
 
         // OPEN starts at the same moment the Logged in as page begins building.
-        void playUiSfx('open').then((played) => {
-          accountGateOpenPlayedRef.current = Boolean(played);
-        });
+        void playAccountGateOpenAggressively();
 
         setAccountGateEntryKey(nextEntryKey);
         setScreen('accountGate');
@@ -4239,9 +4313,7 @@ export default function RUMS() {
 
     // Safety net only: every normal account-page entry triggers OPEN before
     // the page mounts, so its sound and bubbly build begin together.
-    void playUiSfx('open').then((played) => {
-      accountGateOpenPlayedRef.current = Boolean(played);
-    });
+    void playAccountGateOpenAggressively();
   }, [
     entrySessionReady,
     screen,
@@ -4254,7 +4326,28 @@ export default function RUMS() {
   useEffect(() => {
     if (screen !== 'accountGate') {
       accountGateOpenPlayedRef.current = false;
+      accountGateOpenPendingRef.current = false;
+      return undefined;
     }
+
+    const retryOpen = () => {
+      if (accountGateOpenPlayedRef.current) return;
+      void playAccountGateOpenAggressively();
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') retryOpen();
+    };
+
+    window.addEventListener('pageshow', retryOpen);
+    window.addEventListener('focus', retryOpen);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('pageshow', retryOpen);
+      window.removeEventListener('focus', retryOpen);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [screen]);
 
   useEffect(() => {
@@ -4308,6 +4401,15 @@ export default function RUMS() {
   ]);
 
   useEffect(() => () => {
+    if (accountGateOpenDirectAudioRef.current) {
+      try {
+        accountGateOpenDirectAudioRef.current.pause();
+        accountGateOpenDirectAudioRef.current.removeAttribute('src');
+        accountGateOpenDirectAudioRef.current.load();
+      } catch {}
+      accountGateOpenDirectAudioRef.current = null;
+    }
+
     if (startupEntryRevealTimerRef.current) {
       window.clearTimeout(startupEntryRevealTimerRef.current);
       startupEntryRevealTimerRef.current = 0;
@@ -4445,9 +4547,7 @@ export default function RUMS() {
       versionOpenSoundTimerRef.current = 0;
     }
 
-    void playUiSfx('open').then((played) => {
-      accountGateOpenPlayedRef.current = Boolean(played);
-    });
+    void playAccountGateOpenAggressively();
 
     setAccountGateEntryKey(nextEntryKey);
     setScreen('accountGate');
@@ -4463,8 +4563,7 @@ export default function RUMS() {
 
   async function continueFromAccountGate() {
     if (!accountGateOpenPlayedRef.current) {
-      const played = await playUiSfx('open');
-      accountGateOpenPlayedRef.current = Boolean(played);
+      await playAccountGateOpenAggressively();
 
       window.setTimeout(() => {
         void playUiSfx('select');
