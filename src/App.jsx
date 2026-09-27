@@ -43,10 +43,11 @@ const UI_SFX = {
   change: { src: '/audio/ui-change.wav', volume: 0.60 },
   select: { src: '/audio/ui-select.wav', volume: 0.72 },
   select2: { src: '/audio/ui-select2.wav', volume: 0.78 },
+  hover: { src: '/audio/ui-hover.wav', volume: 0.48 },
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'url-fade-on-version-select-91';
+const FORCE_UPDATE_REVISION = 'hover-sound-92';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -57,8 +58,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 91;
-const JAMIE_TUTORIAL_VERSION = 91;
+const TUTORIAL_VERSION = 92;
+const JAMIE_TUTORIAL_VERSION = 92;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -6909,6 +6910,13 @@ export default function RUMS() {
     return <section data-feed-box="posts" data-edit-box-id="feed:posts" className={`editable-built-in-box ${selectedBoxId === 'feed:posts' ? 'is-editor-selected' : ''} ${feedFilter === 'lumina' ? 'lumina-feed-posts' : ''}`} key="posts" onPointerDownCapture={() => { if (editMode && isOwner) setSelectedBoxId('feed:posts'); }}>{feedBoxHandle('posts')}<div className="section-heading"><h2>{followingOnly ? 'Following feed' : 'Recent posts'}</h2><div className="feed-heading-actions">{feedFilter === 'lumina' && <button data-tutorial-action="about-lumina" className="pill pill-btn lumina-about-pill" onClick={openLumina}><Droplet size={12}/> About Lumina</button>}<button className={`pill pill-btn ${followingOnly?'active':''}`} onClick={()=>setFollowingOnly((v)=>!v)}>{followingOnly?'Show everyone':'Following'}</button><span>{visiblePosts.length} {visiblePosts.length === 1 ? 'post' : 'posts'}</span></div></div>{visiblePosts.length === 0 ? <div className="feed-empty"><div className="r-badge">R</div><h3>{feedFilter === 'lumina' ? 'No Lumina posts yet' : 'No posts yet'}</h3><p>{feedFilter === 'lumina' ? 'Be the first to share a view of Lumina.' : 'Be the first to share something from RUMS.'}</p></div> : visiblePosts.map((post) => renderPost(post, { reactionContext: feedFilter === 'lumina' ? 'luminaFeed' : 'default', newPageKey: 'feed' }))}</section>;
   }
 
+  function playVersionHoverSound(event) {
+    if (event?.nativeEvent && 'pointerType' in event.nativeEvent) {
+      if (event.nativeEvent.pointerType && event.nativeEvent.pointerType !== 'mouse') return;
+    }
+    void playUiSfx('hover');
+  }
+
   function renderFeedTabs() {
     if (!hasLumina) return null;
     return (
@@ -6917,11 +6925,11 @@ export default function RUMS() {
         onPointerDown={handleTabsPointerDown} onPointerMove={handleTabsPointerMove}
         onPointerUp={handleTabsPointerEnd} onPointerCancel={handleTabsPointerEnd}
         onClickCapture={(e) => { if (tabsDragRef.current?.moved) { e.preventDefault(); e.stopPropagation(); } }}>
-        <button className={`tab-btn ${feedFilter === 'all' ? 'active' : ''}`} onClick={() => setFeedFilter('all')}>
+        <button className={`tab-btn ${feedFilter === 'all' ? 'active' : ''}`} onMouseEnter={playVersionHoverSound} onClick={() => setFeedFilter('all')}>
           All RUMS
           {unseenGeneral > 0 && <span className="tab-badge">{unseenGeneral}</span>}
         </button>
-        <button data-tutorial-action="lumina-tab" className={`tab-btn ${feedFilter === 'lumina' ? 'active' : ''}`} onClick={() => setFeedFilter('lumina')}>
+        <button data-tutorial-action="lumina-tab" className={`tab-btn ${feedFilter === 'lumina' ? 'active' : ''}`} onMouseEnter={playVersionHoverSound} onClick={() => setFeedFilter('lumina')}>
           <Droplet size={12} /> Lumina
           {unseenLumina > 0 && <span className="tab-badge">{unseenLumina}</span>}
         </button>
@@ -6950,6 +6958,7 @@ export default function RUMS() {
       >
         {options.map(([id, label, number]) => (
           <button key={id} type="button" data-space={id} className={visualVersion === id ? 'active' : ''} aria-pressed={id === 'projects' ? isProjectSpace : rumsSpace === id}
+            onMouseEnter={playVersionHoverSound}
             onClick={() => { if (!spaceSwitchBusy && (id === 'projects' || rumsSpace !== id)) void switchRumsSpace(id); }} disabled={Boolean(spaceSwitchBusy)} title={`Open ${id === 'rums4' ? 'RUMS 4' : id === 'rums5' ? 'Creative' : 'Projects'}`}>
             <span>{label}</span>{number && <strong>{spaceSwitchBusy === id ? <Loader2 size={12} className="spin" /> : number}</strong>}{id === 'projects' && spaceSwitchBusy === id && <Loader2 size={12} className="spin" />}
           </button>
@@ -7332,15 +7341,15 @@ export default function RUMS() {
             <h1 id="rums-space-title">Welcome to RUMS Plaza</h1>
             <p className="space-chooser-intro">Choose where you want to enter. Projects opens a directory of community-made spaces inside RUMS 4, Creative and outside RUMS.</p>
             <div className="space-choice-grid">
-              <button type="button" className="space-choice-card rums4-choice" onClick={() => chooseRumsSpace('rums4', { versionMenuSelection: true })}>
+              <button type="button" className="space-choice-card rums4-choice" onMouseEnter={playVersionHoverSound} onClick={() => chooseRumsSpace('rums4', { versionMenuSelection: true })}>
                 <span className="space-choice-number">04</span>
                 <span className="space-choice-copy"><strong>RUMS 4</strong></span>
               </button>
-              <button type="button" className="space-choice-card rums5-choice" onClick={() => chooseRumsSpace('rums5', { versionMenuSelection: true })}>
+              <button type="button" className="space-choice-card rums5-choice" onMouseEnter={playVersionHoverSound} onClick={() => chooseRumsSpace('rums5', { versionMenuSelection: true })}>
                 <span className="space-choice-number">✦</span>
                 <span className="space-choice-copy"><strong>Creative</strong></span>
               </button>
-              <button type="button" className="space-choice-card projects-choice" onClick={() => void chooseProjectsFromVersionMenu()}>
+              <button type="button" className="space-choice-card projects-choice" onMouseEnter={playVersionHoverSound} onClick={() => void chooseProjectsFromVersionMenu()}>
                 <span className="space-choice-number">PR</span>
                 <span className="space-choice-copy"><strong>Projects</strong></span>
               </button>
