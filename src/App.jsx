@@ -46,7 +46,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'open-on-account-mount-88';
+const FORCE_UPDATE_REVISION = 'url-version-music-hard-stop-89';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -57,8 +57,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 88;
-const JAMIE_TUTORIAL_VERSION = 88;
+const TUTORIAL_VERSION = 89;
+const JAMIE_TUTORIAL_VERSION = 89;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -596,6 +596,7 @@ export default function RUMS() {
   const updateAudioLoadingRef = useRef(null);
   const updateAudioKeepaliveRef = useRef(null);
   const updateAudioKeepaliveGainRef = useRef(null);
+  const updateMusicAllowedRef = useRef(false);
 
   const uiSfxPoolsRef = useRef({});
   const uiSfxBuffersRef = useRef({});
@@ -906,7 +907,34 @@ export default function RUMS() {
     };
   }, [updateTrack.src, entryIntroActive]);
 
+  const stopUpdateMusicCompletely = () => {
+    updateMusicAllowedRef.current = false;
+
+    if (updateAudioSourceRef.current) {
+      try { updateAudioSourceRef.current.stop(0); } catch {}
+      try { updateAudioSourceRef.current.disconnect(); } catch {}
+      updateAudioSourceRef.current = null;
+    }
+
+    const context = updateAudioContextRef.current;
+    const gain = updateAudioGainRef.current;
+    if (context && gain) {
+      try {
+        const now = context.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(0.000001, now);
+      } catch {}
+    }
+
+    setUpdateMusicState('ready');
+  };
+
   const startUpdateMusic = async () => {
+    if (!updateMusicAllowedRef.current) {
+      setUpdateMusicState('ready');
+      return false;
+    }
+
     setUpdateMusicState('starting');
     const context = await ensureUpdateAudioReady({ resume: true });
 
@@ -994,6 +1022,8 @@ export default function RUMS() {
   const beginUpdateCycle = (version, forced) => {
     if (updateCycleRef.current.phase !== 'idle') return false;
 
+    updateMusicAllowedRef.current = true;
+
     updateCycleRef.current = {
       id: version,
       forced: Boolean(forced),
@@ -1022,9 +1052,11 @@ export default function RUMS() {
     if (!context || context.state !== 'running') return false;
 
     updateStartInFlightRef.current = true;
+    updateMusicAllowedRef.current = true;
     const played = await startUpdateMusic();
 
     if (!played) {
+      updateMusicAllowedRef.current = false;
       updateStartInFlightRef.current = false;
       return false;
     }
@@ -1154,12 +1186,9 @@ export default function RUMS() {
 
       setUpdateMusicState('ready');
 
-      if (
-        (updateCycleRef.current.phase === 'updating' || entryIntroActive) &&
-        updateMusicState !== 'playing'
-      ) {
-        // Forced updates and normal Plaza entry use the same soundtrack.
-        // The first ordinary interaction unlocks it when autoplay was denied.
+      if (updateMusicAllowedRef.current) {
+        // The live ref gate prevents a stale listener from ever reviving
+        // a loading-screen soundtrack after that screen has finished.
         await startUpdateMusic();
       } else {
         await tryStartPendingUpdate();
@@ -1296,12 +1325,7 @@ export default function RUMS() {
       fadeTimer = window.setTimeout(() => {
         if (updateCycleRef.current.id !== cycleId) return;
 
-        if (updateAudioSourceRef.current) {
-          try { updateAudioSourceRef.current.stop(); } catch {}
-          try { updateAudioSourceRef.current.disconnect(); } catch {}
-          updateAudioSourceRef.current = null;
-        }
-        setUpdateMusicState('ready');
+        stopUpdateMusicCompletely();
 
         /*
           Stage 2
@@ -4095,6 +4119,15 @@ export default function RUMS() {
     versionMenuEntryKeyRef.current = nextEntryKey;
     versionMenuStartHandledKeyRef.current = nextEntryKey;
 
+    // The loading/update soundtrack is a separate audio system. Make sure it
+    // is dead before the normal Plaza music player takes over.
+    stopUpdateMusicCompletely();
+
+    // URL 湖 is always the default song when entering the version menu.
+    // Reset it to the beginning even if another Plaza track was selected before.
+    prepareSiteMusicTrack(0, { reset: true });
+    void playSiteMusicTrack(0, { reset: true });
+
     // Keep START inside the actual gesture that opens Welcome to RUMS Plaza.
     void playUiSfx('start');
 
@@ -4165,6 +4198,7 @@ export default function RUMS() {
     ) return undefined;
 
     // Use exactly the same soundtrack/track selection as the forced updater.
+    updateMusicAllowedRef.current = true;
     void startUpdateMusic();
 
     if (!entrySessionReady) return undefined;
@@ -4198,13 +4232,10 @@ export default function RUMS() {
       }
 
       finishTimer = window.setTimeout(() => {
-        if (updateAudioSourceRef.current) {
-          try { updateAudioSourceRef.current.stop(); } catch {}
-          try { updateAudioSourceRef.current.disconnect(); } catch {}
-          updateAudioSourceRef.current = null;
-        }
+        // The loading-screen track ends HERE. It cannot be resumed by a later
+        // click, keypress, focus change, or stale audio-unlock listener.
+        stopUpdateMusicCompletely();
 
-        setUpdateMusicState('ready');
         setEntryIntroActive(false);
         setEntryIntroLeaving(false);
       }, ENTRY_FADE_MS);
@@ -4221,6 +4252,15 @@ export default function RUMS() {
     updateOverlayLeaving,
     updateHandoffPhase,
   ]);
+
+  useEffect(() => {
+    if (!entryIntroActive && updateCycleRef.current.phase === 'idle') {
+      updateMusicAllowedRef.current = false;
+      if (updateAudioSourceRef.current) {
+        stopUpdateMusicCompletely();
+      }
+    }
+  }, [entryIntroActive]);
 
   useEffect(() => {
     let cancelled = false;
