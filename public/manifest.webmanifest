@@ -1,9 +1,20 @@
 {
+  "id": "/",
   "name": "RUMS Plaza",
   "short_name": "RUMS Plaza",
+  "description": "RUMS Plaza community platform",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#f6f8fc",
   "theme_color": "#3478f6",
-  "description": "RUMS Plaza community platform"
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
