@@ -13988,3 +13988,73 @@ button,input,textarea { font:inherit; }
     max-width:calc(100% - 122px)!important;
   }
 }
+
+
+/* -------------------------------------------------------------------------- */
+/* MOBILE VERSION ICON ALIGNMENT + LOWER CARDS — 151                           */
+/* Keep each version name in the same horizontal row as its icon on mobile,   */
+/* and give the card stack a little more breathing room below the welcome UI.  */
+/* -------------------------------------------------------------------------- */
+
+@media(max-width:820px){
+  .aero-frame > .rums-space-chooser .space-choice-grid{
+    margin-top:24px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy{
+    position:static!important;
+    inset:auto!important;
+    width:auto!important;
+    height:auto!important;
+    min-width:0!important;
+    min-height:0!important;
+    padding:0!important;
+    margin:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    text-align:left!important;
+    pointer-events:auto!important;
+    z-index:auto!important;
+    grid-column:2!important;
+    grid-row:1!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums4-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums5-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .projects-choice .space-choice-copy strong{
+    width:auto!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:4px 7px!important;
+    text-align:left!important;
+  }
+}
+
+@media(max-width:700px){
+  .aero-frame > .rums-space-chooser .space-choice-grid{
+    margin-top:30px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy{
+    padding-right:0!important;
+  }
+}
+
+@media(max-width:430px){
+  .aero-frame > .rums-space-chooser .space-choice-grid{
+    margin-top:26px!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy{
+    padding-right:0!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums4-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums5-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .projects-choice .space-choice-copy strong{
+    max-width:100%!important;
+  }
+}
