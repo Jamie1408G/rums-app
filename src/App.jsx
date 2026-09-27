@@ -6,7 +6,7 @@ import {
   Plus, X, Trash2, ImagePlus, Loader2, Home, Droplet, Send, ArrowLeft, Search, Share2, Check,
   Lightbulb, Megaphone, Newspaper, Pencil, Video, Link2,
   GripVertical, ChevronUp, ChevronDown, Palette, Sparkles, Eye, EyeOff, Undo2, Redo2, RotateCcw,
-  Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music2, ListMusic,
+  Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Music2, ListMusic, Download,
 } from 'lucide-react';
 
 const USERS_KEY = 'rums-users';
@@ -676,6 +676,50 @@ export default function RUMS() {
   const [siteMusicProgress, setSiteMusicProgress] = useState(0);
   const [siteMusicDuration, setSiteMusicDuration] = useState(0);
   const [siteMusicError, setSiteMusicError] = useState('');
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
+  const [installHelpOpen, setInstallHelpOpen] = useState(false);
+  const [isStandaloneApp, setIsStandaloneApp] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator?.standalone === true;
+  });
+
+  useEffect(() => {
+    const media = window.matchMedia?.('(display-mode: standalone)');
+    const refreshStandalone = () => setIsStandaloneApp(Boolean(media?.matches || window.navigator?.standalone === true));
+    const captureInstallPrompt = (event) => {
+      event.preventDefault();
+      setDeferredInstallPrompt(event);
+    };
+    const installed = () => {
+      setDeferredInstallPrompt(null);
+      setInstallHelpOpen(false);
+      setIsStandaloneApp(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', captureInstallPrompt);
+    window.addEventListener('appinstalled', installed);
+    media?.addEventListener?.('change', refreshStandalone);
+    refreshStandalone();
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', captureInstallPrompt);
+      window.removeEventListener('appinstalled', installed);
+      media?.removeEventListener?.('change', refreshStandalone);
+    };
+  }, []);
+
+  const installRumsPlaza = async () => {
+    if (isStandaloneApp) return;
+    if (deferredInstallPrompt) {
+      try {
+        await deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        if (choice?.outcome === 'accepted') setDeferredInstallPrompt(null);
+        return;
+      } catch {}
+    }
+    setInstallHelpOpen(true);
+  };
 
   const playUiSfx = async (name) => {
     const config = UI_SFX[name];
@@ -8028,6 +8072,7 @@ export default function RUMS() {
               {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
               {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setEditMode(true)}>{editMode ? <Check size={19} /> : <Eye size={19} />} {editMode ? 'Editing website' : 'Edit website'}</button>}
               {!isProjectSpace && <button data-tutorial-nav="upload" className="rail-create" onMouseEnter={playHoverSound} onClick={() => openPostComposer()}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>}
+              {!isStandaloneApp && <button type="button" className="rail-link plaza-install-link" onMouseEnter={playHoverSound} onClick={() => void installRumsPlaza()}><Download size={19} /> Install app</button>}
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS Plaza · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
@@ -8066,6 +8111,7 @@ export default function RUMS() {
                 <button type="button" onClick={() => { setMobileMenuOpen(false); openOwnProfile(); }}><span className="mobile-menu-icon"><UserIcon size={17} /></span> My profile</button>
                 {canEditSite && <button type="button" onClick={() => { setMobileMenuOpen(false); setScreen('admin'); }}><span className="mobile-menu-icon"><ShieldCheck size={17} /></span> Admin space</button>}
                 {isOwner && <button type="button" onClick={() => { setMobileMenuOpen(false); setEditMode((editing) => !editing); }}><span className="mobile-menu-icon"><Pencil size={17} /></span> {editMode ? 'Finish editing' : 'Edit website'}</button>}
+                {!isStandaloneApp && <button type="button" onClick={() => { setMobileMenuOpen(false); void installRumsPlaza(); }}><span className="mobile-menu-icon"><Download size={17} /></span> Install RUMS Plaza</button>}
                 <button type="button" onClick={() => { setMobileMenuOpen(false); void handleLogout(); }}><span className="mobile-menu-icon"><LogOut size={17} /></span> Log out</button>
               </nav>}
               <div className="aero-header-actions">
@@ -9321,6 +9367,23 @@ export default function RUMS() {
                   </button>
                 )}
               </div>
+            </section>
+          </div>
+        )}
+
+        {installHelpOpen && (
+          <div className="modal-overlay plaza-install-overlay" onClick={() => setInstallHelpOpen(false)}>
+            <section className="modal-card plaza-install-card" role="dialog" aria-modal="true" aria-label="Install RUMS Plaza" onClick={(event) => event.stopPropagation()}>
+              <button type="button" className="plaza-install-close" onClick={() => setInstallHelpOpen(false)} aria-label="Close"><X size={18} /></button>
+              <div className="plaza-install-icon"><Download size={24} /></div>
+              <h3>Install RUMS Plaza</h3>
+              <p className="plaza-install-copy">
+                {/iPad|iPhone|iPod/.test(navigator.userAgent)
+                  ? 'On iPhone or iPad, open this page in Safari, tap Share, then choose “Add to Home Screen”.'
+                  : 'Use your browser menu and choose “Install app” or “Add to Home screen”.'}
+              </p>
+              {/iPad|iPhone|iPod/.test(navigator.userAgent) && <div className="plaza-install-steps"><span>1</span><b>Tap Share</b><span>2</span><b>Add to Home Screen</b><span>3</span><b>Tap Add</b></div>}
+              <button type="button" className="aero-btn plaza-install-done" onClick={() => setInstallHelpOpen(false)}>Got it</button>
             </section>
           </div>
         )}
