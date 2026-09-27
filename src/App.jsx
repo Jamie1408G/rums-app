@@ -46,7 +46,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'stop-url-on-version-select-90';
+const FORCE_UPDATE_REVISION = 'url-fade-on-version-select-91';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -57,8 +57,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 90;
-const JAMIE_TUTORIAL_VERSION = 90;
+const TUTORIAL_VERSION = 91;
+const JAMIE_TUTORIAL_VERSION = 91;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -639,6 +639,7 @@ export default function RUMS() {
   const siteMusicTrackIndexRef = useRef(0);
   const siteMusicVolumeRef = useRef(0.72);
   const siteMusicShellRef = useRef(null);
+  const siteMusicFadeTimerRef = useRef(0);
   const siteMusicPressTimerRef = useRef(0);
   const siteMusicPressOriginRef = useRef({ x: 0, y: 0 });
   const siteMusicLongPressRef = useRef(false);
@@ -1491,10 +1492,61 @@ export default function RUMS() {
     return safeIndex;
   }
 
+  function cancelSiteMusicFade({ restoreVolume = true } = {}) {
+    if (siteMusicFadeTimerRef.current) {
+      window.clearInterval(siteMusicFadeTimerRef.current);
+      siteMusicFadeTimerRef.current = 0;
+    }
+
+    const audio = siteMusicAudioRef.current;
+    if (audio && restoreVolume) {
+      try { audio.volume = siteMusicVolumeRef.current; } catch {}
+    }
+  }
+
+  function fadeOutSiteMusic(duration = 350) {
+    const audio = siteMusicAudioRef.current;
+    if (!audio) return;
+
+    cancelSiteMusicFade({ restoreVolume: false });
+
+    if (audio.paused || audio.ended) {
+      try { audio.volume = siteMusicVolumeRef.current; } catch {}
+      setSiteMusicPlaying(false);
+      return;
+    }
+
+    const startVolume = Math.max(0, Math.min(1, Number(audio.volume) || siteMusicVolumeRef.current));
+    const startedAt = performance.now();
+
+    siteMusicFadeTimerRef.current = window.setInterval(() => {
+      const progress = Math.min(1, (performance.now() - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 2);
+
+      try {
+        audio.volume = Math.max(0, startVolume * (1 - eased));
+      } catch {}
+
+      if (progress < 1) return;
+
+      window.clearInterval(siteMusicFadeTimerRef.current);
+      siteMusicFadeTimerRef.current = 0;
+
+      try { audio.pause(); } catch {}
+      try { audio.volume = siteMusicVolumeRef.current; } catch {}
+      setSiteMusicPlaying(false);
+
+      if ('mediaSession' in navigator) {
+        try { navigator.mediaSession.playbackState = 'paused'; } catch {}
+      }
+    }, 25);
+  }
+
   async function playSiteMusicTrack(index = siteMusicTrackIndexRef.current, { reset = false } = {}) {
     const audio = siteMusicAudioRef.current;
     if (!audio) return false;
 
+    cancelSiteMusicFade();
     prepareSiteMusicTrack(index, { reset });
     setSiteMusicError('');
 
@@ -1513,6 +1565,7 @@ export default function RUMS() {
   function pauseSiteMusic() {
     const audio = siteMusicAudioRef.current;
     if (!audio) return;
+    cancelSiteMusicFade();
     try { audio.pause(); } catch {}
     setSiteMusicPlaying(false);
   }
@@ -4051,7 +4104,7 @@ export default function RUMS() {
   }
 
   async function chooseProjectsFromVersionMenu() {
-    pauseSiteMusic();
+    fadeOutSiteMusic(350);
     void playUiSfx('select');
     await openProjectsDirectory();
     scheduleVersionOpenSound();
@@ -4166,7 +4219,7 @@ export default function RUMS() {
     if (versionMenuSelection) {
       // URL 湖 is version-menu-only music. Stop it the instant a version
       // is chosen so it cannot bleed into the destination opening.
-      pauseSiteMusic();
+      fadeOutSiteMusic(350);
       void playUiSfx('select');
     }
 
@@ -4431,6 +4484,10 @@ export default function RUMS() {
   ]);
 
   useEffect(() => () => {
+    if (siteMusicFadeTimerRef.current) {
+      window.clearInterval(siteMusicFadeTimerRef.current);
+      siteMusicFadeTimerRef.current = 0;
+    }
     if (startupEntryRevealTimerRef.current) {
       window.clearTimeout(startupEntryRevealTimerRef.current);
       startupEntryRevealTimerRef.current = 0;
