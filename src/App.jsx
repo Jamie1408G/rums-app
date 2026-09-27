@@ -44,7 +44,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'white-screen-recovery-85';
+const FORCE_UPDATE_REVISION = 'fix-continue-sound-86';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -55,8 +55,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 85;
-const JAMIE_TUTORIAL_VERSION = 85;
+const TUTORIAL_VERSION = 86;
+const JAMIE_TUTORIAL_VERSION = 86;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -4461,22 +4461,9 @@ export default function RUMS() {
     setScreen('login');
   }
 
-  async function continueFromAccountGate() {
-    if (!accountGateOpenPlayedRef.current) {
-      const played = await playUiSfx('open');
-      accountGateOpenPlayedRef.current = Boolean(played);
-
-      window.setTimeout(() => {
-        void playUiSfx('select');
-        window.setTimeout(() => {
-          enterVersionMenu();
-        }, 180);
-      }, 180);
-      return;
-    }
-
-    // SELECT confirms the account choice. START still belongs to the version
-    // menu itself, so give the two UI sounds a tiny bit of breathing room.
+  function continueFromAccountGate() {
+    // Continue is always SELECT only. OPEN belongs exclusively to the
+    // Logged in as page appearing, never to this button.
     void playUiSfx('select');
     window.setTimeout(() => {
       enterVersionMenu();
