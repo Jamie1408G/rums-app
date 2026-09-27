@@ -47,7 +47,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'slightly-longer-music-fades-95';
+const FORCE_UPDATE_REVISION = 'mobile-audio-island-fix-97';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -58,8 +58,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 95;
-const JAMIE_TUTORIAL_VERSION = 95;
+const TUTORIAL_VERSION = 97;
+const JAMIE_TUTORIAL_VERSION = 97;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -597,11 +597,13 @@ export default function RUMS() {
   const updateAudioLoadingRef = useRef(null);
   const updateAudioKeepaliveRef = useRef(null);
   const updateAudioKeepaliveGainRef = useRef(null);
+  const updateAudioHtmlRef = useRef(null);
   const updateMusicAllowedRef = useRef(false);
 
   const uiSfxPoolsRef = useRef({});
   const uiSfxBuffersRef = useRef({});
   const uiSfxBufferLoadsRef = useRef({});
+  const uiSfxContextRef = useRef(null);
   const versionMenuEntryKeyRef = useRef(1);
   const versionMenuStartHandledKeyRef = useRef(0);
   const accountGateEntrySeqRef = useRef(1);
@@ -672,6 +674,46 @@ export default function RUMS() {
   const playUiSfx = async (name) => {
     const config = UI_SFX[name];
     if (!config) return false;
+
+    /*
+      Low-latency path for mobile taps/clicks.
+      The buffers are decoded ahead of time. During a trusted gesture we can
+      resume the context and schedule the source immediately instead of waiting
+      for an <audio> element to spin up.
+    */
+    const fastContext = uiSfxContextRef.current;
+    const fastBuffer = uiSfxBuffersRef.current[name];
+    const hasActiveGesture = Boolean(
+      typeof navigator !== 'undefined' &&
+      navigator.userActivation?.isActive
+    );
+
+    if (
+      fastContext &&
+      fastContext.state !== 'closed' &&
+      fastBuffer &&
+      (fastContext.state === 'running' || hasActiveGesture)
+    ) {
+      try {
+        if (fastContext.state !== 'running') {
+          void fastContext.resume();
+        }
+
+        const gain = fastContext.createGain();
+        gain.gain.value = config.volume;
+        gain.connect(fastContext.destination);
+
+        const source = fastContext.createBufferSource();
+        source.buffer = fastBuffer;
+        source.connect(gain);
+        source.addEventListener('ended', () => {
+          try { source.disconnect(); } catch {}
+          try { gain.disconnect(); } catch {}
+        }, { once: true });
+        source.start(0);
+        return true;
+      } catch {}
+    }
 
     const poolEntry = uiSfxPoolsRef.current[name];
     if (poolEntry?.pool?.length) {
@@ -782,6 +824,15 @@ export default function RUMS() {
   useEffect(() => {
     const pools = {};
 
+    const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+    let sfxContext = null;
+    if (AudioContextCtor) {
+      try {
+        sfxContext = new AudioContextCtor({ latencyHint: 'interactive' });
+        uiSfxContextRef.current = sfxContext;
+      } catch {}
+    }
+
     for (const [name, config] of Object.entries(UI_SFX)) {
       const size = (name === 'click2' || name === 'click') ? 6 : 2;
       pools[name] = {
@@ -797,6 +848,34 @@ export default function RUMS() {
     }
 
     uiSfxPoolsRef.current = pools;
+
+    // Decode every short UI sound up front. Decoding itself does not require
+    // audible autoplay permission, so later taps can start almost instantly.
+    if (sfxContext) {
+      for (const [name, config] of Object.entries(UI_SFX)) {
+        uiSfxBufferLoadsRef.current[name] = fetch(config.src, { cache: 'force-cache' })
+          .then((response) => {
+            if (!response.ok) throw new Error(`Could not preload ${name}`);
+            return response.arrayBuffer();
+          })
+          .then((bytes) => sfxContext.decodeAudioData(bytes.slice(0)))
+          .then((buffer) => {
+            uiSfxBuffersRef.current[name] = buffer;
+            return buffer;
+          })
+          .catch(() => null);
+      }
+    }
+
+    const primeSfxContext = () => {
+      const context = uiSfxContextRef.current;
+      if (context && context.state === 'suspended') {
+        try { void context.resume(); } catch {}
+      }
+    };
+
+    document.addEventListener('touchstart', primeSfxContext, { capture: true, passive: true });
+    document.addEventListener('pointerdown', primeSfxContext, { capture: true, passive: true });
 
     // Keep START preloaded so version-menu entry can fire it immediately.
     pools.start?.pool?.forEach((audio) => {
@@ -879,7 +958,15 @@ export default function RUMS() {
     document.addEventListener('pointerdown', onPointerSfx, true);
 
     return () => {
+      document.removeEventListener('touchstart', primeSfxContext, true);
+      document.removeEventListener('pointerdown', primeSfxContext, true);
       document.removeEventListener('pointerdown', onPointerSfx, true);
+
+      if (uiSfxContextRef.current) {
+        try { uiSfxContextRef.current.close(); } catch {}
+        uiSfxContextRef.current = null;
+      }
+
       Object.values(uiSfxPoolsRef.current).forEach((entry) => {
         entry?.pool?.forEach((audio) => {
           try {
@@ -894,20 +981,28 @@ export default function RUMS() {
   }, []);
 
   useEffect(() => {
-    // Proven-safe cache warming from the older working patch. This warms the
-    // network/media cache only; it does NOT touch the Web Audio permission state.
-    const preloadAudio = new Audio();
+    // Preload one reusable HTMLAudio fallback as well as warming the cache.
+    // iOS often accepts this immediately from touchstart even when WebAudio
+    // resume/decode timing is more temperamental.
+    const preloadAudio = new Audio(updateTrack.src);
     preloadAudio.preload = 'auto';
-    preloadAudio.src = updateTrack.src;
+    preloadAudio.playsInline = true;
+    preloadAudio.volume = 0.72;
+    updateAudioHtmlRef.current = preloadAudio;
     try { preloadAudio.load(); } catch {}
+
     return () => {
       try {
         preloadAudio.pause();
+        preloadAudio.currentTime = 0;
         preloadAudio.removeAttribute('src');
         preloadAudio.load();
       } catch {}
+      if (updateAudioHtmlRef.current === preloadAudio) {
+        updateAudioHtmlRef.current = null;
+      }
     };
-  }, [updateTrack.src, entryIntroActive]);
+  }, [updateTrack.src]);
 
   const stopUpdateMusicCompletely = () => {
     updateMusicAllowedRef.current = false;
@@ -916,6 +1011,12 @@ export default function RUMS() {
       try { updateAudioSourceRef.current.stop(0); } catch {}
       try { updateAudioSourceRef.current.disconnect(); } catch {}
       updateAudioSourceRef.current = null;
+    }
+
+    if (updateAudioHtmlRef.current) {
+      try { updateAudioHtmlRef.current.pause(); } catch {}
+      try { updateAudioHtmlRef.current.currentTime = 0; } catch {}
+      try { updateAudioHtmlRef.current.volume = 0.72; } catch {}
     }
 
     const context = updateAudioContextRef.current;
@@ -938,6 +1039,70 @@ export default function RUMS() {
     }
 
     setUpdateMusicState('starting');
+
+    /*
+      If WebAudio is already hot, use it. Otherwise try the preloaded HTMLAudio
+      element immediately — crucial on iOS because calling play() synchronously
+      from touchstart preserves the user gesture.
+    */
+    const existingContext = updateAudioContextRef.current;
+    if (
+      existingContext?.state === 'running' &&
+      updateAudioBufferRef.current
+    ) {
+      try {
+        if (updateAudioHtmlRef.current) {
+          try { updateAudioHtmlRef.current.pause(); } catch {}
+        }
+
+        if (updateAudioSourceRef.current) {
+          try { updateAudioSourceRef.current.stop(); } catch {}
+          try { updateAudioSourceRef.current.disconnect(); } catch {}
+        }
+
+        const gain = updateAudioGainRef.current;
+        if (gain) {
+          const now = existingContext.currentTime;
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(0.72, now);
+        }
+
+        const source = existingContext.createBufferSource();
+        source.buffer = updateAudioBufferRef.current;
+        source.connect(gain);
+        updateAudioSourceRef.current = source;
+        source.start(0);
+        setUpdateMusicState('playing');
+        return true;
+      } catch {}
+    }
+
+    const htmlAudio = updateAudioHtmlRef.current;
+    if (htmlAudio) {
+      try {
+        const wanted = new URL(updateTrack.src, window.location.href).href;
+        if (htmlAudio.src !== wanted) {
+          htmlAudio.src = updateTrack.src;
+          htmlAudio.preload = 'auto';
+          htmlAudio.playsInline = true;
+          try { htmlAudio.load(); } catch {}
+        }
+
+        htmlAudio.volume = 0.72;
+        if (htmlAudio.ended) htmlAudio.currentTime = 0;
+
+        const attempt = htmlAudio.play();
+        if (attempt?.then) await attempt;
+
+        setUpdateMusicState('playing');
+
+        // Warm WebAudio in the background for desktop/next cycle, but do not
+        // replace the already-audible HTMLAudio source mid-screen.
+        void ensureUpdateAudioReady({ resume: true });
+        return true;
+      } catch {}
+    }
+
     const context = await ensureUpdateAudioReady({ resume: true });
 
     if (!context || context.state !== 'running' || !updateAudioBufferRef.current) {
@@ -954,11 +1119,9 @@ export default function RUMS() {
 
       const gain = updateAudioGainRef.current;
       if (gain) {
-        try {
-          const now = context.currentTime;
-          gain.gain.cancelScheduledValues(now);
-          gain.gain.setValueAtTime(0.72, now);
-        } catch {}
+        const now = context.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(0.72, now);
       }
 
       const source = context.createBufferSource();
@@ -1199,10 +1362,12 @@ export default function RUMS() {
       arming = false;
     };
 
+    document.addEventListener('touchstart', arm, { capture: true, passive: true });
     document.addEventListener('pointerdown', arm, { capture: true, passive: true });
     document.addEventListener('keydown', arm, true);
 
     return () => {
+      document.removeEventListener('touchstart', arm, true);
       document.removeEventListener('pointerdown', arm, true);
       document.removeEventListener('keydown', arm, true);
     };
@@ -1963,8 +2128,29 @@ export default function RUMS() {
     if (delta > 34) closeSiteMusicIsland();
   }
 
+  function renderMobileHeaderMusicIsland() {
+    if (!currentUser || !rumsSpace) return null;
+
+    return (
+      <button
+        type="button"
+        className={`mobile-header-music-island track-${siteMusicTrackIndex} ${siteMusicPlaying ? 'is-playing' : 'is-paused'}`}
+        data-music-control="toggle"
+        onClick={toggleSiteMusic}
+        aria-label={siteMusicPlaying ? `Pause ${siteMusicTrack.title}` : `Play ${siteMusicTrack.title}`}
+        title={`${siteMusicTrack.title} · ${siteMusicTrack.artist}`}
+      >
+        <span className="mobile-header-music-orb" aria-hidden="true">
+          {siteMusicPlaying
+            ? <span className="plaza-music-mini-eq"><i/><i/><i/></span>
+            : <Music2 size={16}/>}
+        </span>
+      </button>
+    );
+  }
+
   function renderHeaderMusicPlayer({ mobile = false } = {}) {
-    if (!currentUser || !rumsSpace || isProjectSpace) return null;
+    if (!currentUser || !rumsSpace || (!mobile && isProjectSpace)) return null;
 
     if (mobile) {
       return (
@@ -7484,14 +7670,14 @@ export default function RUMS() {
               {hasLumina && siteConfig.showLumina && <button data-tutorial-nav="lumina" className={`rail-link ${screen === 'lumina' ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={openLumina}>{navIconWithNew(<Droplet size={19} />, 'lumina')} Project Lumina</button>}
               </>}
               <div className="rail-label">COMMUNITY</div>
-              <button data-tutorial-nav="news" className={`rail-link ${screen === 'news' ? 'selected' : ''}`} onClick={() => setScreen('news')}>{navIconWithNew(<Newspaper size={19} />, 'news')} Plaza News</button>
-              <button data-tutorial-nav="chat" className={`rail-link ${screen === 'chat' ? 'selected' : ''}`} onClick={() => setScreen('chat')}>{chatNavIcon(19)} Chat</button>
-              {!isProjectSpace && siteConfig.showUpdates && <button data-tutorial-nav="updates" className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
-              {!isProjectSpace && siteConfig.showSuggestions && <button data-tutorial-nav="suggestions" className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
-              {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{navIconWithNew(<Pencil size={19} />, `custom:${tab.id}`)} {tab.label}</button>)}
-              {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
-              {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onClick={() => setEditMode(true)}>{editMode ? <Check size={19} /> : <Eye size={19} />} {editMode ? 'Editing website' : 'Edit website'}</button>}
-              {!isProjectSpace && <button data-tutorial-nav="upload" className="rail-create" onClick={() => openPostComposer()}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>}
+              <button data-tutorial-nav="news" className={`rail-link ${screen === 'news' ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setScreen('news')}>{navIconWithNew(<Newspaper size={19} />, 'news')} Plaza News</button>
+              <button data-tutorial-nav="chat" className={`rail-link ${screen === 'chat' ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setScreen('chat')}>{chatNavIcon(19)} Chat</button>
+              {!isProjectSpace && siteConfig.showUpdates && <button data-tutorial-nav="updates" className={`rail-link ${screen === 'updates' ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setScreen('updates')}>{navIconWithNew(<Megaphone size={19} />, 'updates')} Server updates</button>}
+              {!isProjectSpace && siteConfig.showSuggestions && <button data-tutorial-nav="suggestions" className={`rail-link ${screen === 'suggestions' ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setScreen('suggestions')}>{navIconWithNew(<Lightbulb size={19} />, 'suggestions')} Suggestions</button>}
+              {siteConfig.customTabs.map((tab) => <button key={tab.id} className={`rail-link ${screen === 'custom' && customPageId === tab.id ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => { setCustomPageId(tab.id); setScreen('custom'); }}>{navIconWithNew(<Pencil size={19} />, `custom:${tab.id}`)} {tab.label}</button>)}
+              {canEditSite && <button className={`rail-link ${screen === 'admin' ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setScreen('admin')}><Shield size={19} /> Admin space</button>}
+              {isOwner && <button className={`rail-link edit-mode-toggle ${editMode ? 'selected' : ''}`} onMouseEnter={playHoverSound} onClick={() => setEditMode(true)}>{editMode ? <Check size={19} /> : <Eye size={19} />} {editMode ? 'Editing website' : 'Edit website'}</button>}
+              {!isProjectSpace && <button data-tutorial-nav="upload" className="rail-create" onMouseEnter={playHoverSound} onClick={() => openPostComposer()}>{navIconWithNew(<Plus size={19} />, 'upload')} Share a build</button>}
               <div className="rail-footer"><span className="status-light" /> A world built together <small>RUMS Plaza · Minecraft community</small></div>
             </aside>
             <div className="aero-header">
@@ -7515,6 +7701,9 @@ export default function RUMS() {
                     {renderHeaderMusicPlayer()}
                   </div>
                 </div>
+              </div>
+              <div className="mobile-header-music-slot">
+                {renderMobileHeaderMusicIsland()}
               </div>
               <button className="mobile-header-menu-button" type="button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Open site menu" aria-expanded={mobileMenuOpen}><Menu size={21} />{notificationsForCurrentUser().length > 0 && <span className="mobile-header-menu-dot" />}</button>
               {mobileMenuOpen && <nav className="mobile-header-menu" aria-label="Site menu">

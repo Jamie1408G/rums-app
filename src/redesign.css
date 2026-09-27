@@ -8881,3 +8881,142 @@ button,input,textarea { font:inherit; }
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* MOBILE AUDIO / HEADER FIX — 97                                             */
+/* Version switcher + mini music island + menu in one stable mobile row.       */
+/* -------------------------------------------------------------------------- */
+
+.aero-root .mobile-header-music-slot,
+.aero-root .mobile-header-music-island{
+  display:none;
+}
+
+@media(max-width:760px){
+  .aero-root .aero-header{
+    grid-template-columns:minmax(0,1fr) 44px 44px!important;
+    grid-template-rows:auto!important;
+    align-items:center!important;
+    gap:5px 6px!important;
+    min-height:0!important;
+    padding:7px 10px!important;
+  }
+
+  .aero-root .aero-brand-version-switch{
+    grid-column:1!important;
+    grid-row:1!important;
+    min-width:0!important;
+  }
+
+  .aero-root .mobile-header-music-slot{
+    grid-column:2;
+    grid-row:1;
+    display:grid;
+    place-items:center;
+    width:44px;
+    height:42px;
+  }
+
+  .aero-root .mobile-header-menu-button{
+    grid-column:3!important;
+    grid-row:1!important;
+  }
+
+  .aero-root .mobile-header-music-island{
+    position:relative;
+    display:grid;
+    place-items:center;
+    width:44px;
+    height:42px;
+    padding:0;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.84);
+    border-radius:14px;
+    color:var(--theme-text,#29415d);
+    background:
+      radial-gradient(circle at 28% 6%,rgba(255,255,255,.98),transparent 38%),
+      linear-gradient(145deg,rgba(255,255,255,.8),rgba(226,240,253,.68));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.92),
+      inset -1px -2px 4px rgba(68,104,145,.06),
+      0 5px 13px rgba(43,80,123,.11);
+    backdrop-filter:blur(18px) saturate(1.35);
+    -webkit-backdrop-filter:blur(18px) saturate(1.35);
+    cursor:pointer;
+    transition:transform .14s cubic-bezier(.16,1.35,.3,1),box-shadow .14s ease;
+  }
+
+  .aero-root .mobile-header-music-island:active{
+    transform:scale(.93);
+  }
+
+  .aero-root .mobile-header-music-orb{
+    width:29px;
+    height:29px;
+    display:grid;
+    place-items:center;
+    border:1px solid rgba(255,255,255,.72);
+    border-radius:10px;
+    color:#fff;
+    background:linear-gradient(145deg,#4f9eff,#72d7ff 58%,#8e80ff);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.56),
+      0 3px 8px rgba(54,99,150,.15);
+  }
+
+  .aero-root .mobile-header-music-island.track-1 .mobile-header-music-orb{background:linear-gradient(145deg,#ff8880,#ffc77c 58%,#ffe39b)}
+  .aero-root .mobile-header-music-island.track-2 .mobile-header-music-orb{background:linear-gradient(145deg,#74dfba,#72d6ef 54%,#87a8ff)}
+  .aero-root .mobile-header-music-island.track-3 .mobile-header-music-orb{background:linear-gradient(145deg,#bd8cff,#ff90c9 55%,#ffc08b)}
+  .aero-root .mobile-header-music-island.track-4 .mobile-header-music-orb{background:linear-gradient(145deg,#72e1ff,#6699ff 52%,#8c78ff)}
+
+  .aero-root.version-build-active .mobile-header-music-slot{
+    animation:wiiPieceControl .40s .88s cubic-bezier(.14,1.5,.28,1) both;
+  }
+
+  .aero-root.screen-chat .aero-header{
+    grid-template-columns:minmax(0,1fr) 44px 44px!important;
+    grid-template-rows:auto!important;
+  }
+
+  .site-update-now-playing.needs-tap::after{
+    content:"Tap for sound";
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    margin-left:auto;
+    padding:4px 7px;
+    border-radius:999px;
+    color:var(--theme-accent,#3478f6);
+    background:color-mix(in srgb,var(--theme-accent-soft,#dceaff) 72%,white);
+    font-size:8px;
+    font-weight:900;
+    letter-spacing:.04em;
+    white-space:nowrap;
+  }
+}
+
+@media(max-width:380px){
+  .aero-root .aero-header{
+    grid-template-columns:minmax(0,1fr) 40px 40px!important;
+    gap:5px!important;
+    padding-left:8px!important;
+    padding-right:8px!important;
+  }
+
+  .aero-root .mobile-header-music-slot,
+  .aero-root .mobile-header-menu-button{
+    width:40px!important;
+  }
+
+  .aero-root .mobile-header-music-island{
+    width:40px!important;
+  }
+}
+
+.aero-root[data-theme="dark"] .mobile-header-music-island{
+  border-color:rgba(255,255,255,.12);
+  color:#edf5ff;
+  background:
+    radial-gradient(circle at 28% 6%,rgba(255,255,255,.1),transparent 38%),
+    linear-gradient(145deg,rgba(55,67,84,.86),rgba(34,45,59,.8));
+}
+
