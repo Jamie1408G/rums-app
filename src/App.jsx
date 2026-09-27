@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'frutiger-aero-version-menu-105';
+const FORCE_UPDATE_REVISION = 'old-version-menu-restored-106';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -59,8 +59,8 @@ const UPDATE_AUDIO_TRACKS = [
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
-const TUTORIAL_VERSION = 105;
-const JAMIE_TUTORIAL_VERSION = 105;
+const TUTORIAL_VERSION = 106;
+const JAMIE_TUTORIAL_VERSION = 106;
 // TEMP while the interactive tutorial is still being developed: bump both versions on every tutorial update.
 const ROBLOX_THEMES = [
   { id: 'roblox2008', name: 'Roblox 2008', year: '2008', description: 'Classic Virtual Playworld portal with blue bars, framed modules and early-web controls', swatches: ['#d8e8f8', '#4e86b8', '#ffffff'] },
@@ -4663,7 +4663,6 @@ export default function RUMS() {
       }
 
       finishTimer = window.setTimeout(() => {
-        // Let the UI disappear on the existing 800ms timing.
         setEntryIntroActive(false);
         setEntryIntroLeaving(false);
       }, ENTRY_FADE_MS);
@@ -4674,9 +4673,6 @@ export default function RUMS() {
 
       entryMusicTailTimerRef.current = window.setTimeout(() => {
         entryMusicTailTimerRef.current = 0;
-
-        // Only stop the old entry soundtrack if a real updater did not start
-        // during the short audio tail.
         if (updateCycleRef.current.phase === 'idle') {
           stopUpdateMusicCompletely();
         }
@@ -7757,16 +7753,6 @@ export default function RUMS() {
 
         {screen === 'spaceSelect' && (
           <section className="rums-space-chooser" aria-labelledby="rums-space-title">
-            <div className="space-chooser-atmosphere" aria-hidden="true">
-              <span className="plaza-glow glow-a"/>
-              <span className="plaza-glow glow-b"/>
-              <span className="plaza-glow glow-c"/>
-              <span className="plaza-particle particle-a"/>
-              <span className="plaza-particle particle-b"/>
-              <span className="plaza-particle particle-c"/>
-              <span className="plaza-particle particle-d"/>
-              <span className="plaza-particle particle-e"/>
-            </div>
             <div className="entrance-account" aria-label="Account">
               {!entrySessionReady ? <span className="entrance-account-loading">Checking account…</span> : currentUser ? <><span className="entrance-account-user">{avatarNode(currentUser.username, 26, 10)}<span>{currentUser.username}</span></span><button type="button" className="entrance-account-button" onClick={() => void logoutFromEntrance()}>Log out</button></> : <button type="button" className="entrance-account-button primary" onClick={openEntryLogin}>Log in</button>}
             </div>
