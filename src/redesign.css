@@ -13887,3 +13887,21 @@ button,input,textarea { font:inherit; }
   .site-entry-progress-fill{width:72%;}
   .site-entry-progress-orb{left:72%;}
 }
+
+/* -------------------------------------------------------------------------- */
+/* VERSION SWITCH HOVER + PLAZA TITLE FLOAT — 146                            */
+/* -------------------------------------------------------------------------- */
+
+/* The logo + Welcome panel float as one composition using the exact motion
+   curve from the normal loading-screen R orb. */
+.aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+  animation:plazaEntryOrbFloat142 3.8s ease-in-out infinite;
+  will-change:transform;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+    animation:none!important;
+    transform:none!important;
+  }
+}

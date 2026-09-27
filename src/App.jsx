@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'normal-loading-full-bar-145';
+const FORCE_UPDATE_REVISION = 'version-slider-hover-title-float-146';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -7422,6 +7422,7 @@ export default function RUMS() {
       >
         {options.map(([id, label, number]) => (
           <button key={id} type="button" data-space={id} className={visualVersion === id ? 'active' : ''} aria-pressed={id === 'projects' ? isProjectSpace : rumsSpace === id}
+            onMouseEnter={() => { if (!spaceSwitchBusy) playHoverSound(); }}
             onClick={() => { if (!spaceSwitchBusy && (id === 'projects' || rumsSpace !== id)) void switchRumsSpace(id); }} disabled={Boolean(spaceSwitchBusy)} title={`Open ${id === 'rums4' ? 'RUMS 4' : id === 'rums5' ? 'Creative' : 'Projects'}`}>
             <span>{label}</span>{number && <strong>{spaceSwitchBusy === id ? <Loader2 size={12} className="spin" /> : number}</strong>}{id === 'projects' && spaceSwitchBusy === id && <Loader2 size={12} className="spin" />}
           </button>
@@ -7451,6 +7452,7 @@ export default function RUMS() {
             aria-label={`Open ${label}`}
             aria-pressed={visualVersion === id}
             disabled={Boolean(spaceSwitchBusy)}
+            onMouseEnter={() => { if (!spaceSwitchBusy) playHoverSound(); }}
             onClick={() => {
               if (!spaceSwitchBusy && (id === 'projects' || rumsSpace !== id)) {
                 void switchRumsSpace(id);
