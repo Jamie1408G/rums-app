@@ -13889,21 +13889,32 @@ button,input,textarea { font:inherit; }
 }
 
 /* -------------------------------------------------------------------------- */
-/* PLAZA WELCOME FLOAT FIX — 147                                              */
+/* PLAZA WELCOME TRUE FLOAT — 148                                             */
 /* -------------------------------------------------------------------------- */
 
-/* Apply the loading-screen orb motion directly to both visible welcome
-   surfaces. This avoids the title card being visually pinned by layout
-   transforms on the parent cluster. The heading + description now move with
-   the panel itself, while the R mark uses the same timing so they stay in sync. */
+/* Keep the R mark and welcome card moving together, but remove the rotational
+   component from the loading-orb animation. The motion is now a clean vertical
+   hover rather than a tilt, with a slightly stronger lift so it reads clearly. */
 .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
   animation:none!important;
 }
 
 .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark,
 .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-title-card{
-  animation:plazaEntryOrbFloat142 3.8s ease-in-out infinite!important;
+  animation:plazaWelcomeTrueFloat148 3.8s cubic-bezier(.45,.05,.55,.95) infinite!important;
   will-change:transform;
+}
+
+@keyframes plazaWelcomeTrueFloat148{
+  0%,100%{transform:translate3d(0,0,0);}
+  50%{transform:translate3d(0,-10px,0);}
+}
+
+@media(max-width:760px){
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark,
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-title-card{
+    animation-duration:3.6s!important;
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
