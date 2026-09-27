@@ -12726,3 +12726,20 @@ button,input,textarea { font:inherit; }
   }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/* VERSION CARDS SLIGHTLY HIGHER — 134                                       */
+/* Keep bottom anchoring, just raise the row a little.                         */
+/* -------------------------------------------------------------------------- */
+
+.aero-frame > .rums-space-chooser .space-choice-grid{
+  bottom:52px!important;
+}
+
+@media(max-width:820px){
+  .aero-frame > .rums-space-chooser .space-choice-grid{
+    bottom:auto!important;
+  }
+}
+
