@@ -14643,3 +14643,50 @@ button,input,textarea { font:inherit; }
 .aero-root[data-theme="minecraft"] :is(.theme-option,.roblox-theme-year){border-radius:2px!important}
 .aero-root[data-theme="brutalism"] :is(.theme-option,.roblox-theme-year){border-radius:0!important}
 .aero-root[data-theme^="roblox"] :is(.theme-option,.roblox-theme-year){box-shadow:none!important}
+
+/* Startup chrome follows the selected theme all the way through the card. */
+.aero-root .site-entry-screen{
+  --entry-ink:#152b45;--entry-muted:#617a94;--entry-accent:#3a88ff;
+  --entry-surface:#e0f1ffb8;--entry-border:#5a9cda33;
+  --entry-visual:linear-gradient(160deg,#83c2f7,#73a8e7 55%,#8bdbc7);
+  --entry-bar:linear-gradient(90deg,#5bbdff,#3a88ff 64%,#65d5b4);
+  --entry-visual-ink:#fff;--entry-radius:18px;
+}
+.aero-root .site-entry-screen.startup-theme-dark{--entry-ink:#f1f7ff;--entry-muted:#a9bdd1;--entry-accent:#80b5ff;--entry-surface:#243750;--entry-border:#80b5ff55;--entry-visual:linear-gradient(150deg,#12243d,#243f64);--entry-bar:linear-gradient(90deg,#3563ad,#80b5ff);}
+.aero-root .site-entry-screen.startup-theme-minecraft{--entry-ink:#fff;--entry-muted:#d0d0d0;--entry-accent:#8cc85b;--entry-surface:#282828;--entry-border:#777;--entry-visual:linear-gradient(180deg,#77b5dd 0 52%,#76ad45 52% 67%,#59412b 67%);--entry-bar:linear-gradient(90deg,#4d782a,#8cc85b);--entry-radius:2px;--entry-visual-ink:#fff;}
+.aero-root .site-entry-screen.startup-theme-aero{--entry-ink:#15506b;--entry-muted:#39718a;--entry-accent:#189ed1;--entry-surface:#e5faff;--entry-border:#7dcbe1;--entry-visual:linear-gradient(165deg,#8fe1ff,#47b4e3 56%,#91da83);--entry-bar:linear-gradient(90deg,#72d6ff,#168fc9,#5dd0b8);}
+.aero-root .site-entry-screen.startup-theme-eco{--entry-ink:#285d38;--entry-muted:#52745c;--entry-accent:#4b9b45;--entry-surface:#efffe9;--entry-border:#91d485;--entry-visual:linear-gradient(160deg,#8ad7f3,#8cdaa3 55%,#5eae5a);--entry-bar:linear-gradient(90deg,#8bd45a,#4b9b45);}
+.aero-root .site-entry-screen.startup-theme-metro{--entry-ink:#25213c;--entry-muted:#5f526d;--entry-accent:#d12e7d;--entry-surface:#fff0f7;--entry-border:#ed71ad;--entry-visual:linear-gradient(140deg,#eb4a9a 0 30%,#efbe32 30% 48%,#9bd62d 48% 70%,#19b4ce 70%);--entry-bar:linear-gradient(90deg,#f25ca2,#f3c430,#9bd82d,#16b7d6);--entry-radius:4px;}
+.aero-root .site-entry-screen.startup-theme-flourish{--entry-ink:#62314c;--entry-muted:#845e72;--entry-accent:#c04480;--entry-surface:#fff3dc;--entry-border:#c97a9f;--entry-visual:radial-gradient(circle at 25% 25%,#f6bfd7,transparent 48%),linear-gradient(145deg,#df6da5,#a6bc6b);--entry-bar:linear-gradient(90deg,#dd5b95,#96af4b);}
+.aero-root .site-entry-screen.startup-theme-liquid{--entry-ink:#244262;--entry-muted:#58718d;--entry-accent:#438fda;--entry-surface:#ffffff7d;--entry-border:#ffffffd9;--entry-visual:radial-gradient(circle at 28% 25%,#ffffffaa,transparent 38%),linear-gradient(145deg,#9ed1f7,#8cb6eb);--entry-bar:linear-gradient(90deg,#9ce1fa,#73aaf2);}
+.aero-root .site-entry-screen.startup-theme-solar{--entry-ink:#35522d;--entry-muted:#657657;--entry-accent:#638f3b;--entry-surface:#f4f6dc;--entry-border:#b9c999;--entry-visual:linear-gradient(160deg,#f4cc83,#b5d69c 58%,#7ea65b);--entry-bar:linear-gradient(90deg,#e9bf62,#7faa52);}
+.aero-root .site-entry-screen.startup-theme-cyber{--entry-ink:#eaffff;--entry-muted:#8fb8c7;--entry-accent:#22e6ff;--entry-surface:#0e1b29;--entry-border:#22e6ff;--entry-visual:repeating-linear-gradient(0deg,#101a29 0 2px,#122b37 2px 4px);--entry-bar:linear-gradient(90deg,#22e6ff,#ff4fd8);--entry-radius:2px;}
+.aero-root .site-entry-screen.startup-theme-brutal{--entry-ink:#111;--entry-muted:#292929;--entry-accent:#ff5f2e;--entry-surface:#fff4df;--entry-border:#111;--entry-visual:linear-gradient(145deg,#ff5f2e 0 50%,#f5c553 50%);--entry-bar:#ff5f2e;--entry-radius:0;--entry-visual-ink:#111;}
+.aero-root .site-entry-screen.startup-theme-y2k{--entry-ink:#26364d;--entry-muted:#586780;--entry-accent:#7080dd;--entry-surface:#e8f3f8;--entry-border:#aabbd1;--entry-visual:linear-gradient(140deg,#9cc9d2,#aab9e6 52%,#d7caef);--entry-bar:linear-gradient(90deg,#53d3da,#7d81d9,#b896f2);}
+.aero-root .site-entry-screen.startup-theme-roblox{--entry-ink:#303030;--entry-muted:#666;--entry-accent:#00a2ff;--entry-surface:#f2f2f2;--entry-border:#bbb;--entry-visual:#e7e7e7;--entry-bar:#00a2ff;--entry-radius:2px;--entry-visual-ink:#333;}
+.aero-root .site-entry-screen.startup-id-roblox2008,.aero-root .site-entry-screen.startup-id-roblox2010{--entry-accent:#4e86b8;--entry-visual:linear-gradient(#4e86b8 0 46px,#dae9f7 46px);--entry-bar:linear-gradient(#78b3df,#3675aa);}
+.aero-root .site-entry-screen.startup-id-roblox2014{--entry-accent:#2d6ca2;--entry-visual:linear-gradient(#2d6ca2 0 46px,#e5e5e5 46px);--entry-bar:#2d6ca2;}
+.aero-root .site-entry-screen.startup-id-roblox2016{--entry-accent:#00a2ff;--entry-visual:linear-gradient(#00a2ff 0 46px,#e8e8e8 46px);}
+.aero-root .site-entry-screen.startup-id-roblox2017{--entry-accent:#0074bd;--entry-visual:linear-gradient(#0074bd 0 46px,#f2f2f2 46px);--entry-bar:#0074bd;}
+.aero-root .site-entry-screen.startup-id-roblox2020{--entry-accent:#00b06f;--entry-visual:#f2f4f5;--entry-bar:#00b06f;}
+.aero-root .site-entry-screen.startup-id-roblox2026{--entry-accent:#111;--entry-visual:#f2f3f5;--entry-bar:#111;--entry-radius:12px;}
+.aero-root .site-entry-screen .site-entry-visual{background:var(--entry-visual)!important;border-right-color:var(--entry-border)!important;}
+.aero-root .site-entry-screen .site-entry-content h1{color:var(--entry-ink)!important;}
+.aero-root .site-entry-screen .site-entry-content > p,.aero-root .site-entry-screen .site-entry-footnote,.aero-root .site-entry-screen .site-entry-progress-labels{color:var(--entry-muted)!important;}
+.aero-root .site-entry-screen .site-update-kicker{color:var(--entry-accent)!important;background:var(--entry-surface)!important;border-color:var(--entry-border)!important;border-radius:var(--entry-radius)!important;}
+.aero-root .site-entry-screen .site-entry-stage-pills span{background:var(--entry-surface)!important;color:var(--entry-visual-ink)!important;border-color:var(--entry-border)!important;border-radius:var(--entry-radius)!important;}
+.aero-root .site-entry-screen .site-entry-stage-pills i,.aero-root .site-entry-screen .site-entry-pulse{background:var(--entry-accent)!important;}
+.aero-root .site-entry-screen .site-entry-progress-track{background:var(--entry-surface)!important;border-color:var(--entry-border)!important;border-radius:var(--entry-radius)!important;}
+.aero-root .site-entry-screen .site-entry-progress-fill{background:var(--entry-bar)!important;box-shadow:0 0 14px var(--entry-border)!important;}
+.aero-root .site-entry-screen .site-entry-progress-orb{background:var(--entry-accent)!important;border-color:var(--entry-border)!important;border-radius:var(--entry-radius)!important;}
+.aero-root .site-entry-screen .site-entry-now-playing{background:var(--entry-surface)!important;border:1px solid var(--entry-border)!important;border-radius:var(--entry-radius)!important;color:var(--entry-ink)!important;}
+.aero-root .site-entry-screen .site-entry-now-playing .site-update-now-copy,.aero-root .site-entry-screen .site-entry-now-playing .site-update-now-copy strong,.aero-root .site-entry-screen .site-entry-now-playing .site-update-now-copy span,.aero-root .site-entry-screen .site-entry-now-playing .site-update-now-copy small,.aero-root .site-entry-screen .site-update-music-badge{color:var(--entry-ink)!important;}
+.aero-root .site-entry-screen .site-update-now-icon{background:var(--entry-accent)!important;border-color:var(--entry-border)!important;}
+.aero-root .site-entry-screen .site-entry-brand-copy{color:var(--entry-visual-ink)!important;}
+.aero-root .site-entry-screen.startup-theme-roblox .site-entry-brand-orb{background:var(--entry-accent)!important;border-color:var(--entry-border)!important;border-radius:var(--entry-radius)!important;}
+.aero-root .site-entry-screen.startup-theme-roblox .site-entry-brand-copy,.aero-root .site-entry-screen.startup-theme-roblox .site-entry-stage-pills span{color:#333!important;text-shadow:none!important;}
+.aero-root .site-entry-screen.startup-theme-roblox .site-entry-visual::before,.aero-root .site-entry-screen.startup-theme-minecraft .site-entry-visual::before,.aero-root .site-entry-screen.startup-theme-brutal .site-entry-visual::before{display:none;}
+.aero-root .site-entry-screen.startup-theme-cyber .site-entry-brand-copy{font-family:monospace;letter-spacing:.12em;}
+.aero-root .site-entry-screen.startup-theme-minecraft .site-entry-content,.aero-root .site-entry-screen.startup-theme-cyber .site-entry-content{font-family:monospace;}
+.aero-root .site-entry-screen.startup-theme-brutal .site-entry-card,.aero-root .site-entry-screen.startup-theme-minecraft .site-entry-card,.aero-root .site-entry-screen.startup-theme-cyber .site-entry-card,.aero-root .site-entry-screen.startup-theme-roblox .site-entry-card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+.aero-root .site-entry-screen.startup-theme-brutal .site-entry-card::before,.aero-root .site-entry-screen.startup-theme-minecraft .site-entry-card::before,.aero-root .site-entry-screen.startup-theme-cyber .site-entry-card::before,.aero-root .site-entry-screen.startup-theme-roblox .site-entry-card::before{display:none;}
