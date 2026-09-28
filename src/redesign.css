@@ -14848,3 +14848,29 @@ button,input,textarea { font:inherit; }
 @media(prefers-reduced-motion:reduce){
   .aero-root[data-theme="dark"] .site-entry-screen .site-entry-now-playing.is-playing .site-update-now-icon span{animation:none!important;transform:none!important;}
 }
+
+/* The update overlay uses the same matte music treatment as startup. */
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-now-playing{
+  background:#172636!important;border:1px solid #3b536d!important;
+  box-shadow:0 8px 22px #0004!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-now-playing::before{display:none!important;}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-now-icon{
+  background:#253c55!important;border:1px solid #4c6b8e!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-now-icon span{
+  background:#9dd0ff!important;box-shadow:0 0 7px #76b8ff77;
+}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-now-playing.is-playing .site-update-now-icon span{
+  animation:plazaUpdateEq .82s ease-in-out infinite alternate!important;
+}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-now-playing:not(.is-playing) .site-update-now-icon span{
+  animation-play-state:paused!important;transform:scaleY(.58);
+}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-music-badge{
+  background:#284563!important;color:#c9e4ff!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-now-copy small{color:#9dd0ff!important;}
+@media(prefers-reduced-motion:reduce){
+  .aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-now-playing.is-playing .site-update-now-icon span{animation:none!important;transform:none!important;}
+}
