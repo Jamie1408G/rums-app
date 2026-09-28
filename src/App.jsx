@@ -27,12 +27,12 @@ const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
 const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
-const UPDATE_FADE_MS = 2400;
+const UPDATE_FADE_MS = 1000;
 const VERSION_COLOR_FADE_MS = 1150;
 const STARTUP_BUILD_MS = 2250;
 const ENTRY_SCREEN_MS = 9200;
-const ENTRY_FADE_MS = 800;
-const ENTRY_MUSIC_FADE_MS = 1250;
+const ENTRY_FADE_MS = 1000;
+const ENTRY_MUSIC_FADE_MS = 1000;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const HARD_REFRESH_KEY = 'rums-plaza-hard-refresh-revision';
 const HARD_REFRESH_SIGNAL_KEY = 'rums-plaza-hard-refresh-signal';
@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'early-webaudio-promotion-168';
+const FORCE_UPDATE_REVISION = 'one-second-screen-audio-fades-169';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -1730,7 +1730,7 @@ export default function RUMS() {
             { broadcast: true },
           );
         }, VERSION_COLOR_FADE_MS);
-      }, UPDATE_FADE_MS);
+      }, UPDATE_FADE_MS + 40);
     }, Math.max(0, updateUntil - Date.now()));
 
     return () => {
@@ -4981,7 +4981,7 @@ export default function RUMS() {
         if (updateCycleRef.current.phase === 'idle') {
           stopUpdateMusicCompletely();
         }
-      }, ENTRY_MUSIC_FADE_MS);
+      }, ENTRY_MUSIC_FADE_MS + 40);
     }, remaining);
 
     return () => {
