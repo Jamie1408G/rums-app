@@ -14541,3 +14541,22 @@ button,input,textarea { font:inherit; }
     line-height:1!important;
   }
 }
+
+
+/* No preselected version card on mobile — 160 */
+@media(max-width:820px) and (hover:none){
+  .aero-frame > .rums-space-chooser .space-choice-card:hover,
+  .aero-frame > .rums-space-chooser .space-choice-card:focus,
+  .aero-frame > .rums-space-chooser .space-choice-card:focus-visible{
+    transform:none!important;
+    filter:none!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-card .space-choice-copy strong::before,
+  .aero-frame > .rums-space-chooser .space-choice-card:hover .space-choice-copy strong::before,
+  .aero-frame > .rums-space-chooser .space-choice-card:focus .space-choice-copy strong::before,
+  .aero-frame > .rums-space-chooser .space-choice-card:focus-visible .space-choice-copy strong::before{
+    transform:scaleX(0)!important;
+    opacity:0!important;
+  }
+}
