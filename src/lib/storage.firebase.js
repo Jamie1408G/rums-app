@@ -44,6 +44,7 @@ function withDeadline(operation) {
 // generated once and persisted in this browser's real localStorage (not through
 // window.storage, to avoid a chicken-and-egg problem).
 const CLIENT_ID_KEY = 'rums-client-id';
+const LOCAL_PREFIX = 'rums-storage:local:';
 
 function getClientId() {
   try {
@@ -81,6 +82,21 @@ function docId(key, shared) {
 const storage = {
   async get(key, shared = false) {
     if (!isValidKey(key)) throw new Error('Invalid key');
+    if (!shared) {
+      const localKey = `${LOCAL_PREFIX}${key}`;
+      const localValue = window.localStorage.getItem(localKey);
+      if (localValue !== null) return { key, value: localValue, shared: false };
+
+      // Migrate device data written by older builds from Firestore. This keeps
+      // existing signed-in sessions while making future app launches independent
+      // of network timing.
+      const legacyRef = doc(db, collectionName(false), docId(key, false));
+      const legacySnap = await withDeadline(getDoc(legacyRef));
+      if (!legacySnap.exists()) return null;
+      const value = legacySnap.data().value;
+      window.localStorage.setItem(localKey, value);
+      return { key, value, shared: false };
+    }
     const ref = doc(db, collectionName(shared), docId(key, shared));
     const snap = await withDeadline(getDoc(ref));
     if (!snap.exists()) return null;
@@ -90,6 +106,10 @@ const storage = {
   async set(key, value, shared = false) {
     if (!isValidKey(key)) throw new Error('Invalid key');
     if (typeof value !== 'string') throw new Error('Value must be a string');
+    if (!shared) {
+      window.localStorage.setItem(`${LOCAL_PREFIX}${key}`, value);
+      return { key, value, shared: false };
+    }
     const ref = doc(db, collectionName(shared), docId(key, shared));
     await withDeadline(setDoc(ref, { value }));
     return { key, value, shared };
@@ -97,6 +117,15 @@ const storage = {
 
   async delete(key, shared = false) {
     if (!isValidKey(key)) throw new Error('Invalid key');
+    if (!shared) {
+      const localKey = `${LOCAL_PREFIX}${key}`;
+      const existed = window.localStorage.getItem(localKey) !== null;
+      window.localStorage.removeItem(localKey);
+      // Remove the legacy copy as well so an explicit logout cannot restore it.
+      const legacyRef = doc(db, collectionName(false), docId(key, false));
+      try { await withDeadline(deleteDoc(legacyRef)); } catch { /* local logout already succeeded */ }
+      return { key, deleted: existed, shared: false };
+    }
     const ref = doc(db, collectionName(shared), docId(key, shared));
     const snap = await withDeadline(getDoc(ref));
     const existed = snap.exists();
@@ -105,6 +134,16 @@ const storage = {
   },
 
   async list(prefix = '', shared = false) {
+    if (!shared) {
+      const keys = [];
+      for (let index = 0; index < window.localStorage.length; index += 1) {
+        const fullKey = window.localStorage.key(index);
+        if (!fullKey?.startsWith(LOCAL_PREFIX)) continue;
+        const bareKey = fullKey.slice(LOCAL_PREFIX.length);
+        if (bareKey.startsWith(prefix)) keys.push(bareKey);
+      }
+      return { keys, prefix: prefix || undefined, shared: false };
+    }
     const colRef = collection(db, collectionName(shared));
     const snap = await withDeadline(getDocs(query(colRef)));
     const ownPrefix = shared ? '' : `${clientId}::`;
