@@ -5316,16 +5316,16 @@ export default function RUMS() {
     if (space === 'projects') {
       if (!spaceSwitchBusy && !isProjectSpace) {
         void playUiSfx('change');
-        window.setTimeout(() => { void playUiSfx('open'); }, 500);
+        window.setTimeout(() => { void playUiSfx('open'); }, 750);
       }
       await openProjectsDirectory();
       return;
     }
     if (!isContentSpaceId(space) || space === rumsSpace || spaceSwitchBusy) return;
-    // In-server version slider: CHANGE immediately, then the newer
-    // Logged-in-as OPEN sound 0.5s later. Same timing on desktop + mobile.
+    // In-server version slider only: CHANGE immediately, then the
+    // Logged-in-as OPEN sound 0.75s later on desktop and mobile.
     void playUiSfx('change');
-    window.setTimeout(() => { void playUiSfx('open'); }, 500);
+    window.setTimeout(() => { void playUiSfx('open'); }, 750);
     if (!currentUser) {
       await chooseRumsSpace(space);
       return;
