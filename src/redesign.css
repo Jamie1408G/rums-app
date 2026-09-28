@@ -14354,7 +14354,7 @@ button,input,textarea { font:inherit; }
 }
 
 
-/* Spotify playlist inside Plaza music */
+
 .spotify-playlist-card { overflow:hidden; }
 .spotify-playlist-heading { align-items:center; }
 .spotify-playlist-heading small { color:#1db954; }
@@ -14461,3 +14461,27 @@ button,input,textarea { font:inherit; }
 }
 
 /* deploy-retry-scroll-155 */
+
+
+/* Mobile version name/icon alignment — 156 */
+@media(max-width:820px){
+  .aero-frame > .rums-space-chooser .space-choice-copy{
+    height:58px!important;
+    justify-content:center!important;
+    align-items:flex-start!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums4-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums5-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .projects-choice .space-choice-copy strong{
+    display:flex!important;
+    align-items:center!important;
+    height:58px!important;
+    min-height:58px!important;
+    margin:0!important;
+    padding:0!important;
+    line-height:1!important;
+    text-align:left!important;
+  }
+}
