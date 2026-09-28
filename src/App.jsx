@@ -4972,7 +4972,10 @@ export default function RUMS() {
 
     // Keep desktop timing unchanged. On touch/mobile, let the version finish
     // settling for another half-second before the open sound plays.
-    const isMobile = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    const isMobile =
+      navigator.maxTouchPoints > 0 ||
+      'ontouchstart' in window ||
+      window.matchMedia('(hover: none), (pointer: coarse)').matches;
     const delay = isMobile ? 1000 : 500;
 
     versionOpenSoundTimerRef.current = window.setTimeout(() => {
