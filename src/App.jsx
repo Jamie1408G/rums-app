@@ -36,6 +36,7 @@ const STARTUP_BUILD_MS = 2250;
 const ENTRY_SCREEN_MS = 9200;
 const ENTRY_FADE_MS = 800;
 const ENTRY_MUSIC_FADE_MS = 1000;
+const DESKTOP_ENTRY_MUSIC_FADE_MS = 2250;
 const FORCE_UPDATE_KEY = 'rums-plaza-force-update-revision';
 const HARD_REFRESH_KEY = 'rums-plaza-hard-refresh-revision';
 const HARD_REFRESH_SIGNAL_KEY = 'rums-plaza-hard-refresh-signal';
@@ -51,7 +52,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'desktop-audio-restored-mobile-isolated-173';
+const FORCE_UPDATE_REVISION = 'desktop-entry-music-fade-restored-173';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -5046,6 +5047,11 @@ export default function RUMS() {
       ) return;
 
       setEntryIntroLeaving(true);
+
+    const entryMusicFadeMs = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+      ? DESKTOP_ENTRY_MUSIC_FADE_MS
+      : ENTRY_MUSIC_FADE_MS;
+    beginUpdateMusicFade(entryMusicFadeMs);
 
       if (!isTouchMusicDevice()) fadeUpdateHtmlAudio(ENTRY_MUSIC_FADE_MS);
 
