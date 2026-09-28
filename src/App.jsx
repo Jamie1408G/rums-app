@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'spotify-player-live-154';
+const FORCE_UPDATE_REVISION = 'spotify-removed-mobile-version-align-156';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -56,9 +56,6 @@ const UPDATE_AUDIO_TRACKS = [
   { id: 'lotus-waters', src: '/audio/update-lotus-waters.mp3', title: 'lotus waters (nightcore sped up)', artist: 'yume 2kki' },
   { id: 'xscape', src: '/audio/update-xscape.mp3', title: 'xscape', artist: '13 Miles' },
 ];
-const SPOTIFY_PLAYLIST_ID = '0Y4ky9dH20MnsV4djuF4VO';
-const SPOTIFY_PLAYLIST_URL = `https://open.spotify.com/playlist/${SPOTIFY_PLAYLIST_ID}`;
-const SPOTIFY_PLAYLIST_EMBED_URL = `https://open.spotify.com/embed/playlist/${SPOTIFY_PLAYLIST_ID}?utm_source=generator&theme=0`;
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
 
@@ -679,7 +676,6 @@ export default function RUMS() {
   const [siteMusicProgress, setSiteMusicProgress] = useState(0);
   const [siteMusicDuration, setSiteMusicDuration] = useState(0);
   const [siteMusicError, setSiteMusicError] = useState('');
-  const [spotifyPlaylistOpen, setSpotifyPlaylistOpen] = useState(false);
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState(null);
   const [installHelpOpen, setInstallHelpOpen] = useState(false);
   const [isStandaloneApp, setIsStandaloneApp] = useState(() => {
@@ -1802,14 +1798,6 @@ export default function RUMS() {
     setSiteMusicPlaying(false);
   }
 
-  function toggleSpotifyPlaylist() {
-    setSpotifyPlaylistOpen((open) => {
-      const next = !open;
-      if (next) pauseSiteMusic();
-      return next;
-    });
-  }
-
   function toggleSiteMusic() {
     const audio = siteMusicAudioRef.current;
     if (!audio) return;
@@ -2254,39 +2242,6 @@ export default function RUMS() {
     }, 520);
   }
 
-  function renderSpotifyPlaylistCard() {
-    return (
-      <section className="dynamic-music-library-card spotify-playlist-card">
-        <div className="dynamic-music-library-heading spotify-playlist-heading">
-          <div>
-            <small>SPOTIFY</small>
-            <strong>User playlist</strong>
-          </div>
-          <button type="button" className="spotify-playlist-toggle" onClick={toggleSpotifyPlaylist}>
-            {spotifyPlaylistOpen ? 'Hide' : 'Open playlist'}
-          </button>
-        </div>
-
-        {spotifyPlaylistOpen && (
-          <div className="spotify-playlist-embed-wrap">
-            <iframe
-              title="Spotify playlist"
-              src={SPOTIFY_PLAYLIST_EMBED_URL}
-              width="100%"
-              height="352"
-              frameBorder="0"
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-            />
-            <a className="spotify-playlist-external" href={SPOTIFY_PLAYLIST_URL} target="_blank" rel="noreferrer">
-              Open in Spotify
-            </a>
-          </div>
-        )}
-      </section>
-    );
-  }
-
   function renderMobileHeaderMusicIsland() {
     if (!currentUser || !rumsSpace) return null;
 
@@ -2478,12 +2433,6 @@ export default function RUMS() {
                 ))}
               </div>
             </section>
-
-
-
-
-
-            {renderSpotifyPlaylistCard()}
 
             {siteMusicError && <div className="dynamic-music-error">{siteMusicError}</div>}
             <div className="dynamic-music-swipe-hint">Swipe up or tap outside to collapse</div>
@@ -2713,8 +2662,6 @@ export default function RUMS() {
                 ))}
               </div>
             </section>
-
-            {renderSpotifyPlaylistCard()}
 
             {siteMusicError && <div className="dynamic-music-error">{siteMusicError}</div>}
             <div className="dynamic-music-swipe-hint">Swipe up or tap the island to collapse</div>
