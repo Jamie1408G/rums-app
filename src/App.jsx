@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'spotify-removed-mobile-version-align-156';
+const FORCE_UPDATE_REVISION = 'mobile-loading-audio-unlock-162';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -1384,44 +1384,63 @@ export default function RUMS() {
     // keepalive path from the version that previously worked.
     let arming = false;
 
-    const arm = async (event) => {
+    const arm = (event) => {
       if (arming) return;
-
       arming = true;
-      const context = await ensureUpdateAudioReady({ resume: true });
 
-      if (!context || context.state !== 'running') {
-        arming = false;
-        return;
-      }
-
-      if (!updateAudioKeepaliveRef.current) {
-        try {
-          const keepaliveGain = context.createGain();
-          keepaliveGain.gain.value = 0.000001;
-          keepaliveGain.connect(context.destination);
-
-          const keepalive = context.createOscillator();
-          keepalive.frequency.value = 30;
-          keepalive.connect(keepaliveGain);
-          keepalive.start();
-
-          updateAudioKeepaliveRef.current = keepalive;
-          updateAudioKeepaliveGainRef.current = keepaliveGain;
-        } catch {}
-      }
-
-      setUpdateMusicState('ready');
-
+      /*
+        Mobile Safari requires media playback to begin synchronously inside
+        the user's tap. Do not await AudioContext setup before calling play().
+        The same preloaded HTMLAudio element is used by both the opening and
+        updating screens, so one tap anywhere on either screen can unlock it.
+      */
       if (updateMusicAllowedRef.current) {
-        // The live ref gate prevents a stale listener from ever reviving
-        // a loading-screen soundtrack after that screen has finished.
-        await startUpdateMusic();
-      } else {
-        await tryStartPendingUpdate();
+        const htmlAudio = updateAudioHtmlRef.current;
+        if (htmlAudio && htmlAudio.paused) {
+          try {
+            htmlAudio.volume = 0.72;
+            if (htmlAudio.ended) htmlAudio.currentTime = 0;
+            const attempt = htmlAudio.play();
+            if (attempt?.then) {
+              attempt
+                .then(() => setUpdateMusicState('playing'))
+                .catch(() => setUpdateMusicState('blocked'));
+            } else {
+              setUpdateMusicState('playing');
+            }
+          } catch {
+            setUpdateMusicState('blocked');
+          }
+        }
       }
 
-      arming = false;
+      void (async () => {
+        const context = await ensureUpdateAudioReady({ resume: true });
+
+        if (context?.state === 'running' && !updateAudioKeepaliveRef.current) {
+          try {
+            const keepaliveGain = context.createGain();
+            keepaliveGain.gain.value = 0.000001;
+            keepaliveGain.connect(context.destination);
+
+            const keepalive = context.createOscillator();
+            keepalive.frequency.value = 30;
+            keepalive.connect(keepaliveGain);
+            keepalive.start();
+
+            updateAudioKeepaliveRef.current = keepalive;
+            updateAudioKeepaliveGainRef.current = keepaliveGain;
+          } catch {}
+        }
+
+        if (!updateMusicAllowedRef.current) {
+          await tryStartPendingUpdate();
+        } else if (updateAudioHtmlRef.current?.paused && updateMusicState !== 'playing') {
+          await startUpdateMusic();
+        }
+
+        arming = false;
+      })();
     };
 
     document.addEventListener('touchstart', arm, { capture: true, passive: true });
