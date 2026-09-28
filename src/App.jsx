@@ -36,7 +36,6 @@ const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const UPDATE_FADE_MS = 2400;
 const UPDATE_MUSIC_FADE_MS = 1000;
-const MUSIC_FULL_VOLUME_MS = 9000;
 const isTouchMusicDevice = () => window.matchMedia?.('(hover: none), (pointer: coarse)').matches ?? false;
 const VERSION_COLOR_FADE_MS = 1150;
 const STARTUP_BUILD_MS = 2250;
@@ -1160,7 +1159,6 @@ export default function RUMS() {
       // iOS-unlocked HTML fallback well before any transition/fade begins.
       try { htmlAudio.pause(); } catch {}
       setUpdateMusicState('playing');
-      scheduleExactUpdateMusicFade();
       return true;
     } catch {
       return false;
@@ -1188,7 +1186,7 @@ export default function RUMS() {
     }
   };
 
-  const scheduleExactUpdateMusicFade = () => {
+  const fadeMobileUpdateMusicAndStop = (duration = 1000) => {
     if (!isTouchMusicDevice()) return;
 
     if (updateMusicFadeStartTimerRef.current) {
@@ -1198,37 +1196,15 @@ export default function RUMS() {
       window.clearTimeout(updateMusicFadeStopTimerRef.current);
     }
 
-    updateMusicFadeStartTimerRef.current = window.setTimeout(() => {
-      updateMusicFadeStartTimerRef.current = 0;
+    // The loading page owns the timing. Begin the fade only when that page
+    // starts its exit transition, then fully retire whichever source is active.
+    const webAudioFading = beginUpdateMusicFade(duration);
+    if (!webAudioFading) fadeUpdateHtmlAudio(duration);
 
-      // At exactly 9s: begin a 1s fade. Prefer GainNode. If the iOS fallback
-      // is still the audible source, explicitly step its native volume down.
-      const webAudioFading = beginUpdateMusicFade(1000);
-      const htmlAudio = updateAudioHtmlRef.current;
-
-      if (!webAudioFading && htmlAudio && !htmlAudio.paused) {
-        const startedAt = performance.now();
-        const startVolume = Number.isFinite(htmlAudio.volume) ? htmlAudio.volume : 0.72;
-
-        if (updateAudioHtmlFadeTimerRef.current) {
-          window.clearInterval(updateAudioHtmlFadeTimerRef.current);
-        }
-
-        updateAudioHtmlFadeTimerRef.current = window.setInterval(() => {
-          const progress = Math.min(1, (performance.now() - startedAt) / 1000);
-          try { htmlAudio.volume = Math.max(0, startVolume * (1 - progress)); } catch {}
-          if (progress >= 1) {
-            window.clearInterval(updateAudioHtmlFadeTimerRef.current);
-            updateAudioHtmlFadeTimerRef.current = 0;
-          }
-        }, 25);
-      }
-
-      updateMusicFadeStopTimerRef.current = window.setTimeout(() => {
-        updateMusicFadeStopTimerRef.current = 0;
-        stopUpdateMusicCompletely();
-      }, 1040);
-    }, MUSIC_FULL_VOLUME_MS);
+    updateMusicFadeStopTimerRef.current = window.setTimeout(() => {
+      updateMusicFadeStopTimerRef.current = 0;
+      stopUpdateMusicCompletely();
+    }, duration + 40);
   };
 
   const stopUpdateMusicCompletely = () => {
@@ -1326,7 +1302,6 @@ export default function RUMS() {
         updateAudioSourceRef.current = source;
         source.start(0);
         setUpdateMusicState('playing');
-        scheduleExactUpdateMusicFade();
         return true;
       } catch {}
     }
@@ -1349,7 +1324,6 @@ export default function RUMS() {
         if (attempt?.then) await attempt;
 
         setUpdateMusicState('playing');
-        scheduleExactUpdateMusicFade();
 
         // Decode/resume in the background, then move to the fade-capable
         // source while this screen is still visible.
@@ -1756,9 +1730,10 @@ export default function RUMS() {
       setUpdateHandoffPhase('blank');
       setUpdateOverlayLeaving(true);
 
-      // Desktop keeps its original transition-owned soundtrack fade.
-      // Mobile has already been fading from 9s to 10s independently.
-      if (!isTouchMusicDevice()) {
+      // The soundtrack fade begins with the loading page's exit transition.
+      if (isTouchMusicDevice()) {
+        fadeMobileUpdateMusicAndStop(1000);
+      } else {
         const webAudioFading = beginUpdateMusicFade(UPDATE_FADE_MS);
         if (!webAudioFading) fadeUpdateHtmlAudio(UPDATE_FADE_MS);
       }
@@ -5079,7 +5054,9 @@ export default function RUMS() {
 
       setEntryIntroLeaving(true);
 
-      if (!isTouchMusicDevice()) {
+      if (isTouchMusicDevice()) {
+        fadeMobileUpdateMusicAndStop(1000);
+      } else {
         // Desktop keeps the original loading-screen behavior: fade with the
         // screen transition, using the desktop-specific longer music tail.
         const webAudioFading = beginUpdateMusicFade(DESKTOP_ENTRY_MUSIC_FADE_MS);
@@ -5097,8 +5074,7 @@ export default function RUMS() {
       }
 
       finishTimer = window.setTimeout(() => {
-        // Do NOT stop mobile music here. Its 9s -> 10s audio schedule is
-        // intentionally allowed to continue after the visual overlay disappears.
+        // The mobile soundtrack fade is already running with this exit.
         setEntryIntroActive(false);
         setEntryIntroLeaving(false);
       }, ENTRY_FADE_MS);
@@ -5120,7 +5096,7 @@ export default function RUMS() {
   useEffect(() => {
     if (!entryIntroActive && updateCycleRef.current.phase === 'idle') {
       // Desktop tail is owned by entryMusicTailTimerRef.
-      // Mobile tail is owned by scheduleExactUpdateMusicFade (9s + 1s).
+      // Mobile tail is owned by the loading screen's exit transition.
       if (!isTouchMusicDevice()) updateMusicAllowedRef.current = false;
     }
   }, [entryIntroActive]);
