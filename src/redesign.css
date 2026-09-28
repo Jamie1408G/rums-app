@@ -14917,3 +14917,21 @@ button,input,textarea { font:inherit; }
     box-shadow:none!important;
   }
 }
+
+/* The compact player is its own glass component inside that shell. */
+.aero-root[data-theme="dark"] .dynamic-music-island .dynamic-music-compact,
+.aero-root[data-theme="dark"] .dynamic-music-island.is-open .dynamic-music-compact,
+.aero-root[data-theme="dark"] .dynamic-music-island .dynamic-music-compact:hover{
+  background:#202f40!important;border:1px solid #3c536b!important;
+  box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+.aero-root[data-theme="dark"] .dynamic-music-island .dynamic-music-compact::before{display:none!important;}
+.aero-root[data-theme="dark"] .dynamic-music-island :is(.dynamic-music-compact-control,.dynamic-music-wave){
+  background:#293d52!important;border-color:#465f79!important;color:#dcecff!important;
+  box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .dynamic-music-island .dynamic-music-compact-play{
+  background:#365a89!important;border-color:#618dc4!important;color:#fff!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .dynamic-music-island .dynamic-music-compact-control:hover{background:#344f6d!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] .dynamic-music-island .dynamic-music-progress-line{background:#344b62!important;}
