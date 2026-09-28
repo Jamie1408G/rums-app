@@ -5068,19 +5068,25 @@ export default function RUMS() {
 
     let leaveTimer = 0;
     let finishTimer = 0;
+    let mobileEndAudio = null;
+    let exitStarted = false;
     const elapsed = Date.now() - entryIntroStartedAtRef.current;
     const remaining = Math.max(0, ENTRY_SCREEN_MS - elapsed);
 
-    leaveTimer = window.setTimeout(() => {
+    const beginEntryExit = () => {
+      if (exitStarted) return;
       if (
         updateCycleRef.current.phase !== 'idle' ||
         updateUntil > Date.now()
       ) return;
+      exitStarted = true;
 
       setEntryIntroLeaving(true);
 
       if (isTouchMusicDevice()) {
-        fadeMobileUpdateMusicAndStop(1000);
+        // The mobile file contains its own fade. This point is reached from its
+        // actual ended event, so the next screen cannot interrupt the tail.
+        stopUpdateMusicCompletely();
       } else {
         // Desktop keeps the original loading-screen behavior: fade with the
         // screen transition, using the desktop-specific longer music tail.
@@ -5099,16 +5105,25 @@ export default function RUMS() {
       }
 
       finishTimer = window.setTimeout(() => {
-        // The mobile soundtrack fade is already running with this exit.
         setEntryIntroActive(false);
         setEntryIntroLeaving(false);
       }, ENTRY_FADE_MS);
+    };
 
+    leaveTimer = window.setTimeout(() => {
+      const mobileAudio = updateAudioHtmlRef.current;
+      if (isTouchMusicDevice() && mobileAudio && !mobileAudio.paused && !mobileAudio.ended) {
+        mobileEndAudio = mobileAudio;
+        mobileAudio.addEventListener('ended', beginEntryExit, { once: true });
+        return;
+      }
+      beginEntryExit();
     }, remaining);
 
     return () => {
       if (leaveTimer) window.clearTimeout(leaveTimer);
       if (finishTimer) window.clearTimeout(finishTimer);
+      if (mobileEndAudio) mobileEndAudio.removeEventListener('ended', beginEntryExit);
     };
   }, [
     entryIntroActive,
