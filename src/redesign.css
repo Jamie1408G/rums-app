@@ -14568,3 +14568,78 @@ button,input,textarea { font:inherit; }
     transform:translateY(18px)!important;
   }
 }
+
+
+/* ===== THEME-AWARE PLAZA STARTUP ===== */
+.site-entry-screen .site-entry-card{overflow:hidden}
+.site-entry-screen .site-entry-brand-orb strong{position:relative;z-index:2}
+.site-entry-screen.startup-theme-dark{background:radial-gradient(circle at 50% 38%,#21365a 0,#0c111b 38%,#05070b 100%)!important}
+.site-entry-screen.startup-theme-dark .site-entry-card{background:linear-gradient(145deg,#18202de8,#090d14e8)!important;border:1px solid #5e769b55!important;box-shadow:0 28px 90px #000b!important;color:#eef6ff!important}
+.site-entry-screen.startup-theme-dark .site-entry-brand-orb{background:radial-gradient(circle at 35% 25%,#9bc7ff,#477fdb 38%,#17233d 72%)!important;box-shadow:0 0 42px #629dff77!important}
+.site-entry-screen.startup-theme-dark .site-entry-orbit{border-color:#6ea8ff55!important}
+
+.site-entry-screen.startup-theme-minecraft{background:linear-gradient(#78b9e8 0 58%,#79a94d 58% 68%,#65472f 68%)!important;font-family:Arial,sans-serif!important}
+.site-entry-screen.startup-theme-minecraft .site-entry-card{background:#313131!important;border:4px solid #777!important;border-right-color:#171717!important;border-bottom-color:#171717!important;border-radius:2px!important;box-shadow:10px 10px 0 #0006!important;color:#fff!important}
+.site-entry-screen.startup-theme-minecraft .site-entry-brand-orb{border-radius:2px!important;background:#6eaa40!important;border:3px solid #a6d477!important;box-shadow:inset -5px -5px #365520!important}
+.site-entry-screen.startup-theme-minecraft .site-entry-orbit{display:none!important}
+.site-entry-screen.startup-theme-minecraft .site-entry-stage-pills span,.site-entry-screen.startup-theme-minecraft .site-update-now-playing{border-radius:2px!important;background:#202020!important;border:2px solid #666!important}
+
+.site-entry-screen.startup-theme-aero,.site-entry-screen.startup-theme-eco{background:linear-gradient(180deg,#63c4f3 0 63%,#c9f4c3 63% 72%,#72c75d 72%)!important}
+.site-entry-screen.startup-theme-aero .site-entry-card,.site-entry-screen.startup-theme-eco .site-entry-card{background:linear-gradient(145deg,#ffffffee,#e9fbffe6)!important;border:2px solid #fff!important;box-shadow:0 25px 70px #08779c3b,inset 0 1px #fff!important;color:#15506b!important}
+.site-entry-screen.startup-theme-aero .site-entry-brand-orb,.site-entry-screen.startup-theme-eco .site-entry-brand-orb{background:radial-gradient(circle at 30% 20%,#fff,#64d8ff 30%,#1499c9 72%)!important;box-shadow:0 10px 30px #168cb64d,inset 0 2px #fff!important}
+.site-entry-screen.startup-theme-eco .site-entry-brand-orb{background:radial-gradient(circle at 30% 20%,#fff,#a7ef7d 32%,#4ca94a 74%)!important}
+
+.site-entry-screen.startup-theme-metro{background:linear-gradient(125deg,#f14d9c 0 22%,#f9ca35 22% 39%,#9bd62d 39% 59%,#17b7d6 59% 80%,#744fc5 80%)!important}
+.site-entry-screen.startup-theme-metro .site-entry-card{background:#ffffffee!important;border:0!important;border-radius:28px 5px 28px 5px!important;box-shadow:14px 14px 0 #19152b33!important;color:#25213c!important}
+.site-entry-screen.startup-theme-metro .site-entry-orbit{border-width:8px!important;border-style:solid!important;opacity:.5}
+.site-entry-screen.startup-theme-metro .site-entry-brand-orb{background:#111!important;color:#fff!important;box-shadow:9px 9px 0 #f25ca2!important}
+
+.site-entry-screen.startup-theme-flourish{background:radial-gradient(circle at 15% 20%,#f6a5c8 0 9%,transparent 24%),radial-gradient(circle at 85% 80%,#b5ca69 0 10%,transparent 26%),linear-gradient(135deg,#fff4d5,#f2c7df 50%,#dce6aa)!important}
+.site-entry-screen.startup-theme-flourish .site-entry-card{background:#fff9e9e8!important;border:2px solid #b76991!important;box-shadow:0 25px 70px #7b385235!important;color:#62314c!important}
+.site-entry-screen.startup-theme-flourish .site-entry-brand-orb{background:linear-gradient(145deg,#e65b9d,#8da744)!important;box-shadow:0 0 0 8px #fff7d8,0 0 0 10px #a26a84!important}
+
+.site-entry-screen.startup-theme-liquid{background:radial-gradient(circle at 20% 10%,#fff 0 8%,transparent 32%),linear-gradient(145deg,#b8dcff,#eaf5ff 48%,#c8e7ff)!important}
+.site-entry-screen.startup-theme-liquid .site-entry-card{background:#ffffff45!important;border:1px solid #ffffffd9!important;backdrop-filter:blur(38px) saturate(165%)!important;box-shadow:0 25px 80px #4c87b92c,inset 0 1px #fff!important}
+.site-entry-screen.startup-theme-liquid .site-entry-brand-orb{background:#ffffff42!important;border:1px solid #fff!important;backdrop-filter:blur(16px)!important;box-shadow:inset 0 1px #fff,0 12px 32px #4b8ec844!important}
+
+.site-entry-screen.startup-theme-solar{background:linear-gradient(180deg,#f7d88c 0 35%,#dff0c0 35% 62%,#85ad65 62%)!important}
+.site-entry-screen.startup-theme-solar .site-entry-card{background:linear-gradient(145deg,#fff9e8ef,#edf5dcee)!important;border:2px solid #fff7df!important;box-shadow:0 24px 70px #4f683f35!important;color:#35522d!important}
+.site-entry-screen.startup-theme-solar .site-entry-brand-orb{background:radial-gradient(circle,#ffe991 0 24%,#e8aa45 70%)!important;box-shadow:0 0 36px #f0bd5b88!important}
+
+.site-entry-screen.startup-theme-cyber{background:repeating-linear-gradient(0deg,#0a0d14 0 2px,#0d111b 2px 4px)!important;color:#dfffff!important}
+.site-entry-screen.startup-theme-cyber .site-entry-card{background:#0b1019ed!important;border:1px solid #20e8ff!important;border-radius:3px!important;box-shadow:10px 10px 0 #ff3dcc55,0 0 45px #20e8ff22!important;color:#eaffff!important}
+.site-entry-screen.startup-theme-cyber .site-entry-brand-orb{border-radius:2px!important;background:#111725!important;border:1px solid #22e6ff!important;color:#22e6ff!important;box-shadow:5px 5px 0 #ff4fd8!important}
+.site-entry-screen.startup-theme-cyber .site-entry-orbit{border-color:#22e6ff66!important;border-radius:2px!important}
+
+.site-entry-screen.startup-theme-brutal{background:#f2eee3!important;font-family:Arial Black,Arial,sans-serif!important}
+.site-entry-screen.startup-theme-brutal .site-entry-card{background:#f8f4e9!important;border:5px solid #111!important;border-radius:0!important;box-shadow:14px 14px 0 #111!important;color:#111!important}
+.site-entry-screen.startup-theme-brutal .site-entry-brand-orb{border-radius:0!important;background:#ff5f2e!important;border:4px solid #111!important;box-shadow:6px 6px 0 #111!important}
+.site-entry-screen.startup-theme-brutal .site-entry-orbit{border-color:#111!important;border-radius:0!important}
+.site-entry-screen.startup-theme-brutal .site-entry-progress-track,.site-entry-screen.startup-theme-brutal .site-update-now-playing{border:3px solid #111!important;border-radius:0!important}
+
+.site-entry-screen.startup-theme-y2k{background:radial-gradient(circle at 72% 24%,#fff 0 4%,transparent 18%),linear-gradient(135deg,#aabbd1,#f3f7fb 44%,#c7d4e2 70%,#c7e8e8)!important}
+.site-entry-screen.startup-theme-y2k .site-entry-card{background:linear-gradient(145deg,#f9fcffee,#dfe7efec)!important;border:1px solid #fff!important;box-shadow:0 26px 80px #50647b55,inset 0 1px #fff!important;color:#26364d!important}
+.site-entry-screen.startup-theme-y2k .site-entry-brand-orb{background:linear-gradient(145deg,#7de0e5,#6e7ee1)!important;border:2px solid #fff!important;box-shadow:0 9px 25px #5d71b34d,inset 0 1px #fff!important}
+
+.site-entry-screen.startup-theme-roblox{background:#e7e7e7!important;font-family:Arial,sans-serif!important}
+.site-entry-screen.startup-theme-roblox .site-entry-card{background:#fff!important;border:1px solid #bbb!important;border-radius:2px!important;box-shadow:0 2px 8px #0002!important;color:#333!important}
+.site-entry-screen.startup-theme-roblox .site-entry-brand-orb{border-radius:2px!important;background:#00a2ff!important;border:1px solid #0074bd!important;box-shadow:none!important;color:#fff!important}
+.site-entry-screen.startup-theme-roblox .site-entry-orbit{display:none!important}
+.site-entry-screen.startup-theme-roblox .site-entry-stage-pills span,.site-entry-screen.startup-theme-roblox .site-update-now-playing{border-radius:2px!important;background:#f5f5f5!important;border:1px solid #ccc!important;box-shadow:none!important}
+
+/* Roblox era-specific startup identities */
+.site-entry-screen.startup-id-roblox2008,.site-entry-screen.startup-id-roblox2010{background:linear-gradient(#6aa7d8 0 56px,#e9e9e9 56px)!important}
+.site-entry-screen.startup-id-roblox2014{background:linear-gradient(#2d6ca2 0 52px,#f3f3f3 52px)!important}
+.site-entry-screen.startup-id-roblox2016{background:linear-gradient(#00a2ff 0 52px,#e7e7e7 52px)!important}
+.site-entry-screen.startup-id-roblox2017{background:linear-gradient(#0074bd 0 52px,#f2f2f2 52px)!important}
+.site-entry-screen.startup-id-roblox2020,.site-entry-screen.startup-id-roblox2026{background:#f2f4f5!important}
+
+/* Theme-system normalization: prevent generic late coverage rules from breaking
+   family-specific typography/geometry and keep focus/accessibility consistent. */
+.aero-root[data-theme]:not([data-theme="standard"]) :is(button,a,input,textarea,select,[tabindex]):focus-visible{
+  outline:2px solid var(--theme-focus,#3478f6)!important;
+  outline-offset:2px!important;
+}
+.aero-root[data-theme="minecraft"] :is(.theme-option,.roblox-theme-year){border-radius:2px!important}
+.aero-root[data-theme="brutalism"] :is(.theme-option,.roblox-theme-year){border-radius:0!important}
+.aero-root[data-theme^="roblox"] :is(.theme-option,.roblox-theme-year){box-shadow:none!important}
