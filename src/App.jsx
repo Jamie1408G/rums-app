@@ -5012,7 +5012,7 @@ export default function RUMS() {
       // URL 湖 is version-menu-only music. Let it fade smoothly into the
       // destination instead of cutting off as soon as a version is chosen.
       fadeOutSiteMusic(1200);
-      void playUiSfx('change');
+      void playUiSfx('select');
     }
 
     const requestId = ++spaceLoadTokenRef.current;
@@ -5314,15 +5314,18 @@ export default function RUMS() {
 
   async function switchRumsSpace(space) {
     if (space === 'projects') {
-      // Match the sound used when the "Logged in as..." page opens.
-      if (!spaceSwitchBusy && !isProjectSpace) void playUiSfx('open');
+      if (!spaceSwitchBusy && !isProjectSpace) {
+        void playUiSfx('change');
+        window.setTimeout(() => { void playUiSfx('open'); }, 500);
+      }
       await openProjectsDirectory();
       return;
     }
     if (!isContentSpaceId(space) || space === rumsSpace || spaceSwitchBusy) return;
-    // In-server version slider selections use the same OPEN sound as the
-    // "Logged in as..." page on both desktop and mobile.
-    void playUiSfx('open');
+    // In-server version slider: CHANGE immediately, then the newer
+    // Logged-in-as OPEN sound 0.5s later. Same timing on desktop + mobile.
+    void playUiSfx('change');
+    window.setTimeout(() => { void playUiSfx('open'); }, 500);
     if (!currentUser) {
       await chooseRumsSpace(space);
       return;
