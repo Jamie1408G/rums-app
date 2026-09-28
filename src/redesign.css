@@ -14973,3 +14973,13 @@ button,input,textarea { font:inherit; }
     transform:translateY(-2px) scale(1.12);
   }
 }
+
+/* The global glass sheen and theme focus ring otherwise draw a square over these icons. */
+.aero-root[data-theme="dark"] .post-actions > button::before,
+.aero-root[data-theme="dark"] .post-actions > button .glass-ripple{display:none!important;}
+.aero-root[data-theme="dark"] .post-actions > button:focus-visible{
+  outline:none!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .post-actions > button:focus-visible .post-action-icon svg{
+  color:#9ac8ff;transform:translateY(-2px) scale(1.12);
+}
