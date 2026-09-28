@@ -14690,3 +14690,77 @@ button,input,textarea { font:inherit; }
 .aero-root .site-entry-screen.startup-theme-minecraft .site-entry-content,.aero-root .site-entry-screen.startup-theme-cyber .site-entry-content{font-family:monospace;}
 .aero-root .site-entry-screen.startup-theme-brutal .site-entry-card,.aero-root .site-entry-screen.startup-theme-minecraft .site-entry-card,.aero-root .site-entry-screen.startup-theme-cyber .site-entry-card,.aero-root .site-entry-screen.startup-theme-roblox .site-entry-card{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
 .aero-root .site-entry-screen.startup-theme-brutal .site-entry-card::before,.aero-root .site-entry-screen.startup-theme-minecraft .site-entry-card::before,.aero-root .site-entry-screen.startup-theme-cyber .site-entry-card::before,.aero-root .site-entry-screen.startup-theme-roblox .site-entry-card::before{display:none;}
+
+/* Dark theme: complete coverage for screens and controls added after the core theme. */
+.aero-root[data-theme="dark"]{
+  --theme-surface:#181e27;--theme-surface-2:#222b36;--theme-surface-3:#10161e;
+  --theme-border:#344253;--theme-text:#edf4ff;--theme-muted:#aab9ca;
+  --theme-accent:#82b5ff;--theme-accent-soft:#263b57;--theme-accent-text:#081522;
+  --site-accent:#82b5ff!important;color-scheme:dark;
+}
+.aero-root[data-theme="dark"] :is(
+  .plaza-plus-panel,.creator-grid article,.settings-grid,.preset-grid>button,
+  .plus-row,.plus-section-head,.plus-subheading,.setting-toggle,
+  .news-composer,.news-lead,.news-card,.news-reader,.news-empty,.news-rail-block,
+  .news-room-editor,.news-editor-field,.news-media-editor,.news-editor-footer,
+  .news-media-upload,.news-media-url-grid label,.news-article-reactions button,
+  .project-directory-card,.project-directory-empty,.project-create-modal,
+  .project-directory-create-form,.profile-section,.profile-danger-zone,
+  .visual-edit-toolbar,.editor-item,.editor-grid,.updates-composer,
+  .reaction-picker,.mention-dropdown,.custom-emoji-create,.custom-emoji-admin-item,
+  .chat-image-preview,.lumina-intro-card,.lumina-metro-panel,.lumina-share-card,
+  .lumina-station-detail,.lumina-principles article,.lumina-project-stats div,
+  .auth-wrap,.drop-zone,.comments-box,.preview-wrap,.glass-live-preview,
+  .plaza-account-gate-card,.plaza-account-gate-profile,.rums-space-chooser,
+  .space-choice-card,.mobile-music-drawer
+){background:var(--theme-surface)!important;border-color:var(--theme-border)!important;color:var(--theme-text)!important;box-shadow:0 8px 26px #0004!important;}
+.aero-root[data-theme="dark"] :is(
+  .news-composer-head,.news-editor-field,.news-media-editor,.news-editor-footer,
+  .news-room-editor .news-composer-head,.news-media-url-grid label,
+  .chat-thread-button,.comment-row,.reaction-chip,.reaction-add,.plus-row,
+  .setting-toggle,.preset-grid>button,.editor-toggles button,.editor-actions button,
+  .editor-add-row button,.selected-box-chip,.box-color-control,.box-animation-control,
+  .chat-attach-button,.appearance-current-theme,.tag-pill,.detail-back-btn,
+  .profile-pill-with-new,.lumina-fact-row,.lumina-gallery>button,
+  .lumina-wide-action,.lumina-station-detail button,.lumina-share-card button,
+  .preview-action,.custom-mobile-tabs button,.auth-space-switch button,
+  .plaza-account-continue,.plaza-account-logout
+){background:var(--theme-surface-2)!important;border-color:var(--theme-border)!important;color:var(--theme-text)!important;}
+.aero-root[data-theme="dark"] :is(
+  input:not([type="checkbox"]):not([type="range"]):not([type="radio"]):not([type="color"]):not([type="file"]),textarea,select,.aero-input,.caption-area,.search-bar,.tag-select,
+  .news-editor-field input,.news-editor-field select,.news-editor-field textarea,
+  .news-media-url-grid input,.reaction-picker-search input,.custom-emoji-name-input,
+  .editor-grid input,.editor-grid textarea,.editor-grid select,
+  .editor-add-row input,.username-edit-row input,.comment-input-row input,
+  .chat-composer textarea,.chat-user-search input
+){background:var(--theme-surface-3)!important;border-color:var(--theme-border)!important;color:var(--theme-text)!important;}
+.aero-root[data-theme="dark"] :is(input,textarea,select)::placeholder{color:var(--theme-muted)!important;opacity:.8;}
+.aero-root[data-theme="dark"] :is(
+  .news-masthead h1,.news-lead h2,.news-card h3,.news-reader h1,
+  .news-section-heading h2,.news-article-main h1,.news-latest-copy h3,
+  .news-rail-title h2,.plus-section-head h2,.creator-grid h3,
+  .project-directory-section-head h2,.project-directory-card strong,
+  .plaza-plus-panel h2,.plaza-plus-panel h3,.profile-section h2,
+  .lumina-section-heading h2,.lumina-station-detail h3,.chat-empty h3
+){color:var(--theme-text)!important;}
+.aero-root[data-theme="dark"] :is(
+  .news-masthead p,.news-card p,.news-lead p,.news-deck,
+  .news-article-standfirst,.news-latest-copy p,.news-story-meta,
+  .news-composer-head small,.news-media-upload small,.project-directory-card p,
+  .project-directory-card small,.plus-section-head p,.creator-grid p,
+  .plaza-plus-panel p,.profile-section p,.glass-slider-labels,
+  .editor-intro,.editor-item small,.lumina-section-copy p,
+  .chat-thread-copy small,.space-choice-copy small
+){color:var(--theme-muted)!important;}
+.aero-root[data-theme="dark"] :is(.news-source-rums-4,.news-source-lumina,.news-source-creative){background:var(--theme-accent-soft)!important;border-color:var(--theme-border)!important;color:var(--theme-accent)!important;}
+.aero-root[data-theme="dark"] :is(.news-filter-bar button,.theme-option,.news-article-reactions button,.news-net-binnen button,.news-most-discussed button){background:var(--theme-surface-2)!important;border-color:var(--theme-border)!important;color:var(--theme-text)!important;}
+.aero-root[data-theme="dark"] :is(.news-filter-bar button.active,.news-editor-publish,.news-publish-trigger){background:var(--theme-accent-soft)!important;border-color:var(--theme-accent)!important;color:var(--theme-accent)!important;}
+.aero-root[data-theme="dark"] :is(.news-image-preview,.news-lead-image,.glass-live-preview .preview-island){background:var(--theme-surface-2)!important;color:var(--theme-text)!important;}
+.aero-root[data-theme="dark"] :is(.aero-btn,.comment-send,.pill.active,.tab-btn.active){color:#fff!important;}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen){background:#0d141ecc!important;color:var(--theme-text)!important;}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) :is(.site-update-card,.site-update-now-playing,.site-update-outro-pill){background:#182331!important;border-color:var(--theme-border)!important;color:var(--theme-text)!important;box-shadow:0 18px 45px #0008!important;}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) :is(h1,strong,.site-update-now-copy span){color:var(--theme-text)!important;}
+.aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) :is(p,small,.site-update-kicker){color:var(--theme-muted)!important;}
+.aero-root[data-theme="dark"] :is(.rums-space-chooser h1,.plaza-account-gate-card h1,.plaza-account-gate-profile strong){color:var(--theme-text)!important;}
+.aero-root[data-theme="dark"] :is(.space-chooser-intro,.space-choice-copy em,.plaza-account-gate-intro,.plaza-account-gate-profile small){color:var(--theme-muted)!important;}
+.aero-root[data-theme="dark"] :is(button,input,textarea,select):focus-visible{outline:2px solid var(--theme-focus,#82b5ff);outline-offset:2px;}
