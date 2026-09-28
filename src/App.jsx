@@ -22,6 +22,13 @@ const RUMS5_SITE_CONFIG_KEY = 'rums5-site-config';
 const LUMINA_POSTS_KEY = 'rums-lumina-posts';
 const PLATFORM_NAME = 'RUMS Plaza';
 const THEME_STORAGE_KEY = 'rums-plaza-theme';
+const THEME_NIGHT_OVERRIDE_KEY = 'rums-plaza-night-override';
+const nightThemeKey = (date) => {
+  const night = new Date(date);
+  if (night.getHours() < 6) night.setDate(night.getDate() - 1);
+  return `${night.getFullYear()}-${night.getMonth() + 1}-${night.getDate()}`;
+};
+const isNightThemeTime = (date) => date.getHours() >= 20 || date.getHours() < 6;
 const UPDATE_SEEN_KEY = 'rums-plaza-last-build';
 const UPDATE_SCREEN_KEY = 'rums-plaza-update-screen';
 const UPDATE_RELOAD_KEY = 'rums-plaza-update-reload';
@@ -3126,12 +3133,22 @@ export default function RUMS() {
       return Number.isFinite(saved) && saved >= 35 && saved <= 95 ? saved : 72;
     } catch { return 72; }
   });
-  const [theme, setTheme] = useState(() => {
+  const [preferredTheme, setPreferredTheme] = useState(() => {
     try {
       const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
       return RUMS_THEMES.some((item) => item.id === saved) ? saved : 'standard';
     } catch { return 'standard'; }
   });
+  const [themeClock, setThemeClock] = useState(() => new Date());
+  const [nightOverride, setNightOverride] = useState(() => {
+    try { return window.localStorage.getItem(THEME_NIGHT_OVERRIDE_KEY) || ''; } catch { return ''; }
+  });
+  const autoDarkActive = isNightThemeTime(themeClock) && nightOverride !== nightThemeKey(themeClock);
+  const theme = autoDarkActive ? 'dark' : preferredTheme;
+  const selectTheme = (id) => {
+    setPreferredTheme(id);
+    if (isNightThemeTime(new Date())) setNightOverride(nightThemeKey(new Date()));
+  };
   const [robloxThemeMenuOpen, setRobloxThemeMenuOpen] = useState(() => {
     try { return (window.localStorage.getItem(THEME_STORAGE_KEY) || '').startsWith('roblox'); } catch { return false; }
   });
@@ -4768,15 +4785,30 @@ export default function RUMS() {
   useEffect(() => {
     const safeTheme = RUMS_THEMES.some((item) => item.id === theme) ? theme : 'standard';
     if (safeTheme !== theme) {
-      setTheme('standard');
+      setPreferredTheme('standard');
       return;
     }
-    try { window.localStorage.setItem(THEME_STORAGE_KEY, safeTheme); } catch { /* browser preferences unavailable */ }
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, preferredTheme);
+      window.localStorage.setItem(THEME_NIGHT_OVERRIDE_KEY, nightOverride);
+    } catch { /* browser preferences unavailable */ }
 
-    setRobloxThemeMenuOpen(safeTheme.startsWith('roblox'));
-    setFrutigerThemeMenuOpen(FRUTIGER_THEME_IDS.includes(safeTheme));
-    setPunkThemeMenuOpen(PUNK_THEME_IDS.includes(safeTheme));
-  }, [theme]);
+    setRobloxThemeMenuOpen(preferredTheme.startsWith('roblox'));
+    setFrutigerThemeMenuOpen(FRUTIGER_THEME_IDS.includes(preferredTheme));
+    setPunkThemeMenuOpen(PUNK_THEME_IDS.includes(preferredTheme));
+  }, [theme, preferredTheme, nightOverride]);
+
+  useEffect(() => {
+    const updateClock = () => setThemeClock(new Date());
+    const timer = window.setInterval(updateClock, 30000);
+    document.addEventListener('visibilitychange', updateClock);
+    window.addEventListener('focus', updateClock);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', updateClock);
+      window.removeEventListener('focus', updateClock);
+    };
+  }, []);
 
   // Poll the shared stores so new posts/suggestions/updates (and their
   // notification badges) show up without needing to log out/in, and so an
@@ -8016,7 +8048,7 @@ export default function RUMS() {
   const startupTheme = startupThemeMeta(activeThemeId);
 
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || activeThemeId} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBackgroundRevealActive ? 'version-background-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={autoDarkActive ? 'dark' : plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || activeThemeId} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBackgroundRevealActive ? 'version-background-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled && !autoDarkActive ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
@@ -9217,7 +9249,7 @@ export default function RUMS() {
                       </div>
 
                       <div className="profile-section appearance-section" data-tutorial="appearance">
-                        <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Choose a RUMS Plaza theme, then fine-tune its glass transparency on this device.</p></div><span className="appearance-current-theme">{RUMS_THEMES.find((item) => item.id === theme)?.name || 'Light'}</span></div>
+                        <div className="appearance-heading"><div><div className="field-label">Appearance</div><p>Choose a RUMS Plaza theme, then fine-tune its glass transparency on this device. Dark switches on automatically from 20:00 to 06:00 in your device’s time zone. Choosing a theme at night keeps it until the next evening.</p></div><span className="appearance-current-theme">{RUMS_THEMES.find((item) => item.id === theme)?.name || 'Light'}{autoDarkActive ? ' · Auto' : ''}</span></div>
                         <div className="appearance-heading glass-strength-heading"><div><div className="field-label">Glass strength</div><p>Adjust the transparency of glass controls for the selected theme.</p></div><span data-glass-value>{glassStrength}%</span></div>
                         <div className="glass-live-preview" aria-label={`Glass appearance preview at ${glassStrength} percent`}>
                           <div className="preview-sun" /><div className="preview-hill" />
@@ -9237,7 +9269,7 @@ export default function RUMS() {
                               aria-checked={theme === item.id}
                               key={item.id}
                               className={`theme-option theme-option-${item.id} ${theme === item.id ? 'active' : ''}`}
-                              onClick={() => setTheme(item.id)}
+                              onClick={() => selectTheme(item.id)}
                             >
                               <span className="theme-option-preview" aria-hidden="true">
                                 {item.swatches.map((color, index) => <span key={`${item.id}-${index}`} style={{ background: color }} />)}
@@ -9269,7 +9301,7 @@ export default function RUMS() {
                                     aria-checked={theme === item.id}
                                     key={item.id}
                                     className={`roblox-theme-year roblox-theme-year-${item.year} ${theme === item.id ? 'active' : ''}`}
-                                    onClick={() => setTheme(item.id)}
+                                    onClick={() => selectTheme(item.id)}
                                   >
                                     <span className="roblox-year-number">{item.year}</span>
                                     <span className="roblox-year-swatch" aria-hidden="true">{item.swatches.map((color, index) => <span key={`${item.id}-year-${index}`} style={{ background: color }} />)}</span>
@@ -9304,7 +9336,7 @@ export default function RUMS() {
                                     aria-checked={theme === item.id}
                                     key={item.id}
                                     className={`frutiger-theme-item frutiger-theme-item-${item.id} ${theme === item.id ? 'active' : ''}`}
-                                    onClick={() => setTheme(item.id)}
+                                    onClick={() => selectTheme(item.id)}
                                   >
                                     <span className="frutiger-theme-swatch" aria-hidden="true">{item.swatches.map((color, index) => <span key={`${item.id}-family-${index}`} style={{ background: color }} />)}</span>
                                     <span className="frutiger-theme-copy"><strong>{item.name}</strong><small>{item.description}</small></span>
@@ -9337,7 +9369,7 @@ export default function RUMS() {
                                     aria-checked={theme === item.id}
                                     key={item.id}
                                     className={`punk-theme-item punk-theme-item-${item.id} ${theme === item.id ? 'active' : ''}`}
-                                    onClick={() => setTheme(item.id)}
+                                    onClick={() => selectTheme(item.id)}
                                   >
                                     <span className="punk-theme-swatch" aria-hidden="true">{item.swatches.map((color, index) => <span key={`${item.id}-punk-${index}`} style={{ background: color }} />)}</span>
                                     <span className="punk-theme-copy"><strong>{item.name}</strong><small>{item.description}</small></span>
@@ -9355,7 +9387,7 @@ export default function RUMS() {
                               aria-checked={theme === item.id}
                               key={item.id}
                               className={`theme-option theme-option-${item.id} ${theme === item.id ? 'active' : ''}`}
-                              onClick={() => setTheme(item.id)}
+                              onClick={() => selectTheme(item.id)}
                             >
                               <span className="theme-option-preview" aria-hidden="true">
                                 {item.swatches.map((color, index) => <span key={`${item.id}-${index}`} style={{ background: color }} />)}
