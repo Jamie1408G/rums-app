@@ -14794,7 +14794,7 @@ button,input,textarea { font:inherit; }
 /* Version chooser stays recognizable, with a night backdrop and solid cards. */
 .aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser{background:#0c131d!important;}
 .aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser::before{
-  background:linear-gradient(180deg,#08111bb3,#0a1720ba),url('/images/plaza-version-frutiger-aero.png') center center / cover no-repeat!important;
+  background:linear-gradient(180deg,#08111b14,#0a172033),url('/images/plaza-version-night.webp') center center / cover no-repeat!important;
 }
 .aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-chooser-title-card,
 .aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-choice-card{
