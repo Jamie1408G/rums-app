@@ -4970,13 +4970,18 @@ export default function RUMS() {
       window.clearTimeout(versionOpenSoundTimerRef.current);
     }
 
+    // Keep desktop timing unchanged. On touch/mobile, let the version finish
+    // settling for another half-second before the open sound plays.
+    const isMobile = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    const delay = isMobile ? 1000 : 500;
+
     versionOpenSoundTimerRef.current = window.setTimeout(() => {
       versionOpenSoundTimerRef.current = 0;
 
       // SELECT2 belongs to an opened Plaza version, never the Logged in as page.
       if (screen === 'accountGate' || screen === 'boot') return;
       void playUiSfx('select2');
-    }, 500);
+    }, delay);
   }
 
   async function chooseProject(project) {
