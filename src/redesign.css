@@ -14874,3 +14874,28 @@ button,input,textarea { font:inherit; }
 @media(prefers-reduced-motion:reduce){
   .aero-root[data-theme="dark"] .site-update-screen:not(.site-entry-screen) .site-update-now-playing.is-playing .site-update-now-icon span{animation:none!important;transform:none!important;}
 }
+
+/* Account gate: remove the oversized silver gloss shown above the logo. */
+.aero-root[data-theme="dark"] .plaza-account-gate-card{
+  background:#171f2a!important;border-color:#354355!important;box-shadow:0 20px 54px #0007!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+.aero-root[data-theme="dark"] .plaza-account-gate-card::before{display:none!important;}
+.aero-root[data-theme="dark"] .plaza-account-gate-card .space-chooser-mark{
+  background:#356ab2!important;border-color:#6799d7!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .plaza-account-gate-profile{
+  background:#1d2938!important;border-color:#3a4b60!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .plaza-account-gate-card .plaza-account-continue{
+  background:#284563!important;border-color:#527ba7!important;color:#f2f7ff!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .plaza-account-gate-card .plaza-account-continue > span{
+  background:#37638d!important;color:#fff!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .plaza-account-gate-card .plaza-account-logout{
+  background:#202d3c!important;border-color:#3a4b60!important;color:#d4e2f1!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .plaza-account-gate-card :is(.plaza-account-continue,.plaza-account-logout):hover{
+  filter:brightness(1.12);box-shadow:0 5px 16px #0005!important;
+}
