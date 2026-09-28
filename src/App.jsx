@@ -52,7 +52,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'mobile-nine-second-fade-desktop-restored-175';
+const FORCE_UPDATE_REVISION = 'remove-overhaul-announcement-173';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -120,18 +120,7 @@ const DEFAULT_SITE_CONFIG = {
 };
 
 const PLAZA_OVERHAUL_WIDGET_ID = 'plaza-overhaul-2026';
-const PLAZA_OVERHAUL_MIGRATION = 'plaza-overhaul-announcement-v1';
-const PLAZA_OVERHAUL_WIDGET = {
-  id: PLAZA_OVERHAUL_WIDGET_ID,
-  placement: 'feed',
-  title: '✨ RUMS Plaza has been completely overhauled!',
-  body: 'A fresh new look, smoother interactions and loads of new features — while keeping the glossy, modern RUMS aesthetic. Explore RUMS 4, Creative and Projects, emoji reactions, custom emojis, the visual editor and more.',
-  image: '',
-  actionLabel: '',
-  actionUrl: '',
-  color: '#eaf4ff',
-  animation: 'none',
-};
+const PLAZA_OVERHAUL_MIGRATION = 'plaza-overhaul-announcement-removed-v2';
 
 function requiredTutorialVersionForUser(user) {
   if (!user?.username) return TUTORIAL_VERSION;
@@ -140,26 +129,28 @@ function requiredTutorialVersionForUser(user) {
 
 function migratePlazaOverhaulAnnouncement(config) {
   const next = { ...DEFAULT_SITE_CONFIG, ...(config || {}), migrations: { ...(config?.migrations || {}) } };
-  if (next.migrations[PLAZA_OVERHAUL_MIGRATION]) return { config: next, changed: false };
-  const isLegacyOverhaulBox = (widget) => {
+  const isOverhaulBox = (widget) => {
     const text = `${widget?.title || ''} ${widget?.body || ''}`
       .toLowerCase()
       .replace(/[’‘]/g, "'")
       .replace(/\s+/g, ' ')
       .trim();
     return widget?.id === PLAZA_OVERHAUL_WIDGET_ID
+      || text.includes('rums plaza has been completely overhauled')
       || text.includes("our site's gotten a new look")
       || text.includes("our site's gotten a complete overhaul")
       || (text.includes('complete overhaul') && text.includes('glossy') && text.includes('modern aesthetic'));
   };
-  const customWidgets = (next.customWidgets || []).filter((widget) => !isLegacyOverhaulBox(widget));
+  const before = next.customWidgets || [];
+  const customWidgets = before.filter((widget) => !isOverhaulBox(widget));
+  const alreadyMigrated = Boolean(next.migrations[PLAZA_OVERHAUL_MIGRATION]);
   return {
     config: {
       ...next,
-      customWidgets: [PLAZA_OVERHAUL_WIDGET, ...customWidgets],
+      customWidgets,
       migrations: { ...next.migrations, [PLAZA_OVERHAUL_MIGRATION]: true },
     },
-    changed: true,
+    changed: customWidgets.length !== before.length || !alreadyMigrated,
   };
 }
 
