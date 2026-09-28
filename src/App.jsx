@@ -622,8 +622,6 @@ export default function RUMS() {
   const updateAudioKeepaliveRef = useRef(null);
   const updateAudioKeepaliveGainRef = useRef(null);
   const updateAudioHtmlRef = useRef(null);
-  const updateAudioElementSourceRef = useRef(null);
-  const updateAudioElementGainRef = useRef(null);
   const updateAudioHtmlFadeTimerRef = useRef(0);
   const updateMusicFadeStartTimerRef = useRef(0);
   const updateMusicFadeStopTimerRef = useRef(0);
@@ -1114,23 +1112,6 @@ export default function RUMS() {
     }, 25);
   };
 
-  const ensureMobileAudioGain = (context = updateAudioContextRef.current) => {
-    if (!isTouchMusicDevice() || !context || !updateAudioHtmlRef.current) return null;
-    if (updateAudioElementGainRef.current) return updateAudioElementGainRef.current;
-    try {
-      const source = context.createMediaElementSource(updateAudioHtmlRef.current);
-      const gain = context.createGain();
-      gain.gain.value = 1;
-      source.connect(gain);
-      gain.connect(context.destination);
-      updateAudioElementSourceRef.current = source;
-      updateAudioElementGainRef.current = gain;
-      return gain;
-    } catch {
-      return null;
-    }
-  };
-
   const promoteUpdateMusicToWebAudio = () => {
     // Mobile Safari's HTMLAudio -> WebAudio handoff can briefly retain both
     // outputs and create an audible delayed copy. Mobile stays on one native
@@ -1221,28 +1202,10 @@ export default function RUMS() {
 
     // The loading page owns the timing. Begin the fade only when that page
     // starts its exit transition, then fully retire whichever source is active.
-    // Mobile playback is deliberately HTMLAudio-only, so its fade cannot
-    // create or promote a second WebAudio source.
-    if (updateAudioSourceRef.current) {
-      try { updateAudioSourceRef.current.stop(0); } catch {}
-      try { updateAudioSourceRef.current.disconnect(); } catch {}
-      updateAudioSourceRef.current = null;
-    }
-    const mobileGain = ensureMobileAudioGain();
-    const mobileContext = updateAudioContextRef.current;
-    if (mobileGain && mobileContext?.state === 'running') {
-      try {
-        const now = mobileContext.currentTime;
-        const current = Math.max(0.0001, mobileGain.gain.value || 1);
-        mobileGain.gain.cancelScheduledValues(now);
-        mobileGain.gain.setValueAtTime(current, now);
-        mobileGain.gain.linearRampToValueAtTime(0.0001, now + duration / 1000);
-      } catch {
-        fadeUpdateHtmlAudio(duration);
-      }
-    } else {
-      fadeUpdateHtmlAudio(duration);
-    }
+    // iOS ignores scripted HTMLMediaElement volume. The mobile soundtrack is
+    // one AudioBufferSourceNode routed through the existing GainNode, so the
+    // platform can perform a real sample-accurate fade without a handoff.
+    beginUpdateMusicFade(duration);
 
     updateMusicFadeStopTimerRef.current = window.setTimeout(() => {
       updateMusicFadeStopTimerRef.current = 0;
@@ -1301,11 +1264,11 @@ export default function RUMS() {
     // A mobile tap can arrive through touchstart and pointerdown. If either
     // playback path is already live, reuse it instead of creating a second,
     // slightly offset copy of the soundtrack.
-    if (!isTouchMusicDevice() && updateAudioSourceRef.current && updateAudioContextRef.current?.state === 'running') {
+    if (updateAudioSourceRef.current && updateAudioContextRef.current?.state === 'running') {
       setUpdateMusicState('playing');
       return true;
     }
-    if (updateAudioHtmlRef.current && !updateAudioHtmlRef.current.paused && !updateAudioHtmlRef.current.ended) {
+    if (!isTouchMusicDevice() && updateAudioHtmlRef.current && !updateAudioHtmlRef.current.paused && !updateAudioHtmlRef.current.ended) {
       setUpdateMusicState('playing');
       return true;
     }
@@ -1313,30 +1276,29 @@ export default function RUMS() {
     setUpdateMusicState('starting');
 
     if (isTouchMusicDevice()) {
-      // iOS receives exactly one source: the preloaded native audio element.
-      // Calling play before the first await preserves the user's tap permission.
-      if (updateAudioSourceRef.current) {
-        try { updateAudioSourceRef.current.stop(0); } catch {}
-        try { updateAudioSourceRef.current.disconnect(); } catch {}
-        updateAudioSourceRef.current = null;
-      }
-      const mobileAudio = updateAudioHtmlRef.current;
-      if (!mobileAudio) {
+      // Resume from the gesture, finish the already-started decode if needed,
+      // then use one buffer source for both playback and the final gain ramp.
+      const context = await ensureUpdateAudioReady({ resume: true });
+      const gain = updateAudioGainRef.current;
+      const buffer = updateAudioBufferRef.current;
+      if (!context || context.state !== 'running' || !gain || !buffer) {
         setUpdateMusicState('blocked');
         return false;
       }
       try {
-        const wanted = new URL(updateTrack.src, window.location.href).href;
-        if (mobileAudio.src !== wanted) {
-          mobileAudio.src = updateTrack.src;
-          mobileAudio.preload = 'auto';
-          mobileAudio.playsInline = true;
-          try { mobileAudio.load(); } catch {}
-        }
-        mobileAudio.volume = 0.72;
-        if (mobileAudio.ended) mobileAudio.currentTime = 0;
-        const attempt = mobileAudio.play();
-        if (attempt?.then) await attempt;
+        try { updateAudioHtmlRef.current?.pause(); } catch {}
+        const now = context.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(0.72, now);
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(gain);
+        source.addEventListener('ended', () => {
+          if (updateAudioSourceRef.current === source) updateAudioSourceRef.current = null;
+          try { source.disconnect(); } catch {}
+        }, { once: true });
+        updateAudioSourceRef.current = source;
+        source.start(0);
         setUpdateMusicState('playing');
         return true;
       } catch {
@@ -1664,10 +1626,6 @@ export default function RUMS() {
       void (async () => {
         const context = await ensureUpdateAudioReady({ resume: true });
 
-        if (isTouchMusicDevice() && context?.state === 'running') {
-          ensureMobileAudioGain(context);
-        }
-
         if (context?.state === 'running' && !updateAudioKeepaliveRef.current) {
           try {
             const keepaliveGain = context.createGain();
@@ -1902,14 +1860,6 @@ export default function RUMS() {
     if (updateAudioKeepaliveGainRef.current) {
       try { updateAudioKeepaliveGainRef.current.disconnect(); } catch {}
       updateAudioKeepaliveGainRef.current = null;
-    }
-    if (updateAudioElementSourceRef.current) {
-      try { updateAudioElementSourceRef.current.disconnect(); } catch {}
-      updateAudioElementSourceRef.current = null;
-    }
-    if (updateAudioElementGainRef.current) {
-      try { updateAudioElementGainRef.current.disconnect(); } catch {}
-      updateAudioElementGainRef.current = null;
     }
 
     if (updateAudioContextRef.current) {
