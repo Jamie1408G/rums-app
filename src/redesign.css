@@ -14764,3 +14764,61 @@ button,input,textarea { font:inherit; }
 .aero-root[data-theme="dark"] :is(.rums-space-chooser h1,.plaza-account-gate-card h1,.plaza-account-gate-profile strong){color:var(--theme-text)!important;}
 .aero-root[data-theme="dark"] :is(.space-chooser-intro,.space-choice-copy em,.plaza-account-gate-intro,.plaza-account-gate-profile small){color:var(--theme-muted)!important;}
 .aero-root[data-theme="dark"] :is(button,input,textarea,select):focus-visible{outline:2px solid var(--theme-focus,#82b5ff);outline-offset:2px;}
+
+/* Dark surfaces: keep the layout and album artwork, remove white glass glare. */
+.aero-root[data-theme="dark"] :is(
+  .dynamic-music-compact,.dynamic-music-drawer,.dynamic-music-now-card,
+  .dynamic-music-transport-card,.dynamic-music-library-card,
+  .mobile-music-drawer .dynamic-music-now-card,
+  .mobile-music-drawer .dynamic-music-transport-card,
+  .mobile-music-drawer .dynamic-music-library-card
+){background:#18212d!important;border-color:#344354!important;color:#edf4ff!important;box-shadow:0 10px 28px #0005!important;backdrop-filter:blur(20px)!important;-webkit-backdrop-filter:blur(20px)!important;}
+.aero-root[data-theme="dark"] :is(.dynamic-music-compact::before,.dynamic-music-drawer::before,.dynamic-music-drawer-bridge){background:#18212d!important;border-color:#344354!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] :is(
+  .dynamic-music-compact:hover,.dynamic-music-island.is-open .dynamic-music-compact
+){box-shadow:0 12px 30px #0007!important;}
+.aero-root[data-theme="dark"] :is(
+  .dynamic-music-wave,.dynamic-music-collapse-button,.dynamic-music-controls button,
+  .dynamic-music-volume,.dynamic-music-library-state,.dynamic-music-compact-control,
+  .dynamic-music-compact-expand,.dynamic-music-library-row,
+  .mobile-header-music-controls button
+){background:#253243!important;border-color:#405268!important;color:#dcecff!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] :is(.dynamic-music-controls .dynamic-music-main-control,.dynamic-music-compact-play){background:#365a89!important;border-color:#618dc4!important;color:#fff!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] .dynamic-music-library-row.active{background:#294365!important;border-color:#507eb4!important;}
+.aero-root[data-theme="dark"] :is(.dynamic-music-compact-copy small,.dynamic-music-now-copy span,.dynamic-music-library-copy small,.dynamic-music-times,.dynamic-music-swipe-hint){color:#aebed0!important;}
+.aero-root[data-theme="dark"] :is(.dynamic-music-compact-copy strong,.dynamic-music-now-copy strong,.dynamic-music-library-copy strong){color:#edf4ff!important;}
+.aero-root[data-theme="dark"] .dynamic-music-progress-line{background:#344354!important;}
+.aero-root[data-theme="dark"] .dynamic-music-progress-line::after{background:#82b5ff!important;}
+.aero-root[data-theme="dark"] .dynamic-mobile-music{background:#202c3b!important;border-color:#405268!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] .dynamic-mobile-music :is(.mobile-menu-music-main,.mobile-menu-music-next){color:#edf4ff!important;}
+/* Version chooser stays recognizable, with a night backdrop and solid cards. */
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser{background:#0c131d!important;}
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser::before{
+  background:linear-gradient(180deg,#08111bb3,#0a1720ba),url('/images/plaza-version-frutiger-aero.png') center center / cover no-repeat!important;
+}
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-chooser-title-card,
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-choice-card{
+  background:#182432ed!important;border:1px solid #40556e!important;
+  box-shadow:0 12px 32px #0008!important;backdrop-filter:blur(9px)!important;-webkit-backdrop-filter:blur(9px)!important;
+}
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-choice-card:hover,
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-choice-card:focus-visible{background:#233852f2!important;border-color:#7baee6!important;box-shadow:0 14px 38px #000a!important;}
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-choice-card::before,
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-choice-copy::before,
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-choice-copy strong::before,
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-chooser-title-card::before{display:none!important;opacity:0!important;}
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser :is(.space-chooser-title-card h1,.space-choice-copy strong){color:#f1f6ff!important;text-shadow:none!important;}
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser :is(.space-chooser-intro,.space-chooser-kicker,.space-choice-copy small,.space-choice-copy em){color:#bbcde0!important;text-shadow:none!important;}
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-choice-number{background:#294665!important;border:1px solid #527ba8!important;color:#fff!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-chooser-mark::after{opacity:.18!important;}
+/* Switchers retain their sliding interaction without glowing white lenses. */
+.aero-root[data-theme="dark"] :is(.universal-rums-switcher,.feed-tabs,.lumina-view-switch,.location-tabs,.glass-slider-shell,.mobile-version-icons,.mobile-header-music-island){background:#172432!important;border:1px solid #38506a!important;box-shadow:inset 0 1px #ffffff0d,0 5px 16px #0004!important;}
+.aero-root[data-theme="dark"] :is(.feed-tabs::before,.lumina-view-switch::before,.upload-wrap .location-tabs::before,.universal-rums-switcher.is-dragging::before){background:#34577e!important;border-color:#5b83ae!important;box-shadow:none!important;filter:none!important;}
+.aero-root[data-theme="dark"] :is(.feed-tabs.is-dragging::after,.lumina-view-switch.is-dragging::after,.glass-slider-shell::after,.version-drag-refraction){display:none!important;}
+.aero-root[data-theme="dark"] :is(.universal-rums-switcher button,.feed-tabs .tab-btn,.lumina-view-switch button,.location-tabs button){color:#adbed0!important;text-shadow:none!important;}
+.aero-root[data-theme="dark"] :is(.universal-rums-switcher button.active,.feed-tabs .tab-btn.active,.lumina-view-switch button.active,.location-tabs button.active){color:#fff!important;text-shadow:none!important;}
+.aero-root[data-theme="dark"] .universal-rums-switcher button.active{background:#34577e!important;border-color:#5b83ae!important;box-shadow:none!important;}
+.aero-root[data-theme="dark"] .glass-range::-webkit-slider-thumb{background:#82b5ff!important;border-color:#bdd8f8!important;box-shadow:0 0 0 3px #263b57!important;}
+.aero-root[data-theme="dark"] .glass-range::-moz-range-thumb{background:#82b5ff!important;border-color:#bdd8f8!important;box-shadow:0 0 0 3px #263b57!important;}
+.aero-root[data-theme="dark"] .glass-slider-shell.is-dragging{box-shadow:0 5px 16px #0005!important;}
+.aero-root[data-theme="dark"] .mobile-version-icon.active{background:#34577e!important;border-color:#5b83ae!important;color:#fff!important;box-shadow:none!important;}
