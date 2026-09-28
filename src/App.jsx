@@ -6166,14 +6166,21 @@ export default function RUMS() {
     }
     setBusy(true);
     try {
+      // Always authenticate against the latest shared account list. Mobile and
+      // installed app launches can render before the initial Firestore request
+      // finishes; using the temporary in-memory [] caused valid credentials to
+      // be reported as incorrect.
+      const usersRecord = await window.storage.get(USERS_KEY, true);
+      const authUsers = usersRecord ? storageArray(usersRecord) : [];
+      setUsers(authUsers);
       if (authMode === 'signup') {
-        if (users.some((u) => u.username.toLowerCase() === uname.toLowerCase())) {
+        if (authUsers.some((u) => u.username.toLowerCase() === uname.toLowerCase())) {
           setError('That username is taken.');
           setBusy(false);
           return;
         }
-        const newUser = { username: uname, password: pass, isAdmin: users.length === 0, tutorialVersion: 0 };
-        const next = [...users, newUser];
+        const newUser = { username: uname, password: pass, isAdmin: authUsers.length === 0, tutorialVersion: 0 };
+        const next = [...authUsers, newUser];
         // Account creation must wait for a successful write. Do not show a
         // signed-in account that only exists in this tab's React state.
         await window.storage.set(USERS_KEY, JSON.stringify(next), true);
@@ -6187,7 +6194,7 @@ export default function RUMS() {
         setTutorialReturningUser(false);
         setTutorialActive(!entryAuth);
       } else {
-        const found = users.find(
+        const found = authUsers.find(
           (u) => u.username.toLowerCase() === uname.toLowerCase() && u.password === pass
         );
         if (!found) {
