@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'ios-direct-playback-fade-tail-167';
+const FORCE_UPDATE_REVISION = 'early-webaudio-promotion-168';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -1082,56 +1082,78 @@ export default function RUMS() {
     }
   };
 
-  const beginUpdateMusicFade = (duration) => {
+  const promoteUpdateMusicToWebAudio = () => {
     const htmlAudio = updateAudioHtmlRef.current;
     const context = updateAudioContextRef.current;
     const buffer = updateAudioBufferRef.current;
     const gain = updateAudioGainRef.current;
 
-    // iOS playback stays on the reliable plain <audio> element until the fade
-    // begins. At that moment, cross over at the same timestamp to a decoded
-    // WebAudio buffer solely for the short fade tail.
     if (
-      htmlAudio &&
-      !htmlAudio.paused &&
-      context?.state === 'running' &&
-      buffer &&
-      gain
-    ) {
-      const offset = Math.max(
-        0,
-        Math.min(
-          Number(htmlAudio.currentTime) || 0,
-          Math.max(0, (buffer.duration || 0) - 0.05),
-        ),
-      );
+      !updateMusicAllowedRef.current ||
+      !htmlAudio ||
+      htmlAudio.paused ||
+      !context ||
+      context.state !== 'running' ||
+      !buffer ||
+      !gain ||
+      updateAudioSourceRef.current
+    ) return false;
 
-      try {
-        if (updateAudioSourceRef.current) {
-          try { updateAudioSourceRef.current.stop(); } catch {}
-          try { updateAudioSourceRef.current.disconnect(); } catch {}
+    const offset = Math.max(
+      0,
+      Math.min(
+        Number(htmlAudio.currentTime) || 0,
+        Math.max(0, (buffer.duration || 0) - 0.05),
+      ),
+    );
+
+    try {
+      const now = context.currentTime;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(0.72, now);
+
+      const source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(gain);
+      source.addEventListener('ended', () => {
+        if (updateAudioSourceRef.current === source) {
+          updateAudioSourceRef.current = null;
         }
+        try { source.disconnect(); } catch {}
+      }, { once: true });
 
-        const now = context.currentTime;
-        gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(0.72, now);
+      updateAudioSourceRef.current = source;
+      source.start(0, offset);
 
-        const source = context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(gain);
-        updateAudioSourceRef.current = source;
-        source.start(0, offset);
+      // WebAudio is now definitely producing the same track. Retire the
+      // iOS-unlocked HTML fallback well before any transition/fade begins.
+      try { htmlAudio.pause(); } catch {}
+      setUpdateMusicState('playing');
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
-        // Start the replacement first, then stop the HTML source immediately.
-        // The two sources overlap only for this synchronous handoff.
-        try { htmlAudio.pause(); } catch {}
-
-        gain.gain.linearRampToValueAtTime(0.0001, now + duration / 1000);
-        return true;
-      } catch {}
+  const beginUpdateMusicFade = (duration) => {
+    if (!updateAudioSourceRef.current) {
+      promoteUpdateMusicToWebAudio();
     }
 
-    return fadeUpdateHtmlAudio(duration);
+    const context = updateAudioContextRef.current;
+    const gain = updateAudioGainRef.current;
+    if (!context || !gain || !updateAudioSourceRef.current) return false;
+
+    try {
+      const now = context.currentTime;
+      const current = Math.max(0.0001, gain.gain.value || 0.72);
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(current, now);
+      gain.gain.linearRampToValueAtTime(0.0001, now + duration / 1000);
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const stopUpdateMusicCompletely = () => {
@@ -1231,9 +1253,11 @@ export default function RUMS() {
 
         setUpdateMusicState('playing');
 
-        // Warm WebAudio in the background for desktop/next cycle, but do not
-        // replace the already-audible HTMLAudio source mid-screen.
-        void ensureUpdateAudioReady({ resume: true });
+        // Decode/resume in the background, then move to the fade-capable
+        // source while this screen is still visible.
+        void ensureUpdateAudioReady({ resume: true }).then(() => {
+          promoteUpdateMusicToWebAudio();
+        });
         return true;
       } catch {}
     }
@@ -1495,9 +1519,12 @@ export default function RUMS() {
       void (async () => {
         const context = await ensureUpdateAudioReady({ resume: true });
 
-        // The HTML media element is already routed through a GainNode, so keep
-        // that source alive for the whole loading/update screen. Switching
-        // sources mid-screen is unnecessary and can create an iOS cutoff.
+        // The tap starts reliable HTMLAudio immediately. Once decoding and
+        // AudioContext resume complete, promote it while the screen is still
+        // running so the later outro is guaranteed to have a GainNode source.
+        if (context?.state === 'running') {
+          promoteUpdateMusicToWebAudio();
+        }
 
         if (context?.state === 'running' && !updateAudioKeepaliveRef.current) {
           try {
