@@ -14560,3 +14560,11 @@ button,input,textarea { font:inherit; }
     opacity:0!important;
   }
 }
+
+
+/* Lower floating Plaza welcome cluster on mobile — 161 */
+@media(max-width:820px){
+  .aero-frame > .rums-space-chooser .space-chooser-title-cluster{
+    transform:translateY(18px)!important;
+  }
+}
