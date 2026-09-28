@@ -52,7 +52,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'mobile-version-open-delay-173';
+const FORCE_UPDATE_REVISION = 'mobile-sound-delay-stop-fix-173';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -4973,10 +4973,12 @@ export default function RUMS() {
     // Keep desktop timing unchanged. On touch/mobile, let the version finish
     // settling for another half-second before the open sound plays.
     const isMobile =
+      window.matchMedia('(max-width: 820px)').matches ||
       navigator.maxTouchPoints > 0 ||
-      'ontouchstart' in window ||
-      window.matchMedia('(hover: none), (pointer: coarse)').matches;
-    const delay = isMobile ? 1000 : 500;
+      window.matchMedia('(hover: none)').matches ||
+      window.matchMedia('(pointer: coarse)').matches;
+    const desktopDelay = 500;
+    const delay = desktopDelay + (isMobile ? 500 : 0);
 
     versionOpenSoundTimerRef.current = window.setTimeout(() => {
       versionOpenSoundTimerRef.current = 0;
@@ -5079,6 +5081,9 @@ export default function RUMS() {
       }
 
       finishTimer = window.setTimeout(() => {
+        // Mobile Safari can keep the unlocked HTMLAudio alive across the next
+        // screen. Kill both HTMLAudio and WebAudio before removing the overlay.
+        if (isTouchMusicDevice()) stopUpdateMusicCompletely();
         setEntryIntroActive(false);
         setEntryIntroLeaving(false);
       }, ENTRY_FADE_MS);
@@ -5107,8 +5112,10 @@ export default function RUMS() {
   useEffect(() => {
     if (!entryIntroActive && updateCycleRef.current.phase === 'idle') {
       updateMusicAllowedRef.current = false;
-      // Do not hard-stop here: the entryMusicTailTimer owns the soundtrack
-      // lifetime so its fade can continue after the visual has disappeared.
+      if (isTouchMusicDevice()) {
+        stopUpdateMusicCompletely();
+      }
+      // Desktop keeps its existing fade-tail ownership.
     }
   }, [entryIntroActive]);
 
