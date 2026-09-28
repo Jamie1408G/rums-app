@@ -14517,3 +14517,27 @@ button,input,textarea { font:inherit; }
     margin-top:28px!important;
   }
 }
+
+
+/* Restore compact mobile version-name highlighter — 159 */
+@media(max-width:820px){
+  .aero-frame > .rums-space-chooser .space-choice-copy{
+    height:58px!important;
+    min-height:58px!important;
+    justify-content:center!important;
+    align-items:flex-start!important;
+  }
+
+  .aero-frame > .rums-space-chooser .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums4-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .rums5-choice .space-choice-copy strong,
+  .aero-frame > .rums-space-chooser .projects-choice .space-choice-copy strong{
+    display:inline-flex!important;
+    align-items:center!important;
+    align-self:center!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:4px 7px!important;
+    line-height:1!important;
+  }
+}
