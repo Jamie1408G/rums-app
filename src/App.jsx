@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'mobile-audio-fades-163';
+const FORCE_UPDATE_REVISION = 'audio-fade-lifetime-164';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -2163,7 +2163,11 @@ export default function RUMS() {
 
   useEffect(() => {
     if ((updateUntil > Date.now() || updateOverlayLeaving) && siteMusicAudioRef.current) {
-      pauseSiteMusic();
+      // If URL 湖 is already fading out from a version-menu selection, let
+      // that fade complete instead of turning it into an immediate pause.
+      if (!siteMusicFadeTimerRef.current) {
+        pauseSiteMusic();
+      }
       closeSiteMusicIsland();
     }
   }, [updateUntil, updateOverlayLeaving]);
@@ -4634,7 +4638,7 @@ export default function RUMS() {
   }
 
   async function chooseProjectsFromVersionMenu() {
-    fadeOutSiteMusic(900);
+    fadeOutSiteMusic(1200);
     void playUiSfx('select');
     await openProjectsDirectory();
     scheduleVersionOpenSound();
@@ -4763,7 +4767,7 @@ export default function RUMS() {
     if (versionMenuSelection) {
       // URL 湖 is version-menu-only music. Let it fade smoothly into the
       // destination instead of cutting off as soon as a version is chosen.
-      fadeOutSiteMusic(900);
+      fadeOutSiteMusic(1200);
       void playUiSfx('select');
     }
 
@@ -4865,9 +4869,8 @@ export default function RUMS() {
   useEffect(() => {
     if (!entryIntroActive && updateCycleRef.current.phase === 'idle') {
       updateMusicAllowedRef.current = false;
-      if (updateAudioSourceRef.current) {
-        stopUpdateMusicCompletely();
-      }
+      // Do not hard-stop here: the entryMusicTailTimer owns the soundtrack
+      // lifetime so its fade can continue after the visual has disappeared.
     }
   }, [entryIntroActive]);
 
