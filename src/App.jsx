@@ -622,6 +622,8 @@ export default function RUMS() {
   const updateAudioKeepaliveRef = useRef(null);
   const updateAudioKeepaliveGainRef = useRef(null);
   const updateAudioHtmlRef = useRef(null);
+  const updateAudioElementSourceRef = useRef(null);
+  const updateAudioElementGainRef = useRef(null);
   const updateAudioHtmlFadeTimerRef = useRef(0);
   const updateMusicFadeStartTimerRef = useRef(0);
   const updateMusicFadeStopTimerRef = useRef(0);
@@ -1112,6 +1114,23 @@ export default function RUMS() {
     }, 25);
   };
 
+  const ensureMobileAudioGain = (context = updateAudioContextRef.current) => {
+    if (!isTouchMusicDevice() || !context || !updateAudioHtmlRef.current) return null;
+    if (updateAudioElementGainRef.current) return updateAudioElementGainRef.current;
+    try {
+      const source = context.createMediaElementSource(updateAudioHtmlRef.current);
+      const gain = context.createGain();
+      gain.gain.value = 1;
+      source.connect(gain);
+      gain.connect(context.destination);
+      updateAudioElementSourceRef.current = source;
+      updateAudioElementGainRef.current = gain;
+      return gain;
+    } catch {
+      return null;
+    }
+  };
+
   const promoteUpdateMusicToWebAudio = () => {
     // Mobile Safari's HTMLAudio -> WebAudio handoff can briefly retain both
     // outputs and create an audible delayed copy. Mobile stays on one native
@@ -1209,7 +1228,21 @@ export default function RUMS() {
       try { updateAudioSourceRef.current.disconnect(); } catch {}
       updateAudioSourceRef.current = null;
     }
-    fadeUpdateHtmlAudio(duration);
+    const mobileGain = ensureMobileAudioGain();
+    const mobileContext = updateAudioContextRef.current;
+    if (mobileGain && mobileContext?.state === 'running') {
+      try {
+        const now = mobileContext.currentTime;
+        const current = Math.max(0.0001, mobileGain.gain.value || 1);
+        mobileGain.gain.cancelScheduledValues(now);
+        mobileGain.gain.setValueAtTime(current, now);
+        mobileGain.gain.linearRampToValueAtTime(0.0001, now + duration / 1000);
+      } catch {
+        fadeUpdateHtmlAudio(duration);
+      }
+    } else {
+      fadeUpdateHtmlAudio(duration);
+    }
 
     updateMusicFadeStopTimerRef.current = window.setTimeout(() => {
       updateMusicFadeStopTimerRef.current = 0;
@@ -1301,6 +1334,14 @@ export default function RUMS() {
           try { mobileAudio.load(); } catch {}
         }
         mobileAudio.volume = 0.72;
+        const mobileGain = ensureMobileAudioGain();
+        if (mobileGain && updateAudioContextRef.current) {
+          try {
+            const now = updateAudioContextRef.current.currentTime;
+            mobileGain.gain.cancelScheduledValues(now);
+            mobileGain.gain.setValueAtTime(1, now);
+          } catch {}
+        }
         if (mobileAudio.ended) mobileAudio.currentTime = 0;
         const attempt = mobileAudio.play();
         if (attempt?.then) await attempt;
@@ -1631,6 +1672,10 @@ export default function RUMS() {
       void (async () => {
         const context = await ensureUpdateAudioReady({ resume: true });
 
+        if (isTouchMusicDevice() && context?.state === 'running') {
+          ensureMobileAudioGain(context);
+        }
+
         if (context?.state === 'running' && !updateAudioKeepaliveRef.current) {
           try {
             const keepaliveGain = context.createGain();
@@ -1865,6 +1910,14 @@ export default function RUMS() {
     if (updateAudioKeepaliveGainRef.current) {
       try { updateAudioKeepaliveGainRef.current.disconnect(); } catch {}
       updateAudioKeepaliveGainRef.current = null;
+    }
+    if (updateAudioElementSourceRef.current) {
+      try { updateAudioElementSourceRef.current.disconnect(); } catch {}
+      updateAudioElementSourceRef.current = null;
+    }
+    if (updateAudioElementGainRef.current) {
+      try { updateAudioElementGainRef.current.disconnect(); } catch {}
+      updateAudioElementGainRef.current = null;
     }
 
     if (updateAudioContextRef.current) {
