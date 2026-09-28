@@ -14935,3 +14935,23 @@ button,input,textarea { font:inherit; }
 }
 .aero-root[data-theme="dark"] .dynamic-music-island .dynamic-music-compact-control:hover{background:#344f6d!important;box-shadow:none!important;}
 .aero-root[data-theme="dark"] .dynamic-music-island .dynamic-music-progress-line{background:#344b62!important;}
+
+/* Feed action icons retained the Light theme's silver enamel finish. */
+.aero-root[data-theme="dark"] .post-actions > button{
+  background:transparent!important;color:#b7c7d8!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .post-action-icon,
+.aero-root[data-theme="dark"] .post-actions > button:hover .post-action-icon{
+  background:#273648!important;border:1px solid #40556e!important;
+  color:#c9d9eb!important;box-shadow:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+.aero-root[data-theme="dark"] .post-action-icon::before{display:none!important;}
+.aero-root[data-theme="dark"] .post-action-icon svg{filter:none!important;}
+.aero-root[data-theme="dark"] .post-actions > button:hover{color:#ecf5ff!important;background:#243448!important;}
+.aero-root[data-theme="dark"] :is(.like-btn.liked,.bookmark-btn.active,.post-react-btn.active,.share-btn.share-done){
+  color:#9ac8ff!important;background:#213a56!important;
+}
+.aero-root[data-theme="dark"] :is(.like-btn.liked,.bookmark-btn.active,.post-react-btn.active,.share-btn.share-done) .post-action-icon{
+  background:#31577f!important;border-color:#618fc0!important;color:#dceeff!important;box-shadow:none!important;
+}
