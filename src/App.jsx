@@ -30,6 +30,7 @@ const UPDATE_SCREEN_MS = 10000;
 const UPDATE_FADE_MS = 2400;
 const UPDATE_MUSIC_FADE_MS = 1000;
 const MUSIC_FULL_VOLUME_MS = 10000;
+const isTouchMusicDevice = () => window.matchMedia?.('(hover: none), (pointer: coarse)').matches ?? false;
 const VERSION_COLOR_FADE_MS = 1150;
 const STARTUP_BUILD_MS = 2250;
 const ENTRY_SCREEN_MS = 9200;
@@ -50,7 +51,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'exact-ten-second-music-fade-buildfix-173';
+const FORCE_UPDATE_REVISION = 'desktop-audio-restored-mobile-isolated-173';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -1074,20 +1075,20 @@ export default function RUMS() {
   }, [updateTrack.src]);
 
   const fadeUpdateHtmlAudio = (duration) => {
-    const context = updateAudioContextRef.current;
-    const gain = updateAudioGainRef.current;
-    if (!context || !gain || !updateAudioSourceRef.current) return false;
-
-    try {
-      const now = context.currentTime;
-      const current = Math.max(0.0001, gain.gain.value || 0.72);
-      gain.gain.cancelScheduledValues(now);
-      gain.gain.setValueAtTime(current, now);
-      gain.gain.linearRampToValueAtTime(0.0001, now + duration / 1000);
-      return true;
-    } catch {
-      return false;
-    }
+    const audio = updateAudioHtmlRef.current;
+    if (!audio || audio.paused || audio.ended) return;
+    if (updateAudioHtmlFadeTimerRef.current) window.clearInterval(updateAudioHtmlFadeTimerRef.current);
+    const startVolume = Math.max(0, Math.min(1, Number(audio.volume) || 0.72));
+    const startedAt = performance.now();
+    updateAudioHtmlFadeTimerRef.current = window.setInterval(() => {
+      const progress = Math.min(1, (performance.now() - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 2);
+      try { audio.volume = Math.max(0, startVolume * (1 - eased)); } catch {}
+      if (progress >= 1) {
+        window.clearInterval(updateAudioHtmlFadeTimerRef.current);
+        updateAudioHtmlFadeTimerRef.current = 0;
+      }
+    }, 25);
   };
 
   const promoteUpdateMusicToWebAudio = () => {
@@ -1166,6 +1167,7 @@ export default function RUMS() {
   };
 
   const scheduleExactUpdateMusicFade = () => {
+    if (!isTouchMusicDevice()) return;
     if (updateMusicFadeStartTimerRef.current) {
       window.clearTimeout(updateMusicFadeStartTimerRef.current);
     }
@@ -1316,9 +1318,11 @@ export default function RUMS() {
 
         // Decode/resume in the background, then move to the fade-capable
         // source while this screen is still visible.
-        void ensureUpdateAudioReady({ resume: true }).then(() => {
-          promoteUpdateMusicToWebAudio();
-        });
+        if (isTouchMusicDevice()) {
+          void ensureUpdateAudioReady({ resume: true }).then(() => promoteUpdateMusicToWebAudio());
+        } else {
+          void ensureUpdateAudioReady({ resume: true });
+        }
         return true;
       } catch {}
     }
@@ -1606,7 +1610,7 @@ export default function RUMS() {
         // The tap starts reliable HTMLAudio immediately. Once decoding and
         // AudioContext resume complete, promote it while the screen is still
         // running so the later outro is guaranteed to have a GainNode source.
-        if (context?.state === 'running') {
+        if (isTouchMusicDevice() && context?.state === 'running') {
           promoteUpdateMusicToWebAudio();
         }
 
@@ -1747,7 +1751,8 @@ export default function RUMS() {
       setUpdateHandoffPhase('blank');
       setUpdateOverlayLeaving(true);
 
-      // Fade the updater soundtrack for exactly the same time as the screen.
+      // Desktop keeps its original transition-owned soundtrack fade.
+      if (!isTouchMusicDevice()) fadeUpdateHtmlAudio(UPDATE_FADE_MS);
 
       const context = updateAudioContextRef.current;
       const gain = updateAudioGainRef.current;
@@ -1822,7 +1827,7 @@ export default function RUMS() {
         } else {
           finishVisualTransition();
         }
-      }, UPDATE_MUSIC_FADE_MS + 40);
+      }, isTouchMusicDevice() ? UPDATE_MUSIC_FADE_MS + 40 : UPDATE_FADE_MS);
     }, Math.max(0, updateUntil - Date.now()));
 
     return () => {
@@ -5042,6 +5047,7 @@ export default function RUMS() {
 
       setEntryIntroLeaving(true);
 
+      if (!isTouchMusicDevice()) fadeUpdateHtmlAudio(ENTRY_MUSIC_FADE_MS);
 
       const context = updateAudioContextRef.current;
       const gain = updateAudioGainRef.current;
@@ -5063,7 +5069,13 @@ export default function RUMS() {
         setEntryIntroLeaving(false);
       }, ENTRY_FADE_MS);
 
-      // Audio is scheduled independently: 10s full volume + 1s fade.
+      if (!isTouchMusicDevice()) {
+        if (entryMusicTailTimerRef.current) window.clearTimeout(entryMusicTailTimerRef.current);
+        entryMusicTailTimerRef.current = window.setTimeout(() => {
+          entryMusicTailTimerRef.current = 0;
+          if (updateCycleRef.current.phase === 'idle') stopUpdateMusicCompletely();
+        }, ENTRY_MUSIC_FADE_MS);
+      }
     }, remaining);
 
     return () => {
