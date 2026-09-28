@@ -14955,3 +14955,21 @@ button,input,textarea { font:inherit; }
 .aero-root[data-theme="dark"] :is(.like-btn.liked,.bookmark-btn.active,.post-react-btn.active,.share-btn.share-done) .post-action-icon{
   background:#31577f!important;border-color:#618fc0!important;color:#dceeff!important;box-shadow:none!important;
 }
+
+/* Let the feed symbols carry the interaction without a highlight tile. */
+.aero-root[data-theme="dark"] .post-actions > button,
+.aero-root[data-theme="dark"] .post-actions > button:hover,
+.aero-root[data-theme="dark"] :is(.like-btn.liked,.bookmark-btn.active,.post-react-btn.active,.share-btn.share-done){
+  background:transparent!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .post-action-icon,
+.aero-root[data-theme="dark"] .post-actions > button:hover .post-action-icon,
+.aero-root[data-theme="dark"] :is(.like-btn.liked,.bookmark-btn.active,.post-react-btn.active,.share-btn.share-done) .post-action-icon{
+  background:transparent!important;border-color:transparent!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .post-actions > button:hover .post-action-icon{transform:none;}
+@media(hover:hover) and (pointer:fine){
+  .aero-root[data-theme="dark"] .post-actions > button:hover .post-action-icon svg{
+    transform:translateY(-2px) scale(1.12);
+  }
+}
