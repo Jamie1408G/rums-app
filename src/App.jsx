@@ -5308,12 +5308,15 @@ export default function RUMS() {
 
   async function switchRumsSpace(space) {
     if (space === 'projects') {
-      if (!spaceSwitchBusy && !isProjectSpace) void playUiSfx('change');
+      // Match the sound used when the "Logged in as..." page opens.
+      if (!spaceSwitchBusy && !isProjectSpace) void playUiSfx('open');
       await openProjectsDirectory();
       return;
     }
     if (!isContentSpaceId(space) || space === rumsSpace || spaceSwitchBusy) return;
-    void playUiSfx('change');
+    // In-server version slider selections use the same OPEN sound as the
+    // "Logged in as..." page on both desktop and mobile.
+    void playUiSfx('open');
     if (!currentUser) {
       await chooseRumsSpace(space);
       return;
