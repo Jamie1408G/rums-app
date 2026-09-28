@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'mobile-loading-audio-unlock-162';
+const FORCE_UPDATE_REVISION = 'mobile-audio-fades-163';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -599,6 +599,7 @@ export default function RUMS() {
   const updateAudioKeepaliveRef = useRef(null);
   const updateAudioKeepaliveGainRef = useRef(null);
   const updateAudioHtmlRef = useRef(null);
+  const updateAudioHtmlFadeTimerRef = useRef(0);
   const updateMusicAllowedRef = useRef(false);
 
   const uiSfxPoolsRef = useRef({});
@@ -1061,8 +1062,36 @@ export default function RUMS() {
     };
   }, [updateTrack.src]);
 
+  const fadeUpdateHtmlAudio = (duration) => {
+    const audio = updateAudioHtmlRef.current;
+    if (!audio || audio.paused || audio.ended) return;
+
+    if (updateAudioHtmlFadeTimerRef.current) {
+      window.clearInterval(updateAudioHtmlFadeTimerRef.current);
+      updateAudioHtmlFadeTimerRef.current = 0;
+    }
+
+    const startVolume = Math.max(0, Math.min(1, Number(audio.volume) || 0.72));
+    const startedAt = performance.now();
+
+    updateAudioHtmlFadeTimerRef.current = window.setInterval(() => {
+      const progress = Math.min(1, (performance.now() - startedAt) / duration);
+      const eased = 1 - Math.pow(1 - progress, 2);
+      try { audio.volume = Math.max(0, startVolume * (1 - eased)); } catch {}
+
+      if (progress < 1) return;
+      window.clearInterval(updateAudioHtmlFadeTimerRef.current);
+      updateAudioHtmlFadeTimerRef.current = 0;
+    }, 25);
+  };
+
   const stopUpdateMusicCompletely = () => {
     updateMusicAllowedRef.current = false;
+
+    if (updateAudioHtmlFadeTimerRef.current) {
+      window.clearInterval(updateAudioHtmlFadeTimerRef.current);
+      updateAudioHtmlFadeTimerRef.current = 0;
+    }
 
     if (updateAudioSourceRef.current) {
       try { updateAudioSourceRef.current.stop(0); } catch {}
@@ -1555,6 +1584,8 @@ export default function RUMS() {
       setUpdateOverlayLeaving(true);
 
       // Fade the updater soundtrack for exactly the same time as the screen.
+      fadeUpdateHtmlAudio(UPDATE_FADE_MS);
+
       const context = updateAudioContextRef.current;
       const gain = updateAudioGainRef.current;
       if (context && gain) {
@@ -4603,7 +4634,7 @@ export default function RUMS() {
   }
 
   async function chooseProjectsFromVersionMenu() {
-    fadeOutSiteMusic(450);
+    fadeOutSiteMusic(900);
     void playUiSfx('select');
     await openProjectsDirectory();
     scheduleVersionOpenSound();
@@ -4730,9 +4761,9 @@ export default function RUMS() {
     if (!isContentSpaceId(space)) return;
 
     if (versionMenuSelection) {
-      // URL 湖 is version-menu-only music. Stop it the instant a version
-      // is chosen so it cannot bleed into the destination opening.
-      fadeOutSiteMusic(450);
+      // URL 湖 is version-menu-only music. Let it fade smoothly into the
+      // destination instead of cutting off as soon as a version is chosen.
+      fadeOutSiteMusic(900);
       void playUiSfx('select');
     }
 
@@ -4784,6 +4815,8 @@ export default function RUMS() {
       ) return;
 
       setEntryIntroLeaving(true);
+
+      fadeUpdateHtmlAudio(ENTRY_MUSIC_FADE_MS);
 
       const context = updateAudioContextRef.current;
       const gain = updateAudioGainRef.current;
