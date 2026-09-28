@@ -29,7 +29,7 @@ const UPDATE_HANDOFF_KEY = 'rums-plaza-update-handoff-until';
 const UPDATE_SCREEN_MS = 10000;
 const UPDATE_FADE_MS = 2400;
 const UPDATE_MUSIC_FADE_MS = 1000;
-const MUSIC_FULL_VOLUME_MS = 10000;
+const MUSIC_FULL_VOLUME_MS = 9000;
 const isTouchMusicDevice = () => window.matchMedia?.('(hover: none), (pointer: coarse)').matches ?? false;
 const VERSION_COLOR_FADE_MS = 1150;
 const STARTUP_BUILD_MS = 2250;
@@ -52,7 +52,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'mobile-sound-delay-stop-fix-173';
+const FORCE_UPDATE_REVISION = 'nine-second-one-second-music-fade-173';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -1179,7 +1179,7 @@ export default function RUMS() {
     updateMusicFadeStartTimerRef.current = window.setTimeout(() => {
       updateMusicFadeStartTimerRef.current = 0;
 
-      // At exactly 10s: begin a 1s fade. Prefer GainNode. If the iOS fallback
+      // At exactly 9s: begin a 1s fade. Prefer GainNode. If the iOS fallback
       // is still the audible source, explicitly step its native volume down.
       const webAudioFading = beginUpdateMusicFade(1000);
       const htmlAudio = updateAudioHtmlRef.current;
