@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'ios-webaudio-gain-fades-165';
+const FORCE_UPDATE_REVISION = 'update-mediaelement-gain-fade-166';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -599,6 +599,8 @@ export default function RUMS() {
   const updateAudioKeepaliveRef = useRef(null);
   const updateAudioKeepaliveGainRef = useRef(null);
   const updateAudioHtmlRef = useRef(null);
+  const updateAudioMediaSourceRef = useRef(null);
+  const updateAudioMediaGainRef = useRef(null);
   const updateAudioHtmlFadeTimerRef = useRef(0);
   const updateMusicAllowedRef = useRef(false);
 
@@ -1050,6 +1052,28 @@ export default function RUMS() {
     preloadAudio.playsInline = true;
     preloadAudio.volume = 0.72;
     updateAudioHtmlRef.current = preloadAudio;
+
+    // Use the same proven path as the Plaza/menu player:
+    // HTMLAudio -> MediaElementAudioSourceNode -> GainNode -> destination.
+    // This keeps iOS tap-unlock behavior while making the fade controllable.
+    try {
+      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+      let context = updateAudioContextRef.current;
+      if (!context && AudioContextCtor) {
+        context = new AudioContextCtor();
+        updateAudioContextRef.current = context;
+      }
+      if (context) {
+        const source = context.createMediaElementSource(preloadAudio);
+        const gain = context.createGain();
+        gain.gain.value = 0.72;
+        source.connect(gain);
+        gain.connect(context.destination);
+        updateAudioMediaSourceRef.current = source;
+        updateAudioMediaGainRef.current = gain;
+      }
+    } catch {}
+
     try { preloadAudio.load(); } catch {}
 
     return () => {
@@ -1062,30 +1086,26 @@ export default function RUMS() {
       if (updateAudioHtmlRef.current === preloadAudio) {
         updateAudioHtmlRef.current = null;
       }
+      try { updateAudioMediaSourceRef.current?.disconnect(); } catch {}
+      try { updateAudioMediaGainRef.current?.disconnect(); } catch {}
+      updateAudioMediaSourceRef.current = null;
+      updateAudioMediaGainRef.current = null;
     };
   }, [updateTrack.src]);
 
   const fadeUpdateHtmlAudio = (duration) => {
     const audio = updateAudioHtmlRef.current;
-    if (!audio || audio.paused || audio.ended) return;
+    const context = updateAudioContextRef.current;
+    const gain = updateAudioMediaGainRef.current;
+    if (!audio || audio.paused || audio.ended || !context || !gain) return;
 
-    if (updateAudioHtmlFadeTimerRef.current) {
-      window.clearInterval(updateAudioHtmlFadeTimerRef.current);
-      updateAudioHtmlFadeTimerRef.current = 0;
-    }
-
-    const startVolume = Math.max(0, Math.min(1, Number(audio.volume) || 0.72));
-    const startedAt = performance.now();
-
-    updateAudioHtmlFadeTimerRef.current = window.setInterval(() => {
-      const progress = Math.min(1, (performance.now() - startedAt) / duration);
-      const eased = 1 - Math.pow(1 - progress, 2);
-      try { audio.volume = Math.max(0, startVolume * (1 - eased)); } catch {}
-
-      if (progress < 1) return;
-      window.clearInterval(updateAudioHtmlFadeTimerRef.current);
-      updateAudioHtmlFadeTimerRef.current = 0;
-    }, 25);
+    try {
+      const now = context.currentTime;
+      const current = Math.max(0.0001, gain.gain.value || 0.72);
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(current, now);
+      gain.gain.linearRampToValueAtTime(0.0001, now + duration / 1000);
+    } catch {}
   };
 
   const stopUpdateMusicCompletely = () => {
@@ -1109,6 +1129,15 @@ export default function RUMS() {
     }
 
     const context = updateAudioContextRef.current;
+    const mediaGain = updateAudioMediaGainRef.current;
+    if (context && mediaGain) {
+      try {
+        const now = context.currentTime;
+        mediaGain.gain.cancelScheduledValues(now);
+        mediaGain.gain.setValueAtTime(0.72, now);
+      } catch {}
+    }
+
     const gain = updateAudioGainRef.current;
     if (context && gain) {
       try {
@@ -1178,6 +1207,12 @@ export default function RUMS() {
         }
 
         htmlAudio.volume = 0.72;
+        if (updateAudioMediaGainRef.current) {
+          try { updateAudioMediaGainRef.current.gain.value = 0.72; } catch {}
+        }
+        if (updateAudioContextRef.current?.state !== 'running') {
+          try { await updateAudioContextRef.current?.resume(); } catch {}
+        }
         if (htmlAudio.ended) htmlAudio.currentTime = 0;
 
         const attempt = htmlAudio.play();
@@ -1431,6 +1466,13 @@ export default function RUMS() {
         if (htmlAudio && htmlAudio.paused) {
           try {
             htmlAudio.volume = 0.72;
+            const context = updateAudioContextRef.current;
+            if (context?.state !== 'running') {
+              try { void context.resume(); } catch {}
+            }
+            if (updateAudioMediaGainRef.current) {
+              try { updateAudioMediaGainRef.current.gain.value = 0.72; } catch {}
+            }
             if (htmlAudio.ended) htmlAudio.currentTime = 0;
             const attempt = htmlAudio.play();
             if (attempt?.then) {
@@ -1449,41 +1491,9 @@ export default function RUMS() {
       void (async () => {
         const context = await ensureUpdateAudioReady({ resume: true });
 
-        if (
-          context?.state === 'running' &&
-          updateAudioBufferRef.current &&
-          updateMusicAllowedRef.current &&
-          !updateAudioSourceRef.current
-        ) {
-          const htmlAudio = updateAudioHtmlRef.current;
-          const offset = Math.max(
-            0,
-            Math.min(
-              Number(htmlAudio?.currentTime) || 0,
-              Math.max(0, (updateAudioBufferRef.current.duration || 0) - 0.05),
-            ),
-          );
-
-          try {
-            const gain = updateAudioGainRef.current;
-            const now = context.currentTime;
-            gain.gain.cancelScheduledValues(now);
-            gain.gain.setValueAtTime(0.72, now);
-
-            const source = context.createBufferSource();
-            source.buffer = updateAudioBufferRef.current;
-            source.connect(gain);
-            updateAudioSourceRef.current = source;
-            source.start(0, offset);
-
-            // Only silence the HTML fallback after WebAudio has started from
-            // the matching timestamp. All later fades now happen on GainNode.
-            if (htmlAudio && !htmlAudio.paused) {
-              try { htmlAudio.pause(); } catch {}
-            }
-            setUpdateMusicState('playing');
-          } catch {}
-        }
+        // The HTML media element is already routed through a GainNode, so keep
+        // that source alive for the whole loading/update screen. Switching
+        // sources mid-screen is unnecessary and can create an iOS cutoff.
 
         if (context?.state === 'running' && !updateAudioKeepaliveRef.current) {
           try {
