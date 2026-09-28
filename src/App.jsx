@@ -92,6 +92,28 @@ const RUMS_THEMES = [
   { id: 'brutalism', name: 'Brutalism', description: 'Raw high-contrast editorial UI with hard edges, bold type and stark structure', swatches: ['#f3f0e8', '#111111', '#ff5f2e'] },
   { id: 'y2k', name: 'Y2K Futurism', description: 'Chrome, aqua and lavender 2000s futurism', swatches: ['#dce5f4', '#55d8e8', '#a693ff'] },
 ];
+const STARTUP_THEME_META = {
+  standard: { mode: 'glass', eyebrow: 'RUMS PLAZA', title: 'Opening your Plaza', copy: 'Bringing your account, spaces and community into one place.', mark: 'R' },
+  dark: { mode: 'dark', eyebrow: 'PLAZA // ONLINE', title: 'Entering Plaza', copy: 'Synchronising your account and community spaces.', mark: 'R' },
+  minecraft: { mode: 'minecraft', eyebrow: 'RUMS SERVER', title: 'Generating Plaza…', copy: 'Loading account data, spaces and server community.', mark: '▣' },
+  frutiger: { mode: 'aero', eyebrow: 'RUMS PLAZA', title: 'Welcome back to Plaza', copy: 'Connecting people, spaces and your community.', mark: 'R' },
+  frutigereco: { mode: 'eco', eyebrow: 'RUMS PLAZA', title: 'Growing your Plaza', copy: 'Bringing your community, projects and spaces to life.', mark: '●' },
+  frutigermetro: { mode: 'metro', eyebrow: 'RUMS / PLAZA', title: 'Plaza in motion', copy: 'Account. Spaces. Community. Ready.', mark: 'R' },
+  vectorflourish: { mode: 'flourish', eyebrow: 'RUMS PLAZA', title: 'Plaza is blooming', copy: 'Opening your account and community spaces.', mark: '✦' },
+  liquidglass: { mode: 'liquid', eyebrow: 'RUMS PLAZA', title: 'Opening Plaza', copy: 'Your account and spaces are coming into focus.', mark: 'R' },
+  solarpunk: { mode: 'solar', eyebrow: 'RUMS COMMUNITY', title: 'Powering up Plaza', copy: 'Connecting people, projects and shared spaces.', mark: '☀' },
+  cyberpunk: { mode: 'cyber', eyebrow: 'RUMS://PLAZA', title: 'LINK ESTABLISHED', copy: 'Authorising identity and mounting community spaces.', mark: 'R' },
+  brutalism: { mode: 'brutal', eyebrow: 'RUMS PLAZA / START', title: 'PLAZA IS LOADING.', copy: 'ACCOUNT + SPACES + COMMUNITY', mark: 'R' },
+  y2k: { mode: 'y2k', eyebrow: 'RUMS PLAZA 2000', title: 'Connecting to Plaza…', copy: 'Loading your profile, spaces and community portal.', mark: 'R' },
+};
+function startupThemeMeta(themeId) {
+  if (themeId?.startsWith('roblox')) {
+    const year = themeId.replace('roblox', '');
+    return { mode: 'roblox', eyebrow: `RUMS PLAZA • ${year}`, title: 'Loading RUMS…', copy: 'Loading your Home, spaces and server community.', mark: 'R', year };
+  }
+  return STARTUP_THEME_META[themeId] || STARTUP_THEME_META.standard;
+}
+
 const FRUTIGER_THEMES = RUMS_THEMES.filter((item) => FRUTIGER_THEME_IDS.includes(item.id));
 const PUNK_THEMES = RUMS_THEMES.filter((item) => PUNK_THEME_IDS.includes(item.id));
 const MAIN_THEME_OPTIONS = RUMS_THEMES.filter((item) => !item.id.startsWith('roblox') && !FRUTIGER_THEME_IDS.includes(item.id) && !PUNK_THEME_IDS.includes(item.id));
@@ -4744,7 +4766,16 @@ export default function RUMS() {
   useEffect(() => { void applyDueScheduledPosts(); }, [plazaPlus.scheduled?.length, currentUser?.username]);
 
   useEffect(() => {
-    try { window.localStorage.setItem(THEME_STORAGE_KEY, theme); } catch { /* browser preferences unavailable */ }
+    const safeTheme = RUMS_THEMES.some((item) => item.id === theme) ? theme : 'standard';
+    if (safeTheme !== theme) {
+      setTheme('standard');
+      return;
+    }
+    try { window.localStorage.setItem(THEME_STORAGE_KEY, safeTheme); } catch { /* browser preferences unavailable */ }
+
+    setRobloxThemeMenuOpen(safeTheme.startsWith('roblox'));
+    setFrutigerThemeMenuOpen(FRUTIGER_THEME_IDS.includes(safeTheme));
+    setPunkThemeMenuOpen(PUNK_THEME_IDS.includes(safeTheme));
   }, [theme]);
 
   // Poll the shared stores so new posts/suggestions/updates (and their
@@ -7984,8 +8015,11 @@ export default function RUMS() {
     return { className: 'tutorial-card-free', style: { top: Math.max(16, tutorialRect.top - estimatedH - gap), left: Math.max(16, Math.min(vw - cardW - 16, tutorialRect.left + tutorialRect.width / 2 - cardW / 2)), width: cardW } };
   })();
 
+  const activeThemeId = RUMS_THEMES.some((item) => item.id === theme) ? theme : 'standard';
+  const startupTheme = startupThemeMeta(activeThemeId);
+
   return (
-    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || theme} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBackgroundRevealActive ? 'version-background-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
+    <div data-theme={plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || activeThemeId} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBackgroundRevealActive ? 'version-background-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
         <div className="site-update-outro-eq" aria-hidden="true"><span/><span/><span/></div>
         <div><small>UPDATE COMPLETE</small><strong>{updateTrack.title}</strong></div>
@@ -8000,7 +8034,7 @@ export default function RUMS() {
         !(updateUntil > Date.now() || updateOverlayLeaving) &&
         updateHandoffPhase === 'idle' && (
         <div
-          className={`site-update-screen site-entry-screen ${entryIntroLeaving ? 'is-entry-leaving' : ''}`}
+          className={`site-update-screen site-entry-screen startup-theme-${startupTheme.mode} startup-id-${activeThemeId} ${entryIntroLeaving ? 'is-entry-leaving' : ''}`}
           role="status"
           aria-live="polite"
         >
@@ -8010,7 +8044,7 @@ export default function RUMS() {
               <div className="site-entry-orbit site-entry-orbit-two" />
               <div className="site-entry-brand-orb">
                 <span className="site-entry-brand-glint" />
-                <strong>R</strong>
+                <strong>{startupTheme.mark}</strong>
               </div>
               <div className="site-entry-brand-copy">
                 <span>RUMS</span>
@@ -8024,18 +8058,18 @@ export default function RUMS() {
             </div>
 
             <div className="site-entry-content">
-              <span className="site-update-kicker">RUMS PLAZA</span>
-              <h1>Opening your Plaza</h1>
-              <p>Bringing your account, spaces and community into one place.</p>
+              <span className="site-update-kicker">{startupTheme.eyebrow}</span>
+              <h1>{startupTheme.title}</h1>
+              <p>{startupTheme.copy}</p>
 
               <div className="site-entry-progress" aria-hidden="true">
                 <div className="site-entry-progress-track">
                   <span className="site-entry-progress-fill"><span className="site-entry-progress-orb" /></span>
                 </div>
                 <div className="site-entry-progress-labels">
-                  <span>Account</span>
-                  <span>Spaces</span>
-                  <span>Ready</span>
+                  <span>{startupTheme.mode === 'minecraft' ? 'Player' : startupTheme.mode === 'cyber' ? 'IDENTITY' : 'Account'}</span>
+                  <span>{startupTheme.mode === 'roblox' ? 'Home' : startupTheme.mode === 'cyber' ? 'SPACES' : 'Spaces'}</span>
+                  <span>{startupTheme.mode === 'cyber' ? 'ONLINE' : 'Ready'}</span>
                 </div>
               </div>
 
