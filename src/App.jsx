@@ -60,11 +60,11 @@ const UI_SFX = {
 };
 const FORCE_UPDATE_REVISION = 'remove-overhaul-announcement-173';
 const UPDATE_AUDIO_TRACKS = [
-  { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
-  { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
-  { id: 'new-look', src: '/audio/update-new-look.mp3', title: 'New Look - Wii U Mii Maker Lofi Mix', artist: 'Secret Potion' },
-  { id: 'lotus-waters', src: '/audio/update-lotus-waters.mp3', title: 'lotus waters (nightcore sped up)', artist: 'yume 2kki' },
-  { id: 'xscape', src: '/audio/update-xscape.mp3', title: 'xscape', artist: '13 Miles' },
+  { id: 'url-lake', src: '/audio/update-url-lake.mp3', mobileSrc: '/audio/update-url-lake-mobile.mp3', title: 'URL 湖', artist: 'Webinar™' },
+  { id: 'warmpop', src: '/audio/update-warmpop.mp3', mobileSrc: '/audio/update-warmpop-mobile.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
+  { id: 'new-look', src: '/audio/update-new-look.mp3', mobileSrc: '/audio/update-new-look-mobile.mp3', title: 'New Look - Wii U Mii Maker Lofi Mix', artist: 'Secret Potion' },
+  { id: 'lotus-waters', src: '/audio/update-lotus-waters.mp3', mobileSrc: '/audio/update-lotus-waters-mobile.mp3', title: 'lotus waters (nightcore sped up)', artist: 'yume 2kki' },
+  { id: 'xscape', src: '/audio/update-xscape.mp3', mobileSrc: '/audio/update-xscape-mobile.mp3', title: 'xscape', artist: '13 Miles' },
 ];
 const UPDATE_AUDIO_TRACK_IDS = UPDATE_AUDIO_TRACKS.map((track) => track.id);
 const pickUpdateAudioTrack = () => UPDATE_AUDIO_TRACK_IDS[Math.floor(Math.random() * UPDATE_AUDIO_TRACK_IDS.length)];
@@ -611,6 +611,7 @@ export default function RUMS() {
   const [updateTargetVersion, setUpdateTargetVersion] = useState('');
   const [updateTrackId] = useState(() => pickUpdateAudioTrack());
   const updateTrack = UPDATE_AUDIO_TRACKS.find((track) => track.id === updateTrackId) || UPDATE_AUDIO_TRACKS[0];
+  const updateTrackSource = isTouchMusicDevice() ? updateTrack.mobileSrc : updateTrack.src;
   // Update cycle: deliberately one pending update, one active cycle and one
   // soundtrack source. The audio portion below is restored from the exact
   // keepalive architecture that previously worked reliably in-browser.
@@ -880,7 +881,7 @@ export default function RUMS() {
 
     if (!updateAudioBufferRef.current) {
       if (!updateAudioLoadingRef.current) {
-        updateAudioLoadingRef.current = fetch(updateTrack.src, { cache: 'force-cache' })
+        updateAudioLoadingRef.current = fetch(updateTrackSource, { cache: 'force-cache' })
           .then((response) => {
             if (!response.ok) throw new Error('Could not load update soundtrack');
             return response.arrayBuffer();
@@ -1071,7 +1072,7 @@ export default function RUMS() {
     // Preload one reusable HTMLAudio fallback as well as warming the cache.
     // iOS often accepts this immediately from touchstart even when WebAudio
     // resume/decode timing is more temperamental.
-    const preloadAudio = new Audio(updateTrack.src);
+    const preloadAudio = new Audio(updateTrackSource);
     preloadAudio.preload = 'auto';
     preloadAudio.playsInline = true;
     preloadAudio.volume = 0.72;
@@ -1093,7 +1094,7 @@ export default function RUMS() {
         updateAudioHtmlRef.current = null;
       }
     };
-  }, [updateTrack.src]);
+  }, [updateTrackSource]);
 
   const fadeUpdateHtmlAudio = (duration) => {
     const audio = updateAudioHtmlRef.current;
@@ -1202,10 +1203,9 @@ export default function RUMS() {
 
     // The loading page owns the timing. Begin the fade only when that page
     // starts its exit transition, then fully retire whichever source is active.
-    // iOS ignores scripted HTMLMediaElement volume. The mobile soundtrack is
-    // one AudioBufferSourceNode routed through the existing GainNode, so the
-    // platform can perform a real sample-accurate fade without a handoff.
-    beginUpdateMusicFade(duration);
+    // The native mobile file already contains its 9s -> 10s fade. Keeping it
+    // inside the media file preserves iOS's media playback channel, including
+    // when the phone's ring switch is silent.
 
     updateMusicFadeStopTimerRef.current = window.setTimeout(() => {
       updateMusicFadeStopTimerRef.current = 0;
@@ -1276,29 +1276,23 @@ export default function RUMS() {
     setUpdateMusicState('starting');
 
     if (isTouchMusicDevice()) {
-      // Resume from the gesture, finish the already-started decode if needed,
-      // then use one buffer source for both playback and the final gain ramp.
-      const context = await ensureUpdateAudioReady({ resume: true });
-      const gain = updateAudioGainRef.current;
-      const buffer = updateAudioBufferRef.current;
-      if (!context || context.state !== 'running' || !gain || !buffer) {
+      const mobileAudio = updateAudioHtmlRef.current;
+      if (!mobileAudio) {
         setUpdateMusicState('blocked');
         return false;
       }
       try {
-        try { updateAudioHtmlRef.current?.pause(); } catch {}
-        const now = context.currentTime;
-        gain.gain.cancelScheduledValues(now);
-        gain.gain.setValueAtTime(0.72, now);
-        const source = context.createBufferSource();
-        source.buffer = buffer;
-        source.connect(gain);
-        source.addEventListener('ended', () => {
-          if (updateAudioSourceRef.current === source) updateAudioSourceRef.current = null;
-          try { source.disconnect(); } catch {}
-        }, { once: true });
-        updateAudioSourceRef.current = source;
-        source.start(0);
+        const wanted = new URL(updateTrackSource, window.location.href).href;
+        if (mobileAudio.src !== wanted) {
+          mobileAudio.src = updateTrackSource;
+          mobileAudio.preload = 'auto';
+          mobileAudio.playsInline = true;
+          try { mobileAudio.load(); } catch {}
+        }
+        mobileAudio.volume = 1;
+        if (mobileAudio.ended) mobileAudio.currentTime = 0;
+        const attempt = mobileAudio.play();
+        if (attempt?.then) await attempt;
         setUpdateMusicState('playing');
         return true;
       } catch {
@@ -1347,9 +1341,9 @@ export default function RUMS() {
     const htmlAudio = updateAudioHtmlRef.current;
     if (htmlAudio) {
       try {
-        const wanted = new URL(updateTrack.src, window.location.href).href;
+        const wanted = new URL(updateTrackSource, window.location.href).href;
         if (htmlAudio.src !== wanted) {
-          htmlAudio.src = updateTrack.src;
+          htmlAudio.src = updateTrackSource;
           htmlAudio.preload = 'auto';
           htmlAudio.playsInline = true;
           try { htmlAudio.load(); } catch {}
@@ -1659,7 +1653,7 @@ export default function RUMS() {
       document.removeEventListener('pointerdown', arm, true);
       document.removeEventListener('keydown', arm, true);
     };
-  }, [updateTrack.src]);
+  }, [updateTrackSource]);
 
   useEffect(() => {
     if (!import.meta.env.PROD) return undefined;
