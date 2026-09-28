@@ -1334,14 +1334,6 @@ export default function RUMS() {
           try { mobileAudio.load(); } catch {}
         }
         mobileAudio.volume = 0.72;
-        const mobileGain = ensureMobileAudioGain();
-        if (mobileGain && updateAudioContextRef.current) {
-          try {
-            const now = updateAudioContextRef.current.currentTime;
-            mobileGain.gain.cancelScheduledValues(now);
-            mobileGain.gain.setValueAtTime(1, now);
-          } catch {}
-        }
         if (mobileAudio.ended) mobileAudio.currentTime = 0;
         const attempt = mobileAudio.play();
         if (attempt?.then) await attempt;
