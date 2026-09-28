@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'audio-fade-lifetime-164';
+const FORCE_UPDATE_REVISION = 'ios-webaudio-gain-fades-165';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -645,6 +645,9 @@ export default function RUMS() {
   const versionBuildRequestRef = useRef(0);
 
   const siteMusicAudioRef = useRef(null);
+  const siteMusicContextRef = useRef(null);
+  const siteMusicSourceNodeRef = useRef(null);
+  const siteMusicGainRef = useRef(null);
   const siteMusicTrackIndexRef = useRef(0);
   const siteMusicVolumeRef = useRef(0.72);
   const siteMusicShellRef = useRef(null);
@@ -1446,6 +1449,42 @@ export default function RUMS() {
       void (async () => {
         const context = await ensureUpdateAudioReady({ resume: true });
 
+        if (
+          context?.state === 'running' &&
+          updateAudioBufferRef.current &&
+          updateMusicAllowedRef.current &&
+          !updateAudioSourceRef.current
+        ) {
+          const htmlAudio = updateAudioHtmlRef.current;
+          const offset = Math.max(
+            0,
+            Math.min(
+              Number(htmlAudio?.currentTime) || 0,
+              Math.max(0, (updateAudioBufferRef.current.duration || 0) - 0.05),
+            ),
+          );
+
+          try {
+            const gain = updateAudioGainRef.current;
+            const now = context.currentTime;
+            gain.gain.cancelScheduledValues(now);
+            gain.gain.setValueAtTime(0.72, now);
+
+            const source = context.createBufferSource();
+            source.buffer = updateAudioBufferRef.current;
+            source.connect(gain);
+            updateAudioSourceRef.current = source;
+            source.start(0, offset);
+
+            // Only silence the HTML fallback after WebAudio has started from
+            // the matching timestamp. All later fades now happen on GainNode.
+            if (htmlAudio && !htmlAudio.paused) {
+              try { htmlAudio.pause(); } catch {}
+            }
+            setUpdateMusicState('playing');
+          } catch {}
+        }
+
         if (context?.state === 'running' && !updateAudioKeepaliveRef.current) {
           try {
             const keepaliveGain = context.createGain();
@@ -1779,6 +1818,15 @@ export default function RUMS() {
     const audio = siteMusicAudioRef.current;
     if (audio && restoreVolume) {
       try { audio.volume = siteMusicVolumeRef.current; } catch {}
+      const gain = siteMusicGainRef.current;
+      const context = siteMusicContextRef.current;
+      if (gain && context) {
+        try {
+          const now = context.currentTime;
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(siteMusicVolumeRef.current, now);
+        } catch {}
+      }
     }
   }
 
@@ -1789,34 +1837,43 @@ export default function RUMS() {
     cancelSiteMusicFade({ restoreVolume: false });
 
     if (audio.paused || audio.ended) {
-      try { audio.volume = siteMusicVolumeRef.current; } catch {}
       setSiteMusicPlaying(false);
       return;
     }
 
+    const context = siteMusicContextRef.current;
+    const gain = siteMusicGainRef.current;
+
+    if (context && gain) {
+      try {
+        const now = context.currentTime;
+        const current = Math.max(0.0001, gain.gain.value || siteMusicVolumeRef.current);
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(current, now);
+        gain.gain.linearRampToValueAtTime(0.0001, now + duration / 1000);
+
+        siteMusicFadeTimerRef.current = window.setTimeout(() => {
+          siteMusicFadeTimerRef.current = 0;
+          try { audio.pause(); } catch {}
+          try { gain.gain.value = siteMusicVolumeRef.current; } catch {}
+          setSiteMusicPlaying(false);
+        }, duration + 30);
+        return;
+      } catch {}
+    }
+
+    // Desktop/non-WebAudio fallback.
     const startVolume = Math.max(0, Math.min(1, Number(audio.volume) || siteMusicVolumeRef.current));
     const startedAt = performance.now();
-
     siteMusicFadeTimerRef.current = window.setInterval(() => {
       const progress = Math.min(1, (performance.now() - startedAt) / duration);
-      const eased = 1 - Math.pow(1 - progress, 2);
-
-      try {
-        audio.volume = Math.max(0, startVolume * (1 - eased));
-      } catch {}
-
+      try { audio.volume = Math.max(0, startVolume * (1 - progress)); } catch {}
       if (progress < 1) return;
-
       window.clearInterval(siteMusicFadeTimerRef.current);
       siteMusicFadeTimerRef.current = 0;
-
       try { audio.pause(); } catch {}
       try { audio.volume = siteMusicVolumeRef.current; } catch {}
       setSiteMusicPlaying(false);
-
-      if ('mediaSession' in navigator) {
-        try { navigator.mediaSession.playbackState = 'paused'; } catch {}
-      }
     }, 25);
   }
 
@@ -1829,7 +1886,12 @@ export default function RUMS() {
     setSiteMusicError('');
 
     try {
+      const context = siteMusicContextRef.current;
+      if (context?.state !== 'running') {
+        try { await context.resume(); } catch {}
+      }
       audio.volume = siteMusicVolumeRef.current;
+      if (siteMusicGainRef.current) siteMusicGainRef.current.gain.value = siteMusicVolumeRef.current;
       await audio.play();
       setSiteMusicPlaying(true);
       return true;
@@ -1908,6 +1970,9 @@ export default function RUMS() {
     if (audio) {
       try { audio.volume = next; } catch {}
     }
+    if (siteMusicGainRef.current) {
+      try { siteMusicGainRef.current.gain.value = next; } catch {}
+    }
 
     persistSiteMusic({ volume: next });
   }
@@ -1917,6 +1982,24 @@ export default function RUMS() {
     audio.preload = 'metadata';
     audio.volume = siteMusicVolume;
     siteMusicAudioRef.current = audio;
+
+    // iOS does not reliably honor HTMLMediaElement.volume changes. Route the
+    // menu player through WebAudio so fades use a real GainNode instead.
+    try {
+      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextCtor) {
+        const context = new AudioContextCtor();
+        const source = context.createMediaElementSource(audio);
+        const gain = context.createGain();
+        gain.gain.value = siteMusicVolume;
+        source.connect(gain);
+        gain.connect(context.destination);
+        siteMusicContextRef.current = context;
+        siteMusicSourceNodeRef.current = source;
+        siteMusicGainRef.current = gain;
+      }
+    } catch {}
+
     siteMusicTrackIndexRef.current = siteMusicTrackIndex;
     siteMusicVolumeRef.current = siteMusicVolume;
 
@@ -1986,6 +2069,12 @@ export default function RUMS() {
         audio.load();
       } catch {}
       siteMusicAudioRef.current = null;
+      try { siteMusicSourceNodeRef.current?.disconnect(); } catch {}
+      try { siteMusicGainRef.current?.disconnect(); } catch {}
+      try { siteMusicContextRef.current?.close(); } catch {}
+      siteMusicSourceNodeRef.current = null;
+      siteMusicGainRef.current = null;
+      siteMusicContextRef.current = null;
     };
   }, []);
 
