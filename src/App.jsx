@@ -48,7 +48,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'update-mediaelement-gain-fade-166';
+const FORCE_UPDATE_REVISION = 'ios-direct-playback-fade-tail-167';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -599,8 +599,6 @@ export default function RUMS() {
   const updateAudioKeepaliveRef = useRef(null);
   const updateAudioKeepaliveGainRef = useRef(null);
   const updateAudioHtmlRef = useRef(null);
-  const updateAudioMediaSourceRef = useRef(null);
-  const updateAudioMediaGainRef = useRef(null);
   const updateAudioHtmlFadeTimerRef = useRef(0);
   const updateMusicAllowedRef = useRef(false);
 
@@ -1052,28 +1050,6 @@ export default function RUMS() {
     preloadAudio.playsInline = true;
     preloadAudio.volume = 0.72;
     updateAudioHtmlRef.current = preloadAudio;
-
-    // Use the same proven path as the Plaza/menu player:
-    // HTMLAudio -> MediaElementAudioSourceNode -> GainNode -> destination.
-    // This keeps iOS tap-unlock behavior while making the fade controllable.
-    try {
-      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-      let context = updateAudioContextRef.current;
-      if (!context && AudioContextCtor) {
-        context = new AudioContextCtor();
-        updateAudioContextRef.current = context;
-      }
-      if (context) {
-        const source = context.createMediaElementSource(preloadAudio);
-        const gain = context.createGain();
-        gain.gain.value = 0.72;
-        source.connect(gain);
-        gain.connect(context.destination);
-        updateAudioMediaSourceRef.current = source;
-        updateAudioMediaGainRef.current = gain;
-      }
-    } catch {}
-
     try { preloadAudio.load(); } catch {}
 
     return () => {
@@ -1086,18 +1062,13 @@ export default function RUMS() {
       if (updateAudioHtmlRef.current === preloadAudio) {
         updateAudioHtmlRef.current = null;
       }
-      try { updateAudioMediaSourceRef.current?.disconnect(); } catch {}
-      try { updateAudioMediaGainRef.current?.disconnect(); } catch {}
-      updateAudioMediaSourceRef.current = null;
-      updateAudioMediaGainRef.current = null;
     };
   }, [updateTrack.src]);
 
   const fadeUpdateHtmlAudio = (duration) => {
-    const audio = updateAudioHtmlRef.current;
     const context = updateAudioContextRef.current;
-    const gain = updateAudioMediaGainRef.current;
-    if (!audio || audio.paused || audio.ended || !context || !gain) return;
+    const gain = updateAudioGainRef.current;
+    if (!context || !gain || !updateAudioSourceRef.current) return false;
 
     try {
       const now = context.currentTime;
@@ -1105,7 +1076,62 @@ export default function RUMS() {
       gain.gain.cancelScheduledValues(now);
       gain.gain.setValueAtTime(current, now);
       gain.gain.linearRampToValueAtTime(0.0001, now + duration / 1000);
-    } catch {}
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const beginUpdateMusicFade = (duration) => {
+    const htmlAudio = updateAudioHtmlRef.current;
+    const context = updateAudioContextRef.current;
+    const buffer = updateAudioBufferRef.current;
+    const gain = updateAudioGainRef.current;
+
+    // iOS playback stays on the reliable plain <audio> element until the fade
+    // begins. At that moment, cross over at the same timestamp to a decoded
+    // WebAudio buffer solely for the short fade tail.
+    if (
+      htmlAudio &&
+      !htmlAudio.paused &&
+      context?.state === 'running' &&
+      buffer &&
+      gain
+    ) {
+      const offset = Math.max(
+        0,
+        Math.min(
+          Number(htmlAudio.currentTime) || 0,
+          Math.max(0, (buffer.duration || 0) - 0.05),
+        ),
+      );
+
+      try {
+        if (updateAudioSourceRef.current) {
+          try { updateAudioSourceRef.current.stop(); } catch {}
+          try { updateAudioSourceRef.current.disconnect(); } catch {}
+        }
+
+        const now = context.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(0.72, now);
+
+        const source = context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(gain);
+        updateAudioSourceRef.current = source;
+        source.start(0, offset);
+
+        // Start the replacement first, then stop the HTML source immediately.
+        // The two sources overlap only for this synchronous handoff.
+        try { htmlAudio.pause(); } catch {}
+
+        gain.gain.linearRampToValueAtTime(0.0001, now + duration / 1000);
+        return true;
+      } catch {}
+    }
+
+    return fadeUpdateHtmlAudio(duration);
   };
 
   const stopUpdateMusicCompletely = () => {
@@ -1129,15 +1155,6 @@ export default function RUMS() {
     }
 
     const context = updateAudioContextRef.current;
-    const mediaGain = updateAudioMediaGainRef.current;
-    if (context && mediaGain) {
-      try {
-        const now = context.currentTime;
-        mediaGain.gain.cancelScheduledValues(now);
-        mediaGain.gain.setValueAtTime(0.72, now);
-      } catch {}
-    }
-
     const gain = updateAudioGainRef.current;
     if (context && gain) {
       try {
@@ -1207,12 +1224,6 @@ export default function RUMS() {
         }
 
         htmlAudio.volume = 0.72;
-        if (updateAudioMediaGainRef.current) {
-          try { updateAudioMediaGainRef.current.gain.value = 0.72; } catch {}
-        }
-        if (updateAudioContextRef.current?.state !== 'running') {
-          try { await updateAudioContextRef.current?.resume(); } catch {}
-        }
         if (htmlAudio.ended) htmlAudio.currentTime = 0;
 
         const attempt = htmlAudio.play();
@@ -1466,13 +1477,6 @@ export default function RUMS() {
         if (htmlAudio && htmlAudio.paused) {
           try {
             htmlAudio.volume = 0.72;
-            const context = updateAudioContextRef.current;
-            if (context?.state !== 'running') {
-              try { void context.resume(); } catch {}
-            }
-            if (updateAudioMediaGainRef.current) {
-              try { updateAudioMediaGainRef.current.gain.value = 0.72; } catch {}
-            }
             if (htmlAudio.ended) htmlAudio.currentTime = 0;
             const attempt = htmlAudio.play();
             if (attempt?.then) {
@@ -1633,7 +1637,7 @@ export default function RUMS() {
       setUpdateOverlayLeaving(true);
 
       // Fade the updater soundtrack for exactly the same time as the screen.
-      fadeUpdateHtmlAudio(UPDATE_FADE_MS);
+      beginUpdateMusicFade(UPDATE_FADE_MS);
 
       const context = updateAudioContextRef.current;
       const gain = updateAudioGainRef.current;
@@ -4919,7 +4923,7 @@ export default function RUMS() {
 
       setEntryIntroLeaving(true);
 
-      fadeUpdateHtmlAudio(ENTRY_MUSIC_FADE_MS);
+      beginUpdateMusicFade(ENTRY_MUSIC_FADE_MS);
 
       const context = updateAudioContextRef.current;
       const gain = updateAudioGainRef.current;
