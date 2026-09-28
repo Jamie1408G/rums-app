@@ -14998,3 +14998,14 @@ button,input,textarea { font:inherit; }
   border-color:#55779f!important;color:#e4f0ff!important;
   box-shadow:inset 0 1px #ffffff18,0 3px 10px #0004!important;
 }
+
+/* The version chooser has its own large R mark, separate from the sidebar badge. */
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark{
+  background:linear-gradient(145deg,#385c83,#263f5d)!important;
+  border-color:#55779f!important;color:#e5f0ff!important;
+  box-shadow:inset 0 1px #ffffff1c,0 12px 28px #0007!important;
+  text-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .aero-frame > .rums-space-chooser .space-chooser-title-cluster > .space-chooser-mark::before{
+  display:none!important;
+}
