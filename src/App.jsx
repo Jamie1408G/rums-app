@@ -627,6 +627,7 @@ export default function RUMS() {
   const updateMusicFadeStartTimerRef = useRef(0);
   const updateMusicFadeStopTimerRef = useRef(0);
   const updateMusicAllowedRef = useRef(false);
+  const updateMusicGestureAtRef = useRef(0);
 
   const uiSfxPoolsRef = useRef({});
   const uiSfxBuffersRef = useRef({});
@@ -1278,6 +1279,18 @@ export default function RUMS() {
       return false;
     }
 
+    // A mobile tap can arrive through touchstart and pointerdown. If either
+    // playback path is already live, reuse it instead of creating a second,
+    // slightly offset copy of the soundtrack.
+    if (updateAudioSourceRef.current && updateAudioContextRef.current?.state === 'running') {
+      setUpdateMusicState('playing');
+      return true;
+    }
+    if (updateAudioHtmlRef.current && !updateAudioHtmlRef.current.paused && !updateAudioHtmlRef.current.ended) {
+      setUpdateMusicState('playing');
+      return true;
+    }
+
     setUpdateMusicState('starting');
 
     /*
@@ -1574,6 +1587,9 @@ export default function RUMS() {
     let arming = false;
 
     const arm = (event) => {
+      const now = performance.now();
+      if (now - updateMusicGestureAtRef.current < 700) return;
+      updateMusicGestureAtRef.current = now;
       if (arming) return;
       arming = true;
 
@@ -1590,41 +1606,10 @@ export default function RUMS() {
         try { void existingContext?.resume(); } catch {}
       }
 
-      if (updateMusicAllowedRef.current && updateAudioBufferRef.current && existingContext) {
-        try {
-          const gain = updateAudioGainRef.current;
-          const now = existingContext.currentTime;
-          gain.gain.cancelScheduledValues(now);
-          gain.gain.setValueAtTime(0.72, now);
-
-          if (!updateAudioSourceRef.current) {
-            const source = existingContext.createBufferSource();
-            source.buffer = updateAudioBufferRef.current;
-            source.connect(gain);
-            updateAudioSourceRef.current = source;
-            source.start(0);
-          }
-
-          try { updateAudioHtmlRef.current?.pause(); } catch {}
-          setUpdateMusicState('playing');
-        } catch {}
-      } else if (updateMusicAllowedRef.current) {
-        const htmlAudio = updateAudioHtmlRef.current;
-        if (htmlAudio && htmlAudio.paused) {
-          try {
-            htmlAudio.volume = 0.72;
-            if (htmlAudio.ended) htmlAudio.currentTime = 0;
-            const attempt = htmlAudio.play();
-            if (attempt?.then) {
-              attempt
-                .then(() => setUpdateMusicState('playing'))
-                .catch(() => setUpdateMusicState('blocked'));
-            }
-          } catch {
-            setUpdateMusicState('blocked');
-          }
-        }
-      }
+      // startUpdateMusic calls HTMLMediaElement.play() before its first await,
+      // preserving iOS's user gesture while keeping all source selection in one
+      // place.
+      if (updateMusicAllowedRef.current) void startUpdateMusic();
 
       void (async () => {
         const context = await ensureUpdateAudioReady({ resume: true });
@@ -1654,8 +1639,6 @@ export default function RUMS() {
 
         if (!updateMusicAllowedRef.current) {
           await tryStartPendingUpdate();
-        } else if (updateAudioHtmlRef.current?.paused && updateMusicState !== 'playing') {
-          await startUpdateMusic();
         }
 
         arming = false;
@@ -5308,6 +5291,27 @@ export default function RUMS() {
   ]);
 
   useEffect(() => () => {
+    if (updateAudioSourceRef.current) {
+      try { updateAudioSourceRef.current.stop(0); } catch {}
+      try { updateAudioSourceRef.current.disconnect(); } catch {}
+      updateAudioSourceRef.current = null;
+    }
+    if (updateAudioKeepaliveRef.current) {
+      try { updateAudioKeepaliveRef.current.stop(0); } catch {}
+      try { updateAudioKeepaliveRef.current.disconnect(); } catch {}
+      updateAudioKeepaliveRef.current = null;
+    }
+    if (updateAudioKeepaliveGainRef.current) {
+      try { updateAudioKeepaliveGainRef.current.disconnect(); } catch {}
+      updateAudioKeepaliveGainRef.current = null;
+    }
+    if (updateAudioContextRef.current) {
+      try { updateAudioContextRef.current.close(); } catch {}
+      updateAudioContextRef.current = null;
+      updateAudioGainRef.current = null;
+      updateAudioBufferRef.current = null;
+      updateAudioLoadingRef.current = null;
+    }
     if (versionBackgroundRevealTimerRef.current) {
       window.clearTimeout(versionBackgroundRevealTimerRef.current);
       versionBackgroundRevealTimerRef.current = 0;
