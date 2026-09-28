@@ -14899,3 +14899,21 @@ button,input,textarea { font:inherit; }
 .aero-root[data-theme="dark"] .plaza-account-gate-card :is(.plaza-account-continue,.plaza-account-logout):hover{
   filter:brightness(1.12);box-shadow:0 5px 16px #0005!important;
 }
+
+/* Desktop's shared version/feed/music island had its own light glass shell. */
+@media(min-width:761px){
+  .aero-root[data-theme="dark"] .header-center-control-stack{
+    background:#182432!important;border:1px solid #354b62!important;
+    box-shadow:0 7px 20px #0005!important;
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  }
+  .aero-root[data-theme="dark"] .header-center-control-stack::before{display:none!important;}
+  .aero-root[data-theme="dark"] :is(
+    .header-center-version-switcher .universal-rums-switcher,
+    .header-center-feed-switcher .feed-tabs,
+    .header-center-music-row .dynamic-music-compact
+  ){
+    background:#202f40!important;border-color:#3c536b!important;
+    box-shadow:none!important;
+  }
+}
