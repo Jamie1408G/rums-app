@@ -1113,6 +1113,10 @@ export default function RUMS() {
   };
 
   const promoteUpdateMusicToWebAudio = () => {
+    // Mobile Safari's HTMLAudio -> WebAudio handoff can briefly retain both
+    // outputs and create an audible delayed copy. Mobile stays on one native
+    // media element for the complete loading-screen lifecycle.
+    if (isTouchMusicDevice()) return false;
     const htmlAudio = updateAudioHtmlRef.current;
     const context = updateAudioContextRef.current;
     const buffer = updateAudioBufferRef.current;
@@ -1198,8 +1202,14 @@ export default function RUMS() {
 
     // The loading page owns the timing. Begin the fade only when that page
     // starts its exit transition, then fully retire whichever source is active.
-    const webAudioFading = beginUpdateMusicFade(duration);
-    if (!webAudioFading) fadeUpdateHtmlAudio(duration);
+    // Mobile playback is deliberately HTMLAudio-only, so its fade cannot
+    // create or promote a second WebAudio source.
+    if (updateAudioSourceRef.current) {
+      try { updateAudioSourceRef.current.stop(0); } catch {}
+      try { updateAudioSourceRef.current.disconnect(); } catch {}
+      updateAudioSourceRef.current = null;
+    }
+    fadeUpdateHtmlAudio(duration);
 
     updateMusicFadeStopTimerRef.current = window.setTimeout(() => {
       updateMusicFadeStopTimerRef.current = 0;
@@ -1258,7 +1268,7 @@ export default function RUMS() {
     // A mobile tap can arrive through touchstart and pointerdown. If either
     // playback path is already live, reuse it instead of creating a second,
     // slightly offset copy of the soundtrack.
-    if (updateAudioSourceRef.current && updateAudioContextRef.current?.state === 'running') {
+    if (!isTouchMusicDevice() && updateAudioSourceRef.current && updateAudioContextRef.current?.state === 'running') {
       setUpdateMusicState('playing');
       return true;
     }
@@ -1268,6 +1278,39 @@ export default function RUMS() {
     }
 
     setUpdateMusicState('starting');
+
+    if (isTouchMusicDevice()) {
+      // iOS receives exactly one source: the preloaded native audio element.
+      // Calling play before the first await preserves the user's tap permission.
+      if (updateAudioSourceRef.current) {
+        try { updateAudioSourceRef.current.stop(0); } catch {}
+        try { updateAudioSourceRef.current.disconnect(); } catch {}
+        updateAudioSourceRef.current = null;
+      }
+      const mobileAudio = updateAudioHtmlRef.current;
+      if (!mobileAudio) {
+        setUpdateMusicState('blocked');
+        return false;
+      }
+      try {
+        const wanted = new URL(updateTrack.src, window.location.href).href;
+        if (mobileAudio.src !== wanted) {
+          mobileAudio.src = updateTrack.src;
+          mobileAudio.preload = 'auto';
+          mobileAudio.playsInline = true;
+          try { mobileAudio.load(); } catch {}
+        }
+        mobileAudio.volume = 0.72;
+        if (mobileAudio.ended) mobileAudio.currentTime = 0;
+        const attempt = mobileAudio.play();
+        if (attempt?.then) await attempt;
+        setUpdateMusicState('playing');
+        return true;
+      } catch {
+        setUpdateMusicState('blocked');
+        return false;
+      }
+    }
 
     /*
       If WebAudio is already hot, use it. Otherwise try the preloaded HTMLAudio
@@ -1587,13 +1630,6 @@ export default function RUMS() {
 
       void (async () => {
         const context = await ensureUpdateAudioReady({ resume: true });
-
-        // The tap starts reliable HTMLAudio immediately. Once decoding and
-        // AudioContext resume complete, promote it while the screen is still
-        // running so the later outro is guaranteed to have a GainNode source.
-        if (isTouchMusicDevice() && context?.state === 'running') {
-          promoteUpdateMusicToWebAudio();
-        }
 
         if (context?.state === 'running' && !updateAudioKeepaliveRef.current) {
           try {
