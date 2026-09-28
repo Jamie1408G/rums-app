@@ -4982,15 +4982,9 @@ export default function RUMS() {
       window.clearTimeout(versionOpenSoundTimerRef.current);
     }
 
-    // Keep desktop timing unchanged. On touch/mobile, let the version finish
-    // settling for another half-second before the open sound plays.
-    const isMobile =
-      window.matchMedia('(max-width: 820px)').matches ||
-      navigator.maxTouchPoints > 0 ||
-      window.matchMedia('(hover: none)').matches ||
-      window.matchMedia('(pointer: coarse)').matches;
-    const desktopDelay = 500;
-    const delay = desktopDelay + (isMobile ? 500 : 0);
+    // CHANGE plays immediately on selection. The newer version-open sound
+    // follows exactly half a second later on both desktop and mobile.
+    const delay = 500;
 
     versionOpenSoundTimerRef.current = window.setTimeout(() => {
       versionOpenSoundTimerRef.current = 0;
@@ -5018,7 +5012,7 @@ export default function RUMS() {
       // URL 湖 is version-menu-only music. Let it fade smoothly into the
       // destination instead of cutting off as soon as a version is chosen.
       fadeOutSiteMusic(1200);
-      void playUiSfx('select');
+      void playUiSfx('change');
     }
 
     const requestId = ++spaceLoadTokenRef.current;
