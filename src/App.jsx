@@ -52,7 +52,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'nine-second-one-second-music-fade-173';
+const FORCE_UPDATE_REVISION = 'unified-nine-second-one-second-fade-174';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -1168,7 +1168,6 @@ export default function RUMS() {
   };
 
   const scheduleExactUpdateMusicFade = () => {
-    if (!isTouchMusicDevice()) return;
     if (updateMusicFadeStartTimerRef.current) {
       window.clearTimeout(updateMusicFadeStartTimerRef.current);
     }
@@ -5058,27 +5057,8 @@ export default function RUMS() {
 
       setEntryIntroLeaving(true);
 
-    const entryMusicFadeMs = window.matchMedia('(hover: hover) and (pointer: fine)').matches
-      ? DESKTOP_ENTRY_MUSIC_FADE_MS
-      : ENTRY_MUSIC_FADE_MS;
-    beginUpdateMusicFade(entryMusicFadeMs);
-
-      if (!isTouchMusicDevice()) fadeUpdateHtmlAudio(ENTRY_MUSIC_FADE_MS);
-
-      const context = updateAudioContextRef.current;
-      const gain = updateAudioGainRef.current;
-      if (context && gain) {
-        try {
-          const now = context.currentTime;
-          const current = Math.max(0.0001, gain.gain.value || 0.72);
-          gain.gain.cancelScheduledValues(now);
-          gain.gain.setValueAtTime(current, now);
-          gain.gain.linearRampToValueAtTime(
-            0.0001,
-            now + (ENTRY_MUSIC_FADE_MS / 1000),
-          );
-        } catch {}
-      }
+      // Soundtrack fade timing is owned independently:
+      // 9 seconds at full volume, then a 1 second fade on every platform.
 
       finishTimer = window.setTimeout(() => {
         // Mobile Safari can keep the unlocked HTMLAudio alive across the next
@@ -5088,13 +5068,6 @@ export default function RUMS() {
         setEntryIntroLeaving(false);
       }, ENTRY_FADE_MS);
 
-      if (!isTouchMusicDevice()) {
-        if (entryMusicTailTimerRef.current) window.clearTimeout(entryMusicTailTimerRef.current);
-        entryMusicTailTimerRef.current = window.setTimeout(() => {
-          entryMusicTailTimerRef.current = 0;
-          if (updateCycleRef.current.phase === 'idle') stopUpdateMusicCompletely();
-        }, ENTRY_MUSIC_FADE_MS);
-      }
     }, remaining);
 
     return () => {
