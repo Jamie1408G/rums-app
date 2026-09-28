@@ -14983,3 +14983,18 @@ button,input,textarea { font:inherit; }
 .aero-root[data-theme="dark"] .post-actions > button:focus-visible .post-action-icon svg{
   color:#9ac8ff;transform:translateY(-2px) scale(1.12);
 }
+
+/* Lower the two bright accents in the dark navigation rail. */
+.aero-root[data-theme="dark"] .desktop-rail .rail-create{
+  background:#263b56!important;border:1px solid #43648a!important;
+  color:#dceaff!important;box-shadow:none!important;text-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .desktop-rail .rail-create:hover{
+  background:#304b6d!important;border-color:#577ba7!important;box-shadow:none!important;
+}
+.aero-root[data-theme="dark"] .desktop-rail .rail-create::before{display:none!important;}
+.aero-root[data-theme="dark"] .desktop-rail .rail-orb{
+  background:linear-gradient(145deg,#385c83,#294566)!important;
+  border-color:#55779f!important;color:#e4f0ff!important;
+  box-shadow:inset 0 1px #ffffff18,0 3px 10px #0004!important;
+}
