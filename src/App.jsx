@@ -52,7 +52,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'unified-nine-second-one-second-fade-174';
+const FORCE_UPDATE_REVISION = 'mobile-nine-second-fade-desktop-restored-175';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -1168,6 +1168,8 @@ export default function RUMS() {
   };
 
   const scheduleExactUpdateMusicFade = () => {
+    if (!isTouchMusicDevice()) return;
+
     if (updateMusicFadeStartTimerRef.current) {
       window.clearTimeout(updateMusicFadeStartTimerRef.current);
     }
@@ -1752,21 +1754,10 @@ export default function RUMS() {
       setUpdateOverlayLeaving(true);
 
       // Desktop keeps its original transition-owned soundtrack fade.
-      if (!isTouchMusicDevice()) fadeUpdateHtmlAudio(UPDATE_FADE_MS);
-
-      const context = updateAudioContextRef.current;
-      const gain = updateAudioGainRef.current;
-      if (context && gain) {
-        try {
-          const now = context.currentTime;
-          const current = Math.max(0.0001, gain.gain.value || 0.72);
-          gain.gain.cancelScheduledValues(now);
-          gain.gain.setValueAtTime(current, now);
-          gain.gain.linearRampToValueAtTime(
-            0.0001,
-            now + (UPDATE_FADE_MS / 1000),
-          );
-        } catch {}
+      // Mobile has already been fading from 9s to 10s independently.
+      if (!isTouchMusicDevice()) {
+        const webAudioFading = beginUpdateMusicFade(UPDATE_FADE_MS);
+        if (!webAudioFading) fadeUpdateHtmlAudio(UPDATE_FADE_MS);
       }
 
       fadeTimer = window.setTimeout(() => {
@@ -1827,7 +1818,7 @@ export default function RUMS() {
         } else {
           finishVisualTransition();
         }
-      }, isTouchMusicDevice() ? UPDATE_MUSIC_FADE_MS + 40 : UPDATE_FADE_MS);
+      }, isTouchMusicDevice() ? 40 : UPDATE_FADE_MS);
     }, Math.max(0, updateUntil - Date.now()));
 
     return () => {
@@ -5057,13 +5048,26 @@ export default function RUMS() {
 
       setEntryIntroLeaving(true);
 
-      // Soundtrack fade timing is owned independently:
-      // 9 seconds at full volume, then a 1 second fade on every platform.
+      if (!isTouchMusicDevice()) {
+        // Desktop keeps the original loading-screen behavior: fade with the
+        // screen transition, using the desktop-specific longer music tail.
+        const webAudioFading = beginUpdateMusicFade(DESKTOP_ENTRY_MUSIC_FADE_MS);
+        if (!webAudioFading) fadeUpdateHtmlAudio(DESKTOP_ENTRY_MUSIC_FADE_MS);
+
+        if (entryMusicTailTimerRef.current) {
+          window.clearTimeout(entryMusicTailTimerRef.current);
+        }
+        entryMusicTailTimerRef.current = window.setTimeout(() => {
+          entryMusicTailTimerRef.current = 0;
+          if (updateCycleRef.current.phase === 'idle') {
+            stopUpdateMusicCompletely();
+          }
+        }, DESKTOP_ENTRY_MUSIC_FADE_MS + 40);
+      }
 
       finishTimer = window.setTimeout(() => {
-        // Mobile Safari can keep the unlocked HTMLAudio alive across the next
-        // screen. Kill both HTMLAudio and WebAudio before removing the overlay.
-        if (isTouchMusicDevice()) stopUpdateMusicCompletely();
+        // Do NOT stop mobile music here. Its 9s -> 10s audio schedule is
+        // intentionally allowed to continue after the visual overlay disappears.
         setEntryIntroActive(false);
         setEntryIntroLeaving(false);
       }, ENTRY_FADE_MS);
@@ -5084,11 +5088,9 @@ export default function RUMS() {
 
   useEffect(() => {
     if (!entryIntroActive && updateCycleRef.current.phase === 'idle') {
-      updateMusicAllowedRef.current = false;
-      if (isTouchMusicDevice()) {
-        stopUpdateMusicCompletely();
-      }
-      // Desktop keeps its existing fade-tail ownership.
+      // Desktop tail is owned by entryMusicTailTimerRef.
+      // Mobile tail is owned by scheduleExactUpdateMusicFade (9s + 1s).
+      if (!isTouchMusicDevice()) updateMusicAllowedRef.current = false;
     }
   }, [entryIntroActive]);
 
