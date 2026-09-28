@@ -49,7 +49,7 @@ const UI_SFX = {
   start: { src: '/audio/ui-start.wav', volume: 0.72 },
   open: { src: '/audio/ui-open.wav', volume: 0.72 },
 };
-const FORCE_UPDATE_REVISION = 'audio-only-one-second-fades-170';
+const FORCE_UPDATE_REVISION = 'predecoded-one-second-audio-fade-171';
 const UPDATE_AUDIO_TRACKS = [
   { id: 'url-lake', src: '/audio/update-url-lake.mp3', title: 'URL 湖', artist: 'Webinar™' },
   { id: 'warmpop', src: '/audio/update-warmpop.mp3', title: 'Warmpop', artist: 'ESPRIT 空想, George Clanton' },
@@ -1053,6 +1053,10 @@ export default function RUMS() {
     updateAudioHtmlRef.current = preloadAudio;
     try { preloadAudio.load(); } catch {}
 
+    // Decode before the gesture so the tap can synchronously start the
+    // fade-capable AudioBufferSourceNode instead of waiting on network/decode.
+    void ensureUpdateAudioReady({ resume: false });
+
     return () => {
       try {
         preloadAudio.pause();
@@ -1497,7 +1501,32 @@ export default function RUMS() {
         The same preloaded HTMLAudio element is used by both the opening and
         updating screens, so one tap anywhere on either screen can unlock it.
       */
-      if (updateMusicAllowedRef.current) {
+      // Unlock WebAudio immediately in the real gesture. HTMLAudio remains a
+      // fallback only; the fade-capable source is preferred for the whole screen.
+      const existingContext = updateAudioContextRef.current;
+      if (existingContext?.state !== 'running') {
+        try { void existingContext?.resume(); } catch {}
+      }
+
+      if (updateMusicAllowedRef.current && updateAudioBufferRef.current && existingContext) {
+        try {
+          const gain = updateAudioGainRef.current;
+          const now = existingContext.currentTime;
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(0.72, now);
+
+          if (!updateAudioSourceRef.current) {
+            const source = existingContext.createBufferSource();
+            source.buffer = updateAudioBufferRef.current;
+            source.connect(gain);
+            updateAudioSourceRef.current = source;
+            source.start(0);
+          }
+
+          try { updateAudioHtmlRef.current?.pause(); } catch {}
+          setUpdateMusicState('playing');
+        } catch {}
+      } else if (updateMusicAllowedRef.current) {
         const htmlAudio = updateAudioHtmlRef.current;
         if (htmlAudio && htmlAudio.paused) {
           try {
@@ -1508,8 +1537,6 @@ export default function RUMS() {
               attempt
                 .then(() => setUpdateMusicState('playing'))
                 .catch(() => setUpdateMusicState('blocked'));
-            } else {
-              setUpdateMusicState('playing');
             }
           } catch {
             setUpdateMusicState('blocked');
