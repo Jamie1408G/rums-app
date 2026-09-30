@@ -322,3 +322,40 @@
   overflow:hidden!important;
   clip-path:none!important
 }
+
+/* Force real painted-layer rounding on populated Wii channels. */
+.aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser .space-choice-grid>
+:is(.space-choice-card.rums4-choice,.space-choice-card.rums5-choice,.space-choice-card.projects-choice,.wii-empty-channel){
+  border-radius:18px!important;
+  background-clip:padding-box!important
+}
+.aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser .space-choice-grid>
+:is(.space-choice-card.rums4-choice,.space-choice-card.rums5-choice,.space-choice-card.projects-choice){
+  overflow:hidden!important;
+  isolation:isolate!important;
+  -webkit-mask-image:-webkit-radial-gradient(white,black)!important;
+  -webkit-mask-clip:border-box!important
+}
+.aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser .space-choice-grid>
+:is(.space-choice-card.rums4-choice,.space-choice-card.rums5-choice,.space-choice-card.projects-choice)::before{
+  inset:3px!important;
+  border-radius:14px!important
+}
+.aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser
+:is(.rums4-choice,.rums5-choice,.projects-choice)>.space-choice-number{
+  overflow:hidden!important;
+  border-radius:18px!important;
+  background-clip:padding-box!important;
+  -webkit-mask-image:-webkit-radial-gradient(white,black)!important
+}
+
+@media(max-width:700px){
+  .aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser .space-choice-grid>
+  :is(.space-choice-card.rums4-choice,.space-choice-card.rums5-choice,.space-choice-card.projects-choice,.wii-empty-channel){
+    border-radius:13px!important
+  }
+  .aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser
+  :is(.rums4-choice,.rums5-choice,.projects-choice)>.space-choice-number{
+    border-radius:13px!important
+  }
+}
