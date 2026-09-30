@@ -15045,3 +15045,9 @@ button,input,textarea { font:inherit; }
     outline:none!important;box-shadow:0 0 0 2px #17202b,0 0 0 4px #6d9dd3!important;
   }
 }
+
+
+/* Keep the small music glyph white in Light mode. */
+.aero-root[data-theme="standard"] :is(.site-entry-screen,.site-update-screen) .site-update-music-badge{
+  color:#fff!important;
+}
