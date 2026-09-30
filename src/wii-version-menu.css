@@ -1,0 +1,248 @@
+/* Authentic Wii Menu treatment for the RUMS version chooser. */
+.aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser{
+  --wii-blue:#39b9e8;
+  --wii-blue-dark:#1997c8;
+  box-sizing:border-box!important;
+  min-height:100dvh!important;
+  padding:34px clamp(26px,5vw,76px) 132px!important;
+  overflow:hidden!important;
+  background:
+    radial-gradient(ellipse at 50% -15%,#fff 0 28%,transparent 62%),
+    linear-gradient(#fbfbfb,#ededed 72%,#dedede)!important;
+  color:#666!important;
+  font-family:"Helvetica Neue",Arial,sans-serif!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser::before{
+  content:""!important;
+  position:absolute!important;inset:0!important;pointer-events:none!important;
+  display:block!important;
+  background:repeating-linear-gradient(0deg,#fff0 0 2px,#7d8a9010 2px 3px)!important;
+  opacity:.55!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser::after{display:none!important}
+
+/* Wii Menu has no giant glass welcome panel: the channels are the interface. */
+.aero-root[data-theme="wii"] .space-chooser-title-cluster{
+  position:relative!important;z-index:2!important;
+  justify-content:center!important;gap:10px!important;
+  margin:0 auto 18px!important;transform:none!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-chooser-mark{
+  width:42px!important;height:42px!important;flex:0 0 42px!important;
+  border:2px solid #aaa!important;border-radius:50%!important;
+  background:linear-gradient(#fff,#e5e5e5)!important;
+  color:var(--wii-blue-dark)!important;font-size:18px!important;
+  box-shadow:inset 0 0 0 2px #fff,0 1px 3px #7775!important
+}
+.aero-root[data-theme="wii"] .space-chooser-title-card{
+  max-width:none!important;text-align:left!important;background:none!important;
+  border:0!important;box-shadow:none!important;padding:0!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-chooser-kicker{
+  display:none!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser h1{
+  margin:0!important;font-size:clamp(21px,2.5vw,31px)!important;
+  font-weight:400!important;letter-spacing:-.025em!important;
+  color:#777!important;text-shadow:0 1px #fff!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-chooser-intro{
+  margin:2px 0 0!important;max-width:none!important;font-size:12px!important;
+  color:#999!important;line-height:1.3!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .entrance-account{
+  z-index:8!important;top:22px!important;right:28px!important;
+  border:1px solid #aaa!important;border-radius:999px!important;
+  background:linear-gradient(#fff,#e7e7e7)!important;
+  box-shadow:inset 0 1px #fff,0 1px 3px #7774!important;
+  color:#707070!important;backdrop-filter:none!important
+}
+
+/* Four-by-three television-shop channel grid. */
+.aero-root[data-theme="wii"] .space-choice-grid{
+  position:relative!important;z-index:3!important;
+  width:min(980px,100%)!important;margin:0 auto!important;
+  display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-template-rows:repeat(3,minmax(0,1fr))!important;
+  gap:clamp(8px,1.25vw,15px)!important;perspective:none!important
+}
+.aero-root[data-theme="wii"] .space-choice-card,
+.aero-root[data-theme="wii"] .wii-empty-channel{
+  box-sizing:border-box!important;position:relative!important;
+  aspect-ratio:1.55!important;min-height:0!important;width:100%!important;
+  border:2px solid #aaa!important;border-radius:9px!important;
+  background:linear-gradient(180deg,#fff 0%,#fafafa 68%,#e7e7e7 100%)!important;
+  box-shadow:inset 0 0 0 1px #fff,inset 0 -2px 5px #aab2b633,0 1px 2px #7774!important
+}
+.aero-root[data-theme="wii"] .wii-empty-channel{
+  display:block!important;opacity:.72!important;animation:wiiChannelIn .35s ease both!important
+}
+.aero-root[data-theme="wii"] .wii-empty-channel:nth-child(4){animation-delay:.06s!important}
+.aero-root[data-theme="wii"] .wii-empty-channel:nth-child(5){animation-delay:.09s!important}
+.aero-root[data-theme="wii"] .wii-empty-channel:nth-child(6){animation-delay:.12s!important}
+.aero-root[data-theme="wii"] .wii-empty-channel:nth-child(7){animation-delay:.15s!important}
+.aero-root[data-theme="wii"] .wii-empty-channel:nth-child(8){animation-delay:.18s!important}
+.aero-root[data-theme="wii"] .wii-empty-channel:nth-child(9){animation-delay:.21s!important}
+.aero-root[data-theme="wii"] .wii-empty-channel:nth-child(10){animation-delay:.24s!important}
+.aero-root[data-theme="wii"] .wii-empty-channel:nth-child(11){animation-delay:.27s!important}
+.aero-root[data-theme="wii"] .wii-empty-channel:nth-child(12){animation-delay:.30s!important}
+
+/* Real Wii behaviour: artwork stays colourful; the complete channel reacts. */
+.aero-root[data-theme="wii"] .space-choice-card{
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:center!important;gap:5px!important;padding:10px!important;
+  overflow:visible!important;text-align:center!important;cursor:pointer!important;
+  filter:none!important;animation:wiiChannelIn .38s cubic-bezier(.2,.8,.2,1) both!important;
+  transition:transform .14s cubic-bezier(.2,1.45,.35,1),border-color .12s,box-shadow .12s!important
+}
+.aero-root[data-theme="wii"] .space-choice-card:nth-child(2){animation-delay:.045s!important}
+.aero-root[data-theme="wii"] .space-choice-card:nth-child(3){animation-delay:.09s!important}
+.aero-root[data-theme="wii"] .space-choice-card::before{
+  content:""!important;position:absolute!important;inset:4px!important;
+  border-radius:6px!important;pointer-events:none!important;
+  background:linear-gradient(115deg,#fff8 0 14%,transparent 28% 100%)!important;
+  opacity:.42!important
+}
+.aero-root[data-theme="wii"] .space-choice-card::after{display:none!important}
+.aero-root[data-theme="wii"] .space-choice-card:is(:hover,:focus-visible){
+  z-index:10!important;border-color:var(--wii-blue)!important;outline:0!important;
+  transform:scale(1.085) rotate(-.35deg)!important;
+  box-shadow:0 0 0 2px #fff,0 0 0 5px var(--wii-blue),0 8px 17px #4697b74a!important;
+  animation:wiiChannelHover .46s ease-in-out infinite alternate!important
+}
+.aero-root[data-theme="wii"] .space-choice-card:nth-child(even):is(:hover,:focus-visible){
+  transform:scale(1.085) rotate(.35deg)!important
+}
+.aero-root[data-theme="wii"] .space-choice-card:active{
+  transform:scale(1.01)!important;animation:none!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser :is(img,svg,[class*="icon"],[class*="Icon"]){
+  color:inherit!important;fill:revert!important;stroke:revert!important;filter:none!important
+}
+
+/* Individual channel artwork, kept intentionally colourful like real Wii channels. */
+.aero-root[data-theme="wii"] .space-choice-number{
+  display:grid!important;place-items:center!important;
+  width:58px!important;height:58px!important;margin:0!important;
+  border:0!important;border-radius:16px!important;font-weight:700!important;
+  font-size:20px!important;line-height:1!important;filter:none!important
+}
+.aero-root[data-theme="wii"] .rums4-choice .space-choice-number{
+  color:#fff!important;background:linear-gradient(145deg,#5b6671,#1f2932)!important;
+  box-shadow:inset 0 1px #ffffff80,0 3px 6px #1d28325c!important
+}
+.aero-root[data-theme="wii"] .rums5-choice .space-choice-number{
+  color:#fff!important;background:linear-gradient(145deg,#68ddf4,#12a8dc 58%,#087dac)!important;
+  box-shadow:inset 0 1px #ffffffa0,0 3px 6px #168eb55c!important
+}
+.aero-root[data-theme="wii"] .projects-choice .space-choice-number{
+  color:#fff!important;background:linear-gradient(145deg,#ffc969,#ef8c33 58%,#c9601e)!important;
+  box-shadow:inset 0 1px #ffffffa0,0 3px 6px #a85f285c!important
+}
+.aero-root[data-theme="wii"] .space-choice-copy{
+  position:static!important;inset:auto!important;width:auto!important;height:auto!important;
+  min-height:0!important;margin:0!important;padding:0!important;display:block!important;
+  opacity:1!important;visibility:visible!important;transform:none!important;pointer-events:none!important
+}
+.aero-root[data-theme="wii"] .space-choice-copy strong{
+  display:block!important;margin:0!important;padding:0!important;
+  color:#666!important;background:none!important;box-shadow:none!important;
+  font-size:clamp(13px,1.35vw,17px)!important;font-weight:500!important;
+  letter-spacing:-.02em!important;line-height:1.1!important;text-shadow:0 1px #fff!important
+}
+.aero-root[data-theme="wii"] .space-choice-copy strong::before,
+.aero-root[data-theme="wii"] .space-choice-copy strong::after{display:none!important}
+
+/* Authentic page arrows and curved lower console shelf. */
+.aero-root[data-theme="wii"] .wii-menu-page-controls{
+  position:relative!important;z-index:5!important;width:min(980px,100%)!important;
+  height:28px!important;margin:7px auto 0!important;display:flex!important;
+  align-items:center!important;justify-content:center!important;gap:18px!important;color:#a0a0a0!important
+}
+.aero-root[data-theme="wii"] .wii-page-arrow{
+  display:grid!important;place-items:center!important;width:28px!important;height:20px!important;
+  border:1px solid #b6b6b6!important;border-radius:50%!important;background:linear-gradient(#fff,#ddd)!important;
+  color:#777!important;font-size:13px!important;box-shadow:inset 0 1px #fff!important
+}
+.aero-root[data-theme="wii"] .wii-page-dots{display:flex!important;gap:7px!important}
+.aero-root[data-theme="wii"] .wii-page-dots i{
+  width:6px!important;height:6px!important;border-radius:50%!important;background:#b7b7b7!important;
+  box-shadow:0 1px #fff!important
+}
+.aero-root[data-theme="wii"] .wii-page-dots i.active{background:var(--wii-blue)!important}
+.aero-root[data-theme="wii"] .wii-menu-footer{
+  position:absolute!important;z-index:6!important;left:-2%!important;right:-2%!important;bottom:-22px!important;
+  height:118px!important;border-top:2px solid #aaa!important;border-radius:50% 50% 0 0 / 42px 42px 0 0!important;
+  background:linear-gradient(#f8f8f8,#d8d8d8)!important;
+  box-shadow:inset 0 2px #fff,0 -4px 12px #71808b24!important;
+  display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:start!important;
+  padding:17px 7% 0!important
+}
+.aero-root[data-theme="wii"] .wii-footer-round{
+  display:grid!important;place-items:center!important;width:58px!important;height:58px!important;
+  border:2px solid #999!important;border-radius:50%!important;background:linear-gradient(#fff,#ddd)!important;
+  box-shadow:inset 0 0 0 3px #fff,0 1px 3px #7775!important;color:#929292!important
+}
+.aero-root[data-theme="wii"] .wii-footer-home{justify-self:start!important;font-size:10px!important;font-weight:700!important}
+.aero-root[data-theme="wii"] .wii-footer-mail{justify-self:end!important;font-size:24px!important;color:var(--wii-blue-dark)!important}
+.aero-root[data-theme="wii"] .wii-footer-clock{
+  min-width:150px!important;text-align:center!important;color:#777!important;text-shadow:0 1px #fff!important
+}
+.aero-root[data-theme="wii"] .wii-footer-clock strong{display:block!important;font-size:25px!important;font-weight:400!important;line-height:1!important}
+.aero-root[data-theme="wii"] .wii-footer-clock small{display:block!important;margin-top:5px!important;font-size:12px!important;color:#8d8d8d!important}
+
+@keyframes wiiChannelIn{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
+@keyframes wiiChannelHover{from{translate:0 -1px}to{translate:0 1px}}
+
+@media(max-width:700px){
+  .aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser{
+    min-height:100dvh!important;padding:68px 10px 112px!important;overflow:auto!important
+  }
+  .aero-root[data-theme="wii"] .rums-space-chooser .entrance-account{top:10px!important;right:10px!important}
+  .aero-root[data-theme="wii"] .space-chooser-title-cluster{
+    justify-content:flex-start!important;margin:0 4px 14px!important;gap:9px!important
+  }
+  .aero-root[data-theme="wii"] .rums-space-chooser .space-chooser-mark{
+    width:36px!important;height:36px!important;flex-basis:36px!important;font-size:15px!important
+  }
+  .aero-root[data-theme="wii"] .rums-space-chooser h1{font-size:20px!important}
+  .aero-root[data-theme="wii"] .rums-space-chooser .space-chooser-intro{font-size:9px!important;line-height:1.2!important}
+  .aero-root[data-theme="wii"] .space-choice-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-template-rows:repeat(4,minmax(0,1fr))!important;gap:7px!important;margin:0 auto!important
+  }
+  .aero-root[data-theme="wii"] .space-choice-card,
+  .aero-root[data-theme="wii"] .wii-empty-channel{
+    aspect-ratio:1.1!important;border-width:1.5px!important;border-radius:7px!important
+  }
+  .aero-root[data-theme="wii"] .space-choice-card{
+    display:flex!important;flex-direction:column!important;justify-content:center!important;
+    align-items:center!important;gap:3px!important;padding:5px!important
+  }
+  .aero-root[data-theme="wii"] .space-choice-card:nth-child(3){
+    grid-column:auto!important;aspect-ratio:1.1!important;min-height:0!important
+  }
+  .aero-root[data-theme="wii"] .space-choice-number{
+    grid-column:auto!important;grid-row:auto!important;justify-self:auto!important;
+    width:40px!important;height:40px!important;min-width:40px!important;flex-basis:40px!important;
+    border-radius:11px!important;font-size:14px!important
+  }
+  .aero-root[data-theme="wii"] .space-choice-copy{
+    grid-column:auto!important;grid-row:auto!important;width:auto!important;height:auto!important;
+    min-height:0!important;display:block!important;text-align:center!important
+  }
+  .aero-root[data-theme="wii"] .space-choice-copy strong{
+    max-width:none!important;font-size:10px!important;text-align:center!important;line-height:1!important
+  }
+  .aero-root[data-theme="wii"] .wii-menu-page-controls{height:22px!important;margin-top:4px!important}
+  .aero-root[data-theme="wii"] .wii-menu-footer{
+    position:fixed!important;left:-5%!important;right:-5%!important;bottom:-28px!important;height:102px!important;
+    padding:14px 9% 0!important
+  }
+  .aero-root[data-theme="wii"] .wii-footer-round{width:48px!important;height:48px!important}
+  .aero-root[data-theme="wii"] .wii-footer-clock strong{font-size:20px!important}
+  .aero-root[data-theme="wii"] .wii-footer-clock small{font-size:10px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .aero-root[data-theme="wii"] :is(.space-choice-card,.wii-empty-channel){animation:none!important;transition:none!important}
+}

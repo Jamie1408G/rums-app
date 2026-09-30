@@ -8336,6 +8336,22 @@ export default function RUMS() {
                 <span className="space-choice-number">PR</span>
                 <span className="space-choice-copy"><strong>Projects</strong></span>
               </button>
+              {Array.from({ length: 9 }, (_, index) => (
+                <span className="wii-empty-channel" aria-hidden="true" key={`wii-empty-${index}`} />
+              ))}
+            </div>
+            <div className="wii-menu-page-controls" aria-hidden="true">
+              <span className="wii-page-arrow">−</span>
+              <span className="wii-page-dots"><i className="active" /><i /><i /><i /></span>
+              <span className="wii-page-arrow">＋</span>
+            </div>
+            <div className="wii-menu-footer" aria-hidden="true">
+              <span className="wii-footer-round wii-footer-home">RUMS</span>
+              <span className="wii-footer-clock">
+                <strong>{new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</strong>
+                <small>{new Date().toLocaleDateString([], { weekday: 'short', month: 'numeric', day: 'numeric' })}</small>
+              </span>
+              <span className="wii-footer-round wii-footer-mail">✉</span>
             </div>
           </section>
         )}
