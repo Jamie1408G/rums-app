@@ -1,0 +1,30 @@
+/* Wii theme: never use the photographic version-menu artwork. */
+.aero-root[data-theme="wii"].space-chooser-active,
+.aero-root[data-theme="wii"].space-chooser-active .aero-frame,
+.aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser{
+  background:#ededed!important;
+  background-color:#ededed!important;
+  background-image:none!important
+}
+.aero-root[data-theme="wii"].space-chooser-active::before,
+.aero-root[data-theme="wii"].space-chooser-active::after,
+.aero-root[data-theme="wii"].space-chooser-active .aero-frame::before,
+.aero-root[data-theme="wii"].space-chooser-active .aero-frame::after,
+.aero-root[data-theme="wii"] .rums-space-chooser::before,
+.aero-root[data-theme="wii"] .rums-space-chooser::after{
+  background-image:none!important;
+  filter:none!important
+}
+.aero-root[data-theme="wii"] :is(.space-chooser-background,.space-chooser-backdrop,.version-menu-background,.version-background,.space-chooser-scene,.version-chooser-backdrop){
+  display:none!important;background:none!important;background-image:none!important
+}
+.aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser{
+  background:
+    radial-gradient(ellipse at 50% -12%,#fff 0 30%,transparent 62%),
+    repeating-linear-gradient(0deg,#e7e7e7 0 2px,#f0f0f0 2px 4px)!important
+}
+@media(max-width:700px){
+  .aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser{
+    background:linear-gradient(#f7f7f7,#e3e3e3)!important
+  }
+}

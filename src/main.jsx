@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './wii-music.css';
 import './wii-pages.css';
+import './wii-fixes.css';
 import localStorageBackend from './lib/storage';
 
 // The original component was built for an environment that injects a global
