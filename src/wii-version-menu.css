@@ -359,3 +359,8 @@
     border-radius:13px!important
   }
 }
+
+/* Wii-only structural elements must never leak into other themes. */
+.aero-root:not([data-theme="wii"]) :is(.wii-menu-footer,.wii-menu-page-controls,.wii-empty-channel){
+  display:none!important
+}
