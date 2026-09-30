@@ -87,6 +87,7 @@ const RUMS_THEMES = [
   { id: 'standard', name: 'Light', description: 'Glossy modern RUMS Plaza', swatches: ['#f6f8fc', '#3478f6', '#b8d7ff'] },
   ...ROBLOX_THEMES,
   { id: 'dark', name: 'Dark', description: 'Deep graphite glass with cool blue accents', swatches: ['#12151b', '#2c3440', '#6da8ff'] },
+  { id: 'wii', name: 'Wii', description: 'Wii Menu channels, soft cyan focus rings and playful console motion', swatches: ['#f8f8f8', '#d9d9d9', '#34beed'] },
   { id: 'minecraft', name: 'Minecraft', description: 'Blocky stone, grass and dirt-inspired UI', swatches: ['#7cab43', '#6b4c2e', '#9a9a9a'] },
   { id: 'frutiger', name: 'Frutiger Aero', description: 'Apple Aqua meets Windows Longhorn/Aero: silver glass, candy-blue controls and translucent chrome', swatches: ['#e9f5ff', '#2f9de0', '#aebfd0'] },
   { id: 'frutigereco', name: 'Frutiger Eco', description: 'Bright eco-web optimism with blue sky, glossy white cards and vivid leaf-green accents', swatches: ['#effff0', '#72d26b', '#6fc7ff'] },
@@ -101,6 +102,7 @@ const RUMS_THEMES = [
 const STARTUP_THEME_META = {
   standard: { mode: 'glass', eyebrow: 'RUMS PLAZA', title: 'Opening your Plaza', copy: 'Bringing your account, spaces and community into one place.', mark: 'R' },
   dark: { mode: 'dark', eyebrow: 'PLAZA // ONLINE', title: 'Entering Plaza', copy: 'Synchronising your account and community spaces.', mark: 'R' },
+  wii: { mode: 'wii', eyebrow: 'RUMS PLAZA', title: 'Welcome to Plaza', copy: 'Preparing your channels, friends and community.', mark: 'R' },
   minecraft: { mode: 'minecraft', eyebrow: 'RUMS SERVER', title: 'Generating Plaza…', copy: 'Loading account data, spaces and server community.', mark: '▣' },
   frutiger: { mode: 'aero', eyebrow: 'RUMS PLAZA', title: 'Welcome back to Plaza', copy: 'Connecting people, spaces and your community.', mark: 'R' },
   frutigereco: { mode: 'eco', eyebrow: 'RUMS PLAZA', title: 'Growing your Plaza', copy: 'Bringing your community, projects and spaces to life.', mark: '●' },
