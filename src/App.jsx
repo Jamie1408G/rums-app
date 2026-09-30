@@ -1593,9 +1593,12 @@ export default function RUMS() {
     let arming = false;
 
     const arm = (event) => {
-      const now = performance.now();
-      if (now - updateMusicGestureAtRef.current < 700) return;
-      updateMusicGestureAtRef.current = now;
+      const touchDevice = isTouchMusicDevice();
+      if (touchDevice) {
+        const now = performance.now();
+        if (now - updateMusicGestureAtRef.current < 700) return;
+        updateMusicGestureAtRef.current = now;
+      }
       if (arming) return;
       arming = true;
 
@@ -1612,10 +1615,45 @@ export default function RUMS() {
         try { void existingContext?.resume(); } catch {}
       }
 
-      // startUpdateMusic calls HTMLMediaElement.play() before its first await,
-      // preserving iOS's user gesture while keeping all source selection in one
-      // place.
-      if (updateMusicAllowedRef.current) void startUpdateMusic();
+      if (!touchDevice && updateMusicAllowedRef.current && updateAudioBufferRef.current && existingContext) {
+        // Preserve the original desktop path: start the decoded source directly
+        // in the interaction and keep the HTML element only as its fallback.
+        try {
+          const gain = updateAudioGainRef.current;
+          const now = existingContext.currentTime;
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(0.72, now);
+
+          if (!updateAudioSourceRef.current) {
+            const source = existingContext.createBufferSource();
+            source.buffer = updateAudioBufferRef.current;
+            source.connect(gain);
+            updateAudioSourceRef.current = source;
+            source.start(0);
+          }
+
+          try { updateAudioHtmlRef.current?.pause(); } catch {}
+          setUpdateMusicState('playing');
+        } catch {}
+      } else if (!touchDevice && updateMusicAllowedRef.current) {
+        const htmlAudio = updateAudioHtmlRef.current;
+        if (htmlAudio && htmlAudio.paused) {
+          try {
+            htmlAudio.volume = 0.72;
+            if (htmlAudio.ended) htmlAudio.currentTime = 0;
+            const attempt = htmlAudio.play();
+            if (attempt?.then) {
+              attempt
+                .then(() => setUpdateMusicState('playing'))
+                .catch(() => setUpdateMusicState('blocked'));
+            }
+          } catch {
+            setUpdateMusicState('blocked');
+          }
+        }
+      } else if (touchDevice && updateMusicAllowedRef.current) {
+        void startUpdateMusic();
+      }
 
       void (async () => {
         const context = await ensureUpdateAudioReady({ resume: true });
@@ -1638,6 +1676,8 @@ export default function RUMS() {
 
         if (!updateMusicAllowedRef.current) {
           await tryStartPendingUpdate();
+        } else if (!touchDevice && updateAudioHtmlRef.current?.paused && updateMusicState !== 'playing') {
+          await startUpdateMusic();
         }
 
         arming = false;
