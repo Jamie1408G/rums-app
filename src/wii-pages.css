@@ -1,0 +1,185 @@
+/* Complete Wii interface coverage for every secondary RUMS Plaza page. */
+.aero-root[data-theme="wii"]{
+  --wii-cyan:#32b8e6;--wii-cyan-dark:#128ab3;--wii-border:#aaa;--wii-text:#595959;--wii-muted:#7d7d7d;
+  --theme-text:#595959!important;--theme-muted:#7d7d7d!important;--theme-border:#aaa!important;
+  --theme-surface:#fff!important;--theme-surface-2:#ededed!important;--theme-accent:#32b8e6!important
+}
+.aero-root[data-theme="wii"] :is(h1,h2,h3,h4,.profile-name,.admin-section-title,.composer-heading){color:var(--wii-text)!important;text-shadow:0 1px #fff}
+.aero-root[data-theme="wii"] :is(p,small,.switch-line,.field-label,.post-time,.project-muted){color:var(--wii-muted)!important}
+.aero-root[data-theme="wii"] :is(.upload-wrap,.search-wrap,.profile-wrap,.admin-wrap,.updates-composer,.plaza-plus-panel,.plaza-plus-hero,.appearance-section,.profile-section,.suggestion-card,.update-card,.feed-empty,.auth-wrap,.modal-card,.reaction-picker,.mention-dropdown,.visual-edit-toolbar,.custom-emoji-create,.custom-emoji-admin-item){
+  border:3px solid var(--wii-border)!important;border-radius:15px!important;
+  background:linear-gradient(180deg,#fff,#e9e9e9)!important;background-image:none!important;
+  box-shadow:inset 0 0 0 2px #fff,0 5px 11px #526a7833!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  color:var(--wii-text)!important
+}
+.aero-root[data-theme="wii"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input,.editor-grid input,.editor-grid textarea,.editor-grid select){
+  border:2px solid #999!important;border-radius:10px!important;background:#fff!important;color:#555!important;
+  box-shadow:inset 0 2px 4px #67758030!important
+}
+.aero-root[data-theme="wii"] :is(.aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input):focus{
+  border-color:var(--wii-cyan)!important;outline:0!important;box-shadow:0 0 0 3px #8ce1f688!important
+}
+.aero-root[data-theme="wii"] :is(.aero-btn,.comment-send,.modal-primary,.finish-editing-button){
+  border:3px solid var(--wii-cyan)!important;border-radius:999px!important;
+  background:linear-gradient(#fff,#cff0fb)!important;color:var(--wii-cyan-dark)!important;
+  box-shadow:inset 0 0 0 2px #fff,0 3px 6px #536b7930!important;text-shadow:none!important
+}
+.aero-root[data-theme="wii"] :is(.pill,.pill-btn,.tag-chip,.modal-btn,.admin-toggle){
+  border:2px solid #aaa!important;border-radius:999px!important;background:linear-gradient(#fff,#ddd)!important;
+  color:#666!important;box-shadow:inset 0 0 0 1px #fff!important
+}
+.aero-root[data-theme="wii"] :is(.pill.active,.tag-chip.active,.admin-toggle.is-admin,.modal-btn:hover,.pill-btn:hover){
+  border-color:var(--wii-cyan)!important;background:linear-gradient(#fff,#d5f3fc)!important;color:var(--wii-cyan-dark)!important;
+  box-shadow:0 0 0 2px #fff,0 0 0 4px var(--wii-cyan)!important
+}
+
+/* Chat becomes a Wii message-board channel. */
+.aero-root[data-theme="wii"] .chat-page{
+  border:4px solid #999!important;border-radius:17px!important;background:repeating-linear-gradient(0deg,#e5e5e5 0 2px,#eee 2px 4px)!important;
+  box-shadow:inset 0 0 0 3px #fff,0 7px 15px #5069783d!important;overflow:hidden!important
+}
+.aero-root[data-theme="wii"] .chat-sidebar{
+  border:0!important;border-right:3px solid #aaa!important;border-radius:0!important;
+  background:linear-gradient(90deg,#eee,#fff)!important;box-shadow:inset -2px 0 #fff!important
+}
+.aero-root[data-theme="wii"] .chat-conversation{border:0!important;border-radius:0!important;background:#f3f3f3!important;box-shadow:none!important}
+.aero-root[data-theme="wii"] .chat-message-list{background:repeating-linear-gradient(0deg,#ededed 0 2px,#f5f5f5 2px 4px)!important}
+.aero-root[data-theme="wii"] :is(.chat-thread,.chat-user-row){
+  border:2px solid transparent!important;border-radius:12px!important;background:transparent!important;color:#666!important
+}
+.aero-root[data-theme="wii"] :is(.chat-thread,.chat-user-row):hover,
+.aero-root[data-theme="wii"] :is(.chat-thread.active,.chat-user-row.active){
+  border-color:var(--wii-cyan)!important;background:#fff!important;color:var(--wii-cyan-dark)!important;
+  box-shadow:0 0 0 2px #fff,0 0 0 4px var(--wii-cyan)!important
+}
+.aero-root[data-theme="wii"] .chat-message-bubble{
+  border:2px solid #aaa!important;border-radius:16px!important;background:linear-gradient(#fff,#e8e8e8)!important;
+  color:#555!important;box-shadow:inset 0 0 0 1px #fff,0 2px 5px #52697826!important
+}
+.aero-root[data-theme="wii"] .chat-message.own .chat-message-bubble{
+  border-color:var(--wii-cyan)!important;background:linear-gradient(#fff,#cef0fb)!important;color:#28667b!important
+}
+.aero-root[data-theme="wii"] .chat-composer{border-top:3px solid #aaa!important;background:linear-gradient(#fafafa,#ddd)!important}
+.aero-root[data-theme="wii"] :is(.chat-send,.chat-attach-button){
+  border:2px solid var(--wii-cyan)!important;border-radius:50%!important;background:linear-gradient(#fff,#d3f2fc)!important;color:var(--wii-cyan-dark)!important
+}
+
+/* Plaza News becomes a Wii news channel. */
+.aero-root[data-theme="wii"] :is(.news-site-top,.news-top-story,.news-latest-section,.news-home-rail,.news-article-page,.news-authoring-panel,.news-card){
+  border:3px solid #aaa!important;border-radius:15px!important;background:linear-gradient(#fff,#e9e9e9)!important;
+  box-shadow:inset 0 0 0 2px #fff,0 5px 10px #52697830!important;color:#555!important
+}
+.aero-root[data-theme="wii"] .news-site-top{border-top:10px solid var(--wii-cyan)!important}
+.aero-root[data-theme="wii"] :is(.news-card,.news-top-story){transition:transform .18s cubic-bezier(.2,1.6,.4,1),box-shadow .16s,border-color .16s!important}
+.aero-root[data-theme="wii"] :is(.news-card,.news-top-story):hover{
+  border-color:var(--wii-cyan)!important;transform:translateY(-4px) scale(1.015)!important;
+  box-shadow:inset 0 0 0 2px #fff,0 0 0 3px var(--wii-cyan),0 8px 15px #418ea936!important
+}
+.aero-root[data-theme="wii"] :is(.news-category,.news-breaking,.news-new-label){
+  border:2px solid var(--wii-cyan)!important;border-radius:999px!important;background:#fff!important;color:var(--wii-cyan-dark)!important
+}
+
+/* Plaza+ uses Wii dashboard channels. */
+.aero-root[data-theme="wii"] .plaza-plus-hero{border-top:10px solid var(--wii-cyan)!important}
+.aero-root[data-theme="wii"] :is(.plus-tab,.plus-row,.collection-card,.event-card,.group-card,.project-card,.creator-grid>article,.wiki-card,.preset-grid>button){
+  border:2px solid #aaa!important;border-radius:12px!important;background:linear-gradient(#fff,#e8e8e8)!important;
+  color:#5b5b5b!important;box-shadow:inset 0 0 0 1px #fff!important
+}
+.aero-root[data-theme="wii"] :is(.plus-tab,.plus-row,.collection-card,.event-card,.group-card,.project-card,.preset-grid>button):hover,
+.aero-root[data-theme="wii"] .plus-tab.active{
+  border-color:var(--wii-cyan)!important;background:linear-gradient(#fff,#d8f4fd)!important;color:var(--wii-cyan-dark)!important;
+  box-shadow:0 0 0 2px #fff,0 0 0 4px var(--wii-cyan)!important
+}
+.aero-root[data-theme="wii"] :is(.setting-toggle,.push-settings,.theme-builder-row,.per-page-theme-row,.shortcut-grid span){
+  border:2px solid #aaa!important;border-radius:12px!important;background:#f8f8f8!important;color:#666!important
+}
+
+/* Search, profiles, suggestions and server updates. */
+.aero-root[data-theme="wii"] :is(.search-result,.user-row,.profile-grid-thumb,.suggestion-card,.update-card,.admin-post-row){
+  border:3px solid #aaa!important;border-radius:13px!important;background:linear-gradient(#fff,#e9e9e9)!important;
+  background-image:none!important;box-shadow:inset 0 0 0 2px #fff,0 4px 8px #5269782b!important
+}
+.aero-root[data-theme="wii"] :is(.search-result,.user-row,.profile-grid-thumb,.suggestion-card,.update-card):hover{
+  border-color:var(--wii-cyan)!important;box-shadow:inset 0 0 0 2px #fff,0 0 0 3px var(--wii-cyan)!important;transform:translateY(-2px)
+}
+.aero-root[data-theme="wii"] :is(.profile-banner,.profile-hero){
+  border:4px solid #aaa!important;border-radius:16px!important;background:linear-gradient(155deg,#fff,#e5e5e5)!important;
+  box-shadow:inset 0 0 0 3px #fff,0 6px 12px #52697832!important
+}
+.aero-root[data-theme="wii"] .profile-avatar{border:4px solid #fff!important;box-shadow:0 0 0 3px var(--wii-cyan)!important}
+.aero-root[data-theme="wii"] :is(.suggestion-vote,.reaction-chip,.reaction-add){
+  border:2px solid #aaa!important;border-radius:999px!important;background:linear-gradient(#fff,#ddd)!important;color:#666!important
+}
+.aero-root[data-theme="wii"] :is(.suggestion-vote.active,.reaction-chip.active,.reaction-add:hover){
+  border-color:var(--wii-cyan)!important;background:#e1f7ff!important;color:var(--wii-cyan-dark)!important
+}
+
+/* Share a build and editing tools. */
+.aero-root[data-theme="wii"] .drop-zone{
+  border:3px dashed #999!important;border-radius:14px!important;background:repeating-linear-gradient(0deg,#eee 0 2px,#f6f6f6 2px 4px)!important;color:#666!important
+}
+.aero-root[data-theme="wii"] .drop-zone:hover{border-color:var(--wii-cyan)!important;background:#eaf9fe!important}
+.aero-root[data-theme="wii"] :is(.preview-wrap,.upload-preview){border:3px solid #aaa!important;border-radius:13px!important;background:#ddd!important;box-shadow:inset 0 0 0 2px #fff!important}
+.aero-root[data-theme="wii"] :is(.site-editor,.visual-edit-toolbar){
+  border-color:#999!important;background:linear-gradient(#fff,#ddd)!important
+}
+.aero-root[data-theme="wii"] :is(.widget-edit-controls,.built-in-box-handle,.text-position-handle){
+  border:2px solid var(--wii-cyan)!important;border-radius:10px!important;background:linear-gradient(#fff,#d2f1fb)!important;
+  color:var(--wii-cyan-dark)!important;box-shadow:inset 0 0 0 1px #fff!important
+}
+
+/* Project Lumina as a Wii travel/city channel. */
+.aero-root[data-theme="wii"] :is(.lumina-project-hero,.lumina-overview-card,.lumina-principle-card,.lumina-metro-panel,.lumina-station-detail,.lumina-share-card,.lumina-intro-card,.lumina-banner,.lumina-motto-card){
+  border:3px solid #aaa!important;border-radius:15px!important;background:linear-gradient(#fff,#e8e8e8)!important;
+  background-image:none!important;box-shadow:inset 0 0 0 2px #fff,0 5px 10px #52697830!important;color:#595959!important
+}
+.aero-root[data-theme="wii"] .lumina-project-hero{border-top:10px solid var(--wii-cyan)!important}
+.aero-root[data-theme="wii"] :is(.lumina-view-switch,.location-tabs){
+  border:3px solid #999!important;border-radius:999px!important;background:linear-gradient(#ccc,#f8f8f8)!important;box-shadow:inset 0 2px 4px #7775!important
+}
+.aero-root[data-theme="wii"] :is(.lumina-view-switch,.location-tabs) button.active{
+  border:2px solid var(--wii-cyan)!important;border-radius:999px!important;background:#fff!important;color:var(--wii-cyan-dark)!important;
+  box-shadow:0 0 0 2px #fff,0 0 0 4px var(--wii-cyan)!important
+}
+.aero-root[data-theme="wii"] :is(.metro-line,.metro-route-line){filter:saturate(.85) brightness(1.08)}
+.aero-root[data-theme="wii"] :is(.metro-stop,.location-node){border:3px solid #fff!important;box-shadow:0 0 0 3px var(--wii-cyan)!important}
+
+/* Modals, menus, notifications and emoji/GIF pickers. */
+.aero-root[data-theme="wii"] .modal-overlay{background:#52697866!important;backdrop-filter:blur(5px)!important}
+.aero-root[data-theme="wii"] .modal-card{border-top:10px solid var(--wii-cyan)!important;animation:wiiPanelPop .38s cubic-bezier(.16,1.5,.3,1) both!important}
+.aero-root[data-theme="wii"] :is(.notification-panel,.mobile-menu-panel,.reaction-picker,.emoji-picker,.gif-picker,.mention-dropdown){
+  border:3px solid #999!important;border-radius:15px!important;background:linear-gradient(#fff,#e5e5e5)!important;
+  box-shadow:inset 0 0 0 2px #fff,0 10px 24px #425b6a4d!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important
+}
+.aero-root[data-theme="wii"] :is(.notification-row,.emoji-option,.gif-result,.reaction-option){
+  border:2px solid transparent!important;border-radius:10px!important;color:#666!important
+}
+.aero-root[data-theme="wii"] :is(.notification-row,.emoji-option,.gif-result,.reaction-option):hover{
+  border-color:var(--wii-cyan)!important;background:#fff!important;color:var(--wii-cyan-dark)!important;
+  box-shadow:0 0 0 2px #fff,0 0 0 4px var(--wii-cyan)!important
+}
+.aero-root[data-theme="wii"] :is(.toast,.announcement-toast,.like-toast){
+  border:3px solid var(--wii-cyan)!important;border-radius:999px!important;background:linear-gradient(#fff,#d7f4fd)!important;
+  color:#147fa5!important;box-shadow:inset 0 0 0 2px #fff,0 6px 14px #3e78903d!important
+}
+.aero-root[data-theme="wii"] :is(.nav-badge,.notification-dot,.rail-dot){background:#f04f4f!important;border:2px solid #fff!important;box-shadow:0 0 0 1px #b52f2f!important}
+
+/* Authentication and account forms. */
+.aero-root[data-theme="wii"] .auth-wrap{border-top:10px solid var(--wii-cyan)!important;text-align:center!important;animation:wiiPanelPop .42s cubic-bezier(.16,1.5,.3,1) both!important}
+.aero-root[data-theme="wii"] .auth-logo{margin-inline:auto!important;border-radius:50%!important;border-color:var(--wii-cyan)!important;color:var(--wii-cyan-dark)!important}
+.aero-root[data-theme="wii"] :is(.error-pill,.dynamic-music-error){border:2px solid #d7a54c!important;border-radius:999px!important;background:#fff4cf!important;color:#805b17!important}
+
+@keyframes wiiPanelPop{0%{opacity:0;transform:scale(.78)}72%{opacity:1;transform:scale(1.025)}100%{transform:scale(1)}}
+@media(hover:hover) and (pointer:fine){
+  .aero-root[data-theme="wii"] :is(button,.clickable-row,.profile-grid-thumb){transition:transform .16s cubic-bezier(.2,1.65,.4,1),box-shadow .16s,border-color .16s!important}
+}
+@media(max-width:900px){
+  .aero-root[data-theme="wii"] :is(.chat-page,.chat-sidebar,.chat-conversation){border-radius:14px!important}
+  .aero-root[data-theme="wii"] .chat-sidebar{border-right:0!important;border-bottom:3px solid #aaa!important}
+  .aero-root[data-theme="wii"] .mobile-menu-panel{padding-bottom:calc(20px + env(safe-area-inset-bottom))!important}
+  .aero-root[data-theme="wii"] :is(.news-card,.project-card,.collection-card,.event-card,.group-card){border-width:3px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .aero-root[data-theme="wii"] :is(.modal-card,.auth-wrap){animation:none!important}
+}
