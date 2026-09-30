@@ -23,6 +23,27 @@
     radial-gradient(ellipse at 50% -12%,#fff 0 30%,transparent 62%),
     repeating-linear-gradient(0deg,#e7e7e7 0 2px,#f0f0f0 2px 4px)!important
 }
+
+/* Keep version artwork in the restrained Wii Menu palette. */
+.aero-root[data-theme="wii"] .rums-space-chooser :is(img,svg,[class*="icon"],[class*="Icon"]){
+  color:#777!important;
+  fill:currentColor!important;
+  stroke:currentColor!important;
+  filter:grayscale(1) saturate(0) contrast(.82) brightness(1.08)!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser :is(button,[role="button"],a):is(:hover,:focus-visible,[aria-selected="true"],.active,.selected) :is(img,svg,[class*="icon"],[class*="Icon"]){
+  color:#159dc8!important;
+  fill:currentColor!important;
+  stroke:currentColor!important;
+  filter:grayscale(1) sepia(1) saturate(5) hue-rotate(151deg) brightness(.95)!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser :is([class*="icon"],[class*="Icon"]){
+  text-shadow:none!important;
+  background-color:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important
+}
+
 @media(max-width:700px){
   .aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser{
     background:linear-gradient(#f7f7f7,#e3e3e3)!important
