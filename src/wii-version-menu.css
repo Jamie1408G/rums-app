@@ -246,3 +246,79 @@
 @media(prefers-reduced-motion:reduce){
   .aero-root[data-theme="wii"] :is(.space-choice-card,.wii-empty-channel){animation:none!important;transition:none!important}
 }
+
+/* Keep the header in its own row and match populated/empty channel geometry. */
+.aero-root[data-theme="wii"] .aero-frame>.rums-space-chooser{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-chooser-title-cluster{
+  position:relative!important;
+  inset:auto!important;
+  width:min(980px,100%)!important;
+  min-height:58px!important;
+  flex:0 0 auto!important;
+  margin:0 auto 24px!important;
+  translate:none!important;
+  transform:none!important;
+  overflow:visible!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-chooser-title-card{
+  position:relative!important;
+  inset:auto!important;
+  flex:0 1 auto!important;
+  min-width:0!important;
+  translate:none!important;
+  transform:none!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-choice-grid{
+  position:relative!important;
+  inset:auto!important;
+  flex:0 0 auto!important;
+  margin:0 auto!important;
+  translate:none!important;
+  transform:none!important;
+  clear:both!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser :is(.space-choice-card,.wii-empty-channel){
+  border-radius:10px!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-choice-card{
+  overflow:hidden!important;
+  clip-path:inset(0 round 10px)!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-choice-card::before{
+  border-radius:7px!important
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-choice-card:is(:hover,:focus-visible){
+  overflow:visible!important;
+  clip-path:none!important
+}
+
+@media(max-width:700px){
+  .aero-root[data-theme="wii"] .rums-space-chooser .space-chooser-title-cluster{
+    width:100%!important;
+    min-height:54px!important;
+    margin:0 0 20px!important;
+    padding:0 4px!important
+  }
+  .aero-root[data-theme="wii"] .rums-space-chooser .space-choice-grid{
+    width:100%!important;
+    margin:0 auto!important
+  }
+  .aero-root[data-theme="wii"] .rums-space-chooser :is(.space-choice-card,.wii-empty-channel){
+    border-radius:8px!important
+  }
+  .aero-root[data-theme="wii"] .rums-space-chooser .space-choice-card{
+    clip-path:inset(0 round 8px)!important
+  }
+  .aero-root[data-theme="wii"] .rums-space-chooser .space-choice-card:is(:hover,:focus-visible){
+    clip-path:none!important
+  }
+}
+.aero-root[data-theme="wii"] .rums-space-chooser .space-choice-card,
+.aero-root[data-theme="wii"] .rums-space-chooser .space-choice-card:is(:hover,:focus-visible){
+  overflow:hidden!important;
+  clip-path:none!important
+}
