@@ -1,276 +1,311 @@
-/* Rec Room theme — researched from the orange 2021+ UI and 2025 Widget Watch. */
+/* Rec Room — classic Watch UI, based on the iconic translucent 4x3 launcher. */
 .aero-root[data-theme="recroom"]{
-  --rr-orange:#f15a24;
-  --rr-orange-dark:#c83f16;
-  --rr-charcoal:#292929;
-  --rr-ink:#242424;
-  --rr-muted:#747474;
-  --rr-paper:#f4f1ed;
-  --rr-card:#fff;
-  --rr-line:#d5d1cc;
-  --theme-bg:#ebe8e3!important;
-  --theme-surface:#fff!important;
-  --theme-surface-2:#f4f1ed!important;
-  --theme-text:#242424!important;
-  --theme-muted:#747474!important;
-  --theme-border:#d5d1cc!important;
-  --theme-accent:#f15a24!important;
-  font-family:Inter,"Helvetica Neue",Arial,sans-serif!important;
-  color:var(--rr-ink)!important
+  --rr-panel:#43515dda;
+  --rr-panel-dark:#29343de8;
+  --rr-panel-light:#5d6b76d9;
+  --rr-white:#fff;
+  --rr-text:#f7f9fa;
+  --rr-muted:#cbd3d8;
+  --rr-red:#ef4b4f;
+  --rr-purple:#9a5bd1;
+  --rr-green:#42b96c;
+  --rr-teal:#22adad;
+  --rr-pink:#d94e96;
+  --rr-blue:#3399df;
+  --rr-yellow:#e7b52d;
+  --rr-orange:#ee812f;
+  --theme-bg:#252d33!important;
+  --theme-surface:#43515d!important;
+  --theme-surface-2:#34414b!important;
+  --theme-text:#fff!important;
+  --theme-muted:#cbd3d8!important;
+  --theme-border:#7f8d97!important;
+  --theme-accent:#ef4b4f!important;
+  font-family:"Trebuchet MS","Helvetica Neue",Arial,sans-serif!important;
+  color:var(--rr-text)!important
 }
 .aero-root[data-theme="recroom"] .aero-frame{
   background:
-    radial-gradient(circle at 85% 4%,#ffb38f55,transparent 27%),
-    linear-gradient(145deg,#f6f3ee,#dfdcd6)!important;
-  color:var(--rr-ink)!important
+    linear-gradient(#17212966,#17212966),
+    radial-gradient(circle at 25% 12%,#798d9b 0,transparent 34%),
+    linear-gradient(150deg,#52616c,#202a31)!important;
+  color:var(--rr-text)!important
+}
+.aero-root[data-theme="recroom"] .content{
+  background:linear-gradient(145deg,#26323a99,#121a20bb)!important
 }
 .aero-root[data-theme="recroom"] :is(h1,h2,h3,h4,strong,.profile-name,.admin-section-title){
-  color:var(--rr-ink)!important;text-shadow:none!important;font-weight:800!important;letter-spacing:-.025em
+  color:#fff!important;text-shadow:0 2px 2px #0007!important;font-weight:700!important
 }
-.aero-root[data-theme="recroom"] :is(p,small,.project-muted,.post-time,.field-label){color:var(--rr-muted)!important}
+.aero-root[data-theme="recroom"] :is(p,small,.post-time,.field-label,.project-muted){color:var(--rr-muted)!important}
 
-/* Rec Room's chunky, flat card language. */
-.aero-root[data-theme="recroom"] :is(
-  .post-card,.content-card,.widget-box,.profile-wrap,.search-wrap,.upload-wrap,.admin-wrap,
-  .plaza-plus-panel,.plaza-plus-hero,.suggestion-card,.update-card,.feed-empty,.auth-wrap,
-  .modal-card,.notification-panel,.reaction-picker,.emoji-picker,.gif-picker,.mention-dropdown,
-  .project-card,.collection-card,.event-card,.group-card,.news-card,.news-top-story,
-  .news-latest-section,.news-home-rail,.news-article-page,.lumina-overview-card,
-  .lumina-principle-card,.lumina-metro-panel,.lumina-station-detail,.lumina-share-card
-){
-  border:2px solid var(--rr-line)!important;border-radius:18px!important;
-  background:var(--rr-card)!important;background-image:none!important;
-  box-shadow:0 4px 0 #c9c4bd,0 10px 24px #3d332921!important;
-  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;color:var(--rr-ink)!important
+/* Floating watch shell and navigation. */
+.aero-root[data-theme="recroom"] :is(.desktop-rail,.topbar,.header-center-island,.mobile-header,.bottom-nav){
+  border:2px solid #8f9ca566!important;
+  background:linear-gradient(180deg,#53626eea,#34414be8)!important;
+  background-image:linear-gradient(180deg,#53626eea,#34414be8)!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px #ffffff38,0 8px 24px #0007!important;
+  backdrop-filter:blur(15px) saturate(.82)!important;
+  -webkit-backdrop-filter:blur(15px) saturate(.82)!important
 }
-.aero-root[data-theme="recroom"] :is(
-  .post-card,.project-card,.collection-card,.event-card,.group-card,.news-card,
-  .suggestion-card,.update-card,.profile-grid-thumb,.search-result,.user-row
-){
-  transition:transform .14s cubic-bezier(.2,1.5,.35,1),box-shadow .14s,border-color .14s!important
-}
-@media(hover:hover){
-  .aero-root[data-theme="recroom"] :is(
-    .post-card,.project-card,.collection-card,.event-card,.group-card,.news-card,
-    .suggestion-card,.update-card,.profile-grid-thumb,.search-result,.user-row
-  ):hover{
-    transform:translateY(-3px) scale(1.01)!important;border-color:#f08a63!important;
-    box-shadow:0 5px 0 #d84b1d,0 12px 24px #3d33292b!important
-  }
-}
-
-/* Navigation: orange Rec Room chrome with bold white glyphs. */
 .aero-root[data-theme="recroom"] .desktop-rail{
-  background:var(--rr-charcoal)!important;border-right:0!important;
-  box-shadow:8px 0 24px #17130f26!important
+  border-radius:0 17px 17px 0!important;border-left:0!important;padding:14px 10px!important
 }
 .aero-root[data-theme="recroom"] :is(.desktop-rail .rail-logo,.brand-orb,.auth-logo){
-  border:0!important;border-radius:14px!important;background:var(--rr-orange)!important;color:#fff!important;
-  box-shadow:0 4px 0 var(--rr-orange-dark)!important;text-shadow:none!important
+  border:3px solid #fff!important;border-radius:50%!important;background:var(--rr-red)!important;
+  color:#fff!important;box-shadow:0 3px 8px #0005!important;text-shadow:none!important
 }
-.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn){
-  border:0!important;border-radius:13px!important;background:transparent!important;color:#ddd!important;
-  box-shadow:none!important;text-shadow:none!important
+.aero-root[data-theme="recroom"] :is(.rail-btn,.nav-btn){
+  border:2px solid transparent!important;border-radius:8px!important;background:transparent!important;
+  color:#fff!important;box-shadow:none!important;text-shadow:0 1px 2px #0008!important
 }
-.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn):is(:hover,.active,[aria-current="page"]){
-  background:var(--rr-orange)!important;color:#fff!important;transform:scale(1.06)!important;
-  box-shadow:0 3px 0 var(--rr-orange-dark)!important
+.aero-root[data-theme="recroom"] :is(.rail-btn,.nav-btn):is(:hover,.active,[aria-current="page"]){
+  border-color:#ffffffbb!important;background:#ffffff25!important;
+  transform:scale(1.08)!important;box-shadow:0 3px 8px #0005!important
 }
-.aero-root[data-theme="recroom"] :is(.topbar,.header-center-island,.mobile-header,.bottom-nav){
-  border-color:#171717!important;background:var(--rr-charcoal)!important;background-image:none!important;
-  color:#fff!important;box-shadow:0 5px 0 #151515,0 10px 26px #211a1538!important;
-  backdrop-filter:none!important;-webkit-backdrop-filter:none!important
+/* Colour-code launcher/nav tiles like the original Watch. */
+.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn):nth-of-type(8n+1){background:var(--rr-red)!important}
+.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn):nth-of-type(8n+2){background:var(--rr-purple)!important}
+.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn):nth-of-type(8n+3){background:var(--rr-green)!important}
+.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn):nth-of-type(8n+4){background:var(--rr-teal)!important}
+.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn):nth-of-type(8n+5){background:var(--rr-pink)!important}
+.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn):nth-of-type(8n+6){background:var(--rr-blue)!important}
+.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn):nth-of-type(8n+7){background:var(--rr-yellow)!important}
+.aero-root[data-theme="recroom"] .desktop-rail :is(.rail-btn,.nav-btn):nth-of-type(8n){background:var(--rr-orange)!important}
+
+/* Watch-style cards and menus. */
+.aero-root[data-theme="recroom"] :is(
+ .post-card,.content-card,.widget-box,.profile-wrap,.search-wrap,.upload-wrap,.admin-wrap,
+ .plaza-plus-panel,.plaza-plus-hero,.suggestion-card,.update-card,.feed-empty,.auth-wrap,
+ .modal-card,.notification-panel,.reaction-picker,.emoji-picker,.gif-picker,.mention-dropdown,
+ .project-card,.collection-card,.event-card,.group-card,.news-card,.news-top-story,
+ .news-latest-section,.news-home-rail,.news-article-page,.lumina-overview-card,
+ .lumina-principle-card,.lumina-metro-panel,.lumina-station-detail,.lumina-share-card
+){
+  border:2px solid #8d9aa477!important;border-radius:10px!important;
+  background:linear-gradient(180deg,#52616ddd,#3b4852e8)!important;background-image:linear-gradient(180deg,#52616ddd,#3b4852e8)!important;
+  box-shadow:inset 0 1px #ffffff30,0 6px 18px #0006!important;
+  backdrop-filter:blur(12px) saturate(.8)!important;-webkit-backdrop-filter:blur(12px) saturate(.8)!important;
+  color:#fff!important
 }
-.aero-root[data-theme="recroom"] :is(.header-center-island,.mobile-header-music-island,.dynamic-music-island){
-  border-radius:17px!important
+.aero-root[data-theme="recroom"] :is(
+ .post-card,.project-card,.collection-card,.event-card,.group-card,.news-card,
+ .suggestion-card,.update-card,.profile-grid-thumb,.search-result,.user-row
+){
+  transition:transform .1s ease,filter .1s,box-shadow .1s!important
 }
-.aero-root[data-theme="recroom"] :is(.universal-rums-switcher,.feed-tabs,.lumina-view-switch,.location-tabs){
-  border:2px solid #555!important;border-radius:14px!important;background:#3a3a3a!important;
-  box-shadow:inset 0 1px #ffffff18!important;color:#fff!important
+@media(hover:hover){
+ .aero-root[data-theme="recroom"] :is(
+  .post-card,.project-card,.collection-card,.event-card,.group-card,.news-card,
+  .suggestion-card,.update-card,.profile-grid-thumb,.search-result,.user-row
+ ):hover{
+   transform:scale(1.025)!important;filter:brightness(1.13)!important;
+   box-shadow:inset 0 1px #ffffff4d,0 9px 22px #0008!important
+ }
 }
-.aero-root[data-theme="recroom"] :is(.universal-rums-switcher,.feed-tabs,.lumina-view-switch,.location-tabs) button{
-  border-radius:10px!important;color:#ccc!important
-}
-.aero-root[data-theme="recroom"] :is(.universal-rums-switcher,.feed-tabs,.lumina-view-switch,.location-tabs) button:is(.active,[aria-selected="true"]){
-  background:var(--rr-orange)!important;color:#fff!important;box-shadow:0 2px 0 var(--rr-orange-dark)!important
+.aero-root[data-theme="recroom"] :is(.post-header,.profile-hero,.profile-banner,.plaza-plus-hero,.news-site-top,.lumina-project-hero){
+  border-top:7px solid var(--rr-red)!important
 }
 
-/* Buttons and form controls. */
+/* Flat square Watch buttons. */
 .aero-root[data-theme="recroom"] :is(.aero-btn,.comment-send,.chat-send,.modal-primary,.finish-editing-button,.projects-create-btn){
-  border:0!important;border-radius:13px!important;background:var(--rr-orange)!important;color:#fff!important;
-  box-shadow:0 4px 0 var(--rr-orange-dark)!important;text-shadow:none!important;font-weight:800!important;
-  transition:transform .12s,box-shadow .12s!important
+  border:2px solid #ffffffb5!important;border-radius:8px!important;background:var(--rr-red)!important;
+  color:#fff!important;box-shadow:0 3px 7px #0006!important;text-shadow:0 1px 2px #0005!important;font-weight:700!important;
+  transition:transform .08s,filter .08s!important
 }
 .aero-root[data-theme="recroom"] :is(.aero-btn,.comment-send,.chat-send,.modal-primary,.finish-editing-button,.projects-create-btn):hover{
-  background:#ff6b32!important;transform:translateY(-1px)!important
+  filter:brightness(1.15)!important;transform:scale(1.04)!important
 }
 .aero-root[data-theme="recroom"] :is(.aero-btn,.comment-send,.chat-send,.modal-primary,.finish-editing-button,.projects-create-btn):active{
-  transform:translateY(3px) scale(.98)!important;box-shadow:0 1px 0 var(--rr-orange-dark)!important
+  transform:scale(.94)!important;filter:brightness(.9)!important
 }
 .aero-root[data-theme="recroom"] :is(.pill,.pill-btn,.tag-chip,.modal-btn,.reaction-chip,.reaction-add,.admin-toggle){
-  border:2px solid #d0cbc4!important;border-radius:12px!important;background:#f5f2ed!important;color:#555!important;
-  box-shadow:0 3px 0 #d0cbc4!important
+  border:2px solid #ffffff80!important;border-radius:7px!important;background:#27333d99!important;
+  color:#fff!important;box-shadow:inset 0 1px #ffffff20!important
 }
 .aero-root[data-theme="recroom"] :is(.pill,.pill-btn,.tag-chip,.modal-btn,.reaction-chip,.reaction-add,.admin-toggle):is(:hover,.active){
-  border-color:var(--rr-orange)!important;background:#fff0e9!important;color:var(--rr-orange-dark)!important
+  border-color:#fff!important;background:var(--rr-blue)!important;color:#fff!important
 }
 .aero-root[data-theme="recroom"] :is(
-  .aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,
-  .chat-user-search input,.editor-grid input,.editor-grid textarea,.editor-grid select
+ .aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,
+ .chat-user-search input,.editor-grid input,.editor-grid textarea,.editor-grid select
 ){
-  border:2px solid #cfc9c2!important;border-radius:13px!important;background:#fff!important;color:#222!important;
-  box-shadow:inset 0 2px 0 #2a20120d!important
+  border:2px solid #8e9ca6!important;border-radius:7px!important;background:#eef2f4!important;
+  color:#24313a!important;box-shadow:inset 0 2px 4px #0002!important
 }
 .aero-root[data-theme="recroom"] :is(
-  .aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input
+ .aero-input,.caption-area,.search-bar,.comment-input-row input,.chat-composer textarea,.chat-user-search input
 ):focus{
-  border-color:var(--rr-orange)!important;outline:0!important;box-shadow:0 0 0 4px #f15a2433!important
+  border-color:#fff!important;outline:0!important;box-shadow:0 0 0 3px var(--rr-blue)!important
 }
 
-/* Feed, reactions and content accents. */
-.aero-root[data-theme="recroom"] :is(.post-header,.profile-hero,.profile-banner,.plaza-plus-hero,.news-site-top,.lumina-project-hero){
-  border-top:9px solid var(--rr-orange)!important
+/* Segmented watch tabs. */
+.aero-root[data-theme="recroom"] :is(.universal-rums-switcher,.feed-tabs,.lumina-view-switch,.location-tabs){
+  border:2px solid #8e9ba5!important;border-radius:8px!important;background:#27333dcc!important;
+  box-shadow:inset 0 1px #ffffff25!important;color:#fff!important
 }
-.aero-root[data-theme="recroom"] :is(.avatar,.profile-avatar,.comment-avatar,.chat-avatar){
-  border:3px solid #fff!important;box-shadow:0 0 0 3px var(--rr-orange)!important
+.aero-root[data-theme="recroom"] :is(.universal-rums-switcher,.feed-tabs,.lumina-view-switch,.location-tabs) button{
+  border-radius:5px!important;color:#e6ebee!important
 }
-.aero-root[data-theme="recroom"] :is(.liked,.saved,.reaction-chip.active,.suggestion-vote.active){
-  color:var(--rr-orange-dark)!important;background:#fff0e9!important;border-color:var(--rr-orange)!important
-}
-.aero-root[data-theme="recroom"] :is(.nav-badge,.notification-dot,.rail-dot){
-  background:#45c85a!important;border:2px solid #fff!important;box-shadow:0 0 0 2px #238e34!important
+.aero-root[data-theme="recroom"] :is(.universal-rums-switcher,.feed-tabs,.lumina-view-switch,.location-tabs) button:is(.active,[aria-selected="true"]){
+  background:var(--rr-red)!important;color:#fff!important;box-shadow:0 2px 5px #0006!important
 }
 
-/* Chat resembles Rec Room's social panel. */
+/* Social/chat panel. */
 .aero-root[data-theme="recroom"] .chat-page{
-  border:0!important;border-radius:19px!important;background:#e9e5df!important;
-  box-shadow:0 5px 0 #c7c1b9,0 12px 30px #332a2226!important;overflow:hidden!important
+  border:2px solid #8e9ba577!important;border-radius:12px!important;background:#28343ddd!important;
+  box-shadow:0 9px 25px #0007!important;overflow:hidden!important;backdrop-filter:blur(14px)!important
 }
 .aero-root[data-theme="recroom"] .chat-sidebar{
-  border:0!important;border-right:3px solid #d0cac2!important;border-radius:0!important;background:#f8f5f1!important
+  border:0!important;border-right:2px solid #82909a77!important;border-radius:0!important;background:#3c4a55dd!important
 }
-.aero-root[data-theme="recroom"] .chat-conversation{border:0!important;border-radius:0!important;background:#eeeae5!important}
+.aero-root[data-theme="recroom"] .chat-conversation{border:0!important;border-radius:0!important;background:#26323bdd!important}
 .aero-root[data-theme="recroom"] :is(.chat-thread,.chat-user-row){
-  border:2px solid transparent!important;border-radius:13px!important;background:transparent!important
+  border:2px solid transparent!important;border-radius:7px!important;background:transparent!important;color:#fff!important
 }
 .aero-root[data-theme="recroom"] :is(.chat-thread,.chat-user-row):is(:hover,.active){
-  border-color:#f08a63!important;background:#fff!important;box-shadow:0 3px 0 #e0d9d1!important
+  border-color:#fff!important;background:var(--rr-pink)!important
 }
 .aero-root[data-theme="recroom"] .chat-message-bubble{
-  border:0!important;border-radius:16px 16px 16px 5px!important;background:#fff!important;color:#292929!important;
-  box-shadow:0 3px 0 #d3cec7!important
+  border:2px solid #ffffff55!important;border-radius:11px 11px 11px 3px!important;
+  background:#53626ed9!important;color:#fff!important;box-shadow:0 3px 8px #0004!important
 }
 .aero-root[data-theme="recroom"] .chat-message.own .chat-message-bubble{
-  border-radius:16px 16px 5px 16px!important;background:var(--rr-orange)!important;color:#fff!important;
-  box-shadow:0 3px 0 var(--rr-orange-dark)!important
+  border-radius:11px 11px 3px 11px!important;background:var(--rr-blue)!important;color:#fff!important
 }
-.aero-root[data-theme="recroom"] .chat-composer{border-top:3px solid #d0cac2!important;background:#f8f5f1!important}
+.aero-root[data-theme="recroom"] .chat-composer{border-top:2px solid #82909a77!important;background:#3c4a55ee!important}
 
-/* Music player as a compact Rec Room media widget. */
-.aero-root[data-theme="recroom"] :is(.dynamic-music-island,.mobile-header-music-island){
-  border:2px solid #111!important;background:#292929!important;background-image:none!important;
-  box-shadow:0 4px 0 #111,0 10px 22px #1d171244!important;color:#fff!important;
-  backdrop-filter:none!important;-webkit-backdrop-filter:none!important
+/* Avatar/profile and status. */
+.aero-root[data-theme="recroom"] :is(.avatar,.profile-avatar,.comment-avatar,.chat-avatar){
+  border:3px solid #fff!important;box-shadow:0 3px 8px #0005!important
 }
-.aero-root[data-theme="recroom"] :is(.dynamic-music-art,.mobile-header-music-art){
-  border-radius:11px!important;background:var(--rr-orange)!important;color:#fff!important;box-shadow:none!important
+.aero-root[data-theme="recroom"] :is(.nav-badge,.notification-dot,.rail-dot){
+  background:#67d66e!important;border:2px solid #fff!important;box-shadow:0 2px 5px #0006!important
 }
-.aero-root[data-theme="recroom"] :is(.dynamic-music-control,.dynamic-music-collapse-button,.mobile-header-music-control){
-  border:0!important;border-radius:10px!important;background:#414141!important;color:#fff!important;box-shadow:none!important
-}
-.aero-root[data-theme="recroom"] :is(.dynamic-music-control,.dynamic-music-collapse-button,.mobile-header-music-control):hover{
-  background:var(--rr-orange)!important
+.aero-root[data-theme="recroom"] :is(.liked,.saved,.reaction-chip.active,.suggestion-vote.active){
+  color:#fff!important;background:var(--rr-pink)!important;border-color:#fff!important
 }
 
-/* Version menu and account gate: Rec Room watch-like launcher. */
+/* Classic Watch-style version launcher. */
 .aero-root[data-theme="recroom"].space-chooser-active .aero-frame,
 .aero-root[data-theme="recroom"] .aero-frame>.rums-space-chooser,
 .aero-root[data-theme="recroom"] .aero-frame>.plaza-account-gate{
   background:
-    radial-gradient(circle at 15% 15%,#f15a2444,transparent 30%),
-    linear-gradient(145deg,#343434,#1f1f1f)!important;background-image:radial-gradient(circle at 15% 15%,#f15a2444,transparent 30%),linear-gradient(145deg,#343434,#1f1f1f)!important
+    linear-gradient(#1a252db0,#1a252db0),
+    radial-gradient(circle at 50% 20%,#8798a5 0,#40505c 47%,#1d272e 100%)!important;
+  background-image:linear-gradient(#1a252db0,#1a252db0),radial-gradient(circle at 50% 20%,#8798a5 0,#40505c 47%,#1d272e 100%)!important
+}
+.aero-root[data-theme="recroom"] .rums-space-chooser,
+.aero-root[data-theme="recroom"] .plaza-account-gate-card{
+  border:2px solid #aab5bc77!important;border-radius:13px!important;background:#43515dcf!important;
+  box-shadow:inset 0 1px #ffffff38,0 12px 34px #0008!important;backdrop-filter:blur(15px)!important
 }
 .aero-root[data-theme="recroom"] .rums-space-chooser :is(h1,.space-chooser-intro,.space-chooser-kicker),
-.aero-root[data-theme="recroom"] .plaza-account-gate :is(h1,p){color:#fff!important;text-shadow:none!important}
-.aero-root[data-theme="recroom"] .space-chooser-mark,
-.aero-root[data-theme="recroom"] .plaza-account-gate .space-chooser-mark{
-  border:0!important;border-radius:16px!important;background:var(--rr-orange)!important;color:#fff!important;
-  box-shadow:0 5px 0 var(--rr-orange-dark)!important
+.aero-root[data-theme="recroom"] .plaza-account-gate :is(h1,p){color:#fff!important;text-shadow:0 2px 3px #0007!important}
+.aero-root[data-theme="recroom"] :is(.space-chooser-mark,.plaza-account-gate .space-chooser-mark){
+  border:3px solid #fff!important;border-radius:50%!important;background:var(--rr-red)!important;
+  color:#fff!important;box-shadow:0 3px 8px #0006!important
 }
-.aero-root[data-theme="recroom"] .space-choice-grid{gap:16px!important}
+.aero-root[data-theme="recroom"] .space-choice-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}
 .aero-root[data-theme="recroom"] .space-choice-card{
-  border:3px solid #5a5a5a!important;border-radius:18px!important;background:#f7f4f0!important;
-  box-shadow:0 5px 0 #141414,0 10px 20px #0005!important;filter:none!important;overflow:hidden!important
+  border:3px solid #ffffffa6!important;border-radius:10px!important;
+  box-shadow:0 4px 10px #0006!important;filter:none!important;overflow:hidden!important;
+  transition:transform .1s,filter .1s!important
 }
+.aero-root[data-theme="recroom"] .space-choice-card:nth-child(1){background:var(--rr-red)!important}
+.aero-root[data-theme="recroom"] .space-choice-card:nth-child(2){background:var(--rr-purple)!important}
+.aero-root[data-theme="recroom"] .space-choice-card:nth-child(3){background:var(--rr-green)!important}
 .aero-root[data-theme="recroom"] .space-choice-card:hover{
-  border-color:#ff8253!important;transform:translateY(-5px) scale(1.035)!important;
-  box-shadow:0 6px 0 var(--rr-orange-dark),0 14px 24px #0007!important
+  transform:scale(1.06)!important;filter:brightness(1.13)!important;border-color:#fff!important;
+  box-shadow:0 7px 18px #0008!important
 }
 .aero-root[data-theme="recroom"] .space-choice-number{
-  border:0!important;border-radius:14px!important;background:var(--rr-orange)!important;color:#fff!important;
-  box-shadow:0 4px 0 var(--rr-orange-dark)!important
+  border:0!important;border-radius:8px!important;background:#ffffff24!important;color:#fff!important;
+  box-shadow:inset 0 0 0 2px #ffffff4d!important
 }
-.aero-root[data-theme="recroom"] .rums5-choice .space-choice-number{background:#4f79df!important;box-shadow:0 4px 0 #3155af!important}
-.aero-root[data-theme="recroom"] .projects-choice .space-choice-number{background:#42b85a!important;box-shadow:0 4px 0 #25883a!important}
-.aero-root[data-theme="recroom"] .space-choice-copy strong{color:#292929!important;text-shadow:none!important}
+.aero-root[data-theme="recroom"] .space-choice-copy strong{color:#fff!important;text-shadow:0 2px 2px #0006!important}
 .aero-root[data-theme="recroom"] .entrance-account{
-  border:2px solid #555!important;border-radius:14px!important;background:#292929!important;color:#fff!important;box-shadow:0 4px 0 #111!important
+  border:2px solid #ffffff66!important;border-radius:8px!important;background:#29343de8!important;
+  color:#fff!important;box-shadow:0 3px 9px #0005!important
 }
 
-/* Theme-specific startup. */
+/* Music widget. */
+.aero-root[data-theme="recroom"] :is(.dynamic-music-island,.mobile-header-music-island){
+  border:2px solid #92a0aa88!important;border-radius:10px!important;
+  background:linear-gradient(#52616ded,#303d47ed)!important;background-image:linear-gradient(#52616ded,#303d47ed)!important;
+  box-shadow:inset 0 1px #ffffff30,0 6px 18px #0007!important;color:#fff!important;
+  backdrop-filter:blur(14px)!important
+}
+.aero-root[data-theme="recroom"] :is(.dynamic-music-art,.mobile-header-music-art){
+  border-radius:8px!important;background:var(--rr-purple)!important;color:#fff!important;box-shadow:0 2px 5px #0005!important
+}
+.aero-root[data-theme="recroom"] :is(.dynamic-music-control,.dynamic-music-collapse-button,.mobile-header-music-control){
+  border:2px solid #ffffff66!important;border-radius:7px!important;background:#26323c!important;color:#fff!important;box-shadow:none!important
+}
+.aero-root[data-theme="recroom"] :is(.dynamic-music-control,.dynamic-music-collapse-button,.mobile-header-music-control):hover{
+  background:var(--rr-blue)!important;border-color:#fff!important
+}
+
+/* Startup styled as the watch waking up. */
 .site-entry-screen.startup-theme-recroom{
   background:
-    radial-gradient(circle at 22% 18%,#ff9b7155,transparent 30%),
-    linear-gradient(145deg,#343434,#191919)!important
+    linear-gradient(#182229aa,#182229aa),
+    radial-gradient(circle at 50% 22%,#81929e,#35444f 52%,#172027)!important
 }
 .site-entry-screen.startup-theme-recroom .site-entry-card{
-  border:3px solid #555!important;border-radius:22px!important;background:#f5f1ec!important;
-  box-shadow:0 8px 0 #111,0 26px 70px #0009!important;color:#292929!important
+  border:3px solid #9ca9b280!important;border-radius:13px!important;
+  background:linear-gradient(#53626eea,#34414bea)!important;
+  box-shadow:inset 0 1px #ffffff38,0 16px 45px #0009!important;color:#fff!important;
+  backdrop-filter:blur(15px)!important
 }
 .site-entry-screen.startup-theme-recroom .site-entry-brand-orb{
-  border:0!important;border-radius:18px!important;background:#f15a24!important;
-  box-shadow:0 6px 0 #c83f16!important;color:#fff!important
+  border:3px solid #fff!important;border-radius:50%!important;background:var(--rr-red)!important;
+  box-shadow:0 4px 10px #0006!important;color:#fff!important
 }
-.site-entry-screen.startup-theme-recroom .site-entry-orbit{border-color:#f15a2466!important}
+.site-entry-screen.startup-theme-recroom .site-entry-orbit{border-color:#ffffff55!important}
 .site-entry-screen.startup-theme-recroom .site-entry-progress-track{
-  border:0!important;border-radius:999px!important;background:#d8d2cb!important;box-shadow:inset 0 2px #9d948b66!important
+  border:2px solid #ffffff66!important;border-radius:5px!important;background:#25313a!important;box-shadow:inset 0 2px 4px #0005!important
 }
-.site-entry-screen.startup-theme-recroom .site-entry-progress-fill{background:#f15a24!important;box-shadow:none!important}
-.site-entry-screen.startup-theme-recroom :is(.site-entry-eyebrow,.site-entry-status){color:#c84618!important}
+.site-entry-screen.startup-theme-recroom .site-entry-progress-fill{background:var(--rr-red)!important;box-shadow:none!important}
+.site-entry-screen.startup-theme-recroom :is(.site-entry-eyebrow,.site-entry-status){color:#dce3e7!important}
 
-/* Secondary menus, overlays and editing. */
-.aero-root[data-theme="recroom"] .modal-overlay{background:#1b1712aa!important;backdrop-filter:blur(7px)!important}
+/* Pickers, modals and editing tools. */
+.aero-root[data-theme="recroom"] .modal-overlay{background:#111a20b5!important;backdrop-filter:blur(7px)!important}
 .aero-root[data-theme="recroom"] :is(.toast,.announcement-toast,.like-toast){
-  border:2px solid #ff9b75!important;border-radius:14px!important;background:#292929!important;color:#fff!important;
-  box-shadow:0 4px 0 #111,0 12px 24px #0005!important
+  border:2px solid #ffffff88!important;border-radius:8px!important;background:#34414bed!important;
+  color:#fff!important;box-shadow:0 6px 18px #0007!important
 }
 .aero-root[data-theme="recroom"] .drop-zone{
-  border:3px dashed #f15a24!important;border-radius:17px!important;background:#fff5f0!important;color:#9b3b18!important
+  border:3px dashed #fff!important;border-radius:9px!important;background:#34414baa!important;color:#fff!important
 }
 .aero-root[data-theme="recroom"] :is(.visual-edit-toolbar,.widget-edit-controls,.built-in-box-handle,.text-position-handle){
-  border:2px solid #222!important;border-radius:13px!important;background:#292929!important;color:#fff!important;
-  box-shadow:0 4px 0 #111!important
+  border:2px solid #ffffff88!important;border-radius:8px!important;background:#29343dee!important;color:#fff!important;
+  box-shadow:0 4px 12px #0007!important
 }
 
-@keyframes rrPanelPop{0%{opacity:0;transform:scale(.88) translateY(10px)}70%{opacity:1;transform:scale(1.02) translateY(-2px)}100%{transform:none}}
-.aero-root[data-theme="recroom"] :is(.modal-card,.auth-wrap,.space-choice-card){animation:rrPanelPop .28s cubic-bezier(.2,1.45,.35,1) both}
+@keyframes rrWatchPop{0%{opacity:0;transform:scale(.78)}70%{opacity:1;transform:scale(1.04)}100%{transform:scale(1)}}
+.aero-root[data-theme="recroom"] :is(.modal-card,.auth-wrap,.space-choice-card){animation:rrWatchPop .22s cubic-bezier(.2,1.55,.35,1) both}
 
 @media(max-width:900px){
-  .aero-root[data-theme="recroom"] .bottom-nav{
-    border:0!important;border-radius:18px 18px 0 0!important;background:#292929!important;
-    box-shadow:0 -4px 0 #151515,0 -10px 24px #1d171233!important
-  }
-  .aero-root[data-theme="recroom"] .bottom-nav .nav-btn{
-    border:0!important;border-radius:11px!important;background:transparent!important;color:#bdbdbd!important;box-shadow:none!important
-  }
-  .aero-root[data-theme="recroom"] .bottom-nav .nav-btn:is(.active,[aria-current="page"]){
-    background:var(--rr-orange)!important;color:#fff!important;transform:translateY(-3px)!important;
-    box-shadow:0 3px 0 var(--rr-orange-dark)!important
-  }
-  .aero-root[data-theme="recroom"] .chat-sidebar{border-right:0!important;border-bottom:3px solid #d0cac2!important}
-  .aero-root[data-theme="recroom"] .space-choice-grid{grid-template-columns:1fr!important;gap:12px!important}
-  .aero-root[data-theme="recroom"] .space-choice-card{min-height:105px!important;aspect-ratio:auto!important}
+ .aero-root[data-theme="recroom"] .bottom-nav{
+   border-radius:12px 12px 0 0!important;border-bottom:0!important;padding-bottom:calc(8px + env(safe-area-inset-bottom))!important
+ }
+ .aero-root[data-theme="recroom"] .bottom-nav .nav-btn{
+   border:2px solid transparent!important;border-radius:7px!important;background:transparent!important;color:#fff!important
+ }
+ .aero-root[data-theme="recroom"] .bottom-nav .nav-btn:nth-child(1){background:var(--rr-red)!important}
+ .aero-root[data-theme="recroom"] .bottom-nav .nav-btn:nth-child(2){background:var(--rr-purple)!important}
+ .aero-root[data-theme="recroom"] .bottom-nav .nav-btn:nth-child(3){background:var(--rr-green)!important}
+ .aero-root[data-theme="recroom"] .bottom-nav .nav-btn:nth-child(4){background:var(--rr-blue)!important}
+ .aero-root[data-theme="recroom"] .bottom-nav .nav-btn:nth-child(5){background:var(--rr-orange)!important}
+ .aero-root[data-theme="recroom"] .bottom-nav .nav-btn:is(.active,[aria-current="page"]){
+   border-color:#fff!important;transform:translateY(-4px) scale(1.05)!important;box-shadow:0 4px 9px #0007!important
+ }
+ .aero-root[data-theme="recroom"] .chat-sidebar{border-right:0!important;border-bottom:2px solid #82909a77!important}
+ .aero-root[data-theme="recroom"] .space-choice-grid{grid-template-columns:1fr!important;gap:10px!important}
+ .aero-root[data-theme="recroom"] .space-choice-card{aspect-ratio:auto!important;min-height:96px!important}
 }
 @media(prefers-reduced-motion:reduce){
-  .aero-root[data-theme="recroom"] :is(.modal-card,.auth-wrap,.space-choice-card){animation:none!important}
+ .aero-root[data-theme="recroom"] :is(.modal-card,.auth-wrap,.space-choice-card){animation:none!important}
 }
