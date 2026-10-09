@@ -277,6 +277,10 @@ function KlipyMedia({ gif, className = '', controls = false }) {
 const CUSTOM_EMOJIS_KEY = 'rums-custom-emojis';
 const CHAT_MESSAGES_KEY = 'rums-chat-messages';
 const SITE_ANNOUNCEMENT_KEY = 'rums-site-announcement';
+const FINAL_UPDATES_NOTICE = {
+  id: 'plaza-final-updates-2026-10-10',
+  text: 'Starting 10 October 2026, RUMS Plaza will no longer receive website updates. Thank you for being part of the RUMS Plaza community.',
+};
 const CHAT_ROOM_ID = 'plaza';
 const chatReadKey = (username) => `rums-chat-read-${username}`;
 const chatSeenKey = (reader, sender) => `rums-chat-seen-${reader}-${sender}`;
@@ -3031,6 +3035,7 @@ export default function RUMS() {
   const [announcementDraft, setAnnouncementDraft] = useState('');
   const [announcementBusy, setAnnouncementBusy] = useState(false);
   const [dismissedAnnouncement, setDismissedAnnouncement] = useState({ username: '', id: '' });
+  const [dismissedFinalNotice, setDismissedFinalNotice] = useState({ username: '', id: '' });
   const [chatMessages, setChatMessages] = useState([]);
   const [chatReadState, setChatReadState] = useState({});
   const [chatSeenReceipt, setChatSeenReceipt] = useState({ threadId: '', id: '' });
@@ -3256,7 +3261,11 @@ export default function RUMS() {
     const username = currentUser?.username || 'guest';
     try {
       setDismissedAnnouncement({ username, id: localStorage.getItem(`rums-announcement-dismissed-${username}`) || '' });
-    } catch { setDismissedAnnouncement({ username, id: '' }); }
+      setDismissedFinalNotice({ username, id: localStorage.getItem(`rums-final-notice-dismissed-${username}`) || '' });
+    } catch {
+      setDismissedAnnouncement({ username, id: '' });
+      setDismissedFinalNotice({ username, id: '' });
+    }
   }, [currentUser?.username]);
   const isRums5 = rumsSpace === 'rums5';
   const isProjectSpace = isProjectSpaceId(rumsSpace);
@@ -7493,6 +7502,12 @@ export default function RUMS() {
     try { localStorage.setItem(`rums-announcement-dismissed-${username}`, siteAnnouncement.id); } catch { /* session dismissal still works */ }
   }
 
+  function dismissFinalNotice() {
+    const username = currentUser?.username || 'guest';
+    setDismissedFinalNotice({ username, id: FINAL_UPDATES_NOTICE.id });
+    try { localStorage.setItem(`rums-final-notice-dismissed-${username}`, FINAL_UPDATES_NOTICE.id); } catch { /* session dismissal still works */ }
+  }
+
   async function deleteUpdate(id) {
     if (!currentUser?.isAdmin) return;
     await saveUpdates(updates.filter((u) => u.id !== id));
@@ -8118,6 +8133,10 @@ export default function RUMS() {
   const activeThemeId = RUMS_THEMES.some((item) => item.id === theme) ? theme : 'standard';
   const startupTheme = startupThemeMeta(activeThemeId);
 
+  const announcementUsername = currentUser?.username || 'guest';
+  const showFinalNotice = dismissedFinalNotice.username !== announcementUsername || dismissedFinalNotice.id !== FINAL_UPDATES_NOTICE.id;
+  const showSiteAnnouncement = siteAnnouncement && !(dismissedAnnouncement.username === announcementUsername && dismissedAnnouncement.id === siteAnnouncement.id);
+
   return (
     <div data-theme={autoDarkActive ? 'dark' : plazaPlus.pageThemes?.[currentUser?.username]?.[screen] || activeThemeId} className={`aero-root ${screen === 'chat' ? 'screen-chat' : ''} ${screen === 'news' ? 'screen-news' : ''} ${customThemeEnabled ? 'custom-theme-enabled' : ''} ${siteConfig.animations ? '' : 'site-motion-off'} ${editMode ? 'visual-edit-mode' : ''} ${startupRevealPending ? 'startup-reveal-pending' : ''} ${startupRevealActive ? 'startup-reveal-active' : ''} ${versionBackgroundRevealActive ? 'version-background-reveal-active' : ''} ${versionBuildPending ? 'version-build-pending' : ''} ${versionBuildActive ? 'version-build-active' : ''} ${siteMusicOpen ? 'music-island-open' : ''} ${rumsSpace ? (isProjectSpace ? 'space-project' : `space-${rumsSpace}`) : 'space-chooser-active'}`} ref={rootRef} style={{ '--glass-alpha': glassStrength / 100, '--site-accent': customThemeEnabled && !autoDarkActive ? themeBuilder.accent : siteConfig.accent, '--custom-radius': `${themeBuilder.radius}px`, '--custom-blur': `${themeBuilder.blur}px` }}>
       {updateOutroActive && <div className="site-update-outro-pill" aria-live="polite">
@@ -8220,11 +8239,22 @@ export default function RUMS() {
           <div className="site-update-loader" aria-hidden="true"><span /></div>
         </div>
       </div>}
-      {siteAnnouncement && !(dismissedAnnouncement.username === (currentUser?.username || 'guest') && dismissedAnnouncement.id === siteAnnouncement.id) && (
+      {(showFinalNotice || showSiteAnnouncement) && (
         <aside className="site-announcement" role="status" aria-live="polite">
           <span className="site-announcement-icon"><Megaphone size={19} /></span>
-          <div className="site-announcement-copy"><strong>Announcement from {siteAnnouncement.author || 'RUMS Plaza'}</strong><p>{siteAnnouncement.text}</p></div>
-          <button type="button" className="site-announcement-close" onClick={dismissAnnouncement} aria-label="Dismiss announcement"><X size={18} /></button>
+          <div className="site-announcement-copy">
+            {showFinalNotice && <div><strong>Important announcement from RUMS Plaza</strong><p>{FINAL_UPDATES_NOTICE.text}</p></div>}
+            {showSiteAnnouncement && (
+              <div className={showFinalNotice ? 'site-announcement-extra' : ''}>
+                <strong>Announcement from {siteAnnouncement.author || 'RUMS Plaza'}</strong>
+                <p>{siteAnnouncement.text}</p>
+              </div>
+            )}
+          </div>
+          <button type="button" className="site-announcement-close" onClick={() => {
+            if (showFinalNotice) dismissFinalNotice();
+            if (showSiteAnnouncement) dismissAnnouncement();
+          }} aria-label="Dismiss announcement"><X size={18} /></button>
         </aside>
       )}
 
