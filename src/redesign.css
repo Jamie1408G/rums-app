@@ -4357,6 +4357,7 @@ button,input,textarea { font:inherit; }
 .aero-root .site-announcement-copy {min-width:0;flex:1;overflow-y:auto;max-height:210px;}
 .aero-root .site-announcement-copy strong {font-size:13px;}
 .aero-root .site-announcement-copy p {margin:5px 0 0;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+.aero-root .site-announcement-extra {margin-top:12px;padding-top:12px;border-top:1px solid var(--theme-border,rgba(120,150,180,.3));}
 .aero-root .site-announcement-close {display:grid;flex:0 0 30px;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:9px;background:transparent;color:var(--theme-muted,#6e829b);cursor:pointer;}
 .aero-root .site-announcement-close:hover {background:var(--theme-accent-soft,#e6f1ff);}
 .aero-root .announcement-editor .caption-area {display:block;width:100%;min-height:95px;resize:vertical;}
